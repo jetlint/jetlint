@@ -379,6 +379,107 @@ func TestCLI_ConcurrentInvocationsBothSucceedAgainstTheSameDaemon(t *testing.T) 
 	}
 }
 
+func TestCLI_DetectsFloatingPromiseAcrossFilesAndExitsOne(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	for path, content := range map[string]string{
+		"tsconfig.json": `{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"}}`,
+		"api.ts":        "export async function saveUser(name: string): Promise<void> { return; }\n",
+		"main.ts":       "import { saveUser } from \"./api\";\nsaveUser(\"alice\");\n",
+	} {
+		if err := os.WriteFile(filepath.Join(dir, path), []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+
+	cmd := exec.Command(bin, "--format", "json", filepath.Join(dir, "main.ts"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
+	exitErr, _ := err.(*exec.ExitError)
+	if exitErr == nil || exitErr.ExitCode() != 1 {
+		t.Fatalf("expected exit code 1 for floating promise, got %v\nstdout: %s\nstderr: %s",
+			err, stdout.String(), stderr.String())
+	}
+
+	var doc struct {
+		SchemaVersion int `json:"schemaVersion"`
+		Diagnostics   []map[string]any
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &doc); err != nil {
+		t.Fatalf("decode output: %v\nstdout: %s", err, stdout.String())
+	}
+	if len(doc.Diagnostics) != 1 {
+		t.Fatalf("expected 1 diagnostic, got %d: %v", len(doc.Diagnostics), doc.Diagnostics)
+	}
+	got := doc.Diagnostics[0]
+	if got["ruleId"] != "no-floating-promises" {
+		t.Errorf("expected ruleId 'no-floating-promises', got %v", got["ruleId"])
+	}
+	if !strings.HasSuffix(got["file"].(string), "main.ts") {
+		t.Errorf("expected file to end with main.ts, got %v", got["file"])
+	}
+}
+
+func TestCLI_AcceptsMultiplePositionalTargets(t *testing.T) {
+	bin := buildBinary(t)
+	project := fixtureProject(t)
+	rt := runtimeDir(t)
+
+	// Add a second file to the fixture project so the multi-target test
+	// has more than one path to pass.
+	other := filepath.Join(project, "other.ts")
+	if err := os.WriteFile(other, []byte("export {};\n"), 0o644); err != nil {
+		t.Fatalf("write other.ts: %v", err)
+	}
+
+	cmd := exec.Command(bin, filepath.Join(project, "main.ts"), other)
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("multi-target invocation failed: %v\n%s", err, out)
+	}
+}
+
+func TestCLI_AcceptsFileListFromStdin(t *testing.T) {
+	bin := buildBinary(t)
+	project := fixtureProject(t)
+	rt := runtimeDir(t)
+
+	cmd := exec.Command(bin, "--files-from", "-")
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	cmd.Stdin = strings.NewReader(filepath.Join(project, "main.ts") + "\n")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("stdin file-list invocation failed: %v\n%s", err, out)
+	}
+}
+
+func TestCLI_AcceptsFileListFromFile(t *testing.T) {
+	bin := buildBinary(t)
+	project := fixtureProject(t)
+	rt := runtimeDir(t)
+
+	listFile := filepath.Join(t.TempDir(), "files.txt")
+	if err := os.WriteFile(listFile,
+		[]byte(filepath.Join(project, "main.ts")+"\n"), 0o644); err != nil {
+		t.Fatalf("write list: %v", err)
+	}
+
+	cmd := exec.Command(bin, "--files-from", listFile)
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("--files-from invocation failed: %v\n%s", err, out)
+	}
+}
+
 func TestCLI_JSONModeOnCleanProjectEmitsValidJSON(t *testing.T) {
 	bin := buildBinary(t)
 	project := fixtureProject(t)

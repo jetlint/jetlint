@@ -21,6 +21,13 @@ Feature: Wrapper-API architectural boundary
     Then no rule imports any package outside the linter's public rule API and the wrapper
 
   @technical
+  Scenario: A single AST walk dispatches to all registered rule handlers
+    Given multiple rules registered in the engine
+    When a file is linted
+    Then the file's AST is traversed exactly once
+    And each visited node dispatches to every rule handler registered for that node kind
+
+  @technical
   Scenario: An architecture test enforces the wrapper-API boundary
     Given a checked-in allowlist of import paths permitted from rule packages
     When the architecture test runs in continuous integration

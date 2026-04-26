@@ -4,11 +4,13 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -17,10 +19,14 @@ import (
 	// (not in main) so the architecture test sees rule-package-shaped imports.
 	_ "github.com/microsoft/typescript-go/pkg/lint"
 
+	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
+	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
 	"github.com/tommymorgan/tsgolint/internal/config"
 	"github.com/tommymorgan/tsgolint/internal/daemon"
+	"github.com/tommymorgan/tsgolint/internal/engine"
 	"github.com/tommymorgan/tsgolint/internal/format"
 	"github.com/tommymorgan/tsgolint/internal/project"
+	"github.com/tommymorgan/tsgolint/internal/rules/nofloatingpromises"
 	"github.com/tommymorgan/tsgolint/internal/toolerr"
 	"github.com/tommymorgan/tsgolint/internal/transport"
 )
@@ -61,6 +67,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	versionFlag := fs.Bool("version", false, "print version and exit")
 	helpFlag := fs.Bool("help", false, "print usage and exit")
 	formatFlag := fs.String("format", "human", "output format (human, json)")
+	filesFromFlag := fs.String("files-from", "", "read newline-separated target paths from this file (use - for stdin)")
 	daemonFlag := fs.String("daemon", "", "internal: run as the per-project daemon listening on the given socket")
 
 	if err := fs.Parse(args); err != nil {
@@ -89,7 +96,47 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 
-	return runLint(fs.Args(), stdout, stderr, formatter)
+	targets := fs.Args()
+	if *filesFromFlag != "" {
+		extra, err := readFileList(*filesFromFlag)
+		if err != nil {
+			emitToolError(stderr, formatter.Name(),
+				toolerr.WithPath(toolerr.CodeInternal, err.Error(), *filesFromFlag))
+			return 2
+		}
+		targets = append(targets, extra...)
+	}
+
+	return runLint(targets, stdout, stderr, formatter)
+}
+
+// readFileList returns the newline-separated target paths from path. The
+// special path "-" reads from os.Stdin. Blank lines are ignored.
+func readFileList(path string) ([]string, error) {
+	var r io.Reader
+	if path == "-" {
+		r = os.Stdin
+	} else {
+		f, err := os.Open(path)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+		r = f
+	}
+	var out []string
+	sc := bufio.NewScanner(r)
+	for sc.Scan() {
+		line := sc.Text()
+		if line == "" {
+			continue
+		}
+		out = append(out, line)
+	}
+	if err := sc.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // runDaemon is the entry point for the spawned daemon process. It writes
@@ -136,7 +183,8 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 	// the first target. Failures here are user-facing tooling errors (bad
 	// JSON, unknown rule); they preempt daemon work so the user sees the
 	// problem immediately.
-	if _, err := config.ResolveCascade(filepath.Dir(targets[0])); err != nil {
+	resolved, err := config.ResolveCascade(filepath.Dir(targets[0]))
+	if err != nil {
 		var te *toolerr.Error
 		if errors.As(err, &te) {
 			emitToolError(stderr, formatter.Name(), te)
@@ -182,14 +230,50 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 		return 2
 	}
 
-	// No rules yet — render the (always empty) diagnostic set so output
-	// shape is correct from day one.
-	if err := formatter.Format(stdout, nil); err != nil {
+	// Load the program and run the rule engine in-process. v0.1 keeps
+	// the lint compute on the CLI side; the daemon's warm-path role is
+	// to amortise startup once future revisions move program loading
+	// into the daemon and exchange diagnostics over the socket.
+	prog, err := wrapperchecker.LoadProgram(tsconfig)
+	if err != nil {
+		emitToolError(stderr, formatter.Name(),
+			toolerr.WithPath(toolerr.CodeProgramBuildFailed, err.Error(), tsconfig))
+		return 2
+	}
+	defer prog.Close()
+
+	eng := engine.New(activeRules(), resolved.Rules)
+	diagnostics := eng.Lint(prog)
+
+	if err := formatter.Format(stdout, diagnostics); err != nil {
 		emitToolError(stderr, formatter.Name(),
 			toolerr.New(toolerr.CodeInternal, err.Error()))
 		return 2
 	}
+	if hasError(diagnostics) {
+		return 1
+	}
 	return 0
+}
+
+// activeRules returns the registered rule instances. As more rules ship
+// they are appended here; the engine filters by the resolved config so
+// rules disabled at runtime have zero overhead.
+func activeRules() []engine.Rule {
+	return []engine.Rule{
+		nofloatingpromises.New(),
+	}
+}
+
+// hasError reports whether any diagnostic in the slice was emitted at
+// error severity (the signal for exit code 1).
+func hasError(d []wrapperlint.Diagnostic) bool {
+	for _, x := range d {
+		if x.Severity == wrapperlint.SeverityError {
+			return true
+		}
+	}
+	return false
 }
 
 // emitToolError writes a tooling failure to stderr in the appropriate

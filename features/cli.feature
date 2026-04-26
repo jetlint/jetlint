@@ -13,6 +13,21 @@ Feature: Command-line interface
     And no daemon is started or contacted
 
   @user
+  Scenario: A list of files supplied on the command line is linted as a batch
+    Given the user runs the linter with one or more file paths as positional arguments
+    When the linter resolves each path against its discovered TypeScript program
+    Then only the named files are linted
+    And diagnostics are emitted for those files in the JSON output's documented order
+
+  @user
+  Scenario: A list of files supplied on standard input is linted as a batch
+    Given the user invokes the linter with the convention that signals "read file list from stdin" (--files-from -)
+    And a newline-separated list of file paths is written to standard input
+    When the linter completes
+    Then only the files named on standard input are linted
+    And the same output contract applies as for positional arguments
+
+  @user
   Scenario: --help prints stable usage and exits zero
     Given the linter binary
     When the user runs the linter with the --help flag

@@ -1,0 +1,72 @@
+package engine
+
+import (
+	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
+	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
+)
+
+// Engine runs registered rules against a Program. The active set of
+// rules and their severities is supplied at construction; the engine
+// itself is stateless beyond that.
+type Engine struct {
+	rules      []Rule
+	severities map[string]wrapperlint.Severity
+}
+
+// New creates an Engine with the given rules and per-rule severities.
+// Rules whose ID is absent from severities are skipped (treated as off).
+func New(rules []Rule, severities map[string]wrapperlint.Severity) *Engine {
+	return &Engine{rules: rules, severities: severities}
+}
+
+// Lint runs every active rule against every user source file in the
+// program and returns the collected diagnostics.
+func (e *Engine) Lint(program *wrapperchecker.Program) []wrapperlint.Diagnostic {
+	chk := program.Checker()
+	var diagnostics []wrapperlint.Diagnostic
+
+	// Pre-compute per-kind handler lists across all active rules so the
+	// AST walk is one pass with O(1) dispatch per node.
+	type entry struct {
+		ruleID   string
+		severity wrapperlint.Severity
+		handler  Handler
+	}
+	dispatch := map[wrapperchecker.Kind][]entry{}
+	for _, r := range e.rules {
+		sev, ok := e.severities[r.Meta().ID]
+		if !ok || sev == "" {
+			continue
+		}
+		for kind, h := range r.Handlers() {
+			dispatch[kind] = append(dispatch[kind], entry{
+				ruleID:   r.Meta().ID,
+				severity: sev,
+				handler:  h,
+			})
+		}
+	}
+	if len(dispatch) == 0 {
+		return diagnostics
+	}
+
+	for _, file := range program.SourceFiles() {
+		file.Walk(func(n *wrapperchecker.Node) bool {
+			entries, ok := dispatch[n.Kind()]
+			if ok {
+				for _, ent := range entries {
+					ctx := &Context{
+						program:     program,
+						checker:     chk,
+						ruleID:      ent.ruleID,
+						severity:    ent.severity,
+						diagnostics: &diagnostics,
+					}
+					ent.handler(ctx, n)
+				}
+			}
+			return true
+		})
+	}
+	return diagnostics
+}

@@ -1,0 +1,112 @@
+package nofloatingpromises_test
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
+	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/tommymorgan/tsgolint/internal/rules/nofloatingpromises"
+
+	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
+)
+
+// fixture writes a small TypeScript project to a temp dir and returns
+// the absolute tsconfig path.
+func fixture(t *testing.T, files map[string]string) string {
+	t.Helper()
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	tsconfig := filepath.Join(dir, "tsconfig.json")
+	if _, hasConfig := files["tsconfig.json"]; !hasConfig {
+		files["tsconfig.json"] = `{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"}}`
+	}
+	for rel, content := range files {
+		full := filepath.Join(dir, rel)
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatalf("mkdir parent: %v", err)
+		}
+		if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", full, err)
+		}
+	}
+	return tsconfig
+}
+
+func runRule(t *testing.T, tsconfig string) []wrapperlint.Diagnostic {
+	t.Helper()
+	prog, err := wrapperchecker.LoadProgram(tsconfig)
+	if err != nil {
+		t.Fatalf("LoadProgram: %v", err)
+	}
+	t.Cleanup(prog.Close)
+
+	eng := engine.New(
+		[]engine.Rule{nofloatingpromises.New()},
+		map[string]wrapperlint.Severity{"no-floating-promises": wrapperlint.SeverityError},
+	)
+	return eng.Lint(prog)
+}
+
+func TestNoFloatingPromises_FlagsUnawaitedPromiseFromImportedFunction(t *testing.T) {
+	tsconfig := fixture(t, map[string]string{
+		"api.ts":  "export async function saveUser(name: string): Promise<void> { return; }\n",
+		"main.ts": "import { saveUser } from \"./api\";\nsaveUser(\"alice\");\n",
+	})
+	diags := runRule(t, tsconfig)
+	if len(diags) != 1 {
+		t.Fatalf("expected 1 diagnostic, got %d: %#v", len(diags), diags)
+	}
+	d := diags[0]
+	if !strings.HasSuffix(d.Range.File, "main.ts") {
+		t.Errorf("expected diagnostic in main.ts, got %s", d.Range.File)
+	}
+	if d.RuleID != "no-floating-promises" {
+		t.Errorf("expected rule id 'no-floating-promises', got %q", d.RuleID)
+	}
+	if d.Range.StartLine != 2 {
+		t.Errorf("expected line 2, got %d", d.Range.StartLine)
+	}
+}
+
+func TestNoFloatingPromises_DoesNotFlagAwaitedPromise(t *testing.T) {
+	tsconfig := fixture(t, map[string]string{
+		"api.ts":  "export async function fetchUser(): Promise<string> { return \"x\"; }\n",
+		"main.ts": "import { fetchUser } from \"./api\";\nasync function run() { await fetchUser(); }\nrun();\n",
+	})
+	diags := runRule(t, tsconfig)
+	// run() itself is also a promise; it returns from an async function.
+	// We expect one diagnostic on `run();` (line 3) but NOT on `await fetchUser();`.
+	for _, d := range diags {
+		if strings.Contains(d.Range.File, "main.ts") && d.Range.StartLine == 2 {
+			t.Errorf("did not expect diagnostic on awaited call, got: %#v", d)
+		}
+	}
+}
+
+func TestNoFloatingPromises_DoesNotFlagPromiseExplicitlyVoided(t *testing.T) {
+	tsconfig := fixture(t, map[string]string{
+		"api.ts":  "export async function fireAndForget(): Promise<void> { return; }\n",
+		"main.ts": "import { fireAndForget } from \"./api\";\nvoid fireAndForget();\n",
+	})
+	diags := runRule(t, tsconfig)
+	if len(diags) != 0 {
+		t.Errorf("expected no diagnostics for void-prefixed promise, got %d: %#v", len(diags), diags)
+	}
+}
+
+func TestNoFloatingPromises_DoesNotFlagSynchronousFunctionCall(t *testing.T) {
+	tsconfig := fixture(t, map[string]string{
+		"main.ts": "function add(a: number, b: number): number { return a + b; }\nadd(1, 2);\n",
+	})
+	diags := runRule(t, tsconfig)
+	if len(diags) != 0 {
+		t.Errorf("expected no diagnostics for sync function call, got %d: %#v", len(diags), diags)
+	}
+}

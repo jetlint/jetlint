@@ -61,10 +61,10 @@ Scenario: A clean project exits zero with no diagnostics
   Then the linter prints no diagnostics
   And the process exits with code 0
 
-# Living: none (initial implementation)
+# Living: features/output.feature::A project with violations exits one with diagnostics
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A project with violations exits one with diagnostics
   Given a TypeScript project containing at least one rule violation
   When the user runs the linter against the project
@@ -150,20 +150,20 @@ Scenario: --help prints stable usage and exits zero
   And the process exits with code 0
   And no daemon is started or contacted
 
-# Living: none (initial implementation)
+# Living: features/cli.feature::A list of files supplied on the command line is linted as a batch
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A list of files supplied on the command line is linted as a batch
   Given the user runs the linter with one or more file paths as positional arguments
   When the linter resolves each path against its discovered TypeScript program
   Then only the named files are linted
   And diagnostics are emitted for those files in the JSON output's documented order
 
-# Living: none (initial implementation)
+# Living: features/cli.feature::A list of files supplied on standard input is linted as a batch
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A list of files supplied on standard input is linted as a batch
   Given the user invokes the linter with the convention that signals "read file list from stdin" (such as `--files-from -`)
   And a newline-separated list of file paths is written to standard input
@@ -319,10 +319,10 @@ Scenario: Linting proceeds in degraded mode when the program has type errors, wi
 
 ### Rule: detect floating promises
 
-# Living: none (initial implementation)
+# Living: features/no-floating-promises.feature::Should report an unawaited promise returned from an imported function
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should report an unawaited promise returned from an imported function
   Given a project where a function defined in one file returns a promise
   And the function is called in another file without awaiting or otherwise handling its result
@@ -330,20 +330,20 @@ Scenario: Should report an unawaited promise returned from an imported function
   Then a diagnostic is reported at the unawaited call site
   And the diagnostic is attributed to the floating-promises rule
 
-# Living: none (initial implementation)
+# Living: features/no-floating-promises.feature::Should not report a promise that is awaited or explicitly handled
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should not report a promise that is awaited or explicitly handled
   Given a call to a promise-returning function that is awaited
   And another call whose returned promise is explicitly chained or assigned
   When the user runs the linter
   Then no floating-promises diagnostic is reported for either call
 
-# Living: none (initial implementation)
+# Living: features/no-floating-promises.feature::Should not report a promise that is explicitly discarded with the void operator
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should not report a promise that is explicitly discarded with the void operator
   Given a call to a promise-returning function whose result is prefixed with the `void` operator
   When the user runs the linter
@@ -624,10 +624,10 @@ Scenario: A target file outside the discovered program is reported and skipped
 
 ### Engine execution model
 
-# Living: none (initial implementation)
+# Living: features/architecture.feature::A single AST walk dispatches to all registered rule handlers
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A single AST walk dispatches to all registered rule handlers
   Given multiple rules registered in the engine
   When a file is linted
