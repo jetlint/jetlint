@@ -49,6 +49,21 @@ Feature: Output formatting
     And the process exits with code 2
 
   @user
+  Scenario: Tooling failure exits two with the cause on stderr
+    Given a condition that prevents the linter from completing (such as a broken project configuration)
+    When the user runs the linter
+    Then the underlying error is written to stderr with enough context to act on
+    And the process exits with code 2
+    And no lint diagnostics are emitted from the failed invocation
+
+  @user
+  Scenario: Concurrent invocations produce results referentially identical to sequential runs
+    Given two simultaneous lint invocations targeting the same project
+    When both invocations run to completion
+    Then the union of diagnostics returned to the two callers equals the diagnostics that a single sequential invocation over the same files would produce
+    And neither invocation's output contains data from the other invocation's request
+
+  @user
   Scenario: A clean project exits zero with no diagnostics
     Given a TypeScript project with no rule violations
     When the user runs the linter against the project

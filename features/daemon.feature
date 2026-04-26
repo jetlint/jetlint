@@ -28,6 +28,13 @@ Feature: Per-project daemon lifecycle
     And its socket and PID file are removed
 
   @technical
+  Scenario: A stale socket from a crashed daemon is detected and replaced
+    Given a socket file exists but no daemon process is responding
+    When the CLI attempts to connect and its health probe fails to receive a response within 250 milliseconds
+    Then the CLI removes the stale socket
+    And spawns a fresh daemon before retrying
+
+  @technical
   Scenario: Concurrent spawn attempts elect a single spawner via PID-file locking
     Given two CLI invocations both find no running daemon and attempt to spawn one
     When each spawn process acquires an exclusive flock on the daemon's PID file

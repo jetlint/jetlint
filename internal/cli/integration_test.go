@@ -49,11 +49,19 @@ func fixtureProject(t *testing.T) string {
 	return root
 }
 
-// runtimeDir returns an isolated XDG_RUNTIME_DIR for the test, so spawned
-// daemons do not collide with developer machines.
+// runtimeDir returns an isolated XDG_RUNTIME_DIR for the test. It uses a
+// short /tmp-prefixed path rather than t.TempDir because Unix domain
+// socket paths have a ~108-byte limit on Linux, and t.TempDir embeds the
+// (potentially long) test name which blows the limit for tests with
+// descriptive names.
 func runtimeDir(t *testing.T) string {
 	t.Helper()
-	return t.TempDir()
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("create runtime dir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+	return dir
 }
 
 func TestCLI_SpawnsDaemonAndReportsOkOnCleanProject(t *testing.T) {
@@ -237,6 +245,137 @@ func TestCLI_UnknownFormatExitsTwoWithSupportedFormatsListed(t *testing.T) {
 	out := stderr.String()
 	if !strings.Contains(out, "human") || !strings.Contains(out, "json") {
 		t.Errorf("expected supported formats listed in stderr, got: %s", out)
+	}
+}
+
+func TestCLI_DaemonWritesPerProjectLogFileToStateDirectory(t *testing.T) {
+	bin := buildBinary(t)
+	project := fixtureProject(t)
+	rt := runtimeDir(t)
+	state := t.TempDir()
+
+	cmd := exec.Command(bin, filepath.Join(project, "main.ts"))
+	cmd.Env = append(os.Environ(),
+		"XDG_RUNTIME_DIR="+rt,
+		"XDG_STATE_HOME="+state,
+	)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("invocation failed: %v\n%s", err, out)
+	}
+
+	tsgolintStateDir := filepath.Join(state, "tsgolint")
+	entries, err := os.ReadDir(tsgolintStateDir)
+	if err != nil {
+		t.Fatalf("read state dir: %v", err)
+	}
+	var logFile string
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), ".log") {
+			logFile = filepath.Join(tsgolintStateDir, e.Name())
+			break
+		}
+	}
+	if logFile == "" {
+		t.Fatalf("no log file found in %s", tsgolintStateDir)
+	}
+	contents, err := os.ReadFile(logFile)
+	if err != nil {
+		t.Fatalf("read log file: %v", err)
+	}
+	if !strings.Contains(string(contents), "tsgolint daemon: started") {
+		t.Errorf("expected start log line in log file, got: %s", string(contents))
+	}
+}
+
+func TestCLI_StaleSocketIsDetectedAndReplaced(t *testing.T) {
+	bin := buildBinary(t)
+	project := fixtureProject(t)
+	rt := runtimeDir(t)
+
+	// Pre-populate the runtime dir with a stale "socket" file (a regular
+	// file at the path; nothing listening). The CLI must remove it and
+	// spawn a real daemon.
+	tsgolintDir := filepath.Join(rt, "tsgolint")
+	if err := os.MkdirAll(tsgolintDir, 0o700); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	// Determine the would-be socket path the CLI will compute by running
+	// once; capture it via the directory listing afterward.
+	cmd := exec.Command(bin, filepath.Join(project, "main.ts"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("first invocation failed: %v\n%s", err, out)
+	}
+	entries, err := os.ReadDir(tsgolintDir)
+	if err != nil {
+		t.Fatalf("read tsgolint dir: %v", err)
+	}
+	var socketPath string
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), ".sock") {
+			socketPath = filepath.Join(tsgolintDir, e.Name())
+			break
+		}
+	}
+	if socketPath == "" {
+		t.Fatal("could not find socket path after first invocation")
+	}
+
+	// Replace the socket with a stale regular file to simulate a crashed
+	// daemon's leftover state.
+	_ = os.Remove(socketPath)
+	if err := os.WriteFile(socketPath, []byte("stale"), 0o600); err != nil {
+		t.Fatalf("write stale: %v", err)
+	}
+
+	cmd2 := exec.Command(bin, filepath.Join(project, "main.ts"))
+	cmd2.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	out, err := cmd2.CombinedOutput()
+	if err != nil {
+		t.Fatalf("second invocation should recover from stale socket, got error: %v\n%s", err, out)
+	}
+}
+
+func TestCLI_ConcurrentInvocationsBothSucceedAgainstTheSameDaemon(t *testing.T) {
+	bin := buildBinary(t)
+	project := fixtureProject(t)
+	rt := runtimeDir(t)
+
+	// Run an initial invocation to establish a warm daemon. This avoids
+	// stressing the spawn-election path (which is exercised separately by
+	// the unit-level flock test) and isolates this test to the
+	// "concurrent requests against an existing daemon" property.
+	warmup := exec.Command(bin, filepath.Join(project, "main.ts"))
+	warmup.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	if out, err := warmup.CombinedOutput(); err != nil {
+		t.Fatalf("warmup invocation failed: %v\n%s", err, out)
+	}
+
+	const N = 4
+	type result struct {
+		err    error
+		output string
+	}
+	results := make(chan result, N)
+	for i := 0; i < N; i++ {
+		go func() {
+			cmd := exec.Command(bin, filepath.Join(project, "main.ts"))
+			cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+			out, err := cmd.CombinedOutput()
+			results <- result{err: err, output: string(out)}
+		}()
+	}
+
+	deadline := time.After(15 * time.Second)
+	for i := 0; i < N; i++ {
+		select {
+		case r := <-results:
+			if r.err != nil {
+				t.Errorf("concurrent invocation %d failed: %v\n%s", i, r.err, r.output)
+			}
+		case <-deadline:
+			t.Fatalf("concurrent invocations did not all complete within deadline")
+		}
 	}
 }
 

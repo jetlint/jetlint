@@ -31,6 +31,12 @@ type SpawnConfig struct {
 	// a "--daemon" flag and the socket path.
 	Args []string
 
+	// LogPath, when non-empty, names a file that receives the spawned
+	// daemon's stderr output. The file is opened in append mode and
+	// created if it does not exist. When empty, the daemon's stderr is
+	// discarded.
+	LogPath string
+
 	// HealthProbe is the time budget for the per-attempt health probe used
 	// to decide whether an existing socket file represents a live daemon.
 	// 0 selects a reasonable default.
@@ -88,7 +94,6 @@ func EnsureRunning(ctx context.Context, cfg SpawnConfig) error {
 	cmd := exec.Command(cfg.Executable, cfg.Args...)
 	// Detach the daemon so it survives the parent CLI's exit.
 	cmd.SysProcAttr = detachAttr()
-	// Discard daemon stdio at the OS level; daemon writes its own log file.
 	devNull, err := os.OpenFile(os.DevNull, os.O_RDWR, 0)
 	if err != nil {
 		return fmt.Errorf("open /dev/null: %w", err)
@@ -96,7 +101,25 @@ func EnsureRunning(ctx context.Context, cfg SpawnConfig) error {
 	defer devNull.Close()
 	cmd.Stdin = devNull
 	cmd.Stdout = devNull
-	cmd.Stderr = devNull
+
+	// Daemon stderr is the log channel. Route it to the configured log file
+	// when one is supplied so lifecycle events are captured for diagnosis;
+	// otherwise drop it to keep the host environment clean.
+	if cfg.LogPath != "" {
+		if err := os.MkdirAll(filepath.Dir(cfg.LogPath), 0o700); err != nil {
+			return fmt.Errorf("prepare log directory: %w", err)
+		}
+		logFile, err := os.OpenFile(cfg.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
+		if err != nil {
+			return fmt.Errorf("open log file: %w", err)
+		}
+		// The child process inherits this file descriptor; we close our copy
+		// once the spawn completes below.
+		defer logFile.Close()
+		cmd.Stderr = logFile
+	} else {
+		cmd.Stderr = devNull
+	}
 
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("spawn daemon: %w", err)

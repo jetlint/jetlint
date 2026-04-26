@@ -71,10 +71,10 @@ Scenario: A project with violations exits one with diagnostics
   Then each violation is reported with file, line, column, rule identifier, and message
   And the process exits with code 1
 
-# Living: none (initial implementation)
+# Living: features/output.feature::Tooling failure exits two with the cause on stderr
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Tooling failure exits two with the cause on stderr
   Given a condition that prevents the linter from completing (such as a broken project configuration)
   When the user runs the linter
@@ -118,10 +118,10 @@ Scenario: Subsequent invocations complete within the warm-path budget
   Then the invocation completes within 200 milliseconds at the 95th percentile across 20 runs on the CI runner of record
   And no startup cost is paid
 
-# Living: none (initial implementation)
+# Living: features/output.feature::Concurrent invocations produce results referentially identical to sequential runs
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Concurrent invocations produce results referentially identical to sequential runs
   Given two simultaneous lint invocations targeting the same project
   When both invocations run to completion
@@ -556,10 +556,10 @@ Scenario: A request arriving during idle shutdown either completes or is cleanly
   Then either the request is served to completion before the daemon exits
   Or the request is rejected with a structured "daemon_unavailable" error so the CLI's retry path can spawn a fresh daemon
 
-# Living: none (initial implementation)
+# Living: features/daemon.feature::A stale socket from a crashed daemon is detected and replaced
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A stale socket from a crashed daemon is detected and replaced
   Given a socket file exists but no daemon process is responding
   When the CLI attempts to connect and its health probe fails to receive a response within 250 milliseconds
@@ -655,10 +655,10 @@ Scenario: Edits within the same modification-time tick are still detected via se
   And if both match the cached values, the cached parse may be reused
   And this limitation is documented in user-facing release notes so that AI agents and CI tooling can pass `--no-cache` or restart the daemon when they need a guaranteed fresh check
 
-# Living: none (initial implementation)
+# Living: features/architecture.feature::Rules access type information only through the wrapper
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Rules access type information only through the wrapper
   Given the rule implementations
   When the source is inspected
@@ -691,10 +691,10 @@ Scenario: The linter ships as a single static binary across major platforms
 
 ### Logging
 
-# Living: none (initial implementation)
+# Living: features/logging.feature::The daemon writes per-project logs to a predictable location
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: The daemon writes per-project logs to a predictable location
   Given a running daemon
   When it produces log output

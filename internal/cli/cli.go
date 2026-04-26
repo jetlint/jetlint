@@ -92,17 +92,22 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	return runLint(fs.Args(), stdout, stderr, formatter)
 }
 
-// runDaemon is the entry point for the spawned daemon process.
+// runDaemon is the entry point for the spawned daemon process. It writes
+// lifecycle events to stderr; the parent CLI captures stderr into the
+// per-project log file via SpawnConfig.LogPath.
 func runDaemon(socketPath string, stderr io.Writer) int {
 	srv, err := daemon.NewServer(socketPath, daemonIdleDefault)
 	if err != nil {
-		fmt.Fprintf(stderr, "daemon: %v\n", err)
+		fmt.Fprintf(stderr, "tsgolint daemon: start failed: %v\n", err)
 		return 2
 	}
+	fmt.Fprintf(stderr, "tsgolint daemon: started on %s, idle timeout %s\n",
+		socketPath, daemonIdleDefault)
 	if err := srv.Run(context.Background()); err != nil {
-		fmt.Fprintf(stderr, "daemon: %v\n", err)
+		fmt.Fprintf(stderr, "tsgolint daemon: run failed: %v\n", err)
 		return 2
 	}
+	fmt.Fprintf(stderr, "tsgolint daemon: shut down cleanly\n")
 	return 0
 }
 
@@ -149,8 +154,15 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 		return 2
 	}
 
+	logPath, err := transport.LogPath(tsconfig)
+	if err != nil {
+		emitToolError(stderr, formatter.Name(),
+			toolerr.New(toolerr.CodeInternal, err.Error()))
+		return 2
+	}
 	if err := daemon.EnsureRunning(context.Background(), daemon.SpawnConfig{
 		SocketPath: socket,
+		LogPath:    logPath,
 		Args:       []string{"--daemon", socket},
 	}); err != nil {
 		emitToolError(stderr, formatter.Name(),

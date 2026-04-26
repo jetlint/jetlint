@@ -54,6 +54,29 @@ func TestDaemonSocketPath_LivesUnderTheRuntimeDirectory(t *testing.T) {
 	}
 }
 
+func TestLogPath_LivesUnderTheStateDirectoryAndIsKeyedByProject(t *testing.T) {
+	stateDir := t.TempDir()
+	t.Setenv("XDG_STATE_HOME", stateDir)
+
+	a, err := transport.LogPath("/repo-one/tsconfig.json")
+	if err != nil {
+		t.Fatalf("LogPath: %v", err)
+	}
+	b, err := transport.LogPath("/repo-two/tsconfig.json")
+	if err != nil {
+		t.Fatalf("LogPath: %v", err)
+	}
+	if !strings.HasPrefix(a, stateDir) {
+		t.Errorf("expected log path under %s, got %s", stateDir, a)
+	}
+	if filepath.Base(filepath.Dir(a)) != "tsgolint" {
+		t.Errorf("expected log under tsgolint/ subdirectory, got %s", a)
+	}
+	if a == b {
+		t.Errorf("expected distinct log paths for distinct projects, got %s for both", a)
+	}
+}
+
 func TestDaemonSocketPath_AbsolutizesRelativeTsconfigPath(t *testing.T) {
 	// Two callers from different working directories that resolve to the same
 	// absolute tsconfig path must compute the same socket path.

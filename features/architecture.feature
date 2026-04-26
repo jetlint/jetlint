@@ -15,6 +15,12 @@ Feature: Wrapper-API architectural boundary
     And no source file in the linter imports from internal packages of the fork
 
   @technical
+  Scenario: Rules access type information only through the wrapper
+    Given the rule implementations
+    When the source is inspected
+    Then no rule imports any package outside the linter's public rule API and the wrapper
+
+  @technical
   Scenario: An architecture test enforces the wrapper-API boundary
     Given a checked-in allowlist of import paths permitted from rule packages
     When the architecture test runs in continuous integration
