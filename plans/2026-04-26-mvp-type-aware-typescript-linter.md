@@ -219,20 +219,20 @@ Scenario: Unknown output format fails with a clear message
 
 ### Configuration
 
-# Living: none (initial implementation)
+# Living: features/configuration.feature::A project with no linter config uses sensible defaults
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A project with no linter config uses sensible defaults
   Given a TypeScript project with no linter configuration file
   When the user runs the linter
   Then all five MVP rules are active at error severity
   And diagnostics are produced wherever rules find violations
 
-# Living: none (initial implementation)
+# Living: features/configuration.feature::Cascading configurations override defaults level by level
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Cascading configurations override defaults level by level
   Given a project with a root linter configuration
   And a child directory with its own linter configuration
@@ -240,10 +240,10 @@ Scenario: Cascading configurations override defaults level by level
   Then the effective configuration is the merge of root and child
   And settings declared in the child win where they conflict
 
-# Living: none (initial implementation)
+# Living: features/configuration.feature::Cascade merge replaces lists rather than concatenating them
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Cascade merge replaces lists rather than concatenating them
   Given a parent configuration that declares a list-typed setting (such as a list of disabled rules)
   And a child configuration that declares its own value for the same list-typed setting
@@ -251,10 +251,10 @@ Scenario: Cascade merge replaces lists rather than concatenating them
   Then the child's list value replaces the parent's list value entirely
   And no element of the parent's list survives in the resolved configuration unless the child's list also includes it
 
-# Living: none (initial implementation)
+# Living: features/configuration.feature::A child configuration can disable a rule for its subtree
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A child configuration can disable a rule for its subtree
   Given a parent configuration that enables a rule
   And a child configuration that disables that rule
@@ -262,20 +262,20 @@ Scenario: A child configuration can disable a rule for its subtree
   Then no diagnostics from that rule are reported for files in the child's subtree
   And the rule continues to apply elsewhere
 
-# Living: none (initial implementation)
+# Living: features/configuration.feature::An invalid configuration file fails fast with location
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: An invalid configuration file fails fast with location
   Given a linter configuration file that cannot be parsed or validated
   When the user runs the linter
   Then the linter exits with code 2 before linting any file
   And the failure message identifies the file and the offending location
 
-# Living: none (initial implementation)
+# Living: features/configuration.feature::An unknown rule name in configuration fails fast
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: An unknown rule name in configuration fails fast
   Given a linter configuration that references a rule the linter does not ship
   When the user runs the linter

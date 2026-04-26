@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"path/filepath"
 	"time"
 
 	// Imported to anchor the wrapper-API dependency: the binary statically
@@ -16,6 +17,7 @@ import (
 	// (not in main) so the architecture test sees rule-package-shaped imports.
 	_ "github.com/microsoft/typescript-go/pkg/lint"
 
+	"github.com/tommymorgan/tsgolint/internal/config"
 	"github.com/tommymorgan/tsgolint/internal/daemon"
 	"github.com/tommymorgan/tsgolint/internal/format"
 	"github.com/tommymorgan/tsgolint/internal/project"
@@ -122,6 +124,21 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 		}
 		emitToolError(stderr, formatter.Name(),
 			toolerr.WithPath(code, err.Error(), targets[0]))
+		return 2
+	}
+
+	// Resolve the lint configuration cascade starting at the directory of
+	// the first target. Failures here are user-facing tooling errors (bad
+	// JSON, unknown rule); they preempt daemon work so the user sees the
+	// problem immediately.
+	if _, err := config.ResolveCascade(filepath.Dir(targets[0])); err != nil {
+		var te *toolerr.Error
+		if errors.As(err, &te) {
+			emitToolError(stderr, formatter.Name(), te)
+		} else {
+			emitToolError(stderr, formatter.Name(),
+				toolerr.New(toolerr.CodeInternal, err.Error()))
+		}
 		return 2
 	}
 
