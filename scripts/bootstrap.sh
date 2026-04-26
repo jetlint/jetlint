@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 GO_BIN="${TSGOLINT_GO_BIN:-go}"
-GO_VERSION_MIN="${TSGOLINT_GO_VERSION_MIN:-1.23}"
+GO_VERSION_MIN="${TSGOLINT_GO_VERSION_MIN:-1.26}"
 FORK_PATH="${TSGOLINT_FORK_PATH:-$REPO_ROOT/../typescript-go}"
 BIN_DIR="${TSGOLINT_BIN_DIR:-$REPO_ROOT/bin}"
 
@@ -38,9 +38,11 @@ phase_check() {
 		fail "prerequisite 'Go' detected at '$GO_BIN' but 'go version' produced no output"
 	fi
 
+	# Parse the version only when the line begins with the canonical "go version go"
+	# prefix. This rejects wrapper output (asdf, mise) that prepends noise.
 	local detected
-	detected="$(printf '%s' "$raw" | sed -E 's/^go version go([0-9]+\.[0-9]+(\.[0-9]+)?).*$/\1/')"
-	if [ -z "$detected" ] || [ "$detected" = "$raw" ]; then
+	detected="$(printf '%s' "$raw" | grep -Eo '^go version go[0-9]+\.[0-9]+(\.[0-9]+)?' | sed -E 's/^go version go//')"
+	if [ -z "$detected" ]; then
 		fail "prerequisite 'Go' version could not be parsed from: $raw"
 	fi
 

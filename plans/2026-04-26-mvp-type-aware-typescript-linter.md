@@ -493,20 +493,20 @@ Scenario: Should report an array of objects whose elements lack a meaningful str
 
 ### Source layout and dependency
 
-# Living: none (initial implementation)
+# Living: features/architecture.feature::The linter depends on the typescript-go fork via a Go module
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: The linter depends on the typescript-go fork via a Go module
   Given the linter repository
   When the build is performed
   Then the binary statically links against the fork's exported packages
   And no source file in the linter imports from internal packages of the fork
 
-# Living: none (initial implementation)
+# Living: features/architecture.feature::An architecture test enforces the wrapper-API boundary
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: An architecture test enforces the wrapper-API boundary
   Given a checked-in allowlist of import paths permitted from rule packages and from non-wrapper code in the fork
   When the architecture test runs in continuous integration

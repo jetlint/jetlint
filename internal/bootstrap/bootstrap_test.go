@@ -1,6 +1,7 @@
 package bootstrap_test
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -9,8 +10,9 @@ import (
 	"testing"
 )
 
-// scriptPath returns the absolute path to scripts/bootstrap.sh, derived from this
-// test file's location so the test runs correctly from any working directory.
+// scriptPath returns the absolute path to scripts/bootstrap.sh, derived from
+// this test file's location so the test runs correctly from any working
+// directory.
 func scriptPath(t *testing.T) string {
 	t.Helper()
 	_, thisFile, _, ok := runtime.Caller(0)
@@ -21,9 +23,9 @@ func scriptPath(t *testing.T) string {
 	return filepath.Join(repoRoot, "scripts", "bootstrap.sh")
 }
 
-// runBootstrap invokes the bootstrap script with the given environment overrides
-// and returns combined output and exit code. Environment overrides replace any
-// existing values for those keys; other env vars are inherited from the parent.
+// runBootstrap invokes the bootstrap script with the given environment
+// overrides and returns combined output and exit code. Environment overrides
+// replace any existing values for those keys; other env vars are inherited.
 func runBootstrap(t *testing.T, env map[string]string) (string, int) {
 	t.Helper()
 	cmd := exec.Command("bash", scriptPath(t))
@@ -32,32 +34,15 @@ func runBootstrap(t *testing.T, env map[string]string) (string, int) {
 		cmd.Env = append(cmd.Env, k+"="+v)
 	}
 	output, err := cmd.CombinedOutput()
-	exit := 0
-	if err != nil {
-		var ee *exec.ExitError
-		if errAs(err, &ee) {
-			exit = ee.ExitCode()
-		} else {
-			t.Fatalf("unexpected exec error: %v\noutput:\n%s", err, output)
-		}
+	if err == nil {
+		return string(output), 0
 	}
-	return string(output), exit
-}
-
-// errAs is a tiny errors.As wrapper kept local so the test file has no external
-// dependencies beyond the standard library.
-func errAs(err error, target any) bool {
-	type errorAs interface{ As(any) bool }
-	if a, ok := err.(errorAs); ok {
-		return a.As(target)
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		return string(output), exitErr.ExitCode()
 	}
-	if ee, ok := err.(*exec.ExitError); ok {
-		if t, ok := target.(**exec.ExitError); ok {
-			*t = ee
-			return true
-		}
-	}
-	return false
+	t.Fatalf("unexpected exec error: %v\noutput:\n%s", err, output)
+	return "", -1
 }
 
 // fakeGoBin writes a stub `go` shim to a temp dir that prints the requested
@@ -73,20 +58,16 @@ func fakeGoBin(t *testing.T, versionLine string) string {
 	return shim
 }
 
-// existingForkPath returns a usable typescript-go fork path for happy-path tests.
-// Tests that need to vary this can pass their own value.
-func existingForkPath(t *testing.T) string {
+// presentForkPath returns a directory the bootstrap can treat as a present
+// fork. Tests that need real tsgo content should use a different fixture.
+func presentForkPath(t *testing.T) string {
 	t.Helper()
-	candidate := filepath.Join(os.Getenv("HOME"), "src", "typescript-go")
-	if _, err := os.Stat(candidate); err != nil {
-		t.Skipf("typescript-go fork not present at %s (set up local dev to enable this test)", candidate)
-	}
-	return candidate
+	return t.TempDir()
 }
 
 func TestBootstrap_ReportsGoToolchainAndForkWhenBothPresent(t *testing.T) {
 	output, exit := runBootstrap(t, map[string]string{
-		"TSGOLINT_FORK_PATH":       existingForkPath(t),
+		"TSGOLINT_FORK_PATH":       presentForkPath(t),
 		"TSGOLINT_BOOTSTRAP_PHASE": "check",
 	})
 	if exit != 0 {
@@ -117,7 +98,7 @@ func TestBootstrap_HaltsWhenGoToolchainTooOld(t *testing.T) {
 	shim := fakeGoBin(t, "go version go1.20.0 linux/amd64")
 	output, exit := runBootstrap(t, map[string]string{
 		"TSGOLINT_GO_BIN":          shim,
-		"TSGOLINT_FORK_PATH":       existingForkPath(t),
+		"TSGOLINT_FORK_PATH":       presentForkPath(t),
 		"TSGOLINT_BOOTSTRAP_PHASE": "check",
 	})
 	if exit == 0 {
@@ -129,10 +110,24 @@ func TestBootstrap_HaltsWhenGoToolchainTooOld(t *testing.T) {
 	}
 }
 
+func TestBootstrap_HaltsWhenGoVersionUnparseable(t *testing.T) {
+	// A wrapper that prepends noise to `go version` output (think asdf, mise)
+	// must not be silently treated as a valid version.
+	shim := fakeGoBin(t, "warning: setting up shim... go version go1.26.2 linux/amd64")
+	output, exit := runBootstrap(t, map[string]string{
+		"TSGOLINT_GO_BIN":          shim,
+		"TSGOLINT_FORK_PATH":       presentForkPath(t),
+		"TSGOLINT_BOOTSTRAP_PHASE": "check",
+	})
+	if exit == 0 {
+		t.Fatalf("expected non-zero exit when version is unparseable, got 0. output:\n%s", output)
+	}
+}
+
 func TestBootstrap_BuildPhaseProducesAnExecutableThatReportsItsVersion(t *testing.T) {
 	binDir := t.TempDir()
 	output, exit := runBootstrap(t, map[string]string{
-		"TSGOLINT_FORK_PATH":       existingForkPath(t),
+		"TSGOLINT_FORK_PATH":       presentForkPath(t),
 		"TSGOLINT_BIN_DIR":         binDir,
 		"TSGOLINT_BOOTSTRAP_PHASE": "build",
 	})
@@ -156,7 +151,6 @@ func TestBootstrap_BuildPhaseProducesAnExecutableThatReportsItsVersion(t *testin
 }
 
 func TestBootstrap_HaltsBeforeBuildStepWhenPrerequisiteMissing(t *testing.T) {
-	// The bootstrap should not produce any "build" output when prerequisites fail.
 	missing := filepath.Join(t.TempDir(), "no-fork")
 	output, exit := runBootstrap(t, map[string]string{
 		"TSGOLINT_FORK_PATH": missing,
