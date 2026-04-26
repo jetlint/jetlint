@@ -22,6 +22,10 @@ type Diagnostic = wrapperlint.Diagnostic
 // against severity literals without importing the wrapper directly.
 type Severity = wrapperlint.Severity
 
+// SourceRange is re-exported for the same reason: tests and consumers
+// can construct ranges without depending on the wrapper.
+type SourceRange = wrapperlint.SourceRange
+
 // JSONSchemaVersion is the version number embedded in JSON output. Bumped
 // whenever the contract changes in a way consumers must adapt to.
 const JSONSchemaVersion = 1

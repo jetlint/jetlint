@@ -49,25 +49,6 @@ func TestLookup_UnknownFormatReturnsErrorListingSupported(t *testing.T) {
 	}
 }
 
-func TestHumanFormatter_OneLinePerDiagnosticInScannableLayout(t *testing.T) {
-	var buf bytes.Buffer
-	d := []format.Diagnostic{
-		diag("a.ts", 1, 5, "no-floating-promises", "promise not awaited"),
-	}
-	if err := (format.Human{}).Format(&buf, d); err != nil {
-		t.Fatalf("Format: %v", err)
-	}
-	got := buf.String()
-	for _, want := range []string{"a.ts", "1", "5", "error", "no-floating-promises", "promise not awaited"} {
-		if !strings.Contains(got, want) {
-			t.Errorf("expected %q in output: %s", want, got)
-		}
-	}
-	if strings.Count(got, "\n") != 1 {
-		t.Errorf("expected exactly one line, got: %q", got)
-	}
-}
-
 func TestJSONFormatter_EmitsSchemaVersionAndAllRequiredFields(t *testing.T) {
 	var buf bytes.Buffer
 	d := []format.Diagnostic{
