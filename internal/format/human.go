@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 )
 
 // ColorMode controls whether the human formatter emits ANSI color
@@ -23,22 +24,40 @@ const (
 )
 
 // Human is the default formatter. It renders one biome-style block per
-// diagnostic — a header naming the location and rule, a code frame
-// showing two lines of context on either side of the offending source,
-// a caret line marking the offending column range, and the message —
-// followed by a summary line that reports the total count.
+// diagnostic — a header naming the location and rule plus a heavy
+// horizontal-bar separator, a code frame showing two lines of context
+// on either side of the offending source with > markers on every
+// affected line, a caret line marking the offending column range, and
+// the message — followed by a summary block reporting the number of
+// files checked, the elapsed duration, and per-severity counts.
 type Human struct {
 	// Color selects whether ANSI escapes are emitted. The zero value
 	// (ColorAuto) auto-detects from the writer.
 	Color ColorMode
+
+	// FilesChecked is the count of source files the engine processed.
+	// When zero (the default), the summary omits the "Checked N files"
+	// line so unit tests that don't supply stats stay terse.
+	FilesChecked int
+
+	// Duration is the wall-clock time the lint pass took. When zero,
+	// it is omitted from the summary.
+	Duration time.Duration
 }
 
 // Name returns "human".
 func (Human) Name() string { return "human" }
 
-// codeFrameContext is the number of source lines shown above and below
-// each offending line.
-const codeFrameContext = 2
+const (
+	// codeFrameContext is the number of source lines shown above and
+	// below each offending line.
+	codeFrameContext = 2
+
+	// headerWidth is the target column width for the heavy-bar line
+	// that pads the header. We hardcode rather than detect terminal
+	// width so output is byte-identical across environments.
+	headerWidth = 100
+)
 
 // ANSI escape sequences. Held as constants so the renderer can decide
 // at the start of Format whether to emit them or substitute empty
@@ -53,10 +72,11 @@ const (
 )
 
 // Format writes a biome-style human-readable report. An empty
-// diagnostic slice produces no output so a clean lint invocation
-// stays silent.
+// diagnostic slice with no stats produces no output so a clean lint
+// invocation stays silent. When stats are populated, the summary
+// block is rendered even if there are no findings.
 func (h Human) Format(w io.Writer, diagnostics []Diagnostic) error {
-	if len(diagnostics) == 0 {
+	if len(diagnostics) == 0 && h.FilesChecked == 0 {
 		return nil
 	}
 	SortDiagnostics(diagnostics)
@@ -83,13 +103,12 @@ func (h Human) Format(w io.Writer, diagnostics []Diagnostic) error {
 			warnCount++
 		}
 	}
-	if _, err := io.WriteString(w, "\n"); err != nil {
-		return err
+	if len(diagnostics) > 0 {
+		if _, err := io.WriteString(w, "\n"); err != nil {
+			return err
+		}
 	}
-	if _, err := fmt.Fprintf(w, "%s\n", c.summary(errCount, warnCount)); err != nil {
-		return err
-	}
-	return nil
+	return writeSummary(w, c, h.FilesChecked, h.Duration, errCount, warnCount)
 }
 
 // shouldUseColor resolves the formatter's color mode against the
@@ -160,38 +179,32 @@ func (p palette) severityColor(s Severity) string {
 	}
 }
 
+// bullet returns the single-character marker for a severity. Biome's
+// convention: × for errors, ! for warnings. ASCII-clean so terminals
+// without good Unicode support still render correctly.
 func (p palette) bullet(s Severity) string {
 	switch s {
 	case "warning":
-		return p.wrap(p.yellow, "⚠")
+		return p.wrap(p.yellow, "!")
 	default:
-		return p.wrap(p.red, "✖")
-	}
-}
-
-func (p palette) summary(errors, warnings int) string {
-	switch {
-	case errors == 0 && warnings == 0:
-		return "No errors found."
-	case errors > 0 && warnings == 0:
-		return p.wrap(p.red, fmt.Sprintf("Found %d %s.", errors, plural(errors, "error", "errors")))
-	case errors == 0 && warnings > 0:
-		return p.wrap(p.yellow, fmt.Sprintf("Found %d %s.", warnings, plural(warnings, "warning", "warnings")))
-	default:
-		return p.wrap(p.red, fmt.Sprintf("Found %d %s and %d %s.",
-			errors, plural(errors, "error", "errors"),
-			warnings, plural(warnings, "warning", "warnings")))
+		return p.wrap(p.red, "×")
 	}
 }
 
 // writeBlock renders the header, code frame, caret, and message for a
-// single diagnostic. The order matches biome's: header, blank, ✖ message,
-// blank, code frame.
+// single diagnostic. The order matches biome's: header (with trailing
+// bar), blank, × message, blank, code frame.
 func writeBlock(w io.Writer, c palette, d Diagnostic, srcCache map[string][]string) error {
 	location := fmt.Sprintf("%s:%d:%d", d.Range.File, d.Range.StartLine, d.Range.StartColumn)
-	header := fmt.Sprintf("%s %s\n",
+	prefixVisible := len(location) + 1 + len(d.RuleID) + 1
+	bar := ""
+	if prefixVisible < headerWidth {
+		bar = strings.Repeat("━", headerWidth-prefixVisible)
+	}
+	header := fmt.Sprintf("%s %s %s\n",
 		c.wrap(c.cyan, location),
 		c.wrap(c.dim, d.RuleID),
+		c.wrap(c.dim, bar),
 	)
 	if _, err := io.WriteString(w, header); err != nil {
 		return err
@@ -199,15 +212,14 @@ func writeBlock(w io.Writer, c palette, d Diagnostic, srcCache map[string][]stri
 	if _, err := fmt.Fprintf(w, "\n  %s %s\n\n", c.bullet(d.Severity), d.Message); err != nil {
 		return err
 	}
-	if err := writeCodeFrame(w, c, d, srcCache); err != nil {
-		return err
-	}
-	return nil
+	return writeCodeFrame(w, c, d, srcCache)
 }
 
-// writeCodeFrame renders the source context around the offending line.
-// When the source file cannot be read, the frame is silently omitted —
-// the header and message above already convey the diagnostic.
+// writeCodeFrame renders the source context around the offending
+// range. Multi-line ranges receive a > marker on every line within
+// the range; the caret underline is rendered for the first and last
+// affected lines (matching biome's behavior). When the source file
+// cannot be read, the frame is silently omitted.
 func writeCodeFrame(w io.Writer, c palette, d Diagnostic, srcCache map[string][]string) error {
 	lines, ok := readSourceLines(d.Range.File, srcCache)
 	if !ok {
@@ -217,7 +229,7 @@ func writeCodeFrame(w io.Writer, c palette, d Diagnostic, srcCache map[string][]
 	if startLine < 1 {
 		startLine = 1
 	}
-	endLine := d.Range.StartLine + codeFrameContext
+	endLine := d.Range.EndLine + codeFrameContext
 	if endLine > len(lines) {
 		endLine = len(lines)
 	}
@@ -226,17 +238,17 @@ func writeCodeFrame(w io.Writer, c palette, d Diagnostic, srcCache map[string][]
 	pipe := c.wrap(c.dim, "│")
 
 	for ln := startLine; ln <= endLine; ln++ {
-		isOffending := ln == d.Range.StartLine
+		inRange := ln >= d.Range.StartLine && ln <= d.Range.EndLine
 		marker := " "
-		if isOffending {
+		if inRange {
 			marker = c.wrap(severityColor, ">")
 		}
 		number := c.wrap(c.dim, fmt.Sprintf("%*d", gutterWidth, ln))
 		if _, err := fmt.Fprintf(w, "  %s %s %s %s\n", marker, number, pipe, lines[ln-1]); err != nil {
 			return err
 		}
-		if isOffending {
-			caret := caretLine(d.Range.StartColumn, d.Range.EndLine == d.Range.StartLine, d.Range.EndColumn)
+		if inRange && (ln == d.Range.StartLine || ln == d.Range.EndLine) {
+			caret := caretFor(d.Range, ln, lines[ln-1])
 			if _, err := fmt.Fprintf(w, "    %*s %s %s\n",
 				gutterWidth, "", pipe, c.wrap(severityColor, caret)); err != nil {
 				return err
@@ -246,9 +258,31 @@ func writeCodeFrame(w io.Writer, c palette, d Diagnostic, srcCache map[string][]
 	return nil
 }
 
-// readSourceLines returns the file's lines, caching across calls. The
-// boolean reports whether the read succeeded; failures collapse the
-// rest of the frame to nothing rather than aborting the report.
+// caretFor returns the underline for line ln within the diagnostic's
+// range. The first line is underlined from StartColumn to the line's
+// end; the last line is underlined from column 1 to EndColumn; a
+// single-line range is underlined from StartColumn to EndColumn.
+func caretFor(r SourceRange, ln int, source string) string {
+	switch {
+	case r.StartLine == r.EndLine:
+		pad := strings.Repeat(" ", maxInt(r.StartColumn-1, 0))
+		width := r.EndColumn - r.StartColumn
+		if width < 1 {
+			width = 1
+		}
+		return pad + strings.Repeat("^", width)
+	case ln == r.StartLine:
+		pad := strings.Repeat(" ", maxInt(r.StartColumn-1, 0))
+		width := maxInt(len(source)-(r.StartColumn-1), 1)
+		return pad + strings.Repeat("^", width)
+	case ln == r.EndLine:
+		width := maxInt(r.EndColumn-1, 1)
+		return strings.Repeat("^", width)
+	}
+	return ""
+}
+
+// readSourceLines returns the file's lines, caching across calls.
 func readSourceLines(path string, cache map[string][]string) ([]string, bool) {
 	if cached, ok := cache[path]; ok {
 		return cached, len(cached) > 0
@@ -263,20 +297,50 @@ func readSourceLines(path string, cache map[string][]string) ([]string, bool) {
 	return lines, true
 }
 
-// caretLine returns the underline for the offending range. For a
-// single-line range it underlines the columns explicitly; for a
-// multi-line range only the start position is marked, since rendering
-// the full range across multiple lines would clutter the frame.
-func caretLine(startCol int, sameLine bool, endCol int) string {
-	pad := strings.Repeat(" ", maxInt(startCol-1, 0))
-	if !sameLine {
-		return pad + "^"
+// writeSummary renders biome's footer block: a "Checked N files in
+// Tms. No fixes applied." line, then "Found X errors." and "Found Y
+// warnings." on separate lines (each in the relevant severity color).
+func writeSummary(w io.Writer, c palette, files int, dur time.Duration, errors, warnings int) error {
+	if files > 0 {
+		if _, err := fmt.Fprintf(w, "Checked %d %s in %s. No fixes applied.\n",
+			files, plural(files, "file", "files"), formatDuration(dur)); err != nil {
+			return err
+		}
 	}
-	width := endCol - startCol
-	if width < 1 {
-		width = 1
+	if errors > 0 {
+		line := fmt.Sprintf("Found %d %s.", errors, plural(errors, "error", "errors"))
+		if _, err := fmt.Fprintf(w, "%s\n", c.wrap(c.red, line)); err != nil {
+			return err
+		}
 	}
-	return pad + strings.Repeat("^", width)
+	if warnings > 0 {
+		line := fmt.Sprintf("Found %d %s.", warnings, plural(warnings, "warning", "warnings"))
+		if _, err := fmt.Fprintf(w, "%s\n", c.wrap(c.yellow, line)); err != nil {
+			return err
+		}
+	}
+	if files == 0 && errors == 0 && warnings == 0 {
+		// Tests that pass a single diagnostic without stats still want
+		// some indication of completion; mirror biome's default for
+		// the all-clear case.
+		_, err := fmt.Fprintln(w, "No issues found.")
+		return err
+	}
+	return nil
+}
+
+// formatDuration produces a human-friendly elapsed time matching
+// biome's compact style ("789ms", "2s", "1m32s"). Sub-second values
+// render in milliseconds; second-and-above values use Go's stdlib
+// duration format which already yields readable output.
+func formatDuration(d time.Duration) string {
+	if d <= 0 {
+		return "0ms"
+	}
+	if d < time.Second {
+		return fmt.Sprintf("%dms", d.Milliseconds())
+	}
+	return d.Truncate(time.Millisecond).String()
 }
 
 func plural(n int, singular, plural string) string {

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/tommymorgan/tsgolint/internal/format"
 )
@@ -75,6 +76,110 @@ func TestHumanFormatter_CaretMarksOffendingRange(t *testing.T) {
 	// width is variable; what matters is that ^ characters appear.
 	if !strings.Contains(buf.String(), "^") {
 		t.Errorf("expected caret marker in code frame, got:\n%s", buf.String())
+	}
+}
+
+func TestHumanFormatter_HeaderHasTrailingSeparatorBar(t *testing.T) {
+	path := writeSource(t, "main.ts", "x;\n")
+	var buf bytes.Buffer
+	d := []format.Diagnostic{diag(path, 1, 1, "rule-x", "msg")}
+	if err := (format.Human{}).Format(&buf, d); err != nil {
+		t.Fatal(err)
+	}
+	// Biome pads the header line with a heavy horizontal bar to the right
+	// edge. Match that: the header line must contain at least one ━.
+	if !strings.Contains(buf.String(), "━") {
+		t.Errorf("expected ━ separator on header line, got:\n%s", buf.String())
+	}
+}
+
+func TestHumanFormatter_ErrorBulletIsCrossMark(t *testing.T) {
+	path := writeSource(t, "main.ts", "x;\n")
+	var buf bytes.Buffer
+	d := []format.Diagnostic{diag(path, 1, 1, "rule-x", "msg")}
+	if err := (format.Human{}).Format(&buf, d); err != nil {
+		t.Fatal(err)
+	}
+	// Biome uses × (multiplication sign) for errors. Anything else
+	// drifts from the visual conventions developers expect.
+	if !strings.Contains(buf.String(), "×") {
+		t.Errorf("expected × bullet for error severity, got:\n%s", buf.String())
+	}
+}
+
+func TestHumanFormatter_WarningBulletIsExclamation(t *testing.T) {
+	path := writeSource(t, "main.ts", "x;\n")
+	var buf bytes.Buffer
+	warn := diag(path, 1, 1, "rule-x", "msg")
+	warn.Severity = "warning"
+	if err := (format.Human{}).Format(&buf, []format.Diagnostic{warn}); err != nil {
+		t.Fatal(err)
+	}
+	// Biome uses ! for warnings. The bullet must be a literal ! and not
+	// e.g. ⚠ — ASCII renders cleanly across every terminal.
+	out := buf.String()
+	// Look for the bullet pattern: two-space indent then "! ".
+	if !strings.Contains(out, "  ! ") {
+		t.Errorf("expected '  ! ' bullet for warning severity, got:\n%s", out)
+	}
+}
+
+func TestHumanFormatter_MultiLineRangeGetsMarkerOnEveryAffectedLine(t *testing.T) {
+	src := "const x = a +\n  b +\n  c;\n"
+	path := writeSource(t, "main.ts", src)
+	var buf bytes.Buffer
+	d := format.Diagnostic{
+		Range:    format.SourceRange{File: path, StartLine: 1, StartColumn: 11, EndLine: 3, EndColumn: 4},
+		RuleID:   "rule-x",
+		Severity: "error",
+		Message:  "spans three lines",
+	}
+	if err := (format.Human{}).Format(&buf, []format.Diagnostic{d}); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	// Each line within the range carries a > marker, not just the first.
+	// Three lines in the range → three > markers minimum.
+	if got := strings.Count(out, "> "); got < 3 {
+		t.Errorf("expected at least 3 '> ' markers for a 3-line range, got %d:\n%s", got, out)
+	}
+}
+
+func TestHumanFormatter_SummaryReportsFilesCheckedAndDuration(t *testing.T) {
+	path := writeSource(t, "main.ts", "x;\n")
+	var buf bytes.Buffer
+	h := format.Human{FilesChecked: 1682, Duration: 8 * time.Second}
+	d := []format.Diagnostic{diag(path, 1, 1, "rule-x", "msg")}
+	if err := h.Format(&buf, d); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "Checked 1682 files") {
+		t.Errorf("expected 'Checked 1682 files' line, got:\n%s", out)
+	}
+	if !strings.Contains(out, "8s") {
+		t.Errorf("expected duration '8s' in summary, got:\n%s", out)
+	}
+}
+
+func TestHumanFormatter_SummaryListsErrorAndWarningCountsOnSeparateLines(t *testing.T) {
+	path := writeSource(t, "main.ts", "x;\ny;\n")
+	var buf bytes.Buffer
+	warn := diag(path, 2, 1, "rule-y", "warn-msg")
+	warn.Severity = "warning"
+	d := []format.Diagnostic{
+		diag(path, 1, 1, "rule-x", "err-msg"),
+		warn,
+	}
+	if err := (format.Human{}).Format(&buf, d); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "Found 1 error.") {
+		t.Errorf("expected separate 'Found 1 error.' line, got:\n%s", out)
+	}
+	if !strings.Contains(out, "Found 1 warning.") {
+		t.Errorf("expected separate 'Found 1 warning.' line, got:\n%s", out)
 	}
 }
 

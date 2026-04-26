@@ -279,7 +279,10 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 	}
 
 	eng := engine.New(activeRules(), resolved.Rules)
+	lintStart := time.Now()
 	diagnostics := eng.Lint(prog)
+	lintDuration := time.Since(lintStart)
+	filesChecked := len(prog.SourceFiles())
 
 	// Degraded-mode signal: when the program itself has type errors,
 	// every type-aware diagnostic built on it is suspect. Surface a
@@ -292,6 +295,16 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 			Severity: wrapperlint.SeverityWarning,
 			Message:  "the TypeScript program has type errors; lint diagnostics may be unreliable until those are resolved",
 		}}, diagnostics...)
+	}
+
+	// The human formatter benefits from execution stats (files checked,
+	// duration) in its summary block. Other formatters don't carry that
+	// state, so we only enrich when the active formatter is Human.
+	if _, ok := formatter.(format.Human); ok {
+		formatter = format.Human{
+			FilesChecked: filesChecked,
+			Duration:     lintDuration,
+		}
 	}
 
 	if err := formatter.Format(stdout, diagnostics); err != nil {

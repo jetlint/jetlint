@@ -77,10 +77,11 @@ func TestCLI_SpawnsDaemonAndReportsOkOnCleanProject(t *testing.T) {
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("first invocation failed: %v\nstdout: %s\nstderr: %s", err, stdout.String(), stderr.String())
 	}
-	// Default human formatter emits nothing on a clean project; the
-	// success signal is exit code 0 plus an empty stdout.
-	if stdout.Len() != 0 {
-		t.Errorf("expected empty stdout on clean project, got: %s", stdout.String())
+	// Default human formatter mirrors biome's behavior on a clean
+	// project: emit a "Checked N files in Tms. No fixes applied."
+	// summary so users get positive confirmation the run completed.
+	if !strings.Contains(stdout.String(), "Checked") {
+		t.Errorf("expected human summary line on clean project, got: %s", stdout.String())
 	}
 
 	// A daemon socket should now exist under the temp runtime dir.
