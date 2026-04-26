@@ -142,6 +142,60 @@ func TestHumanFormatter_OrdersDiagnosticsByFileThenPosition(t *testing.T) {
 	}
 }
 
+func TestHumanFormatter_DefaultIsPlaintextWhenWriterIsNotATerminal(t *testing.T) {
+	// A bytes.Buffer is never a TTY, so auto-detection must yield
+	// plaintext. CI logs and tests rely on this.
+	path := writeSource(t, "main.ts", "x;\n")
+	var buf bytes.Buffer
+	d := []format.Diagnostic{diag(path, 1, 1, "rule-x", "msg")}
+	if err := (format.Human{}).Format(&buf, d); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(buf.String(), "\x1b[") {
+		t.Errorf("expected no ANSI escape in default output to a non-TTY, got: %q", buf.String())
+	}
+}
+
+func TestHumanFormatter_ColorAlwaysProducesANSIEscapes(t *testing.T) {
+	path := writeSource(t, "main.ts", "x;\n")
+	var buf bytes.Buffer
+	d := []format.Diagnostic{diag(path, 1, 1, "rule-x", "msg")}
+	if err := (format.Human{Color: format.ColorAlways}).Format(&buf, d); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(buf.String(), "\x1b[") {
+		t.Errorf("expected ANSI escapes when Color=Always, got: %q", buf.String())
+	}
+}
+
+func TestHumanFormatter_ColorNeverSuppressesEscapesEvenWhenForced(t *testing.T) {
+	path := writeSource(t, "main.ts", "x;\n")
+	var buf bytes.Buffer
+	d := []format.Diagnostic{diag(path, 1, 1, "rule-x", "msg")}
+	if err := (format.Human{Color: format.ColorNever}).Format(&buf, d); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(buf.String(), "\x1b[") {
+		t.Errorf("expected no ANSI when Color=Never, got: %q", buf.String())
+	}
+}
+
+func TestHumanFormatter_NoColorEnvOverridesColorAlways(t *testing.T) {
+	// Per the NO_COLOR convention (https://no-color.org), setting
+	// NO_COLOR must suppress color output regardless of any explicit
+	// "always" preference.
+	t.Setenv("NO_COLOR", "1")
+	path := writeSource(t, "main.ts", "x;\n")
+	var buf bytes.Buffer
+	d := []format.Diagnostic{diag(path, 1, 1, "rule-x", "msg")}
+	if err := (format.Human{Color: format.ColorAlways}).Format(&buf, d); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(buf.String(), "\x1b[") {
+		t.Errorf("expected NO_COLOR to suppress ANSI, got: %q", buf.String())
+	}
+}
+
 func TestHumanFormatter_ProducesByteIdenticalOutputForIdenticalInput(t *testing.T) {
 	path := writeSource(t, "main.ts", "x;\ny;\n")
 	d := []format.Diagnostic{
