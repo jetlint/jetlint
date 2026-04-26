@@ -125,11 +125,11 @@ func TestGitHubActionsFormatter_ProducesByteIdenticalOutputForIdenticalInput(t *
 }
 
 func TestLookup_ReturnsGitHubActionsFormatter(t *testing.T) {
-	f, err := format.Lookup("github-actions")
+	f, err := format.Lookup("github")
 	if err != nil {
-		t.Fatalf("Lookup(github-actions): %v", err)
+		t.Fatalf("Lookup(github): %v", err)
 	}
-	if f.Name() != "github-actions" {
-		t.Errorf("expected name 'github-actions', got %q", f.Name())
+	if f.Name() != "github" {
+		t.Errorf("expected name 'github', got %q", f.Name())
 	}
 }

@@ -48,8 +48,12 @@ func Lookup(name string) (Formatter, error) {
 		return JSON{}, nil
 	case "sarif":
 		return SARIF{}, nil
-	case "github-actions":
+	case "github":
 		return GitHubActions{}, nil
+	case "junit":
+		return JUnit{}, nil
+	case "rdjson":
+		return RDJSON{}, nil
 	default:
 		return nil, fmt.Errorf("%w: %q (supported: %v)", ErrUnknownFormat, name, SupportedNames())
 	}
@@ -58,7 +62,7 @@ func Lookup(name string) (Formatter, error) {
 // SupportedNames returns the set of formatter names supported by Lookup,
 // in stable order, so error messages and help text are deterministic.
 func SupportedNames() []string {
-	return []string{"human", "json", "sarif", "github-actions"}
+	return []string{"human", "json", "sarif", "github", "junit", "rdjson"}
 }
 
 // SortDiagnostics orders diagnostics by file path, then by start position.

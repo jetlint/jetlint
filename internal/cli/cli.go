@@ -48,8 +48,10 @@ Flags:
     --version          Print the linter version and exit.
     --help             Print this help text and exit.
     --format <name>    Output format. One of: human (default), json,
-                       sarif (GitHub Code Scanning), github-actions
-                       (workflow command annotations).
+                       sarif (GitHub Code Scanning, Azure DevOps),
+                       github (GitHub Actions inline PR annotations),
+                       junit (CI dashboard XML),
+                       rdjson (reviewdog inline PR comments).
 
 Exit codes:
     0    No diagnostics produced.

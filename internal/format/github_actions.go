@@ -16,8 +16,9 @@ import (
 // https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-error-message
 type GitHubActions struct{}
 
-// Name returns "github-actions".
-func (GitHubActions) Name() string { return "github-actions" }
+// Name returns "github". The short name matches biome's reporter
+// convention so users can pass the same flag value to either tool.
+func (GitHubActions) Name() string { return "github" }
 
 // Format writes one workflow command per diagnostic. The command
 // shape is:
