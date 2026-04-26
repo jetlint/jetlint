@@ -5,6 +5,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -16,7 +17,9 @@ import (
 	_ "github.com/microsoft/typescript-go/pkg/lint"
 
 	"github.com/tommymorgan/tsgolint/internal/daemon"
+	"github.com/tommymorgan/tsgolint/internal/format"
 	"github.com/tommymorgan/tsgolint/internal/project"
+	"github.com/tommymorgan/tsgolint/internal/toolerr"
 	"github.com/tommymorgan/tsgolint/internal/transport"
 )
 
@@ -30,8 +33,9 @@ Usage:
     tsgolint [flags] [files...]
 
 Flags:
-    --version    Print the linter version and exit.
-    --help       Print this help text and exit.
+    --version          Print the linter version and exit.
+    --help             Print this help text and exit.
+    --format <name>    Output format. One of: human (default), json.
 
 Exit codes:
     0    No diagnostics produced.
@@ -54,6 +58,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 
 	versionFlag := fs.Bool("version", false, "print version and exit")
 	helpFlag := fs.Bool("help", false, "print usage and exit")
+	formatFlag := fs.String("format", "human", "output format (human, json)")
 	daemonFlag := fs.String("daemon", "", "internal: run as the per-project daemon listening on the given socket")
 
 	if err := fs.Parse(args); err != nil {
@@ -72,7 +77,17 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return runDaemon(*daemonFlag, stderr)
 	}
 
-	return runLint(fs.Args(), stdout, stderr)
+	formatter, err := format.Lookup(*formatFlag)
+	if err != nil {
+		// Unknown format: report via the chosen format itself is impossible
+		// because we don't have a formatter; fall back to human-formatted
+		// stderr regardless and exit 2.
+		emitToolError(stderr, "human",
+			toolerr.WithPath(toolerr.CodeFormatUnknown, err.Error(), ""))
+		return 2
+	}
+
+	return runLint(fs.Args(), stdout, stderr, formatter)
 }
 
 // runDaemon is the entry point for the spawned daemon process.
@@ -90,39 +105,79 @@ func runDaemon(socketPath string, stderr io.Writer) int {
 }
 
 // runLint is the entry point for a normal CLI invocation. For v0.1 it
-// proves the daemon round-trip end-to-end without any rule machinery.
-func runLint(targets []string, stdout, stderr io.Writer) int {
+// proves the daemon round-trip end-to-end and renders the (currently
+// always empty) diagnostic set via the chosen formatter.
+func runLint(targets []string, stdout, stderr io.Writer, formatter format.Formatter) int {
 	if len(targets) == 0 {
-		fmt.Fprintln(stderr, "tsgolint: no targets provided")
+		emitToolError(stderr, formatter.Name(),
+			toolerr.New(toolerr.CodeNoTargets, "no targets provided"))
 		return 2
 	}
+
 	tsconfig, err := project.FindNearestTsconfig(targets[0])
 	if err != nil {
-		fmt.Fprintf(stderr, "tsgolint: %v\n", err)
+		code := toolerr.CodeInternal
+		if project.IsNotFound(err) {
+			code = toolerr.CodeTsconfigMissing
+		}
+		emitToolError(stderr, formatter.Name(),
+			toolerr.WithPath(code, err.Error(), targets[0]))
 		return 2
 	}
+
 	socket, err := transport.DaemonSocketPath(tsconfig)
 	if err != nil {
-		fmt.Fprintf(stderr, "tsgolint: %v\n", err)
+		emitToolError(stderr, formatter.Name(),
+			toolerr.New(toolerr.CodeInternal, err.Error()))
 		return 2
 	}
+
 	if err := daemon.EnsureRunning(context.Background(), daemon.SpawnConfig{
 		SocketPath: socket,
 		Args:       []string{"--daemon", socket},
 	}); err != nil {
-		fmt.Fprintf(stderr, "tsgolint: %v\n", err)
+		emitToolError(stderr, formatter.Name(),
+			toolerr.New(toolerr.CodeDaemonUnavailable, err.Error()))
 		return 2
 	}
+
 	resp, err := daemon.Ping(socket, time.Second)
 	if err != nil {
-		fmt.Fprintf(stderr, "tsgolint: %v\n", err)
+		emitToolError(stderr, formatter.Name(),
+			toolerr.New(toolerr.CodeDaemonUnavailable, err.Error()))
 		return 2
 	}
 	if resp.Error != "" {
-		fmt.Fprintf(stderr, "tsgolint: daemon error: %s\n", resp.Error)
+		emitToolError(stderr, formatter.Name(),
+			toolerr.New(toolerr.CodeInternal, resp.Error))
 		return 2
 	}
-	// No rules yet — report a clean run.
-	fmt.Fprintln(stdout, "ok")
+
+	// No rules yet — render the (always empty) diagnostic set so output
+	// shape is correct from day one.
+	if err := formatter.Format(stdout, nil); err != nil {
+		emitToolError(stderr, formatter.Name(),
+			toolerr.New(toolerr.CodeInternal, err.Error()))
+		return 2
+	}
 	return 0
 }
+
+// emitToolError writes a tooling failure to stderr in the appropriate
+// shape for the given format. JSON mode emits a single-line JSON object;
+// human mode emits a "tsgolint: <message>" line.
+func emitToolError(stderr io.Writer, formatName string, e *toolerr.Error) {
+	if formatName == "json" {
+		_ = e.WriteJSON(stderr)
+		return
+	}
+	if e.Path != "" {
+		fmt.Fprintf(stderr, "tsgolint: %s: %s\n", e.Path, e.Message)
+	} else {
+		fmt.Fprintf(stderr, "tsgolint: %s\n", e.Message)
+	}
+}
+
+// Ensure errors package import is reachable from here even if all error
+// inspection currently lives in helpers; this keeps a stable surface.
+var _ = errors.Is

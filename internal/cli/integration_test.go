@@ -2,6 +2,7 @@ package cli_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -68,8 +69,10 @@ func TestCLI_SpawnsDaemonAndReportsOkOnCleanProject(t *testing.T) {
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("first invocation failed: %v\nstdout: %s\nstderr: %s", err, stdout.String(), stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "ok") {
-		t.Errorf("expected 'ok' in stdout, got: %s", stdout.String())
+	// Default human formatter emits nothing on a clean project; the
+	// success signal is exit code 0 plus an empty stdout.
+	if stdout.Len() != 0 {
+		t.Errorf("expected empty stdout on clean project, got: %s", stdout.String())
 	}
 
 	// A daemon socket should now exist under the temp runtime dir.
@@ -173,5 +176,91 @@ func TestCLI_NoTsconfigExitsTwoWithGuidance(t *testing.T) {
 	out := strings.ToLower(stderr.String())
 	if !strings.Contains(out, "tsconfig") {
 		t.Errorf("expected stderr to mention tsconfig, got: %s", stderr.String())
+	}
+}
+
+func TestCLI_NoTsconfigInJSONModeEmitsStructuredError(t *testing.T) {
+	bin := buildBinary(t)
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "loose.ts"), []byte("export {};"), 0o644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+	rt := runtimeDir(t)
+
+	cmd := exec.Command(bin, "--format", "json", filepath.Join(dir, "loose.ts"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err == nil {
+		t.Fatalf("expected non-zero exit, got 0")
+	}
+
+	stderrStr := strings.TrimSpace(stderr.String())
+	// One line, parseable JSON, code = tsconfig_missing.
+	if strings.Count(stderrStr, "\n") != 0 {
+		t.Errorf("expected single-line JSON on stderr, got: %q", stderrStr)
+	}
+	var got map[string]any
+	if decErr := json.Unmarshal([]byte(stderrStr), &got); decErr != nil {
+		t.Fatalf("decode stderr JSON: %v\nstderr: %s", decErr, stderrStr)
+	}
+	if got["code"] != "tsconfig_missing" {
+		t.Errorf("expected code 'tsconfig_missing', got %v", got["code"])
+	}
+	if got["message"] == nil || got["message"] == "" {
+		t.Errorf("expected non-empty message, got: %v", got["message"])
+	}
+}
+
+func TestCLI_UnknownFormatExitsTwoWithSupportedFormatsListed(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	cmd := exec.Command(bin, "--format", "yaml", "/tmp/doesnt-matter.ts")
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err == nil {
+		t.Fatalf("expected non-zero exit, got 0")
+	}
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if exitErr.ExitCode() != 2 {
+		t.Errorf("expected exit code 2, got %d", exitErr.ExitCode())
+	}
+	out := stderr.String()
+	if !strings.Contains(out, "human") || !strings.Contains(out, "json") {
+		t.Errorf("expected supported formats listed in stderr, got: %s", out)
+	}
+}
+
+func TestCLI_JSONModeOnCleanProjectEmitsValidJSON(t *testing.T) {
+	bin := buildBinary(t)
+	project := fixtureProject(t)
+	rt := runtimeDir(t)
+
+	cmd := exec.Command(bin, "--format", "json", filepath.Join(project, "main.ts"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("invocation failed: %v\nstderr: %s", err, stderr.String())
+	}
+	var got map[string]any
+	if decErr := json.Unmarshal(stdout.Bytes(), &got); decErr != nil {
+		t.Fatalf("decode stdout JSON: %v\nstdout: %s", decErr, stdout.String())
+	}
+	if _, ok := got["schemaVersion"]; !ok {
+		t.Errorf("expected schemaVersion in output, got: %v", got)
+	}
+	if diags, ok := got["diagnostics"].([]any); !ok || len(diags) != 0 {
+		t.Errorf("expected empty diagnostics array, got: %v", got["diagnostics"])
 	}
 }

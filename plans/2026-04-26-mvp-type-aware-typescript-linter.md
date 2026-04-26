@@ -51,10 +51,10 @@ Scenario: Bootstrap fails fast when prerequisites are missing
 
 ### Running the linter
 
-# Living: none (initial implementation)
+# Living: features/output.feature::A clean project exits zero with no diagnostics
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A clean project exits zero with no diagnostics
   Given a TypeScript project with no rule violations
   When the user runs the linter against the project
@@ -82,10 +82,10 @@ Scenario: Tooling failure exits two with the cause on stderr
   And the process exits with code 2
   And no lint diagnostics are emitted from the failed invocation
 
-# Living: none (initial implementation)
+# Living: features/output.feature::Tooling failure in JSON mode emits a structured machine-readable error
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Tooling failure in JSON mode emits a structured machine-readable error
   Given the linter is invoked with the JSON output format
   And a tooling failure occurs
@@ -173,20 +173,20 @@ Scenario: A list of files supplied on standard input is linted as a batch
 
 ### Output formats
 
-# Living: none (initial implementation)
+# Living: features/output.feature::Default output format is human-readable
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Default output format is human-readable
   Given a project with violations
   When the user runs the linter without specifying an output format
   Then diagnostics are formatted for terminal display
   And each diagnostic shows file path, position, rule, and message in a scannable layout
 
-# Living: none (initial implementation)
+# Living: features/output.feature::JSON format produces a fully specified diagnostic contract
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: JSON format produces a fully specified diagnostic contract
   Given a project with violations
   When the user runs the linter requesting JSON output
@@ -197,20 +197,20 @@ Scenario: JSON format produces a fully specified diagnostic contract
   And severity is one of the values "error" or "warning"
   And diagnostics are ordered by file path, then by start position
 
-# Living: none (initial implementation)
+# Living: features/output.feature::Repeated runs over unchanged input produce byte-identical JSON output
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Repeated runs over unchanged input produce byte-identical JSON output
   Given a project and configuration that have not changed
   When the linter is invoked twice in JSON output mode
   Then the byte sequences emitted by the two invocations are identical
   And no field in the output depends on wall-clock time, process identifiers, or invocation ordering
 
-# Living: none (initial implementation)
+# Living: features/output.feature::Unknown output format fails with a clear message
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Unknown output format fails with a clear message
   Given the user requests an output format the linter does not support
   When the linter starts
