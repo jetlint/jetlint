@@ -430,6 +430,43 @@ func TestCLI_DetectsFloatingPromiseAcrossFilesAndExitsOne(t *testing.T) {
 	}
 }
 
+func TestCLI_BrokenTsconfigEmitsProgramBuildFailedError(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "tsconfig.json"),
+		[]byte(`{ this is not valid json `), 0o644); err != nil {
+		t.Fatalf("write tsconfig: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "main.ts"),
+		[]byte("export {};\n"), 0o644); err != nil {
+		t.Fatalf("write main: %v", err)
+	}
+
+	cmd := exec.Command(bin, "--format", "json", filepath.Join(dir, "main.ts"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	exitErr, _ := err.(*exec.ExitError)
+	if exitErr == nil || exitErr.ExitCode() != 2 {
+		t.Fatalf("expected exit 2 for broken tsconfig, got %v\nstderr: %s", err, stderr.String())
+	}
+
+	var got map[string]any
+	if decErr := json.Unmarshal([]byte(strings.TrimSpace(stderr.String())), &got); decErr != nil {
+		t.Fatalf("decode stderr: %v\nstderr: %s", decErr, stderr.String())
+	}
+	if got["code"] != "program_build_failed" {
+		t.Errorf("expected code 'program_build_failed', got %v", got["code"])
+	}
+	if stdout.Len() != 0 {
+		t.Errorf("expected empty stdout, got: %s", stdout.String())
+	}
+}
+
 func TestCLI_AcceptsMultiplePositionalTargets(t *testing.T) {
 	bin := buildBinary(t)
 	project := fixtureProject(t)

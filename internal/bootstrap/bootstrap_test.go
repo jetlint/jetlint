@@ -150,6 +150,33 @@ func TestBootstrap_BuildPhaseProducesAnExecutableThatReportsItsVersion(t *testin
 	}
 }
 
+func TestBootstrap_SmokePhaseProducesExpectedDiagnosticAgainstCheckedInFixture(t *testing.T) {
+	binDir := t.TempDir()
+	output, exit := runBootstrap(t, map[string]string{
+		"TSGOLINT_FORK_PATH":       existingForkPath(t),
+		"TSGOLINT_BIN_DIR":         binDir,
+		"TSGOLINT_BOOTSTRAP_PHASE": "smoke",
+	})
+	if exit != 0 {
+		t.Fatalf("expected exit 0 from smoke phase, got %d. output:\n%s", exit, output)
+	}
+	if !strings.Contains(output, "Smoke lint produced expected diagnostic.") {
+		t.Errorf("expected smoke success line, got:\n%s", output)
+	}
+}
+
+// existingForkPath retains the original behaviour for the smoke test:
+// the smoke phase needs the real typescript-go fork to compile and lint.
+// Tests of the prereq logic alone use presentForkPath instead.
+func existingForkPath(t *testing.T) string {
+	t.Helper()
+	candidate := filepath.Join(os.Getenv("HOME"), "src", "typescript-go")
+	if _, err := os.Stat(candidate); err != nil {
+		t.Skipf("typescript-go fork not present at %s; skipping smoke test", candidate)
+	}
+	return candidate
+}
+
 func TestBootstrap_HaltsBeforeBuildStepWhenPrerequisiteMissing(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "no-fork")
 	output, exit := runBootstrap(t, map[string]string{

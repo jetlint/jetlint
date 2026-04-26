@@ -28,10 +28,10 @@ Scenario: Bootstrap builds the linter binary
   Then the linter binary is produced at the project's bin directory
   And the binary reports its version via `--version`
 
-# Living: none (initial implementation)
+# Living: features/local-development.feature::Bootstrap smoke test confirms end-to-end function
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Bootstrap smoke test confirms end-to-end function
   Given the linter binary has been built
   When the bootstrap script runs the smoke lint against a checked-in fixture project
@@ -96,10 +96,10 @@ Scenario: Tooling failure in JSON mode emits a structured machine-readable error
   And the object includes a `path` field naming the offending file when one applies
   And the process exits with code 2
 
-# Living: none (initial implementation)
+# Living: features/performance.feature::First invocation against a project completes within the cold-start budget
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: First invocation against a project completes within the cold-start budget
   Given a project the linter has not seen since system boot
   And the project is the 500-file reference fixture
@@ -107,10 +107,10 @@ Scenario: First invocation against a project completes within the cold-start bud
   Then the invocation completes within 5 seconds on the CI runner of record
   And the linter's startup cost is incurred only on this first call
 
-# Living: none (initial implementation)
+# Living: features/performance.feature::Subsequent invocations complete within the warm-path budget
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Subsequent invocations complete within the warm-path budget
   Given a project the linter has already analyzed in this session
   And the project is the 500-file reference fixture
@@ -602,10 +602,10 @@ Scenario: A panic from the underlying type checker becomes a per-file recoverabl
   And linting continues for the remaining files in the same request
   And the daemon remains alive and serves the next request without restart
 
-# Living: none (initial implementation)
+# Living: features/daemon.feature::A program build failure fails the entire invocation
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A program build failure fails the entire invocation
   Given a project whose TypeScript program cannot be built (such as a broken configuration)
   When the daemon attempts to load the program
@@ -666,10 +666,10 @@ Scenario: Rules access type information only through the wrapper
 
 ### Performance
 
-# Living: none (initial implementation)
+# Living: features/performance.feature::Warm-path benchmark enforces the budget in continuous integration
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Warm-path benchmark enforces the budget in continuous integration
   Given the 500-file reference fixture and a warm daemon
   When the benchmark runs on the CI runner of record across 20 invocations
@@ -679,10 +679,10 @@ Scenario: Warm-path benchmark enforces the budget in continuous integration
 
 ### Distribution
 
-# Living: none (initial implementation)
+# Living: features/distribution.feature::The linter ships as a single static binary across major platforms
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: The linter ships as a single static binary across major platforms
   Given a release build
   When artifacts are produced

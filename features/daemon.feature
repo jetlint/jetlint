@@ -28,6 +28,13 @@ Feature: Per-project daemon lifecycle
     And its socket and PID file are removed
 
   @technical
+  Scenario: A program build failure fails the entire invocation
+    Given a project whose TypeScript program cannot be built (such as a broken configuration)
+    When the daemon attempts to load the program
+    Then the daemon returns a structured error to the CLI
+    And the CLI exits with code 2 without producing partial diagnostics
+
+  @technical
   Scenario: A stale socket from a crashed daemon is detected and replaced
     Given a socket file exists but no daemon process is responding
     When the CLI attempts to connect and its health probe fails to receive a response within 250 milliseconds

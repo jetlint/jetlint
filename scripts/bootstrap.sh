@@ -64,6 +64,22 @@ phase_build() {
 	echo "Build complete: $BIN_DIR/tsgolint"
 }
 
+# phase_smoke runs the freshly built binary against a checked-in fixture
+# project that contains a known floating-promise violation. A successful
+# smoke run produces exit code 1 (lint diagnostics found) and emits at
+# least one diagnostic in JSON format.
+phase_smoke() {
+	local fixture="$REPO_ROOT/testdata/fixtures/smoke"
+	echo "Running smoke lint against $fixture ..."
+	local output
+	output=$("$BIN_DIR/tsgolint" --format json "$fixture/main.ts" 2>&1) || true
+	if printf '%s' "$output" | grep -q '"ruleId":"no-floating-promises"'; then
+		echo "Smoke lint produced expected diagnostic."
+	else
+		fail "smoke lint did not produce the expected diagnostic. Output:\n$output"
+	fi
+}
+
 phase_check
 
 case "$PHASE" in
@@ -74,7 +90,7 @@ case "$PHASE" in
 		;;
 	smoke)
 		phase_build
-		# smoke phase implemented in a later scenario
+		phase_smoke
 		;;
 	*)
 		fail "unknown TSGOLINT_BOOTSTRAP_PHASE '$PHASE' (expected: check, build, smoke)"

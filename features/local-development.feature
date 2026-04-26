@@ -20,6 +20,13 @@ Feature: Local development bootstrap
     And the binary reports its version via --version
 
   @user
+  Scenario: Bootstrap smoke test confirms end-to-end function
+    Given the linter binary has been built
+    When the bootstrap script runs the smoke lint against a checked-in fixture project
+    Then the expected diagnostic is produced
+    And the bootstrap exits successfully
+
+  @user
   Scenario: Bootstrap fails fast when prerequisites are missing
     Given a freshly cloned linter repository
     And the required toolchain version is not present

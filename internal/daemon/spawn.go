@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -178,19 +177,5 @@ func (c SpawnConfig) withDefaults() SpawnConfig {
 	return c
 }
 
-// --- platform shims ---
-
-func flockExclusive(f *os.File) error {
-	return syscall.Flock(int(f.Fd()), syscall.LOCK_EX)
-}
-
-func unflock(f *os.File) {
-	_ = syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
-}
-
-// detachAttr returns SysProcAttr settings that detach the daemon from the
-// parent's process group so it survives the CLI's exit. On Linux this means
-// setting Setsid so the child becomes its own session leader.
-func detachAttr() *syscall.SysProcAttr {
-	return &syscall.SysProcAttr{Setsid: true}
-}
+// Platform-specific implementations of flockExclusive, unflock, and
+// detachAttr live in spawn_unix.go and spawn_windows.go.
