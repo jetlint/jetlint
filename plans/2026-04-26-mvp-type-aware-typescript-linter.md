@@ -284,20 +284,20 @@ Scenario: An unknown rule name in configuration fails fast
 
 ### Project discovery
 
-# Living: none (initial implementation)
+# Living: features/project-discovery.feature::The linter discovers the governing TypeScript project automatically
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: The linter discovers the governing TypeScript project automatically
   Given a TypeScript file inside a project tree
   When the user runs the linter against that file
   Then the linter discovers the project's TypeScript configuration without explicit user input
   And the file is linted in the context of that project
 
-# Living: none (initial implementation)
+# Living: features/project-discovery.feature::A directory with no TypeScript project produces a clear error
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A directory with no TypeScript project produces a clear error
   Given a directory with no discoverable TypeScript project configuration
   When the user runs the linter from that directory
@@ -516,30 +516,30 @@ Scenario: An architecture test enforces the wrapper-API boundary
 
 ### Daemon lifecycle and transport
 
-# Living: none (initial implementation)
+# Living: features/daemon.feature::A per-project daemon is started on first request
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A per-project daemon is started on first request
   Given no daemon process is running for a particular TypeScript project
   When the linter is invoked against a file in that project
   Then a daemon process is started bound to that project
   And subsequent CLI invocations against the same project reuse the daemon
 
-# Living: none (initial implementation)
+# Living: features/daemon.feature::The daemon socket path is derived deterministically from the project path
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: The daemon socket path is derived deterministically from the project path
   Given two CLI invocations against the same project from any working directory
   When each computes the daemon socket path
   Then both compute the same socket path
   And the path lives under the platform-appropriate runtime directory
 
-# Living: none (initial implementation)
+# Living: features/daemon.feature::An idle daemon shuts itself down after a configurable timeout
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: An idle daemon shuts itself down after a configurable timeout
   Given a daemon that has received no requests for the configured idle period (default 10 minutes)
   When the idle period elapses
@@ -566,10 +566,10 @@ Scenario: A stale socket from a crashed daemon is detected and replaced
   Then the CLI removes the stale socket
   And spawns a fresh daemon before retrying
 
-# Living: none (initial implementation)
+# Living: features/daemon.feature::Concurrent spawn attempts elect a single spawner via PID-file locking
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Concurrent spawn attempts elect a single spawner via PID-file locking
   Given two CLI invocations both find no running daemon and attempt to spawn one
   When each spawn process acquires an exclusive flock on the daemon's PID file
