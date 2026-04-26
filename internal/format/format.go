@@ -18,6 +18,10 @@ import (
 // package owns the type rather than re-exporting wrapper symbols.
 type Diagnostic = wrapperlint.Diagnostic
 
+// Severity is re-exported so format-package callers can compare
+// against severity literals without importing the wrapper directly.
+type Severity = wrapperlint.Severity
+
 // JSONSchemaVersion is the version number embedded in JSON output. Bumped
 // whenever the contract changes in a way consumers must adapt to.
 const JSONSchemaVersion = 1
@@ -42,6 +46,10 @@ func Lookup(name string) (Formatter, error) {
 		return Human{}, nil
 	case "json":
 		return JSON{}, nil
+	case "sarif":
+		return SARIF{}, nil
+	case "github-actions":
+		return GitHubActions{}, nil
 	default:
 		return nil, fmt.Errorf("%w: %q (supported: %v)", ErrUnknownFormat, name, SupportedNames())
 	}
@@ -50,7 +58,7 @@ func Lookup(name string) (Formatter, error) {
 // SupportedNames returns the set of formatter names supported by Lookup,
 // in stable order, so error messages and help text are deterministic.
 func SupportedNames() []string {
-	return []string{"human", "json"}
+	return []string{"human", "json", "sarif", "github-actions"}
 }
 
 // SortDiagnostics orders diagnostics by file path, then by start position.

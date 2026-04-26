@@ -47,7 +47,9 @@ Usage:
 Flags:
     --version          Print the linter version and exit.
     --help             Print this help text and exit.
-    --format <name>    Output format. One of: human (default), json.
+    --format <name>    Output format. One of: human (default), json,
+                       sarif (GitHub Code Scanning), github-actions
+                       (workflow command annotations).
 
 Exit codes:
     0    No diagnostics produced.
