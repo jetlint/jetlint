@@ -53,20 +53,51 @@ func (e *Engine) Lint(program *wrapperchecker.Program) []wrapperlint.Diagnostic 
 	for _, file := range program.SourceFiles() {
 		file.Walk(func(n *wrapperchecker.Node) bool {
 			entries, ok := dispatch[n.Kind()]
-			if ok {
-				for _, ent := range entries {
-					ctx := &Context{
-						program:     program,
-						checker:     chk,
-						ruleID:      ent.ruleID,
-						severity:    ent.severity,
-						diagnostics: &diagnostics,
-					}
-					ent.handler(ctx, n)
+			if !ok {
+				return true
+			}
+			for _, ent := range entries {
+				ctx := &Context{
+					program:     program,
+					checker:     chk,
+					ruleID:      ent.ruleID,
+					severity:    ent.severity,
+					diagnostics: &diagnostics,
 				}
+				dispatchSafely(ctx, ent.handler, n, file.Path(), ent.ruleID, &diagnostics)
 			}
 			return true
 		})
 	}
 	return diagnostics
+}
+
+// dispatchSafely invokes a rule handler with a deferred recover. A
+// panic from the underlying type checker (or a buggy rule) is captured
+// and reported as a per-file tool-error diagnostic so the rest of the
+// lint pass continues. Without this guard, one bad node would abort
+// the entire invocation.
+func dispatchSafely(ctx *Context, h Handler, n *wrapperchecker.Node, file, ruleID string, diags *[]wrapperlint.Diagnostic) {
+	defer func() {
+		if r := recover(); r != nil {
+			startLine, startCol, endLine, endCol := 1, 1, 1, 1
+			if n != nil {
+				_, sl, sc, el, ec := n.SourceRange()
+				startLine, startCol, endLine, endCol = sl, sc, el, ec
+			}
+			*diags = append(*diags, wrapperlint.Diagnostic{
+				Range: wrapperlint.SourceRange{
+					File:        file,
+					StartLine:   startLine,
+					StartColumn: startCol,
+					EndLine:     endLine,
+					EndColumn:   endCol,
+				},
+				RuleID:   "tsgolint/rule-panic",
+				Severity: wrapperlint.SeverityWarning,
+				Message:  "rule '" + ruleID + "' panicked while processing this node; remaining files were linted; please report this as a bug",
+			})
+		}
+	}()
+	h(ctx, n)
 }

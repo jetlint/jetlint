@@ -63,6 +63,29 @@ func TestNoBaseToString_DoesNotFlagPrimitiveInterpolation(t *testing.T) {
 	}
 }
 
+func TestNoBaseToString_FlagsArrayOfObjectsLackingMeaningfulToString(t *testing.T) {
+	tsconfig := fixture(t,
+		"const xs: { id: number }[] = [{ id: 1 }, { id: 2 }];\n"+
+			"const msg = `xs: ${xs}`;\n")
+	diags := runRule(t, tsconfig)
+	if len(diags) != 1 {
+		t.Fatalf("expected 1 diagnostic for array of plain objects, got %d: %#v", len(diags), diags)
+	}
+	if diags[0].RuleID != "no-base-to-string" {
+		t.Errorf("expected rule id 'no-base-to-string', got %q", diags[0].RuleID)
+	}
+}
+
+func TestNoBaseToString_DoesNotFlagArrayOfPrimitives(t *testing.T) {
+	tsconfig := fixture(t,
+		"const xs: number[] = [1, 2, 3];\n"+
+			"const msg = `xs: ${xs}`;\n")
+	diags := runRule(t, tsconfig)
+	if len(diags) != 0 {
+		t.Errorf("expected no diagnostics for array of primitives, got %d: %#v", len(diags), diags)
+	}
+}
+
 func TestNoBaseToString_DoesNotFlagObjectWithCustomToString(t *testing.T) {
 	tsconfig := fixture(t, "class User {\n"+
 		"  constructor(public name: string) {}\n"+

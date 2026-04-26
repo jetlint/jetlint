@@ -430,6 +430,100 @@ func TestCLI_DetectsFloatingPromiseAcrossFilesAndExitsOne(t *testing.T) {
 	}
 }
 
+func TestCLI_ModifiedFileIsReParsedOnNextInvocation(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	tsconfig := filepath.Join(dir, "tsconfig.json")
+	main := filepath.Join(dir, "main.ts")
+	if err := os.WriteFile(tsconfig, []byte(`{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"}}`), 0o644); err != nil {
+		t.Fatalf("tsconfig: %v", err)
+	}
+
+	// First version: clean (no violations).
+	if err := os.WriteFile(main, []byte("export const x = 1;\n"), 0o644); err != nil {
+		t.Fatalf("main v1: %v", err)
+	}
+	first := exec.Command(bin, "--format", "json", main)
+	first.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	out1, err := first.CombinedOutput()
+	if err != nil {
+		t.Fatalf("first run failed: %v\n%s", err, out1)
+	}
+
+	// Second version: introduces a floating promise. Same file path,
+	// different content — possibly within the same modification-time
+	// tick on a fast filesystem.
+	if err := os.WriteFile(main,
+		[]byte("async function fn(): Promise<void> { return; }\nfn();\n"), 0o644); err != nil {
+		t.Fatalf("main v2: %v", err)
+	}
+	second := exec.Command(bin, "--format", "json", main)
+	second.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	out2, err := second.CombinedOutput()
+	exitErr, _ := err.(*exec.ExitError)
+	if exitErr == nil || exitErr.ExitCode() != 1 {
+		t.Fatalf("second run should have exited 1 after edit; got %v\n%s", err, out2)
+	}
+	if !strings.Contains(string(out2), "no-floating-promises") {
+		t.Errorf("expected no-floating-promises in re-parsed output, got: %s", out2)
+	}
+}
+
+func TestCLI_DegradedModeWarningWhenProgramHasTypeErrors(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	// A program with a real type error: assigning a string literal to
+	// a number-typed variable.
+	for path, content := range map[string]string{
+		"tsconfig.json": `{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"}}`,
+		"main.ts":       "export const x: number = \"not a number\";\n",
+	} {
+		if err := os.WriteFile(filepath.Join(dir, path), []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+
+	cmd := exec.Command(bin, "--format", "json", filepath.Join(dir, "main.ts"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_ = cmd.Run() // we don't assert exit here; the warning may or may not push exit to 1
+	var doc struct {
+		Diagnostics []map[string]any
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &doc); err != nil {
+		t.Fatalf("decode output: %v\nstdout: %s", err, stdout.String())
+	}
+	foundWarning := false
+	for _, d := range doc.Diagnostics {
+		if d["ruleId"] == "tsgolint/program-has-type-errors" {
+			foundWarning = true
+			if d["severity"] != "warning" {
+				t.Errorf("expected severity 'warning', got %v", d["severity"])
+			}
+			break
+		}
+	}
+	if !foundWarning {
+		t.Errorf("expected degraded-mode warning, got: %v", doc.Diagnostics)
+	}
+}
+
 func TestCLI_BrokenTsconfigEmitsProgramBuildFailedError(t *testing.T) {
 	bin := buildBinary(t)
 	rt := runtimeDir(t)

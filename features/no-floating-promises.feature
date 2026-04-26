@@ -22,6 +22,13 @@ Feature: no-floating-promises rule
     Then no floating-promises diagnostic is reported
 
   @user
+  Scenario: Should not report a promise returned from an arrow function via implicit return
+    Given an arrow function whose concise body returns the result of a promise-returning call
+    When the user runs the linter
+    Then no floating-promises diagnostic is reported at the implicit return
+    Because the promise becomes the function's return value, the caller is responsible for handling it
+
+  @user
   Scenario: Should not report a promise that is explicitly discarded with the void operator
     Given a call to a promise-returning function whose result is prefixed with the void operator
     When the user runs the linter

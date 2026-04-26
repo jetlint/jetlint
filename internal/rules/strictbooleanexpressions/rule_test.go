@@ -58,6 +58,23 @@ if (maybeName) { console.log(maybeName); }
 	}
 }
 
+func TestStrictBooleanExpressions_DoesNotFlagNarrowedNonNullableTest(t *testing.T) {
+	tsconfig := fixture(t, `
+declare const maybeName: string | undefined;
+if (maybeName !== undefined) {
+  if (maybeName) { console.log(maybeName); }
+}
+`)
+	diags := runRule(t, tsconfig)
+	// Outer test is `maybeName !== undefined` (a boolean comparison) -
+	// fine. Inner test is `maybeName` narrowed to plain string - allowed.
+	for _, d := range diags {
+		if d.Range.StartLine == 4 {
+			t.Errorf("did not expect diagnostic on narrowed string test, got: %#v", d)
+		}
+	}
+}
+
 func TestStrictBooleanExpressions_DoesNotFlagBooleanTest(t *testing.T) {
 	tsconfig := fixture(t, `
 declare const flag: boolean;

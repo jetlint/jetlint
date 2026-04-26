@@ -44,20 +44,22 @@ func visitTemplateSpan(ctx *engine.Context, n *wrapperchecker.Node) {
 
 // hasMeaningfulStringConversion returns true if the type, or every
 // member of a union type, declares its own toString or is a primitive.
-// Returns false only when ANY constituent will render as the default
-// object representation, since one bad branch is sufficient to ship
-// garbage at runtime.
+// Arrays defer to their element type: `T[]`'s toString joins each
+// element's toString, so an array of plain objects renders garbage.
 func hasMeaningfulStringConversion(t *wrapperchecker.Type) bool {
 	if t.IsAny() || t.IsUnknown() {
 		// `any` and `unknown` are deliberately excluded: the
 		// no-unsafe-* family handles `any` flow.
 		return true
 	}
+	if elem := t.ArrayElementType(); elem != nil {
+		return hasMeaningfulStringConversion(elem)
+	}
 	if !t.IsUnion() {
 		return t.HasOwnToString()
 	}
 	for _, m := range t.UnionMembers() {
-		if !m.HasOwnToString() {
+		if !hasMeaningfulStringConversion(m) {
 			return false
 		}
 	}

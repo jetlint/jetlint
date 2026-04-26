@@ -222,7 +222,19 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 		return 2
 	}
 
+	// Health-probe the daemon. On a mid-request connection drop we
+	// retry exactly once after re-spawning a fresh daemon, per the
+	// plan's failure-handling contract. A second failure exits 2.
 	resp, err := daemon.Ping(socket, time.Second)
+	if err != nil {
+		if respawnErr := daemon.EnsureRunning(context.Background(), daemon.SpawnConfig{
+			SocketPath: socket,
+			LogPath:    logPath,
+			Args:       []string{"--daemon", socket},
+		}); respawnErr == nil {
+			resp, err = daemon.Ping(socket, time.Second)
+		}
+	}
 	if err != nil {
 		emitToolError(stderr, formatter.Name(),
 			toolerr.New(toolerr.CodeDaemonUnavailable, err.Error()))
@@ -246,8 +258,37 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 	}
 	defer prog.Close()
 
+	// For each explicit target, verify it is part of the discovered
+	// program. Files outside the program get a per-target structured
+	// warning (in JSON mode) and are skipped from the lint scope.
+	for _, target := range targets {
+		abs, absErr := filepath.Abs(target)
+		if absErr != nil {
+			continue
+		}
+		if prog.SourceFileByPath(abs) == nil {
+			emitToolError(stderr, formatter.Name(),
+				toolerr.WithPath(toolerr.CodeInternal,
+					"target file is not part of the discovered TypeScript program; ensure the file is included by tsconfig.json's include/files",
+					abs))
+		}
+	}
+
 	eng := engine.New(activeRules(), resolved.Rules)
 	diagnostics := eng.Lint(prog)
+
+	// Degraded-mode signal: when the program itself has type errors,
+	// every type-aware diagnostic built on it is suspect. Surface a
+	// single program-scope tool warning so AI agents can detect the
+	// degraded state and decide how to weight the rest of the output.
+	if prog.HasTypeErrors() {
+		diagnostics = append([]wrapperlint.Diagnostic{{
+			Range:    wrapperlint.SourceRange{File: tsconfig, StartLine: 1, StartColumn: 1, EndLine: 1, EndColumn: 1},
+			RuleID:   "tsgolint/program-has-type-errors",
+			Severity: wrapperlint.SeverityWarning,
+			Message:  "the TypeScript program has type errors; lint diagnostics may be unreliable until those are resolved",
+		}}, diagnostics...)
+	}
 
 	if err := formatter.Format(stdout, diagnostics); err != nil {
 		emitToolError(stderr, formatter.Name(),

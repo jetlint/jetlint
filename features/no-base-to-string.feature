@@ -15,6 +15,14 @@ Feature: no-base-to-string rule
     And the diagnostic explains that the result will be the default object representation
 
   @user
+  Scenario: Should report an array of objects whose elements lack a meaningful string conversion
+    Given an array whose element type does not declare a custom string-conversion method
+    And the array is interpolated into a template literal or coerced to string
+    When the user runs the linter
+    Then a diagnostic is reported at the coercion site
+    Because Array.prototype.toString joins element string conversions, propagating the default object representation
+
+  @user
   Scenario: Should not report interpolation of values with a meaningful string conversion
     Given an object whose type declares its own string-conversion method
     And the object is interpolated into a template literal

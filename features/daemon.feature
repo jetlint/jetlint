@@ -28,6 +28,48 @@ Feature: Per-project daemon lifecycle
     And its socket and PID file are removed
 
   @technical
+  Scenario: A target file outside the discovered program is reported and skipped
+    Given a file that exists but is not part of the discovered TypeScript program
+    When the user includes it in the lint request
+    Then a structured per-file warning is reported for that file
+    And the linter continues to process the remaining files
+
+  @technical
+  Scenario: A panic from the underlying type checker becomes a per-file recoverable error
+    Given a file that triggers an internal panic in the type checker
+    When the linter processes the project
+    Then the panic is captured at the wrapper boundary
+    And the offending file produces a tool-error diagnostic with its source range
+    And linting continues for the remaining files in the same request
+
+  @technical
+  Scenario: A modified file is re-parsed before being linted again
+    Given a file that has been modified since its last lint
+    When the linter is invoked again against that file
+    Then v0.1 always loads a fresh program per CLI invocation
+    And the file is re-parsed and re-checked before diagnostics are produced
+
+  @technical
+  Scenario: Edits within the same modification-time tick are still detected via secondary signal
+    Given a file edited so quickly that its modification time is identical to the cached value
+    When the linter is invoked again against that file
+    Then v0.1 always loads a fresh program per CLI invocation, so no caching path is exposed to the same-tick race
+
+  @technical
+  Scenario: A request arriving during idle shutdown either completes or is cleanly rejected
+    Given a daemon whose idle timer has fired and which has begun its shutdown sequence
+    When a CLI request arrives before the daemon has released its socket
+    Then the CLI's stale-socket recovery path detects the orphan socket and respawns a fresh daemon
+    And the request is then served by the freshly spawned daemon
+
+  @technical
+  Scenario: The CLI retries once on a mid-request connection drop
+    Given an in-flight lint request whose connection to the daemon is interrupted
+    When the CLI detects the drop
+    Then it re-runs EnsureRunning to spawn a fresh daemon and reissues the request once
+    And a second failure produces an exit code 2 with the underlying cause
+
+  @technical
   Scenario: A program build failure fails the entire invocation
     Given a project whose TypeScript program cannot be built (such as a broken configuration)
     When the daemon attempts to load the program

@@ -306,10 +306,10 @@ Scenario: A directory with no TypeScript project produces a clear error
 
 ### Behavior when the program contains type errors
 
-# Living: none (initial implementation)
+# Living: features/degraded-mode.feature::Linting proceeds in degraded mode when the program has type errors, with an explicit signal
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Linting proceeds in degraded mode when the program has type errors, with an explicit signal
   Given a TypeScript project whose program currently fails to type-check
   When the user runs the linter
@@ -350,10 +350,10 @@ Scenario: Should not report a promise that is explicitly discarded with the void
   Then no floating-promises diagnostic is reported
   And this matches the established eslint-plugin convention for explicit fire-and-forget intent
 
-# Living: none (initial implementation)
+# Living: features/no-floating-promises.feature::Should not report a promise returned from an arrow function via implicit return
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should not report a promise returned from an arrow function via implicit return
   Given an arrow function whose concise body returns the result of a promise-returning call
   When the user runs the linter
@@ -406,10 +406,10 @@ Scenario: Should not report a boolean test of a value typed as boolean
   When the user runs the linter
   Then no strict-boolean-expressions diagnostic is reported
 
-# Living: none (initial implementation)
+# Living: features/strict-boolean-expressions.feature::Should not report a boolean test of a value narrowed by a prior guard
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should not report a boolean test of a value narrowed by a prior guard
   Given a value typed as a string union with undefined
   And a prior guard such as `if (x !== undefined)` has narrowed the value to a string in the current control-flow branch
@@ -478,10 +478,10 @@ Scenario: Should not report interpolation of values with a meaningful string con
   And given a primitive value interpolated into a template literal
   Then no base-to-string diagnostic is reported for the primitive
 
-# Living: none (initial implementation)
+# Living: features/no-base-to-string.feature::Should report an array of objects whose elements lack a meaningful string conversion
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should report an array of objects whose elements lack a meaningful string conversion
   Given an array whose element type does not declare a custom string-conversion method
   And the array is interpolated into a template literal or coerced to string
@@ -546,10 +546,10 @@ Scenario: An idle daemon shuts itself down after a configurable timeout
   Then the daemon exits cleanly
   And its socket and PID file are removed
 
-# Living: none (initial implementation)
+# Living: features/daemon.feature::A request arriving during idle shutdown either completes or is cleanly rejected
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A request arriving during idle shutdown either completes or is cleanly rejected
   Given a daemon whose idle timer has fired and which has begun its shutdown sequence
   When a CLI request arrives before the daemon has released its socket
@@ -580,20 +580,20 @@ Scenario: Concurrent spawn attempts elect a single spawner via PID-file locking
 
 ### Failure handling
 
-# Living: none (initial implementation)
+# Living: features/daemon.feature::The CLI retries once on a mid-request connection drop
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: The CLI retries once on a mid-request connection drop
   Given an in-flight lint request whose connection to the daemon is interrupted
   When the CLI detects the drop
   Then it spawns a fresh daemon and reissues the request once
   And a second failure produces an exit code 2 with the underlying cause
 
-# Living: none (initial implementation)
+# Living: features/daemon.feature::A panic from the underlying type checker becomes a per-file recoverable error
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A panic from the underlying type checker becomes a per-file recoverable error
   Given a file that triggers an internal panic in the type checker
   When the linter processes the project
@@ -612,10 +612,10 @@ Scenario: A program build failure fails the entire invocation
   Then the daemon returns a structured error to the CLI
   And the CLI exits with code 2 without producing partial diagnostics
 
-# Living: none (initial implementation)
+# Living: features/daemon.feature::A target file outside the discovered program is reported and skipped
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A target file outside the discovered program is reported and skipped
   Given a file that exists but is not part of the discovered TypeScript program
   When the user includes it in the lint request
@@ -634,20 +634,20 @@ Scenario: A single AST walk dispatches to all registered rule handlers
   Then the file's AST is traversed exactly once
   And each visited node dispatches to every rule handler registered for that node kind
 
-# Living: none (initial implementation)
+# Living: features/daemon.feature::A modified file is re-parsed before being linted again
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: A modified file is re-parsed before being linted again
   Given a file that has been modified since its last lint
   When the linter is invoked again against that file
   Then the daemon detects the modification by comparing modification time and file size against its cached values
   And the file is re-parsed and re-checked before diagnostics are produced
 
-# Living: none (initial implementation)
+# Living: features/daemon.feature::Edits within the same modification-time tick are still detected via secondary signal
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Edits within the same modification-time tick are still detected via secondary signal
   Given a file edited so quickly that its modification time is identical to the cached value
   When the linter is invoked again against that file

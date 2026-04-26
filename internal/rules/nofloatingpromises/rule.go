@@ -38,14 +38,29 @@ func visitExpressionStatement(ctx *engine.Context, n *wrapperchecker.Node) {
 	if isHandled(expr) {
 		return
 	}
-	t := ctx.TypeOf(expr)
-	if t == nil {
-		return
+	if expressionProducesPromise(ctx, expr) {
+		ctx.Report(n, "promise returned by this expression is not awaited or otherwise handled")
 	}
-	if !isAnyMemberThenable(t) {
-		return
+}
+
+// expressionProducesPromise checks both the contextually-narrowed type
+// of the expression and, when the expression is a call, the resolved
+// signature's declared return type. The two sources differ when a
+// callback's contextual type narrows the call's return: TypeOf returns
+// the narrowed type, but the called function still produces a Promise
+// at runtime. Either signal is sufficient to flag.
+func expressionProducesPromise(ctx *engine.Context, expr *wrapperchecker.Node) bool {
+	if t := ctx.TypeOf(expr); t != nil && isAnyMemberThenable(t) {
+		return true
 	}
-	ctx.Report(n, "promise returned by this expression is not awaited or otherwise handled")
+	if expr.Kind() == wrapperchecker.KindCallExpression {
+		if sig := ctx.Checker().ResolvedSignature(expr); sig != nil {
+			if rt := sig.ReturnType(); rt != nil && isAnyMemberThenable(rt) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // isHandled reports whether the expression is in a position that
