@@ -26,7 +26,11 @@ import (
 	"github.com/tommymorgan/tsgolint/internal/engine"
 	"github.com/tommymorgan/tsgolint/internal/format"
 	"github.com/tommymorgan/tsgolint/internal/project"
+	"github.com/tommymorgan/tsgolint/internal/rules/nobasetotostring"
 	"github.com/tommymorgan/tsgolint/internal/rules/nofloatingpromises"
+	"github.com/tommymorgan/tsgolint/internal/rules/nomisusedpromises"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounsafeassignment"
+	"github.com/tommymorgan/tsgolint/internal/rules/strictbooleanexpressions"
 	"github.com/tommymorgan/tsgolint/internal/toolerr"
 	"github.com/tommymorgan/tsgolint/internal/transport"
 )
@@ -256,12 +260,16 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 	return 0
 }
 
-// activeRules returns the registered rule instances. As more rules ship
-// they are appended here; the engine filters by the resolved config so
-// rules disabled at runtime have zero overhead.
+// activeRules returns the registered rule instances. The engine filters
+// by the resolved configuration so rules disabled at runtime have zero
+// overhead per node.
 func activeRules() []engine.Rule {
 	return []engine.Rule{
 		nofloatingpromises.New(),
+		nomisusedpromises.New(),
+		strictbooleanexpressions.New(),
+		nounsafeassignment.New(),
+		nobasetotostring.New(),
 	}
 }
 

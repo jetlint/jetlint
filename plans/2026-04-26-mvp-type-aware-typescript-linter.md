@@ -362,10 +362,10 @@ Scenario: Should not report a promise returned from an arrow function via implic
 
 ### Rule: detect misused promises
 
-# Living: none (initial implementation)
+# Living: features/no-misused-promises.feature::Should report an async callback passed where the consumer expects no return
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should report an async callback passed where the consumer expects no return
   Given an array iteration that accepts a callback returning nothing
   And the user passes an async callback to that iteration
@@ -373,10 +373,10 @@ Scenario: Should report an async callback passed where the consumer expects no r
   Then a diagnostic is reported at the call site
   And the diagnostic explains that the returned promise will be silently dropped
 
-# Living: none (initial implementation)
+# Living: features/no-misused-promises.feature::Should not report an async callback passed where a promise return is expected
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should not report an async callback passed where a promise return is expected
   Given an iteration whose callback type accepts a promise return (such as mapping)
   And the user passes an async callback to that iteration
@@ -385,10 +385,10 @@ Scenario: Should not report an async callback passed where a promise return is e
 
 ### Rule: enforce strict boolean expressions
 
-# Living: none (initial implementation)
+# Living: features/strict-boolean-expressions.feature::Should report a boolean test of a value that may be string-or-undefined
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should report a boolean test of a value that may be string-or-undefined
   Given a value typed as a string union with undefined
   And the value is used directly as a boolean test
@@ -396,10 +396,10 @@ Scenario: Should report a boolean test of a value that may be string-or-undefine
   Then a diagnostic is reported at the test location
   And the diagnostic identifies the ambiguous coercion
 
-# Living: none (initial implementation)
+# Living: features/strict-boolean-expressions.feature::Should not report a boolean test of a value typed as boolean
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should not report a boolean test of a value typed as boolean
   Given a value typed as boolean
   And the value is used as a boolean test
@@ -420,10 +420,10 @@ Scenario: Should not report a boolean test of a value narrowed by a prior guard
 
 ### Rule: detect unsafe assignment from any
 
-# Living: none (initial implementation)
+# Living: features/no-unsafe-assignment.feature::Should report an assignment from a value typed any to a typed target
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should report an assignment from a value typed any to a typed target
   Given a source value typed as any
   And the value is assigned to a variable with a more specific declared type
@@ -431,19 +431,19 @@ Scenario: Should report an assignment from a value typed any to a typed target
   Then a diagnostic is reported at the assignment
   And the diagnostic explains that type information was lost or fabricated
 
-# Living: none (initial implementation)
+# Living: features/no-unsafe-assignment.feature::Should not report an assignment between properly typed values
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should not report an assignment between properly typed values
   Given a source and target whose types are both fully known and compatible
   When the user runs the linter
   Then no unsafe-assignment diagnostic is reported
 
-# Living: none (initial implementation)
+# Living: features/no-unsafe-assignment.feature::Should not report an assignment from any to a target also typed any
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should not report an assignment from any to a target also typed any
   Given a source value typed as any
   And a target also typed as any
@@ -454,10 +454,10 @@ Scenario: Should not report an assignment from any to a target also typed any
 
 ### Rule: detect base-to-string coercion of objects
 
-# Living: none (initial implementation)
+# Living: features/no-base-to-string.feature::Should report a template literal that interpolates an object lacking a custom string conversion
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should report a template literal that interpolates an object lacking a custom string conversion
   Given an object whose type does not declare a custom string-conversion method
   And the object is interpolated into a template literal
@@ -465,10 +465,10 @@ Scenario: Should report a template literal that interpolates an object lacking a
   Then a diagnostic is reported at the interpolation
   And the diagnostic explains that the result will be the default object representation
 
-# Living: none (initial implementation)
+# Living: features/no-base-to-string.feature::Should not report interpolation of values with a meaningful string conversion
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Should not report interpolation of values with a meaningful string conversion
   Given an object whose type declares its own string-conversion method
   And the object is interpolated into a template literal
