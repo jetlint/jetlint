@@ -86,7 +86,8 @@ func existingForkPath(t *testing.T) string {
 
 func TestBootstrap_ReportsGoToolchainAndForkWhenBothPresent(t *testing.T) {
 	output, exit := runBootstrap(t, map[string]string{
-		"TSGOLINT_FORK_PATH": existingForkPath(t),
+		"TSGOLINT_FORK_PATH":       existingForkPath(t),
+		"TSGOLINT_BOOTSTRAP_PHASE": "check",
 	})
 	if exit != 0 {
 		t.Fatalf("expected exit 0, got %d. output:\n%s", exit, output)
@@ -115,8 +116,9 @@ func TestBootstrap_HaltsWhenForkPathIsMissing(t *testing.T) {
 func TestBootstrap_HaltsWhenGoToolchainTooOld(t *testing.T) {
 	shim := fakeGoBin(t, "go version go1.20.0 linux/amd64")
 	output, exit := runBootstrap(t, map[string]string{
-		"TSGOLINT_GO_BIN":    shim,
-		"TSGOLINT_FORK_PATH": existingForkPath(t),
+		"TSGOLINT_GO_BIN":          shim,
+		"TSGOLINT_FORK_PATH":       existingForkPath(t),
+		"TSGOLINT_BOOTSTRAP_PHASE": "check",
 	})
 	if exit == 0 {
 		t.Fatalf("expected non-zero exit, got 0. output:\n%s", output)
@@ -124,6 +126,32 @@ func TestBootstrap_HaltsWhenGoToolchainTooOld(t *testing.T) {
 	out := strings.ToLower(output)
 	if !strings.Contains(out, "go") || !strings.Contains(out, "1.20") {
 		t.Errorf("expected error naming Go and the detected version, got:\n%s", output)
+	}
+}
+
+func TestBootstrap_BuildPhaseProducesAnExecutableThatReportsItsVersion(t *testing.T) {
+	binDir := t.TempDir()
+	output, exit := runBootstrap(t, map[string]string{
+		"TSGOLINT_FORK_PATH":       existingForkPath(t),
+		"TSGOLINT_BIN_DIR":         binDir,
+		"TSGOLINT_BOOTSTRAP_PHASE": "build",
+	})
+	if exit != 0 {
+		t.Fatalf("expected exit 0, got %d. output:\n%s", exit, output)
+	}
+	if !strings.Contains(output, "Build complete") {
+		t.Errorf("expected 'Build complete' in output, got:\n%s", output)
+	}
+	bin := filepath.Join(binDir, "tsgolint")
+	if info, err := os.Stat(bin); err != nil || info.Mode()&0o111 == 0 {
+		t.Fatalf("expected executable at %s: %v", bin, err)
+	}
+	versionOut, err := exec.Command(bin, "--version").CombinedOutput()
+	if err != nil {
+		t.Fatalf("built binary --version exited non-zero: %v\noutput:\n%s", err, versionOut)
+	}
+	if strings.TrimSpace(string(versionOut)) == "" {
+		t.Errorf("expected non-empty version output from built binary")
 	}
 }
 

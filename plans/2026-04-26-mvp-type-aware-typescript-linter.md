@@ -18,10 +18,10 @@ Scenario: Bootstrap verifies toolchain prerequisites
   And the typescript-go fork checkout is detected at the expected sibling path
   And missing prerequisites cause the bootstrap to halt before any build step
 
-# Living: none (initial implementation)
+# Living: features/local-development.feature::Bootstrap builds the linter binary
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: Bootstrap builds the linter binary
   Given the toolchain prerequisites have been verified
   When the developer runs the bootstrap command
@@ -128,10 +128,10 @@ Scenario: Concurrent invocations produce results referentially identical to sequ
   Then the union of diagnostics returned to the two callers equals the diagnostics that a single sequential invocation over the same files would produce
   And neither invocation's output contains data from the other invocation's request
 
-# Living: none (initial implementation)
+# Living: features/cli.feature::--version prints a stable version string and exits zero
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: --version prints a stable version string and exits zero
   Given the linter binary
   When the user runs the linter with the `--version` flag
@@ -139,10 +139,10 @@ Scenario: --version prints a stable version string and exits zero
   And the process exits with code 0
   And no daemon is started or contacted
 
-# Living: none (initial implementation)
+# Living: features/cli.feature::--help prints stable usage and exits zero
 # Action: creates
-# Status: TODO
-# Living updated: NO
+# Status: DONE
+# Living updated: YES
 Scenario: --help prints stable usage and exits zero
   Given the linter binary
   When the user runs the linter with the `--help` flag

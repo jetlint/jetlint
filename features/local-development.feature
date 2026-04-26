@@ -13,6 +13,13 @@ Feature: Local development bootstrap
     And missing prerequisites cause the bootstrap to halt before any build step
 
   @user
+  Scenario: Bootstrap builds the linter binary
+    Given the toolchain prerequisites have been verified
+    When the developer runs the bootstrap command
+    Then the linter binary is produced at the project's bin directory
+    And the binary reports its version via --version
+
+  @user
   Scenario: Bootstrap fails fast when prerequisites are missing
     Given a freshly cloned linter repository
     And the required toolchain version is not present
