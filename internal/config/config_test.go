@@ -21,6 +21,73 @@ func writeFile(t *testing.T, path, contents string) {
 	}
 }
 
+func TestResolveCascade_DefaultMaxDiagnosticsMatchesBiome(t *testing.T) {
+	dir := t.TempDir()
+	got, err := config.ResolveCascade(dir)
+	if err != nil {
+		t.Fatalf("ResolveCascade: %v", err)
+	}
+	// Biome's default is 20; we match that value so users hitting
+	// either tool see the same "shows 20, hides the rest" behavior.
+	if got.MaxDiagnostics != 20 {
+		t.Errorf("expected default MaxDiagnostics=20 (matching biome), got %d", got.MaxDiagnostics)
+	}
+}
+
+func TestResolveCascade_RootConfigOverridesMaxDiagnostics(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, ".tsgolintrc.json"),
+		`{"maxDiagnostics": 50}`)
+	got, err := config.ResolveCascade(dir)
+	if err != nil {
+		t.Fatalf("ResolveCascade: %v", err)
+	}
+	if got.MaxDiagnostics != 50 {
+		t.Errorf("expected MaxDiagnostics=50 from config, got %d", got.MaxDiagnostics)
+	}
+}
+
+func TestResolveCascade_ChildConfigOverridesParentMaxDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, ".tsgolintrc.json"),
+		`{"maxDiagnostics": 50}`)
+	child := filepath.Join(root, "packages", "web")
+	writeFile(t, filepath.Join(child, ".tsgolintrc.json"),
+		`{"maxDiagnostics": 5}`)
+	got, err := config.ResolveCascade(child)
+	if err != nil {
+		t.Fatalf("ResolveCascade: %v", err)
+	}
+	if got.MaxDiagnostics != 5 {
+		t.Errorf("expected child MaxDiagnostics=5 to win, got %d", got.MaxDiagnostics)
+	}
+}
+
+func TestResolveCascade_MaxDiagnosticsZeroDisablesTruncation(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, ".tsgolintrc.json"),
+		`{"maxDiagnostics": 0}`)
+	got, err := config.ResolveCascade(dir)
+	if err != nil {
+		t.Fatalf("ResolveCascade: %v", err)
+	}
+	// Explicit 0 must be preserved (sentinel for "unlimited"), not
+	// silently treated as "unset" and replaced with the default.
+	if got.MaxDiagnostics != 0 {
+		t.Errorf("expected explicit MaxDiagnostics=0 to disable truncation, got %d", got.MaxDiagnostics)
+	}
+}
+
+func TestResolveCascade_NegativeMaxDiagnosticsRejected(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, ".tsgolintrc.json"),
+		`{"maxDiagnostics": -1}`)
+	_, err := config.ResolveCascade(dir)
+	if err == nil {
+		t.Fatal("expected error for negative maxDiagnostics, got nil")
+	}
+}
+
 func TestResolveCascade_NoConfigUsesDefaults(t *testing.T) {
 	dir := t.TempDir()
 	got, err := config.ResolveCascade(dir)

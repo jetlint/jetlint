@@ -32,14 +32,25 @@ type FileConfig struct {
 	// "off"). Absence means "no opinion at this level"; cascade resolution
 	// then defers to the parent.
 	Rules map[string]string `json:"rules,omitempty"`
+
+	// MaxDiagnostics caps the number of diagnostic blocks the human
+	// formatter renders. A pointer distinguishes "absent" (defer to
+	// parent / default) from "0" (explicit "render everything").
+	MaxDiagnostics *int `json:"maxDiagnostics,omitempty"`
 }
+
+// DefaultMaxDiagnostics is the truncation threshold applied when no
+// configuration file specifies a value. Matches biome's default so
+// users get the same "show 20, hide the rest" experience across tools.
+const DefaultMaxDiagnostics = 20
 
 // ResolvedConfig is the effective configuration for a particular file
 // after cascade resolution. The Rules map names exactly the rules that
 // will produce diagnostics, with their effective severity. Rules set to
 // "off" at any level are absent from the map.
 type ResolvedConfig struct {
-	Rules map[string]wrapperlint.Severity
+	Rules          map[string]wrapperlint.Severity
+	MaxDiagnostics int
 	// Sources lists the configuration files that contributed to this
 	// resolution, in cascade order (outermost first). Useful for "why is
 	// this rule active?" debugging in future tooling.
@@ -68,6 +79,10 @@ func LoadFile(path string) (FileConfig, error) {
 			return FileConfig{}, toolerr.WithPath(toolerr.CodeConfigInvalid,
 				fmt.Sprintf("rule %q has invalid severity %q (expected error, warning, or off)", ruleID, sev), path)
 		}
+	}
+	if cfg.MaxDiagnostics != nil && *cfg.MaxDiagnostics < 0 {
+		return FileConfig{}, toolerr.WithPath(toolerr.CodeConfigInvalid,
+			fmt.Sprintf("maxDiagnostics in %s must be non-negative (use 0 to disable truncation)", path), path)
 	}
 	return cfg, nil
 }
@@ -102,7 +117,8 @@ func ResolveCascade(startDir string) (ResolvedConfig, error) {
 	}
 
 	resolved := ResolvedConfig{
-		Rules: defaultRules(),
+		Rules:          defaultRules(),
+		MaxDiagnostics: DefaultMaxDiagnostics,
 	}
 	for _, path := range stack {
 		cfg, err := LoadFile(path)
@@ -126,7 +142,8 @@ func defaultRules() map[string]wrapperlint.Severity {
 // mergeFileInto applies a single FileConfig as a cascade override.
 // Replace semantics: any rule mentioned in the child sets the effective
 // severity for that rule, including the explicit "off" value which
-// removes the rule from the resolved set.
+// removes the rule from the resolved set. Scalar settings like
+// MaxDiagnostics use child-wins replace.
 func mergeFileInto(resolved *ResolvedConfig, child FileConfig) {
 	for ruleID, sev := range child.Rules {
 		if sev == "off" {
@@ -134,6 +151,9 @@ func mergeFileInto(resolved *ResolvedConfig, child FileConfig) {
 			continue
 		}
 		resolved.Rules[ruleID] = wrapperlint.Severity(sev)
+	}
+	if child.MaxDiagnostics != nil {
+		resolved.MaxDiagnostics = *child.MaxDiagnostics
 	}
 }
 

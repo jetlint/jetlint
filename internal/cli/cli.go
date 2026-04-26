@@ -52,6 +52,10 @@ Flags:
                        github (GitHub Actions inline PR annotations),
                        junit (CI dashboard XML),
                        rdjson (reviewdog inline PR comments).
+    --max-diagnostics <n>
+                       Cap on rendered diagnostics for the human format.
+                       0 disables truncation. Overrides .tsgolintrc.json's
+                       maxDiagnostics value. Default: 20 (matches biome).
 
 Exit codes:
     0    No diagnostics produced.
@@ -76,6 +80,10 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	helpFlag := fs.Bool("help", false, "print usage and exit")
 	formatFlag := fs.String("format", "human", "output format (human, json)")
 	filesFromFlag := fs.String("files-from", "", "read newline-separated target paths from this file (use - for stdin)")
+	// -1 is the sentinel for "not supplied"; the resolved config's
+	// value (or DefaultMaxDiagnostics when no config) wins in that
+	// case. 0 means "render every diagnostic".
+	maxDiagnosticsFlag := fs.Int("max-diagnostics", -1, "cap on rendered diagnostics for the human format (0 = unlimited; overrides config)")
 	daemonFlag := fs.String("daemon", "", "internal: run as the per-project daemon listening on the given socket")
 
 	if err := fs.Parse(args); err != nil {
@@ -115,7 +123,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		targets = append(targets, extra...)
 	}
 
-	return runLint(targets, stdout, stderr, formatter)
+	return runLint(targets, stdout, stderr, formatter, *maxDiagnosticsFlag)
 }
 
 // readFileList returns the newline-separated target paths from path. The
@@ -169,7 +177,7 @@ func runDaemon(socketPath string, stderr io.Writer) int {
 // runLint is the entry point for a normal CLI invocation. For v0.1 it
 // proves the daemon round-trip end-to-end and renders the (currently
 // always empty) diagnostic set via the chosen formatter.
-func runLint(targets []string, stdout, stderr io.Writer, formatter format.Formatter) int {
+func runLint(targets []string, stdout, stderr io.Writer, formatter format.Formatter, maxDiagnosticsFlag int) int {
 	if len(targets) == 0 {
 		emitToolError(stderr, formatter.Name(),
 			toolerr.New(toolerr.CodeNoTargets, "no targets provided"))
@@ -298,12 +306,18 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 	}
 
 	// The human formatter benefits from execution stats (files checked,
-	// duration) in its summary block. Other formatters don't carry that
-	// state, so we only enrich when the active formatter is Human.
+	// duration, max-diagnostics cap) in its summary block. Other
+	// formatters don't carry that state, so we only enrich when the
+	// active formatter is Human.
+	maxDiagnostics := resolved.MaxDiagnostics
+	if maxDiagnosticsFlag >= 0 {
+		maxDiagnostics = maxDiagnosticsFlag
+	}
 	if _, ok := formatter.(format.Human); ok {
 		formatter = format.Human{
-			FilesChecked: filesChecked,
-			Duration:     lintDuration,
+			FilesChecked:   filesChecked,
+			Duration:       lintDuration,
+			MaxDiagnostics: maxDiagnostics,
 		}
 	}
 

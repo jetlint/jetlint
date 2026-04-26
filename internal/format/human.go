@@ -43,6 +43,13 @@ type Human struct {
 	// Duration is the wall-clock time the lint pass took. When zero,
 	// it is omitted from the summary.
 	Duration time.Duration
+
+	// MaxDiagnostics is the maximum number of diagnostic blocks to
+	// render. Diagnostics beyond this count are summarised by a
+	// "Diagnostics not shown: N." line; the per-severity totals in
+	// the summary still reflect the full count. The zero value
+	// disables truncation entirely (every diagnostic is rendered).
+	MaxDiagnostics int
 }
 
 // Name returns "human".
@@ -86,8 +93,26 @@ func (h Human) Format(w io.Writer, diagnostics []Diagnostic) error {
 
 	srcCache := map[string][]string{}
 
+	// Count severities across the FULL list so the summary reflects
+	// totals rather than the (possibly truncated) rendered set.
 	errCount, warnCount := 0, 0
-	for i, d := range diagnostics {
+	for _, d := range diagnostics {
+		switch d.Severity {
+		case "error":
+			errCount++
+		case "warning":
+			warnCount++
+		}
+	}
+
+	rendered := diagnostics
+	notShown := 0
+	if h.MaxDiagnostics > 0 && len(diagnostics) > h.MaxDiagnostics {
+		rendered = diagnostics[:h.MaxDiagnostics]
+		notShown = len(diagnostics) - h.MaxDiagnostics
+	}
+
+	for i, d := range rendered {
 		if i > 0 {
 			if _, err := io.WriteString(w, "\n"); err != nil {
 				return err
@@ -96,15 +121,14 @@ func (h Human) Format(w io.Writer, diagnostics []Diagnostic) error {
 		if err := writeBlock(w, c, d, srcCache); err != nil {
 			return err
 		}
-		switch d.Severity {
-		case "error":
-			errCount++
-		case "warning":
-			warnCount++
+	}
+	if len(rendered) > 0 {
+		if _, err := io.WriteString(w, "\n"); err != nil {
+			return err
 		}
 	}
-	if len(diagnostics) > 0 {
-		if _, err := io.WriteString(w, "\n"); err != nil {
+	if notShown > 0 {
+		if _, err := fmt.Fprintf(w, "Diagnostics not shown: %d. Use --max-diagnostics to increase the limit.\n", notShown); err != nil {
 			return err
 		}
 	}

@@ -183,6 +183,107 @@ func TestHumanFormatter_SummaryListsErrorAndWarningCountsOnSeparateLines(t *test
 	}
 }
 
+func TestHumanFormatter_TruncatesRenderedDiagnosticsAtMaxDiagnostics(t *testing.T) {
+	path := writeSource(t, "main.ts", "a;\nb;\nc;\nd;\ne;\n")
+	var buf bytes.Buffer
+	d := []format.Diagnostic{
+		diag(path, 1, 1, "rule", "first"),
+		diag(path, 2, 1, "rule", "second"),
+		diag(path, 3, 1, "rule", "third"),
+		diag(path, 4, 1, "rule", "fourth"),
+		diag(path, 5, 1, "rule", "fifth"),
+	}
+	if err := (format.Human{MaxDiagnostics: 2}).Format(&buf, d); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	// Only the first two messages should appear in code-frame blocks.
+	for _, want := range []string{"first", "second"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("expected %q in truncated output, got:\n%s", want, out)
+		}
+	}
+	for _, banned := range []string{"third", "fourth", "fifth"} {
+		if strings.Contains(out, banned) {
+			t.Errorf("expected truncated output to omit %q, got:\n%s", banned, out)
+		}
+	}
+}
+
+func TestHumanFormatter_ReportsCountOfTruncatedDiagnostics(t *testing.T) {
+	path := writeSource(t, "main.ts", "x;\n")
+	var buf bytes.Buffer
+	d := make([]format.Diagnostic, 0, 5)
+	for i := 0; i < 5; i++ {
+		d = append(d, diag(path, 1, 1, "rule", "msg"))
+	}
+	if err := (format.Human{MaxDiagnostics: 2}).Format(&buf, d); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	// Biome surfaces a "Diagnostics not shown: N." line plus a hint
+	// pointing at the override flag. Match the count and the flag name.
+	if !strings.Contains(out, "Diagnostics not shown: 3") {
+		t.Errorf("expected 'Diagnostics not shown: 3' line, got:\n%s", out)
+	}
+	if !strings.Contains(out, "--max-diagnostics") {
+		t.Errorf("expected hint mentioning --max-diagnostics, got:\n%s", out)
+	}
+}
+
+func TestHumanFormatter_SummaryReflectsTotalNotTruncatedCount(t *testing.T) {
+	path := writeSource(t, "main.ts", "x;\n")
+	var buf bytes.Buffer
+	d := make([]format.Diagnostic, 0, 5)
+	for i := 0; i < 5; i++ {
+		d = append(d, diag(path, 1, 1, "rule", "msg"))
+	}
+	if err := (format.Human{MaxDiagnostics: 2}).Format(&buf, d); err != nil {
+		t.Fatal(err)
+	}
+	// All five errors must show up in the summary even though only two
+	// were rendered with code frames.
+	if !strings.Contains(buf.String(), "Found 5 errors.") {
+		t.Errorf("expected summary to count all 5 errors, got:\n%s", buf.String())
+	}
+}
+
+func TestHumanFormatter_MaxZeroDisablesTruncation(t *testing.T) {
+	path := writeSource(t, "main.ts", "x;\n")
+	var buf bytes.Buffer
+	d := []format.Diagnostic{
+		diag(path, 1, 1, "rule", "first"),
+		diag(path, 1, 1, "rule", "second"),
+		diag(path, 1, 1, "rule", "third"),
+	}
+	if err := (format.Human{MaxDiagnostics: 0}).Format(&buf, d); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	for _, want := range []string{"first", "second", "third"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("expected %q present when MaxDiagnostics=0, got:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "not shown") {
+		t.Errorf("expected no truncation notice when MaxDiagnostics=0, got:\n%s", out)
+	}
+}
+
+func TestHumanFormatter_MaxAboveCountIsNotTruncated(t *testing.T) {
+	path := writeSource(t, "main.ts", "x;\n")
+	var buf bytes.Buffer
+	d := []format.Diagnostic{
+		diag(path, 1, 1, "rule", "only"),
+	}
+	if err := (format.Human{MaxDiagnostics: 100}).Format(&buf, d); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(buf.String(), "not shown") {
+		t.Errorf("expected no truncation notice when below max, got:\n%s", buf.String())
+	}
+}
+
 func TestHumanFormatter_RendersSummaryAtEnd(t *testing.T) {
 	path := writeSource(t, "main.ts", "x;\ny;\n")
 	var buf bytes.Buffer

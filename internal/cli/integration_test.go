@@ -525,6 +525,48 @@ func TestCLI_DegradedModeWarningWhenProgramHasTypeErrors(t *testing.T) {
 	}
 }
 
+func TestCLI_MaxDiagnosticsFlagTruncatesHumanOutput(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	// A file with three floating-promise call sites generates three
+	// diagnostics; --max-diagnostics=1 must render only one block and
+	// surface a "Diagnostics not shown: 2." line.
+	for path, content := range map[string]string{
+		"tsconfig.json": `{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"}}`,
+		"main.ts": "" +
+			"async function a(): Promise<void> { return; }\n" +
+			"async function b(): Promise<void> { return; }\n" +
+			"async function c(): Promise<void> { return; }\n" +
+			"a();\nb();\nc();\n",
+	} {
+		if err := os.WriteFile(filepath.Join(dir, path), []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+
+	cmd := exec.Command(bin, "--max-diagnostics", "1", filepath.Join(dir, "main.ts"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_ = cmd.Run() // exit 1 expected; we only assert on output here
+
+	out := stdout.String()
+	if !strings.Contains(out, "Diagnostics not shown: 2") {
+		t.Errorf("expected 'Diagnostics not shown: 2' in output, got:\n%s", out)
+	}
+	if !strings.Contains(out, "Found 3 errors.") {
+		t.Errorf("expected 'Found 3 errors.' in summary (total, not truncated), got:\n%s", out)
+	}
+}
+
 func TestCLI_BrokenTsconfigEmitsProgramBuildFailedError(t *testing.T) {
 	bin := buildBinary(t)
 	rt := runtimeDir(t)
