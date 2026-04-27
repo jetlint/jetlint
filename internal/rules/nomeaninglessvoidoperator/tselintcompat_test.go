@@ -32,7 +32,11 @@ func TestNoMeaninglessVoidOperator_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := nomeaninglessvoidoperator.DefaultOptions()
+		if v, ok := c.Options["checkNever"].(bool); ok {
+			opts.CheckNever = v
+		}
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -46,6 +50,9 @@ func TestNoMeaninglessVoidOperator_TypescriptEslintCompatibility(t *testing.T) {
 			continue
 		}
 		failed++
+		valid := "invalid"
+		if c.Valid { valid = "valid" }
+		t.Logf("FAIL [%s #%d] exp=%d act=%d\n%s\n", valid, c.SourceIndex, expected, actual, c.Code)
 	}
 	total := passed + failed
 	pct := 0.0
@@ -55,7 +62,7 @@ func TestNoMeaninglessVoidOperator_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func runCase(t *testing.T, code string, opts nomeaninglessvoidoperator.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -68,7 +75,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{nomeaninglessvoidoperator.New()},
+		[]engine.Rule{nomeaninglessvoidoperator.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"no-meaningless-void-operator": wrapperlint.SeverityError},
 	)
 	count := 0

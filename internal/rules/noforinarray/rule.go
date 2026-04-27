@@ -47,6 +47,13 @@ func isArrayLikeWalking(t *wrapperchecker.Type, depth int) bool {
 	if t.IsArrayLikeType() {
 		return true
 	}
+	// HTMLCollection, NodeList, IArguments, and custom `{[k:number]:V; length}`
+	// types are array-like by index-signature even when not assignable to
+	// ReadonlyArray. Require BOTH numeric index AND `length` so plain
+	// numeric-keyed records aren't flagged.
+	if t.HasNumericIndex() && hasLengthProperty(t) {
+		return true
+	}
 	if t.IsUnion() {
 		for _, m := range t.UnionMembers() {
 			if isArrayLikeWalking(m, depth+1) {
@@ -63,6 +70,15 @@ func isArrayLikeWalking(t *wrapperchecker.Type, depth int) bool {
 	}
 	if c := t.BaseConstraint(); c != nil && c != t {
 		return isArrayLikeWalking(c, depth+1)
+	}
+	return false
+}
+
+func hasLengthProperty(t *wrapperchecker.Type) bool {
+	for _, name := range t.PropertyNames() {
+		if name == "length" {
+			return true
+		}
 	}
 	return false
 }

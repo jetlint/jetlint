@@ -48,9 +48,7 @@ func isNumericLike(t *wrapperchecker.Type, depth int) bool {
 	if t.IsAny() || t.IsNever() {
 		return true
 	}
-	// number | bigint
-	s := t.String()
-	if s == "number" || s == "bigint" {
+	if t.IsNumberLike() || t.IsBigIntLike() {
 		return true
 	}
 	if t.IsUnion() {
