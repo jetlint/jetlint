@@ -230,6 +230,13 @@ func (r *rule) matchesAllow(t *wrapperchecker.Type) bool {
 	if matchByName(t.SymbolName(), r.opts.Allow) || matchByName(t.AliasSymbolName(), r.opts.Allow) {
 		return true
 	}
+	// Walk inheritance — `class Derived extends Base` should match a
+	// `Base` allow entry.
+	for _, base := range t.BaseTypeNames() {
+		if matchByName(base, r.opts.Allow) {
+			return true
+		}
+	}
 	return false
 }
 
