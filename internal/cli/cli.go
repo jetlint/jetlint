@@ -401,6 +401,10 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 	if err != nil {
 		return nil, toolerr.New(toolerr.CodeConfigInvalid, err.Error())
 	}
+	nbtsOpts, err := nobasetotostring.OptionsFromJSON(ruleOptions["no-base-to-string"])
+	if err != nil {
+		return nil, toolerr.New(toolerr.CodeConfigInvalid, err.Error())
+	}
 	rejectIfOptionsPresent := func(ruleID string) *toolerr.Error {
 		if len(ruleOptions[ruleID]) == 0 {
 			return nil
@@ -412,7 +416,6 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		"no-misused-promises",
 		"strict-boolean-expressions",
 		"no-unsafe-assignment",
-		"no-base-to-string",
 	} {
 		if e := rejectIfOptionsPresent(ruleID); e != nil {
 			return nil, e
@@ -423,7 +426,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nomisusedpromises.New(),
 		strictbooleanexpressions.New(),
 		nounsafeassignment.New(),
-		nobasetotostring.New(),
+		nobasetotostring.NewWithOptions(nbtsOpts),
 	}, nil
 }
 
