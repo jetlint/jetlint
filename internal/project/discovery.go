@@ -23,12 +23,25 @@ func IsNotFound(err error) bool { return errors.Is(err, ErrNotFound) }
 // tsconfig.json is found, returning ErrNotFound if the walk reaches the
 // filesystem root without finding one.
 //
-// target may be a file or a directory. Symlinks are not followed; the result
-// is in terms of the literal directory ancestry as observed by the OS.
+// When target itself names a tsconfig file (any "tsconfig*.json"), that
+// file is returned directly — the user-supplied path wins over the
+// walk-up. This lets users select a specific child tsconfig (e.g.
+// tsconfig.app.json in a project-references setup) without our walk
+// silently substituting the project-references root.
+//
+// target may otherwise be a source file or a directory. Symlinks are
+// not followed; the result is in terms of the literal directory
+// ancestry as observed by the OS.
 func FindNearestTsconfig(target string) (string, error) {
 	abs, err := filepath.Abs(target)
 	if err != nil {
 		return "", fmt.Errorf("resolve %s: %w", target, err)
+	}
+
+	if isTsconfigFile(abs) {
+		if info, err := os.Stat(abs); err == nil && !info.IsDir() {
+			return abs, nil
+		}
 	}
 
 	// Start the walk from the directory containing target. If target is itself
@@ -50,4 +63,13 @@ func FindNearestTsconfig(target string) (string, error) {
 		}
 		dir = parent
 	}
+}
+
+// isTsconfigFile reports whether path's basename matches the tsconfig
+// naming convention (tsconfig.json, tsconfig.app.json, etc.).
+func isTsconfigFile(path string) bool {
+	base := filepath.Base(path)
+	return len(base) >= len("tsconfig.json") &&
+		base[:len("tsconfig.")] == "tsconfig." &&
+		filepath.Ext(base) == ".json"
 }
