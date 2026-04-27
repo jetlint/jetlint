@@ -238,6 +238,11 @@ func bodyUsesAwait(ctx *engine.Context, body *wrapperchecker.Node, fn *wrapperch
 				found = true
 				return false
 			}
+		case wrapperchecker.KindVariableDeclarationList:
+			if n.IsAwaitUsingDeclaration() {
+				found = true
+				return false
+			}
 		case wrapperchecker.KindYieldExpression:
 			if isAsyncYield(ctx, n) {
 				found = true
