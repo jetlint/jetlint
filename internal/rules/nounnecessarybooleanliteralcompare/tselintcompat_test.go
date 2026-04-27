@@ -32,7 +32,14 @@ func TestNoUnnecessaryBooleanLiteralCompare_TypescriptEslintCompatibility(t *tes
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := nounnecessarybooleanliteralcompare.DefaultOptions()
+		if v, ok := c.Options["allowComparingNullableBooleansToTrue"].(bool); ok {
+			opts.AllowComparingNullableBooleansToTrue = v
+		}
+		if v, ok := c.Options["allowComparingNullableBooleansToFalse"].(bool); ok {
+			opts.AllowComparingNullableBooleansToFalse = v
+		}
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -46,6 +53,9 @@ func TestNoUnnecessaryBooleanLiteralCompare_TypescriptEslintCompatibility(t *tes
 			continue
 		}
 		failed++
+		valid := "invalid"
+		if c.Valid { valid = "valid" }
+		t.Logf("FAIL [%s #%d] exp=%d act=%d hasOpts=%v\n%s\n", valid, c.SourceIndex, expected, actual, c.HasOptions, c.Code)
 	}
 	total := passed + failed
 	pct := 0.0
@@ -55,7 +65,7 @@ func TestNoUnnecessaryBooleanLiteralCompare_TypescriptEslintCompatibility(t *tes
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func runCase(t *testing.T, code string, opts nounnecessarybooleanliteralcompare.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -68,7 +78,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{nounnecessarybooleanliteralcompare.New()},
+		[]engine.Rule{nounnecessarybooleanliteralcompare.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"no-unnecessary-boolean-literal-compare": wrapperlint.SeverityError},
 	)
 	count := 0
