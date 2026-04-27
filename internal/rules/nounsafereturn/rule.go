@@ -1,6 +1,6 @@
-// Package nounsafereturn implements the no-unsafe-return rule: flag a
-// `return X` where X has type any but the function's declared return
-// type is more specific.
+// Package nounsafereturn implements the no-unsafe-return rule: flag
+// returning a value containing `any` from a function that's expected
+// to return something more specific.
 package nounsafereturn
 
 import (
@@ -18,54 +18,142 @@ func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindReturnStatement: visit,
+		wrapperchecker.KindReturnStatement: visitReturn,
+		wrapperchecker.KindArrowFunction:   visitArrow,
 	}
 }
 
-func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+func visitReturn(ctx *engine.Context, n *wrapperchecker.Node) {
 	expr := n.FirstChild()
 	if expr == nil {
 		return
 	}
+	fn := enclosingFunction(n)
+	checkReturnedValue(ctx, fn, expr)
+}
+
+func visitArrow(ctx *engine.Context, n *wrapperchecker.Node) {
+	body := n.FunctionBody()
+	if body == nil {
+		return
+	}
+	// Block-bodied arrows are handled by the ReturnStatement visitor.
+	if body.Kind() == wrapperchecker.KindBlock {
+		return
+	}
+	checkReturnedValue(ctx, n, body)
+}
+
+func checkReturnedValue(ctx *engine.Context, fn *wrapperchecker.Node, expr *wrapperchecker.Node) {
 	t := ctx.TypeOf(expr)
 	if t == nil {
 		return
 	}
-	if !typeContainsAny(t) {
+	declared := declaredReturnTypeFor(ctx, fn)
+	if fn != nil && wrapperchecker.HasAsyncModifier(fn) {
+		// Async: compare awaited types — `return value` in an async fn
+		// produces a Promise<awaited(value)>.
+		t = unwrapPromise(t)
+		if declared != nil {
+			declared = unwrapPromise(declared)
+		}
+	}
+	if declared != nil && (declared.IsAny() || declared.IsUnknown()) {
 		return
 	}
-	// If the function has an explicit return-type annotation, check
-	// whether returning any narrows from it. Otherwise (inferred),
-	// flag when the expression's type is `any` — upstream considers
-	// inferred-any returns unsafe even without an annotation.
-	fn := enclosingFunction(n)
-	if fn != nil {
-		if declared := declaredReturnType(ctx, fn); declared != nil {
-			if declared.IsAny() || declared.IsUnknown() {
-				return
-			}
-			// Async: declared is Promise<T>; check inner T.
-			if wrapperchecker.HasAsyncModifier(fn) {
-				if args := declared.TypeArguments(); len(args) == 1 {
-					if args[0].IsAny() || args[0].IsUnknown() {
-						return
-					}
-				}
-			}
+	if declared == nil {
+		// No declared return: flag deep `any` containment, except when
+		// the value is a Promise — passing through a Promise<any> does
+		// not itself leak any (the caller has to await to materialize
+		// it, at which point the inferred return type is Promise<any>).
+		if t.IsPromise() {
+			return
 		}
+		if typeContainsAnyDeep(t, 8) {
+			ctx.Report(expr, "returning an `any` value defeats the function's declared return type")
+		}
+		return
+	}
+	if !returnIsUnsafe(t, declared, 8) {
+		return
 	}
 	ctx.Report(expr, "returning an `any` value defeats the function's declared return type")
 }
 
-// typeContainsAny reports whether the type is `any` or any union
-// member is `any`.
-func typeContainsAny(t *wrapperchecker.Type) bool {
+// unwrapPromise recurses through Promise<…<X>> wrappers and returns
+// the innermost non-Promise type. Async returns flatten any number of
+// promise layers, so `Promise<Promise<X>>` resolves to `X`.
+func unwrapPromise(t *wrapperchecker.Type) *wrapperchecker.Type {
+	for i := 0; i < 8 && t != nil; i++ {
+		if !t.IsPromise() {
+			return t
+		}
+		args := t.TypeArguments()
+		if len(args) != 1 {
+			return t
+		}
+		t = args[0]
+	}
+	return t
+}
+
+// typeContainsAnyDeep reports whether the type or any of its nested
+// type arguments / union members is `any`.
+func typeContainsAnyDeep(t *wrapperchecker.Type, depth int) bool {
+	if t == nil || depth <= 0 {
+		return false
+	}
 	if t.IsAny() {
 		return true
 	}
 	if t.IsUnion() {
 		for _, m := range t.UnionMembers() {
-			if m.IsAny() {
+			if typeContainsAnyDeep(m, depth-1) {
+				return true
+			}
+		}
+	}
+	for _, a := range t.TypeArguments() {
+		if typeContainsAnyDeep(a, depth-1) {
+			return true
+		}
+	}
+	return false
+}
+
+// returnIsUnsafe reports whether returning an actual value of type
+// `actual` to a function expecting `declared` would smuggle an `any`
+// past the type system. The check recurses into matching generic type
+// arguments (Set<any> vs Set<string>) but doesn't unwrap when the
+// declared and actual types have different shapes.
+func returnIsUnsafe(actual, declared *wrapperchecker.Type, depth int) bool {
+	if actual == nil || depth <= 0 {
+		return false
+	}
+	if actual.IsAny() {
+		if declared != nil && (declared.IsAny() || declared.IsUnknown()) {
+			return false
+		}
+		return true
+	}
+	if actual.IsUnion() {
+		for _, m := range actual.UnionMembers() {
+			if returnIsUnsafe(m, declared, depth-1) {
+				return true
+			}
+		}
+		return false
+	}
+	if declared == nil {
+		return false
+	}
+	// Same generic type — compare type arguments positionally.
+	actualArgs := actual.TypeArguments()
+	declaredArgs := declared.TypeArguments()
+	if len(actualArgs) > 0 && len(actualArgs) == len(declaredArgs) &&
+		actual.SymbolName() == declared.SymbolName() && actual.SymbolName() != "" {
+		for i := range actualArgs {
+			if returnIsUnsafe(actualArgs[i], declaredArgs[i], depth-1) {
 				return true
 			}
 		}
@@ -86,12 +174,26 @@ func enclosingFunction(n *wrapperchecker.Node) *wrapperchecker.Node {
 	return nil
 }
 
-// declaredReturnType returns the function's explicit return-type
-// annotation as a Type, or nil for inferred returns.
-func declaredReturnType(ctx *engine.Context, fn *wrapperchecker.Node) *wrapperchecker.Type {
-	ann := fn.FunctionReturnTypeAnnotation()
-	if ann == nil {
+// declaredReturnTypeFor returns the function's declared return type
+// (annotation or contextual type), or nil for inferred returns with
+// no contextual constraint.
+func declaredReturnTypeFor(ctx *engine.Context, fn *wrapperchecker.Node) *wrapperchecker.Type {
+	if fn == nil {
 		return nil
 	}
-	return ctx.Checker().TypeFromTypeNode(ann)
+	if ann := fn.FunctionReturnTypeAnnotation(); ann != nil {
+		return ctx.Checker().TypeFromTypeNode(ann)
+	}
+	// Function expressions / arrows passed as args or assigned to
+	// typed slots get a contextual return type from the surrounding
+	// signature. Use the contextual type's call signatures.
+	if t := ctx.Checker().ContextualTypeOf(fn); t != nil {
+		for _, sig := range t.CallSignatures() {
+			rt := sig.ReturnType()
+			if rt != nil {
+				return rt
+			}
+		}
+	}
+	return nil
 }
