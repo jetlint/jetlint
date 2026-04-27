@@ -46,6 +46,12 @@ func TestNoUnsafeArgument_TypescriptEslintCompatibility(t *testing.T) {
 			continue
 		}
 		failed++
+		valid := "invalid"
+		if c.Valid {
+			valid = "valid"
+		}
+		t.Logf("FAIL [%s #%d] expected=%d actual=%d hasOptions=%v\n--- code ---\n%s\n--- end ---",
+			valid, c.SourceIndex, expected, actual, c.HasOptions, c.Code)
 	}
 	total := passed + failed
 	pct := 0.0

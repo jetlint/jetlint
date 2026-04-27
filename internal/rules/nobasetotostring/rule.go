@@ -184,24 +184,22 @@ func (r *rule) visitCallExpression(ctx *engine.Context, call *wrapperchecker.Nod
 	}
 }
 
-// calleeIsGlobalString reports whether the `String` identifier in the
-// call resolves to the ambient global. We treat anything declared in
-// the user's source (a function `String(...)`, a destructured import)
-// as shadowing — the call's behavior is the user's responsibility.
+// calleeIsGlobalString reports whether the `String(x)` call performs
+// the global String coercion. Returns false when the symbol or the
+// call's resolved signature comes from user source — we treat
+// shadowed `String` as the user's responsibility.
 func calleeIsGlobalString(ctx *engine.Context, callee *wrapperchecker.Node) bool {
 	sym := ctx.Checker().SymbolOf(callee)
-	if sym == nil {
-		// Couldn't resolve a symbol at all — be conservative and treat
-		// it as NOT global so we don't flag user-shadowed calls.
+	if sym == nil || sym.Name() != "String" {
 		return false
 	}
-	// The wrapper doesn't currently expose declaration source files.
-	// Heuristic: if the symbol's name is "String" and the apparent
-	// type's call signatures look like the global String constructor
-	// (returns string), we treat it as global. This is imperfect for
-	// users who write `function String(v): string`, but matches the
-	// dominant case.
-	if sym.Name() != "String" {
+	if callee.SymbolHasUserDeclaration(ctx.Checker()) {
+		return false
+	}
+	// tsgo can resolve a user-declared `function String() {}` to the
+	// global StringConstructor type even though the user clearly
+	// shadowed it. Detect the shadow at the source-file level.
+	if callee.FileHasTopLevelDeclaration("String") {
 		return false
 	}
 	t := ctx.TypeOf(callee)
@@ -209,11 +207,18 @@ func calleeIsGlobalString(ctx *engine.Context, callee *wrapperchecker.Node) bool
 		return false
 	}
 	for _, sig := range t.CallSignatures() {
-		if rt := sig.ReturnType(); rt != nil && rt.IsStringLike() {
-			return true
+		if sig.DeclarationIsUserSource() {
+			return false
+		}
+		rt := sig.ReturnType()
+		if rt == nil {
+			continue
+		}
+		if !rt.IsStringLike() {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
 // visitBinaryExpression handles `x + y` and `x += y` where one side is
@@ -318,6 +323,10 @@ func (r *rule) hasMeaningful(t *wrapperchecker.Type, depth int) bool {
 	if c := t.BaseConstraint(); c != nil && c != t {
 		return r.hasMeaningful(c, depth+1)
 	}
+	// Unconstrained type parameter: equivalent to unknown.
+	if t.IsTypeParameter() {
+		return !r.opts.CheckUnknown
+	}
 	return t.HasOwnToString()
 }
 
@@ -353,7 +362,11 @@ func (r *rule) typeOrAncestorIgnored(t *wrapperchecker.Type, depth int) bool {
 
 // arrayElementsHaveMeaningfulStringConversion returns true when a
 // receiver type used as `.join(...)` has elements that all render
-// meaningfully.
+// meaningfully. For intersections of arrays/tuples, an intersection's
+// element type is the intersection of corresponding positions —
+// meaning if ANY constituent has meaningful elements, the merged
+// element type does too (the meaningful toString lives on the
+// intersection).
 func (r *rule) arrayElementsHaveMeaningfulStringConversion(t *wrapperchecker.Type) bool {
 	if t.IsUnion() {
 		for _, m := range t.UnionMembers() {
@@ -365,11 +378,11 @@ func (r *rule) arrayElementsHaveMeaningfulStringConversion(t *wrapperchecker.Typ
 	}
 	if t.IsIntersection() {
 		for _, m := range t.IntersectionMembers() {
-			if !r.arrayElementsHaveMeaningfulStringConversion(m) {
-				return false
+			if r.arrayElementsHaveMeaningfulStringConversion(m) {
+				return true
 			}
 		}
-		return true
+		return false
 	}
 	if t.IsTupleType() {
 		for _, e := range t.TypeArguments() {
