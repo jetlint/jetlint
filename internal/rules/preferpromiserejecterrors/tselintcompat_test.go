@@ -32,7 +32,8 @@ func TestPreferPromiseRejectErrors_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := optsFromCase(c)
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -58,7 +59,24 @@ func TestPreferPromiseRejectErrors_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func optsFromCase(c tselintcompat.Case) preferpromiserejecterrors.Options {
+	opts := preferpromiserejecterrors.DefaultOptions()
+	if c.Options == nil {
+		return opts
+	}
+	if v, ok := c.Options["allowEmptyReject"].(bool); ok {
+		opts.AllowEmptyReject = v
+	}
+	if v, ok := c.Options["allowThrowingAny"].(bool); ok {
+		opts.AllowThrowingAny = v
+	}
+	if v, ok := c.Options["allowThrowingUnknown"].(bool); ok {
+		opts.AllowThrowingUnknown = v
+	}
+	return opts
+}
+
+func runCase(t *testing.T, code string, opts preferpromiserejecterrors.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -71,7 +89,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{preferpromiserejecterrors.New()},
+		[]engine.Rule{preferpromiserejecterrors.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"prefer-promise-reject-errors": wrapperlint.SeverityError},
 	)
 	count := 0

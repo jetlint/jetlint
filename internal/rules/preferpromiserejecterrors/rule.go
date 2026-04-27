@@ -3,50 +3,96 @@
 package preferpromiserejecterrors
 
 import (
+	"encoding/json"
+	"fmt"
+
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	"github.com/tommymorgan/tsgolint/internal/engine"
 )
 
 const id = "prefer-promise-reject-errors"
 
-func New() engine.Rule { return rule{} }
+// Options is the configurable surface of the rule.
+type Options struct {
+	AllowEmptyReject     bool
+	AllowThrowingAny     bool
+	AllowThrowingUnknown bool
+}
 
-type rule struct{}
+func DefaultOptions() Options {
+	// typescript-eslint defaults: any/unknown rejections are flagged
+	// unless the user opts in via options.
+	return Options{}
+}
 
-func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+func OptionsFromJSON(raw json.RawMessage) (Options, error) {
+	out := DefaultOptions()
+	if len(raw) == 0 || string(raw) == "null" {
+		return out, nil
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return Options{}, fmt.Errorf("prefer-promise-reject-errors options must be a JSON object: %w", err)
+	}
+	for key, val := range fields {
+		switch key {
+		case "allowEmptyReject":
+			if err := json.Unmarshal(val, &out.AllowEmptyReject); err != nil {
+				return Options{}, err
+			}
+		case "allowThrowingAny":
+			if err := json.Unmarshal(val, &out.AllowThrowingAny); err != nil {
+				return Options{}, err
+			}
+		case "allowThrowingUnknown":
+			if err := json.Unmarshal(val, &out.AllowThrowingUnknown); err != nil {
+				return Options{}, err
+			}
+		}
+	}
+	return out, nil
+}
 
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+func New() engine.Rule                          { return NewWithOptions(DefaultOptions()) }
+func NewWithOptions(opts Options) engine.Rule   { return &rule{opts: opts} }
+
+type rule struct{ opts Options }
+
+func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+
+func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindCallExpression: visit,
-		wrapperchecker.KindNewExpression:  visit,
+		wrapperchecker.KindCallExpression: r.visit,
+		wrapperchecker.KindNewExpression:  r.visit,
 	}
 }
 
-func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	callee := n.CalleeExpression()
 	if callee == nil {
 		return
 	}
+	callee = unwrapParens(callee)
 	args := n.CallArguments()
 
-	// Promise.reject(...) — propertyAccess on Promise (or alias).
 	if isPromiseRejectCallee(ctx, callee) {
-		reportRejectCall(ctx, n, args)
+		r.reportRejectCall(ctx, n, args)
 		return
 	}
-	// reject(X) inside `new Promise((resolve, reject) => …)` — the
-	// callee resolves to the executor's reject parameter.
 	if callee.Kind() == wrapperchecker.KindIdentifier && isExecutorRejectParam(ctx, callee) {
-		reportRejectCall(ctx, n, args)
+		r.reportRejectCall(ctx, n, args)
 	}
 }
 
-func reportRejectCall(ctx *engine.Context, n *wrapperchecker.Node, args []*wrapperchecker.Node) {
+func (r *rule) reportRejectCall(ctx *engine.Context, n *wrapperchecker.Node, args []*wrapperchecker.Node) {
 	if len(args) == 0 {
+		if r.opts.AllowEmptyReject {
+			return
+		}
 		ctx.Report(n, "Promise.reject() should be called with an Error instance")
 		return
 	}
-	checkArg(ctx, n, args[0])
+	r.checkArg(ctx, n, args[0])
 }
 
 // isPromiseRejectCallee reports whether the callee expression is a
@@ -81,12 +127,25 @@ func receiverIsPromise(ctx *engine.Context, recv *wrapperchecker.Node) bool {
 	if recv == nil {
 		return false
 	}
+	recv = unwrapParens(recv)
 	if recv.Kind() == wrapperchecker.KindIdentifier && recv.LiteralText() == "Promise" {
 		return true
 	}
-	// Aliased: `const foo = Promise; foo.reject(…)` — type's symbol is
-	// the PromiseConstructor.
+	// Aliased / inherited: `const foo = Promise; foo.reject(…)` and
+	// `class Foo extends Promise<…> {}; Foo.reject(…)`. The receiver's
+	// type carries the PromiseConstructor shape directly, in its symbol,
+	// or via a base-type name.
 	t := ctx.TypeOf(recv)
+	if t == nil {
+		return false
+	}
+	if typeIsPromiseConstructor(t) {
+		return true
+	}
+	return false
+}
+
+func typeIsPromiseConstructor(t *wrapperchecker.Type) bool {
 	if t == nil {
 		return false
 	}
@@ -94,11 +153,18 @@ func receiverIsPromise(ctx *engine.Context, recv *wrapperchecker.Node) bool {
 		return true
 	}
 	for _, base := range t.BaseTypeNames() {
-		if base == "PromiseConstructor" {
+		if base == "PromiseConstructor" || base == "Promise" {
 			return true
 		}
 	}
 	return false
+}
+
+func unwrapParens(n *wrapperchecker.Node) *wrapperchecker.Node {
+	for n != nil && n.Kind() == wrapperchecker.KindParenthesizedExpression {
+		n = n.FirstChild()
+	}
+	return n
 }
 
 // isExecutorRejectParam reports whether the identifier at callee
@@ -110,15 +176,14 @@ func isExecutorRejectParam(ctx *engine.Context, id *wrapperchecker.Node) bool {
 		return false
 	}
 	for _, decl := range sym.Declarations() {
-		if !isPromiseExecutorRejectParam(decl) {
-			continue
+		if isPromiseExecutorRejectParam(ctx, decl) {
+			return true
 		}
-		return true
 	}
 	return false
 }
 
-func isPromiseExecutorRejectParam(decl *wrapperchecker.Node) bool {
+func isPromiseExecutorRejectParam(ctx *engine.Context, decl *wrapperchecker.Node) bool {
 	if decl == nil || decl.Kind() != wrapperchecker.KindParameter {
 		return false
 	}
@@ -129,8 +194,6 @@ func isPromiseExecutorRejectParam(decl *wrapperchecker.Node) bool {
 	if fn.Kind() != wrapperchecker.KindArrowFunction && fn.Kind() != wrapperchecker.KindFunctionExpression {
 		return false
 	}
-	// Find this parameter's index in the function's parameter list. A
-	// reject is the second parameter (index 1).
 	idx := -1
 	pos := 0
 	declPos := decl.Pos()
@@ -147,21 +210,43 @@ func isPromiseExecutorRejectParam(decl *wrapperchecker.Node) bool {
 	if idx != 1 {
 		return false
 	}
-	// Function must be the first argument of `new Promise(...)`.
 	call := fn.Parent()
 	if call == nil || call.Kind() != wrapperchecker.KindNewExpression {
 		return false
 	}
 	callee := call.CalleeExpression()
-	if callee == nil || callee.Kind() != wrapperchecker.KindIdentifier {
+	if callee == nil {
 		return false
 	}
-	return callee.LiteralText() == "Promise"
+	callee = unwrapParens(callee)
+	if callee.Kind() == wrapperchecker.KindIdentifier && callee.LiteralText() == "Promise" {
+		return true
+	}
+	// `new foo.bar(...)` where foo.bar's type is PromiseConstructor.
+	if t := ctx.TypeOf(callee); typeIsPromiseConstructor(t) {
+		return true
+	}
+	return false
 }
 
-func checkArg(ctx *engine.Context, call, arg *wrapperchecker.Node) {
+
+func (r *rule) checkArg(ctx *engine.Context, call, arg *wrapperchecker.Node) {
 	t := ctx.TypeOf(arg)
 	if t == nil {
+		return
+	}
+	if t.IsAny() {
+		if r.opts.AllowThrowingAny {
+			return
+		}
+		ctx.Report(call, "Promise.reject() should be called with an Error instance")
+		return
+	}
+	if t.IsUnknown() {
+		if r.opts.AllowThrowingUnknown {
+			return
+		}
+		ctx.Report(call, "Promise.reject() should be called with an Error instance")
 		return
 	}
 	errorT := ctx.Checker().GlobalErrorType()
@@ -177,10 +262,12 @@ func isAcceptable(t, errorT *wrapperchecker.Type, depth int) bool {
 	if t == nil || depth > recursionLimit {
 		return true
 	}
-	if t.IsAny() {
+	if t.IsAny() || t.IsUnknown() {
+		// Caller has decided whether to allow these — past this point
+		// in the recursive walk we just ride along.
 		return true
 	}
-	if t.IsUnknown() || t.IsNever() {
+	if t.IsNever() {
 		return false
 	}
 	if t.IsUnion() {
