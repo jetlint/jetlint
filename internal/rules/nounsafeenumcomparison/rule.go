@@ -19,7 +19,75 @@ func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
 		wrapperchecker.KindBinaryExpression: visit,
+		wrapperchecker.KindSwitchStatement:  visitSwitch,
 	}
+}
+
+func visitSwitch(ctx *engine.Context, n *wrapperchecker.Node) {
+	disc := n.SwitchExpression()
+	if disc == nil {
+		return
+	}
+	discT := ctx.TypeOf(disc)
+	if discT == nil {
+		return
+	}
+	if isAlwaysAcceptable(discT) {
+		return
+	}
+	// Walk case clauses — flag when either side carries an enum and the
+	// other side doesn't share the enum's identity.
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		walkCaseClauses(ctx, c, discT)
+		return false
+	})
+}
+
+func walkCaseClauses(ctx *engine.Context, c *wrapperchecker.Node, discT *wrapperchecker.Type) {
+	c.ForEachChild(func(cc *wrapperchecker.Node) bool {
+		if cc.Kind() != wrapperchecker.KindCaseClause {
+			return false
+		}
+		expr := cc.CaseExpression()
+		if expr == nil {
+			return false
+		}
+		caseT := ctx.TypeOf(expr)
+		if caseT == nil {
+			return false
+		}
+		if isAlwaysAcceptable(caseT) || isAlwaysAcceptable(discT) {
+			return false
+		}
+		discHasEnum := containsEnum(discT)
+		caseHasEnum := containsEnum(caseT)
+		if !discHasEnum && !caseHasEnum {
+			return false
+		}
+		if discHasEnum && caseHasEnum {
+			if sameEnumIdentity(discT, caseT) {
+				return false
+			}
+			ctx.Report(cc, "case label is from a different enum than the switch discriminant")
+			return false
+		}
+		enumSide, otherSide := discT, caseT
+		if caseHasEnum {
+			enumSide, otherSide = caseT, discT
+		}
+		if otherCompatibleWithEnumUnion(otherSide, enumSide) {
+			return false
+		}
+		otherKind := classifyPrimitive(otherSide)
+		if otherKind == "" {
+			return false
+		}
+		if enumKind := classifyEnumValueKind(enumSide); enumKind != "" && otherKind != enumKind {
+			return false
+		}
+		ctx.Report(cc, "case label compares against a value of a different type than the switch discriminant's enum")
+		return false
+	})
 }
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -58,7 +126,44 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if otherCompatibleWithEnumUnion(otherSide, enumSide) {
 		return
 	}
+	otherKind := classifyPrimitive(otherSide)
+	if otherKind == "" {
+		// Object / function / other non-primitive types can never equal
+		// an enum value at runtime — the comparison is dead, not unsafe.
+		return
+	}
+	if enumKind := classifyEnumValueKind(enumSide); enumKind != "" && otherKind != enumKind {
+		// Different primitive kinds — same reasoning.
+		return
+	}
 	ctx.Report(n, "comparing an enum to a non-enum value; either use the enum's member or compare two enums of the same type")
+}
+
+// classifyEnumValueKind reports whether the enum's underlying value
+// type is "string" or "number" (or "" if neither/mixed).
+func classifyEnumValueKind(t *wrapperchecker.Type) string {
+	var kinds []string
+	for _, m := range t.UnionMembers() {
+		if !m.IsEnumLike() {
+			continue
+		}
+		switch {
+		case m.IsStringLike():
+			kinds = append(kinds, "string")
+		case m.IsNumberLike():
+			kinds = append(kinds, "number")
+		}
+	}
+	if len(kinds) == 0 {
+		return ""
+	}
+	first := kinds[0]
+	for _, k := range kinds[1:] {
+		if k != first {
+			return ""
+		}
+	}
+	return first
 }
 
 func isComparison(op wrapperchecker.Kind) bool {
@@ -185,6 +290,14 @@ func classifyPrimitive(t *wrapperchecker.Type) string {
 			}
 		}
 		return seen
+	}
+	if t.IsIntersection() {
+		// `number & {}` (branded primitive) — pick any primitive member.
+		for _, m := range t.IntersectionMembers() {
+			if c := classifyPrimitive(m); c != "" {
+				return c
+			}
+		}
 	}
 	return ""
 }
