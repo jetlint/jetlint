@@ -32,7 +32,7 @@ func TestOnlyThrowError_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		actual, runErr := runCase(t, c.Code, optionsFromCase(c))
 		if runErr != nil {
 			failed++
 			continue
@@ -46,6 +46,9 @@ func TestOnlyThrowError_TypescriptEslintCompatibility(t *testing.T) {
 			continue
 		}
 		failed++
+		valid := "invalid"
+		if c.Valid { valid = "valid" }
+		t.Logf("FAIL [%s #%d] expected=%d actual=%d hasOptions=%v\n--- code ---\n%s\n--- end ---", valid, c.SourceIndex, expected, actual, c.HasOptions, c.Code)
 	}
 	total := passed + failed
 	pct := 0.0
@@ -55,7 +58,42 @@ func TestOnlyThrowError_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func optionsFromCase(c tselintcompat.Case) onlythrowerror.Options {
+	opts := onlythrowerror.DefaultOptions()
+	if c.Options == nil {
+		return opts
+	}
+	if v, ok := c.Options["allowThrowingAny"].(bool); ok {
+		opts.AllowThrowingAny = v
+	}
+	if v, ok := c.Options["allowThrowingUnknown"].(bool); ok {
+		opts.AllowThrowingUnknown = v
+	}
+	if v, ok := c.Options["allowRethrowing"].(bool); ok {
+		opts.AllowRethrowing = v
+	}
+	if arr, ok := c.Options["allow"].([]any); ok {
+		out := make([]onlythrowerror.TypeMatcher, 0, len(arr))
+		for _, e := range arr {
+			switch x := e.(type) {
+			case string:
+				if x != "" {
+					out = append(out, onlythrowerror.TypeMatcher{Name: x})
+				}
+			case map[string]any:
+				from, _ := x["from"].(string)
+				name, _ := x["name"].(string)
+				if name != "" {
+					out = append(out, onlythrowerror.TypeMatcher{From: from, Name: name})
+				}
+			}
+		}
+		opts.Allow = out
+	}
+	return opts
+}
+
+func runCase(t *testing.T, code string, opts onlythrowerror.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -68,7 +106,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{onlythrowerror.New()},
+		[]engine.Rule{onlythrowerror.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"only-throw-error": wrapperlint.SeverityError},
 	)
 	count := 0
