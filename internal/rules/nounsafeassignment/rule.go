@@ -1,8 +1,7 @@
 // Package nounsafeassignment implements the no-unsafe-assignment rule:
-// flag variable declarations whose initialiser is typed `any` but whose
-// declared (or inferred-via-annotation) target type is more specific.
-// This catches the common pattern where an `any` value is silently
-// laundered into a typed variable, defeating the type checker.
+// flag where an `any` value is laundered into a more-specific typed
+// slot — variable declarations, assignment expressions, object
+// literal property values, and array elements.
 package nounsafeassignment
 
 import (
@@ -12,7 +11,6 @@ import (
 
 const id = "no-unsafe-assignment"
 
-// New constructs a fresh rule instance.
 func New() engine.Rule { return rule{} }
 
 type rule struct{}
@@ -22,68 +20,155 @@ func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
 		wrapperchecker.KindVariableDeclaration: visitVariableDeclaration,
+		wrapperchecker.KindBinaryExpression:    visitBinary,
+		wrapperchecker.KindPropertyAssignment:  visitPropertyAssignment,
+		wrapperchecker.KindParameter:           visitParameter,
+		wrapperchecker.KindPropertyDeclaration: visitPropertyDeclaration,
 	}
+}
+
+func visitParameter(ctx *engine.Context, n *wrapperchecker.Node) {
+	init := n.ParameterInitializer()
+	if init == nil {
+		return
+	}
+	rhs := ctx.TypeOf(init)
+	lhs := lhsFromParameterAnnotation(ctx, n)
+	check(ctx, init, rhs, lhs)
+}
+
+func visitPropertyDeclaration(ctx *engine.Context, n *wrapperchecker.Node) {
+	init := n.PropertyDeclarationInitializer()
+	if init == nil {
+		return
+	}
+	rhs := ctx.TypeOf(init)
+	lhs := lhsFromPropertyAnnotation(ctx, n)
+	check(ctx, init, rhs, lhs)
+}
+
+// lhsFromParameterAnnotation returns the parameter's declared type
+// only when there's an explicit type annotation; an inferred any from
+// `(a = ...)` shouldn't suppress the rhs check.
+func lhsFromParameterAnnotation(ctx *engine.Context, n *wrapperchecker.Node) *wrapperchecker.Type {
+	annot := n.ParameterTypeAnnotation()
+	if annot == nil {
+		return nil
+	}
+	return ctx.Checker().TypeFromTypeNode(annot)
+}
+
+func lhsFromPropertyAnnotation(ctx *engine.Context, n *wrapperchecker.Node) *wrapperchecker.Type {
+	annot := n.PropertyDeclarationType()
+	if annot == nil {
+		return nil
+	}
+	return ctx.Checker().TypeFromTypeNode(annot)
 }
 
 func visitVariableDeclaration(ctx *engine.Context, n *wrapperchecker.Node) {
-	// VariableDeclaration's children are (in order): name, type? exclamation? initializer?
-	// We only care about declarations that have an initializer.
-	var name, initializer *wrapperchecker.Node
-	idx := 0
-	n.ForEachChild(func(c *wrapperchecker.Node) bool {
-		switch idx {
-		case 0:
-			name = c
-		default:
-			// The last child is the initializer in the absence of a type
-			// node; record every child past the first and let the final
-			// one win.
-			initializer = c
-		}
-		idx++
-		return false
-	})
-	if initializer == nil || name == nil || initializer == name {
+	init := n.VariableDeclarationInitializer()
+	if init == nil {
 		return
 	}
-
-	// If the initializer is also a TypeNode (for declarations that have
-	// a type annotation but no initializer), there's nothing to assign.
-	if isTypeNode(initializer) {
+	rhs := ctx.TypeOf(init)
+	if rhs == nil {
 		return
 	}
-
-	rhsType := ctx.TypeOf(initializer)
-	if rhsType == nil || !rhsType.IsAny() {
-		return
+	annot := n.VariableDeclarationType()
+	var lhs *wrapperchecker.Type
+	if annot != nil {
+		lhs = ctx.Checker().TypeFromTypeNode(annot)
 	}
-	lhsType := ctx.TypeOf(name)
-	if lhsType == nil || lhsType.IsAny() || lhsType.IsUnknown() {
-		// Both sides any/unknown: no information is being lost.
-		return
-	}
-	ctx.Report(initializer,
-		"unsafe assignment of an `any` value to a more specific declared type")
+	check(ctx, init, rhs, lhs)
 }
 
-func isTypeNode(n *wrapperchecker.Node) bool {
-	// Type nodes never carry runtime values; treating them as
-	// initializers would produce false positives. The kinds we already
-	// expose are non-type expressions, so anything outside that small
-	// known set is conservatively skipped.
-	switch n.Kind() {
-	case wrapperchecker.KindCallExpression,
-		wrapperchecker.KindIdentifier,
-		wrapperchecker.KindStringLiteral,
-		wrapperchecker.KindBinaryExpression,
-		wrapperchecker.KindPropertyAccessExpression,
-		wrapperchecker.KindTemplateExpression,
-		wrapperchecker.KindParenthesizedExpression,
-		wrapperchecker.KindAwaitExpression,
-		wrapperchecker.KindArrowFunction,
-		wrapperchecker.KindFunctionExpression,
-		wrapperchecker.KindConditionalExpression:
+func visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
+	if n.BinaryOperatorKind() != wrapperchecker.KindEqualsToken {
+		return
+	}
+	left := n.BinaryLeft()
+	right := n.BinaryRight()
+	if left == nil || right == nil {
+		return
+	}
+	rhs := ctx.TypeOf(right)
+	lhs := ctx.TypeOf(left)
+	check(ctx, right, rhs, lhs)
+}
+
+func visitPropertyAssignment(ctx *engine.Context, n *wrapperchecker.Node) {
+	init := n.PropertyInitializer()
+	if init == nil {
+		return
+	}
+	rhs := ctx.TypeOf(init)
+	lhs := ctx.Checker().ContextualTypeOf(init)
+	if lhs == nil {
+		return
+	}
+	check(ctx, init, rhs, lhs)
+}
+
+func check(ctx *engine.Context, src *wrapperchecker.Node, rhs, lhs *wrapperchecker.Type) {
+	if rhs == nil {
+		return
+	}
+	// `unknown` on the lhs is the explicit "I'll narrow later" escape
+	// hatch — assigning any to unknown isn't unsafe.
+	if lhs != nil && lhs.IsUnknown() {
+		return
+	}
+	if rhs.IsAny() {
+		// Don't flag when lhs is also any (no information lost).
+		if lhs != nil && lhs.IsAny() {
+			return
+		}
+		ctx.Report(src, "unsafe assignment of an `any` value")
+		return
+	}
+	if lhs == nil {
+		return
+	}
+	if lhs.IsAny() {
+		return
+	}
+	if assignmentIsUnsafe(rhs, lhs, 8) {
+		ctx.Report(src, "unsafe assignment of an `any` value to a more specific declared type")
+	}
+}
+
+// assignmentIsUnsafe reports whether the rhs smuggles `any` past the
+// declared lhs type. Bare any → flag. Generic shapes that match the
+// lhs in name and arity recurse into matching positions so
+// `Set<any>` to `Set<string>` flags via positional argument compare.
+func assignmentIsUnsafe(rhs, lhs *wrapperchecker.Type, depth int) bool {
+	if rhs == nil || depth <= 0 {
 		return false
+	}
+	if rhs.IsAny() {
+		if lhs.IsAny() || lhs.IsUnknown() {
+			return false
+		}
+		return true
+	}
+	if rhs.IsUnion() {
+		for _, m := range rhs.UnionMembers() {
+			if assignmentIsUnsafe(m, lhs, depth-1) {
+				return true
+			}
+		}
+		return false
+	}
+	rhsArgs := rhs.TypeArguments()
+	lhsArgs := lhs.TypeArguments()
+	if len(rhsArgs) > 0 && len(rhsArgs) == len(lhsArgs) &&
+		rhs.SymbolName() == lhs.SymbolName() && rhs.SymbolName() != "" {
+		for i := range rhsArgs {
+			if assignmentIsUnsafe(rhsArgs[i], lhsArgs[i], depth-1) {
+				return true
+			}
+		}
 	}
 	return false
 }
