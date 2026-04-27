@@ -405,6 +405,10 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 	if err != nil {
 		return nil, toolerr.New(toolerr.CodeConfigInvalid, err.Error())
 	}
+	nmpOpts, err := nomisusedpromises.OptionsFromJSON(ruleOptions["no-misused-promises"])
+	if err != nil {
+		return nil, toolerr.New(toolerr.CodeConfigInvalid, err.Error())
+	}
 	rejectIfOptionsPresent := func(ruleID string) *toolerr.Error {
 		if len(ruleOptions[ruleID]) == 0 {
 			return nil
@@ -413,7 +417,6 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 			fmt.Sprintf("rule %q does not accept options yet", ruleID))
 	}
 	for _, ruleID := range []string{
-		"no-misused-promises",
 		"strict-boolean-expressions",
 		"no-unsafe-assignment",
 	} {
@@ -423,7 +426,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 	}
 	return []engine.Rule{
 		nofloatingpromises.NewWithOptions(nfpOpts),
-		nomisusedpromises.New(),
+		nomisusedpromises.NewWithOptions(nmpOpts),
 		strictbooleanexpressions.New(),
 		nounsafeassignment.New(),
 		nobasetotostring.NewWithOptions(nbtsOpts),
