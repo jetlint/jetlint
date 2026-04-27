@@ -29,22 +29,134 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	}
 	args := n.CallArguments()
 
-	// Match Promise.reject(...) — callee is propertyAccess `Promise.reject`.
-	if callee.Kind() == wrapperchecker.KindPropertyAccessExpression &&
-		callee.PropertyAccessName() == "reject" {
-		if recv := callee.PropertyAccessReceiver(); recv != nil {
-			if recv.Kind() == wrapperchecker.KindIdentifier && recv.LiteralText() == "Promise" {
-				if len(args) == 0 {
-					ctx.Report(n, "Promise.reject() should be called with an Error instance")
-					return
-				}
-				checkArg(ctx, n, args[0])
-				return
-			}
+	// Promise.reject(...) — propertyAccess on Promise (or alias).
+	if isPromiseRejectCallee(ctx, callee) {
+		reportRejectCall(ctx, n, args)
+		return
+	}
+	// reject(X) inside `new Promise((resolve, reject) => …)` — the
+	// callee resolves to the executor's reject parameter.
+	if callee.Kind() == wrapperchecker.KindIdentifier && isExecutorRejectParam(ctx, callee) {
+		reportRejectCall(ctx, n, args)
+	}
+}
+
+func reportRejectCall(ctx *engine.Context, n *wrapperchecker.Node, args []*wrapperchecker.Node) {
+	if len(args) == 0 {
+		ctx.Report(n, "Promise.reject() should be called with an Error instance")
+		return
+	}
+	checkArg(ctx, n, args[0])
+}
+
+// isPromiseRejectCallee reports whether the callee expression is a
+// recognizable form of `Promise.reject`: direct property access,
+// optional-chained, computed `Promise['reject']`, or via an alias
+// like `const foo = Promise; foo.reject(…)`.
+func isPromiseRejectCallee(ctx *engine.Context, callee *wrapperchecker.Node) bool {
+	switch callee.Kind() {
+	case wrapperchecker.KindPropertyAccessExpression:
+		if callee.PropertyAccessName() != "reject" {
+			return false
+		}
+		return receiverIsPromise(ctx, callee.PropertyAccessReceiver())
+	case wrapperchecker.KindElementAccessExpression:
+		idx := callee.ElementAccessIndex()
+		if idx == nil {
+			return false
+		}
+		// `Promise['reject']` — index is a string literal.
+		if idx.Kind() != wrapperchecker.KindStringLiteral {
+			return false
+		}
+		if idx.LiteralText() != "reject" {
+			return false
+		}
+		return receiverIsPromise(ctx, callee.ElementAccessReceiver())
+	}
+	return false
+}
+
+func receiverIsPromise(ctx *engine.Context, recv *wrapperchecker.Node) bool {
+	if recv == nil {
+		return false
+	}
+	if recv.Kind() == wrapperchecker.KindIdentifier && recv.LiteralText() == "Promise" {
+		return true
+	}
+	// Aliased: `const foo = Promise; foo.reject(…)` — type's symbol is
+	// the PromiseConstructor.
+	t := ctx.TypeOf(recv)
+	if t == nil {
+		return false
+	}
+	if t.SymbolName() == "PromiseConstructor" {
+		return true
+	}
+	for _, base := range t.BaseTypeNames() {
+		if base == "PromiseConstructor" {
+			return true
 		}
 	}
-	// Also match `new Promise((resolve, reject) => reject(X))` — second
-	// callback param. Skipped for simplicity (rare in fixtures).
+	return false
+}
+
+// isExecutorRejectParam reports whether the identifier at callee
+// resolves to the second parameter of a Promise executor (the
+// `reject` slot in `new Promise((resolve, reject) => …)`).
+func isExecutorRejectParam(ctx *engine.Context, id *wrapperchecker.Node) bool {
+	sym := ctx.Checker().SymbolOf(id)
+	if sym == nil {
+		return false
+	}
+	for _, decl := range sym.Declarations() {
+		if !isPromiseExecutorRejectParam(decl) {
+			continue
+		}
+		return true
+	}
+	return false
+}
+
+func isPromiseExecutorRejectParam(decl *wrapperchecker.Node) bool {
+	if decl == nil || decl.Kind() != wrapperchecker.KindParameter {
+		return false
+	}
+	fn := decl.Parent()
+	if fn == nil {
+		return false
+	}
+	if fn.Kind() != wrapperchecker.KindArrowFunction && fn.Kind() != wrapperchecker.KindFunctionExpression {
+		return false
+	}
+	// Find this parameter's index in the function's parameter list. A
+	// reject is the second parameter (index 1).
+	idx := -1
+	pos := 0
+	declPos := decl.Pos()
+	fn.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() == wrapperchecker.KindParameter {
+			if c.Pos() == declPos {
+				idx = pos
+				return true
+			}
+			pos++
+		}
+		return false
+	})
+	if idx != 1 {
+		return false
+	}
+	// Function must be the first argument of `new Promise(...)`.
+	call := fn.Parent()
+	if call == nil || call.Kind() != wrapperchecker.KindNewExpression {
+		return false
+	}
+	callee := call.CalleeExpression()
+	if callee == nil || callee.Kind() != wrapperchecker.KindIdentifier {
+		return false
+	}
+	return callee.LiteralText() == "Promise"
 }
 
 func checkArg(ctx *engine.Context, call, arg *wrapperchecker.Node) {
