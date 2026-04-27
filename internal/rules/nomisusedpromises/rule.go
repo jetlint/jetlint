@@ -84,6 +84,10 @@ func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 		wrapperchecker.KindConditionalExpression: r.visitConditional,
 		wrapperchecker.KindBinaryExpression:      r.visitBinaryExpression,
 		wrapperchecker.KindPrefixUnaryExpression: r.visitPrefixUnary,
+		wrapperchecker.KindVariableDeclaration:        r.visitVariableDeclaration,
+		wrapperchecker.KindPropertyAssignment:         r.visitPropertyAssignment,
+		wrapperchecker.KindShorthandPropertyAssignment: r.visitShorthandProperty,
+		wrapperchecker.KindMethodDeclaration:          r.visitMethodDeclaration,
 		wrapperchecker.KindSpreadElement:         r.visitSpreadElement,
 		wrapperchecker.KindSpreadAssignment:      r.visitSpreadElement,
 	}
@@ -141,12 +145,19 @@ func returnsPromise(ctx *engine.Context, n *wrapperchecker.Node) bool {
 
 func allCallSignaturesExpectVoid(t *wrapperchecker.Type) bool {
 	if t.IsUnion() {
+		anyVoidCallable := false
 		for _, m := range t.UnionMembers() {
+			// Skip nullable members — `() => void | undefined` still
+			// requires a void-returning callable on the value side.
+			if m.IsNullOrUndefined() {
+				continue
+			}
 			if !allCallSignaturesExpectVoid(m) {
 				return false
 			}
+			anyVoidCallable = true
 		}
-		return true
+		return anyVoidCallable
 	}
 	sigs := t.CallSignatures()
 	if len(sigs) == 0 {
@@ -187,16 +198,142 @@ func (r *rule) visitForStatement(ctx *engine.Context, n *wrapperchecker.Node) {
 }
 
 func (r *rule) visitBinaryExpression(ctx *engine.Context, n *wrapperchecker.Node) {
-	if !r.opts.ChecksConditionals {
+	// Catch assignments to void-returning function-typed targets.
+	if r.opts.ChecksVoidReturn && n.BinaryOperatorKind() == wrapperchecker.KindEqualsToken {
+		left := n.BinaryLeft()
+		right := n.BinaryRight()
+		if left == nil || right == nil {
+			return
+		}
+		if !returnsPromise(ctx, right) {
+			return
+		}
+		t := ctx.TypeOf(left)
+		if t != nil && allCallSignaturesExpectVoid(t) {
+			ctx.Report(right, msgVoidCallback)
+		}
+	}
+}
+
+func (r *rule) visitVariableDeclaration(ctx *engine.Context, n *wrapperchecker.Node) {
+	if !r.opts.ChecksVoidReturn {
 		return
 	}
-	switch n.BinaryOperatorKind() {
-	case wrapperchecker.KindBarBarToken,
-		wrapperchecker.KindAmpersandAmpersandToken,
-		wrapperchecker.KindQuestionQuestionToken:
-		if left := n.BinaryLeft(); left != nil {
-			checkPromiseInTest(ctx, left)
+	init := n.VariableDeclarationInitializer()
+	if init == nil {
+		return
+	}
+	if !returnsPromise(ctx, init) {
+		return
+	}
+	annot := n.VariableDeclarationType()
+	if annot == nil {
+		return
+	}
+	t := ctx.Checker().TypeFromTypeNode(annot)
+	if t == nil {
+		return
+	}
+	if allCallSignaturesExpectVoid(t) {
+		ctx.Report(init, msgVoidCallback)
+	}
+}
+
+func (r *rule) visitShorthandProperty(ctx *engine.Context, n *wrapperchecker.Node) {
+	if !r.opts.ChecksVoidReturn {
+		return
+	}
+	// In `{ f }`, the value expression is the same identifier `f` —
+	// the contextual type is what the surrounding object type expects.
+	id := n.FirstChild()
+	if id == nil {
+		return
+	}
+	t := ctx.TypeOf(id)
+	if t == nil {
+		return
+	}
+	if !returnTypeIsPromise(t) {
+		return
+	}
+	expected := ctx.Checker().ContextualTypeOf(id)
+	if expected == nil {
+		return
+	}
+	if allCallSignaturesExpectVoid(expected) {
+		ctx.Report(n, msgVoidCallback)
+	}
+}
+
+func (r *rule) visitMethodDeclaration(ctx *engine.Context, n *wrapperchecker.Node) {
+	if !r.opts.ChecksVoidReturn {
+		return
+	}
+	// Object-literal method `{ async f() {} }`: the method's own type
+	// is async/promise-returning; the contextual type is the surrounding
+	// object's expected member type. (Class methods are handled
+	// separately via heritage-clause analysis.)
+	parent := n.Parent()
+	if parent == nil || parent.Kind() != wrapperchecker.KindObjectLiteralExpression {
+		return
+	}
+	if !wrapperchecker.IsAsyncFunction(n) && !methodReturnsPromise(ctx, n) {
+		return
+	}
+	expected := ctx.Checker().ContextualTypeOf(n)
+	if expected == nil {
+		return
+	}
+	if allCallSignaturesExpectVoid(expected) {
+		ctx.Report(n, msgVoidCallback)
+	}
+}
+
+func methodReturnsPromise(ctx *engine.Context, n *wrapperchecker.Node) bool {
+	t := ctx.TypeOf(n)
+	if t == nil {
+		return false
+	}
+	return returnTypeIsPromise(t)
+}
+
+func returnTypeIsPromise(t *wrapperchecker.Type) bool {
+	for _, sig := range t.CallSignatures() {
+		rt := sig.ReturnType()
+		if rt == nil {
+			continue
 		}
+		if rt.IsPromise() {
+			return true
+		}
+		if rt.IsUnion() {
+			for _, m := range rt.UnionMembers() {
+				if m.IsPromise() {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func (r *rule) visitPropertyAssignment(ctx *engine.Context, n *wrapperchecker.Node) {
+	if !r.opts.ChecksVoidReturn {
+		return
+	}
+	init := n.PropertyInitializer()
+	if init == nil {
+		return
+	}
+	if !returnsPromise(ctx, init) {
+		return
+	}
+	expected := ctx.Checker().ContextualTypeOf(init)
+	if expected == nil {
+		return
+	}
+	if allCallSignaturesExpectVoid(expected) {
+		ctx.Report(init, msgVoidCallback)
 	}
 }
 
@@ -241,22 +378,56 @@ func (r *rule) visitSpreadElement(ctx *engine.Context, n *wrapperchecker.Node) {
 }
 
 func checkPromiseInTest(ctx *engine.Context, expr *wrapperchecker.Node) {
+	// `a || b` and `a && b` evaluate either operand depending on a's
+	// truthiness; testing the whole expression is testing each operand
+	// in turn. Descend so a promise on one side is flagged even when
+	// the other side is a non-promise. `??` doesn't have this property
+	// (LHS is tested for null/undefined, not truthiness), so check the
+	// whole expression type.
+	if expr.Kind() == wrapperchecker.KindBinaryExpression {
+		switch expr.BinaryOperatorKind() {
+		case wrapperchecker.KindBarBarToken,
+			wrapperchecker.KindAmpersandAmpersandToken:
+			if l := expr.BinaryLeft(); l != nil {
+				checkPromiseInTest(ctx, l)
+			}
+			if r := expr.BinaryRight(); r != nil {
+				checkPromiseInTest(ctx, r)
+			}
+			return
+		}
+	}
 	t := ctx.TypeOf(expr)
 	if t == nil {
 		return
 	}
-	if t.IsPromise() {
+	if isTestPromise(t) {
 		ctx.Report(expr, msgConditional)
-		return
 	}
+}
+
+// isTestPromise reports whether testing this type's truthiness is
+// almost certainly a misuse: the type is purely Promise, or a union
+// where every non-nullable member is Promise (so the test fires only
+// on a promise, never on a real value).
+func isTestPromise(t *wrapperchecker.Type) bool {
 	if t.IsUnion() {
+		hasPromise := false
 		for _, m := range t.UnionMembers() {
-			if m.IsPromise() {
-				ctx.Report(expr, msgConditional)
-				return
+			if m.IsNullOrUndefined() {
+				continue
 			}
+			if m.IsPromise() {
+				hasPromise = true
+				continue
+			}
+			// Any non-nullable, non-promise member means the test could
+			// legitimately be operating on a real value.
+			return false
 		}
+		return hasPromise
 	}
+	return t.IsPromise()
 }
 
 func conditionExpression(n *wrapperchecker.Node) *wrapperchecker.Node {

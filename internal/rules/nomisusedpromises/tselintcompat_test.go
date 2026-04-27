@@ -40,7 +40,8 @@ func TestNoMisusedPromises_TypescriptEslintCompatibility(t *testing.T) {
 
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := optsFromCase(c)
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			t.Logf("FAIL [%s #%d]: load error: %v", labelFor(c.Valid), c.SourceIndex, runErr)
@@ -73,7 +74,27 @@ func labelFor(valid bool) string {
 	return "invalid"
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func optsFromCase(c tselintcompat.Case) nomisusedpromises.Options {
+	opts := nomisusedpromises.DefaultOptions()
+	if c.Options == nil {
+		return opts
+	}
+	if v, ok := c.Options["checksConditionals"].(bool); ok {
+		opts.ChecksConditionals = v
+	}
+	if v, ok := c.Options["checksSpreads"].(bool); ok {
+		opts.ChecksSpreads = v
+	}
+	switch v := c.Options["checksVoidReturn"].(type) {
+	case bool:
+		opts.ChecksVoidReturn = v
+	case map[string]any:
+		opts.ChecksVoidReturn = true
+	}
+	return opts
+}
+
+func runCase(t *testing.T, code string, opts nomisusedpromises.Options) (int, error) {
 	t.Helper()
 	dir, err := os.MkdirTemp("/tmp", "tsg")
 	if err != nil {
@@ -93,7 +114,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{nomisusedpromises.New()},
+		[]engine.Rule{nomisusedpromises.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"no-misused-promises": wrapperlint.SeverityError},
 	)
 	count := 0
