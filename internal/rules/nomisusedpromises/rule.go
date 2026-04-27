@@ -269,24 +269,54 @@ func (r *rule) visitMethodDeclaration(ctx *engine.Context, n *wrapperchecker.Nod
 	if !r.opts.ChecksVoidReturn {
 		return
 	}
-	// Object-literal method `{ async f() {} }`: the method's own type
-	// is async/promise-returning; the contextual type is the surrounding
-	// object's expected member type. (Class methods are handled
-	// separately via heritage-clause analysis.)
-	parent := n.Parent()
-	if parent == nil || parent.Kind() != wrapperchecker.KindObjectLiteralExpression {
-		return
-	}
 	if !wrapperchecker.IsAsyncFunction(n) && !methodReturnsPromise(ctx, n) {
 		return
 	}
-	expected := ctx.Checker().ContextualTypeOf(n)
-	if expected == nil {
+	parent := n.Parent()
+	if parent == nil {
 		return
 	}
-	if allCallSignaturesExpectVoid(expected) {
-		ctx.Report(n, msgVoidCallback)
+	switch parent.Kind() {
+	case wrapperchecker.KindObjectLiteralExpression:
+		// `{ async f() {} }` — contextual type from surrounding annotation.
+		expected := ctx.Checker().ContextualTypeOf(n)
+		if expected == nil {
+			return
+		}
+		if allCallSignaturesExpectVoid(expected) {
+			ctx.Report(n, msgVoidCallback)
+		}
+	case wrapperchecker.KindClassDeclaration, wrapperchecker.KindClassExpression:
+		// `class X implements I { async f() {} }` — check each heritage
+		// type for a same-named property whose call signatures expect
+		// void.
+		methodName := methodName(n)
+		if methodName == "" {
+			return
+		}
+		for _, base := range parent.HeritageTypes(ctx.Checker()) {
+			expected := base.PropertyType(methodName)
+			if expected == nil {
+				continue
+			}
+			if allCallSignaturesExpectVoid(expected) {
+				ctx.Report(n, msgVoidCallback)
+				return
+			}
+		}
 	}
+}
+
+func methodName(n *wrapperchecker.Node) string {
+	var name string
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() == wrapperchecker.KindIdentifier {
+			name = c.LiteralText()
+			return true
+		}
+		return false
+	})
+	return name
 }
 
 func methodReturnsPromise(ctx *engine.Context, n *wrapperchecker.Node) bool {
