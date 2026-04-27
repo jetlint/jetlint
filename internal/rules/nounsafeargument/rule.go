@@ -27,8 +27,12 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	args := n.CallArguments()
 	for i, arg := range args {
+		if arg.Kind() == wrapperchecker.KindSpreadElement {
+			checkSpread(ctx, n, arg, i)
+			continue
+		}
 		argT := ctx.TypeOf(arg)
-		if argT == nil || !argT.IsAny() {
+		if argT == nil {
 			continue
 		}
 		paramT := ctx.Checker().ContextualTypeForArgument(n, i)
@@ -38,8 +42,93 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		if paramT.IsAny() || paramT.IsUnknown() {
 			continue
 		}
-		ctx.Report(arg, "passing an `any` value to a parameter with a more specific type")
+		if argT.IsAny() {
+			ctx.Report(arg, "passing an `any` value to a parameter with a more specific type")
+		}
 	}
+}
+
+func checkSpread(ctx *engine.Context, call *wrapperchecker.Node, spread *wrapperchecker.Node, baseIdx int) {
+	expr := spread.FirstChild()
+	if expr == nil {
+		return
+	}
+	t := ctx.TypeOf(expr)
+	if t == nil {
+		return
+	}
+	// `...x` where x is `any` (or `any[]`): each downstream parameter
+	// effectively receives an `any`. Flag once if any param is more
+	// specific than any.
+	if t.IsAny() || elementTypeIsAny(t) {
+		// Check at least one downstream non-any parameter exists.
+		paramT := ctx.Checker().ContextualTypeForArgument(call, baseIdx)
+		if paramT != nil && !paramT.IsAny() && !paramT.IsUnknown() {
+			ctx.Report(spread, "spreading an `any` value into parameters with more specific types")
+			return
+		}
+	}
+	// Tuple spread: walk element types against parameter slots.
+	if t.IsTupleType() {
+		args := t.TypeArguments()
+		for i, elemT := range args {
+			paramT := ctx.Checker().ContextualTypeForArgument(call, baseIdx+i)
+			if paramT == nil {
+				continue
+			}
+			if paramT.IsAny() || paramT.IsUnknown() {
+				continue
+			}
+			if argIsUnsafe(elemT, paramT, 8) {
+				ctx.Report(spread, "passing an `any` value through a spread to a parameter with a more specific type")
+				return
+			}
+		}
+	}
+}
+
+func elementTypeIsAny(t *wrapperchecker.Type) bool {
+	if elem := t.ArrayElementType(); elem != nil {
+		return elem.IsAny()
+	}
+	return false
+}
+
+// argIsUnsafe reports whether passing actual to a slot expecting
+// declared smuggles `any` through the type checker. Recurses into
+// matching generic type arguments (Set<any> vs Set<string>).
+func argIsUnsafe(actual, declared *wrapperchecker.Type, depth int) bool {
+	if actual == nil || depth <= 0 {
+		return false
+	}
+	if actual.IsAny() {
+		if declared != nil && (declared.IsAny() || declared.IsUnknown()) {
+			return false
+		}
+		return true
+	}
+	if actual.IsUnion() {
+		for _, m := range actual.UnionMembers() {
+			if argIsUnsafe(m, declared, depth-1) {
+				return true
+			}
+		}
+		return false
+	}
+	if declared == nil {
+		return false
+	}
+	actualArgs := actual.TypeArguments()
+	declaredArgs := declared.TypeArguments()
+	if len(actualArgs) > 0 && len(actualArgs) == len(declaredArgs) &&
+		actual.SymbolName() == declared.SymbolName() && actual.SymbolName() != "" {
+		for i := range actualArgs {
+			if argIsUnsafe(actualArgs[i], declaredArgs[i], depth-1) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // visitTagged handles `tag` template `${a}${b}` — each interpolation is
