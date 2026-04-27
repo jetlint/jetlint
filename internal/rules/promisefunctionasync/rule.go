@@ -29,37 +29,52 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if wrapperchecker.IsAsyncFunction(n) {
 		return
 	}
+	// Abstract methods don't have a body, so they can't be marked async.
+	if n.HasAbstractModifier() {
+		return
+	}
+	// Method declarations on interfaces/abstract classes have no body
+	// (signature only) — skip those too.
+	if n.FunctionBody() == nil && n.Kind() != wrapperchecker.KindArrowFunction {
+		return
+	}
 	t := ctx.TypeOf(n)
 	if t == nil {
 		return
 	}
-	for _, sig := range t.CallSignatures() {
+	sigs := t.CallSignatures()
+	if len(sigs) == 0 {
+		return
+	}
+	for _, sig := range sigs {
 		rt := sig.ReturnType()
 		if rt == nil {
-			continue
+			return
 		}
-		if isPromiseLike(rt, 0) {
-			ctx.Report(n, "function returns a Promise but is not declared `async`; mark async to make the return type explicit and enable await")
+		// Every overload must be purely Promise-returning. A union
+		// member that isn't a Promise (or any non-promise overload)
+		// means the function legitimately returns a non-promise on
+		// some path, so async would be wrong.
+		if !isAllPromise(rt, 0) {
 			return
 		}
 	}
+	ctx.Report(n, "function returns a Promise but is not declared `async`; mark async to make the return type explicit and enable await")
 }
 
 const recursionLimit = 16
 
-func isPromiseLike(t *wrapperchecker.Type, depth int) bool {
+func isAllPromise(t *wrapperchecker.Type, depth int) bool {
 	if t == nil || depth > recursionLimit {
 		return false
 	}
-	if t.IsPromise() {
-		return true
-	}
 	if t.IsUnion() {
 		for _, m := range t.UnionMembers() {
-			if isPromiseLike(m, depth+1) {
-				return true
+			if !isAllPromise(m, depth+1) {
+				return false
 			}
 		}
+		return true
 	}
-	return false
+	return t.IsPromise()
 }
