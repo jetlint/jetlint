@@ -55,11 +55,16 @@ func acceptable(t *wrapperchecker.Type, depth int) bool {
 	if t.IsAny() || t.IsUnknown() {
 		return true
 	}
-	if isAnyMemberThenable(t) {
+	// Unconstrained type parameter: equivalent to unknown — could be
+	// thenable.
+	if t.IsTypeParameter() {
+		if c := t.BaseConstraint(); c != nil {
+			return acceptable(c, depth+1)
+		}
 		return true
 	}
-	if c := t.BaseConstraint(); c != nil && c != t {
-		return acceptable(c, depth+1)
+	if isAnyMemberThenable(t) {
+		return true
 	}
 	return false
 }
