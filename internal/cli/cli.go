@@ -28,12 +28,68 @@ import (
 	"github.com/tommymorgan/tsgolint/internal/engine"
 	"github.com/tommymorgan/tsgolint/internal/format"
 	"github.com/tommymorgan/tsgolint/internal/project"
-	"github.com/tommymorgan/tsgolint/internal/rules/nobasetotostring"
-	"github.com/tommymorgan/tsgolint/internal/rules/nofloatingpromises"
-	"github.com/tommymorgan/tsgolint/internal/rules/nomisusedpromises"
 	"github.com/tommymorgan/tsgolint/internal/rules"
+	"github.com/tommymorgan/tsgolint/internal/rules/awaitthenable"
+	"github.com/tommymorgan/tsgolint/internal/rules/consistentreturn"
+	"github.com/tommymorgan/tsgolint/internal/rules/consistenttypeexports"
+	"github.com/tommymorgan/tsgolint/internal/rules/dotnotation"
+	"github.com/tommymorgan/tsgolint/internal/rules/namingconvention"
+	"github.com/tommymorgan/tsgolint/internal/rules/noarraydelete"
+	"github.com/tommymorgan/tsgolint/internal/rules/nobasetotostring"
+	"github.com/tommymorgan/tsgolint/internal/rules/noconfusingvoidexpression"
+	"github.com/tommymorgan/tsgolint/internal/rules/nodeprecated"
+	"github.com/tommymorgan/tsgolint/internal/rules/noduplicatetypeconstituents"
+	"github.com/tommymorgan/tsgolint/internal/rules/nofloatingpromises"
+	"github.com/tommymorgan/tsgolint/internal/rules/noforinarray"
+	"github.com/tommymorgan/tsgolint/internal/rules/noimpliedeval"
+	"github.com/tommymorgan/tsgolint/internal/rules/nomeaninglessvoidoperator"
+	"github.com/tommymorgan/tsgolint/internal/rules/nomisusedpromises"
+	"github.com/tommymorgan/tsgolint/internal/rules/nomisusedspread"
+	"github.com/tommymorgan/tsgolint/internal/rules/nomixedenums"
+	"github.com/tommymorgan/tsgolint/internal/rules/nonnullabletypeassertionstyle"
+	"github.com/tommymorgan/tsgolint/internal/rules/noredundanttypeconstituents"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarybooleanliteralcompare"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarycondition"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessaryqualifier"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarytemplateexpression"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarytypearguments"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarytypeassertion"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarytypeconversion"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarytypeparameters"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounsafeargument"
 	"github.com/tommymorgan/tsgolint/internal/rules/nounsafeassignment"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounsafecall"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounsafeenumcomparison"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounsafememberaccess"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounsafereturn"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounsafetypeassertion"
+	"github.com/tommymorgan/tsgolint/internal/rules/nounsafeunaryminus"
+	"github.com/tommymorgan/tsgolint/internal/rules/nouselessdefaultassignment"
+	"github.com/tommymorgan/tsgolint/internal/rules/onlythrowerror"
+	"github.com/tommymorgan/tsgolint/internal/rules/preferdestructuring"
+	"github.com/tommymorgan/tsgolint/internal/rules/preferfind"
+	"github.com/tommymorgan/tsgolint/internal/rules/preferincludes"
+	"github.com/tommymorgan/tsgolint/internal/rules/prefernullishcoalescing"
+	"github.com/tommymorgan/tsgolint/internal/rules/preferoptionalchain"
+	"github.com/tommymorgan/tsgolint/internal/rules/preferpromiserejecterrors"
+	"github.com/tommymorgan/tsgolint/internal/rules/preferreadonly"
+	"github.com/tommymorgan/tsgolint/internal/rules/preferreadonlyparametertypes"
+	"github.com/tommymorgan/tsgolint/internal/rules/preferreducetypeparameter"
+	"github.com/tommymorgan/tsgolint/internal/rules/preferregexpexec"
+	"github.com/tommymorgan/tsgolint/internal/rules/preferreturnthistype"
+	"github.com/tommymorgan/tsgolint/internal/rules/preferstringstartsendswith"
+	"github.com/tommymorgan/tsgolint/internal/rules/promisefunctionasync"
+	"github.com/tommymorgan/tsgolint/internal/rules/relatedgettersetterpairs"
+	"github.com/tommymorgan/tsgolint/internal/rules/requirearraysortcompare"
+	"github.com/tommymorgan/tsgolint/internal/rules/requireawait"
+	"github.com/tommymorgan/tsgolint/internal/rules/restrictplusoperands"
+	"github.com/tommymorgan/tsgolint/internal/rules/restricttemplateexpressions"
+	"github.com/tommymorgan/tsgolint/internal/rules/returnawait"
 	"github.com/tommymorgan/tsgolint/internal/rules/strictbooleanexpressions"
+	"github.com/tommymorgan/tsgolint/internal/rules/strictvoidreturn"
+	"github.com/tommymorgan/tsgolint/internal/rules/switchexhaustivenesscheck"
+	"github.com/tommymorgan/tsgolint/internal/rules/unboundmethod"
+	"github.com/tommymorgan/tsgolint/internal/rules/useunknownincatchcallbackvariable"
 	"github.com/tommymorgan/tsgolint/internal/toolerr"
 	"github.com/tommymorgan/tsgolint/internal/transport"
 )
@@ -416,20 +472,80 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		return toolerr.New(toolerr.CodeConfigInvalid,
 			fmt.Sprintf("rule %q does not accept options yet", ruleID))
 	}
-	for _, ruleID := range []string{
+	// Rules without options support: reject any user-supplied options
+	// at config-load time so typos are visible.
+	for _, ruleID := range append([]string{
 		"strict-boolean-expressions",
 		"no-unsafe-assignment",
-	} {
+	}, rules.AdditionalTypeAwareRuleIDs...) {
 		if e := rejectIfOptionsPresent(ruleID); e != nil {
 			return nil, e
 		}
 	}
 	return []engine.Rule{
+		// MVP rules with full options support.
 		nofloatingpromises.NewWithOptions(nfpOpts),
 		nomisusedpromises.NewWithOptions(nmpOpts),
 		strictbooleanexpressions.New(),
 		nounsafeassignment.New(),
 		nobasetotostring.NewWithOptions(nbtsOpts),
+		// Additional type-aware rules — default-off, opt-in via config.
+		awaitthenable.New(),
+		consistentreturn.New(),
+		consistenttypeexports.New(),
+		dotnotation.New(),
+		namingconvention.New(),
+		noarraydelete.New(),
+		noconfusingvoidexpression.New(),
+		nodeprecated.New(),
+		noduplicatetypeconstituents.New(),
+		noforinarray.New(),
+		noimpliedeval.New(),
+		nomeaninglessvoidoperator.New(),
+		nomisusedspread.New(),
+		nomixedenums.New(),
+		nonnullabletypeassertionstyle.New(),
+		noredundanttypeconstituents.New(),
+		nounnecessarybooleanliteralcompare.New(),
+		nounnecessarycondition.New(),
+		nounnecessaryqualifier.New(),
+		nounnecessarytemplateexpression.New(),
+		nounnecessarytypearguments.New(),
+		nounnecessarytypeassertion.New(),
+		nounnecessarytypeconversion.New(),
+		nounnecessarytypeparameters.New(),
+		nounsafeargument.New(),
+		nounsafecall.New(),
+		nounsafeenumcomparison.New(),
+		nounsafememberaccess.New(),
+		nounsafereturn.New(),
+		nounsafetypeassertion.New(),
+		nounsafeunaryminus.New(),
+		nouselessdefaultassignment.New(),
+		onlythrowerror.New(),
+		preferdestructuring.New(),
+		preferfind.New(),
+		preferincludes.New(),
+		prefernullishcoalescing.New(),
+		preferoptionalchain.New(),
+		preferpromiserejecterrors.New(),
+		preferreadonly.New(),
+		preferreadonlyparametertypes.New(),
+		preferreducetypeparameter.New(),
+		preferregexpexec.New(),
+		preferreturnthistype.New(),
+		preferstringstartsendswith.New(),
+		promisefunctionasync.New(),
+		relatedgettersetterpairs.New(),
+		requirearraysortcompare.New(),
+		requireawait.New(),
+		restrictplusoperands.New(),
+		restricttemplateexpressions.New(),
+		returnawait.New(),
+		strictvoidreturn.New(),
+		switchexhaustivenesscheck.New(),
+		unboundmethod.New(),
+		useunknownincatchcallbackvariable.New(),
 	}, nil
 }
 
