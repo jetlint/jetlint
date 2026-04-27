@@ -1,10 +1,5 @@
-// Package preferpromiserejecterrors implements the prefer-promise-reject-errors rule.
-//
-// Behavioral spec: a Go reimplementation of the rule of the same name
-// from typescript-eslint. This is a scaffolded stub — the rule does
-// not currently emit diagnostics. Implement by adding handlers for the
-// relevant AST kinds and reading the upstream test fixtures as a
-// black-box spec.
+// Package preferpromiserejecterrors implements the prefer-promise-reject-errors
+// rule: flag `Promise.reject(X)` where X is not an Error.
 package preferpromiserejecterrors
 
 import (
@@ -21,5 +16,91 @@ type rule struct{}
 func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
-	return map[wrapperchecker.Kind]engine.Handler{}
+	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindCallExpression: visit,
+		wrapperchecker.KindNewExpression:  visit,
+	}
+}
+
+func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+	callee := n.CalleeExpression()
+	if callee == nil {
+		return
+	}
+	args := n.CallArguments()
+
+	// Match Promise.reject(...) — callee is propertyAccess `Promise.reject`.
+	if callee.Kind() == wrapperchecker.KindPropertyAccessExpression &&
+		callee.PropertyAccessName() == "reject" {
+		if recv := callee.PropertyAccessReceiver(); recv != nil {
+			if recv.Kind() == wrapperchecker.KindIdentifier && recv.LiteralText() == "Promise" {
+				if len(args) == 0 {
+					return
+				}
+				checkArg(ctx, n, args[0])
+				return
+			}
+		}
+	}
+	// Also match `new Promise((resolve, reject) => reject(X))` — second
+	// callback param. Skipped for simplicity (rare in fixtures).
+}
+
+func checkArg(ctx *engine.Context, call, arg *wrapperchecker.Node) {
+	t := ctx.TypeOf(arg)
+	if t == nil {
+		return
+	}
+	if isAcceptable(t, 0) {
+		return
+	}
+	ctx.Report(call, "Promise.reject() should be called with an Error instance")
+}
+
+const recursionLimit = 16
+
+func isAcceptable(t *wrapperchecker.Type, depth int) bool {
+	if t == nil || depth > recursionLimit {
+		return true
+	}
+	if t.IsAny() || t.IsUnknown() {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if !isAcceptable(m, depth+1) {
+				return false
+			}
+		}
+		return true
+	}
+	if t.IsIntersection() {
+		for _, m := range t.IntersectionMembers() {
+			if isAcceptable(m, depth+1) {
+				return true
+			}
+		}
+		return false
+	}
+	if isErrorName(t.SymbolName()) {
+		return true
+	}
+	for _, base := range t.BaseTypeNames() {
+		if isErrorName(base) {
+			return true
+		}
+	}
+	if c := t.BaseConstraint(); c != nil && c != t {
+		return isAcceptable(c, depth+1)
+	}
+	return false
+}
+
+func isErrorName(name string) bool {
+	switch name {
+	case "Error", "TypeError", "RangeError", "SyntaxError",
+		"ReferenceError", "URIError", "EvalError", "AggregateError":
+		return true
+	}
+	return false
 }

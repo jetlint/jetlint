@@ -1,10 +1,5 @@
-// Package nounsafememberaccess implements the no-unsafe-member-access rule.
-//
-// Behavioral spec: a Go reimplementation of the rule of the same name
-// from typescript-eslint. This is a scaffolded stub — the rule does
-// not currently emit diagnostics. Implement by adding handlers for the
-// relevant AST kinds and reading the upstream test fixtures as a
-// black-box spec.
+// Package nounsafememberaccess implements the no-unsafe-member-access rule:
+// flag `x.foo` or `x[key]` where x has type any.
 package nounsafememberaccess
 
 import (
@@ -21,5 +16,22 @@ type rule struct{}
 func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
-	return map[wrapperchecker.Kind]engine.Handler{}
+	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindPropertyAccessExpression: visit,
+		wrapperchecker.KindElementAccessExpression:  visit,
+	}
+}
+
+func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+	recv := n.FirstChild()
+	if recv == nil {
+		return
+	}
+	t := ctx.TypeOf(recv)
+	if t == nil {
+		return
+	}
+	if t.IsAny() {
+		ctx.Report(n, "member access on a value of type `any` defeats the type checker")
+	}
 }

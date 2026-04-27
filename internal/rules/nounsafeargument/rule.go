@@ -1,10 +1,6 @@
-// Package nounsafeargument implements the no-unsafe-argument rule.
-//
-// Behavioral spec: a Go reimplementation of the rule of the same name
-// from typescript-eslint. This is a scaffolded stub — the rule does
-// not currently emit diagnostics. Implement by adding handlers for the
-// relevant AST kinds and reading the upstream test fixtures as a
-// black-box spec.
+// Package nounsafeargument implements the no-unsafe-argument rule:
+// flag `f(x)` where x has type any but the parameter expects something
+// more specific.
 package nounsafeargument
 
 import (
@@ -21,5 +17,26 @@ type rule struct{}
 func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
-	return map[wrapperchecker.Kind]engine.Handler{}
+	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindCallExpression: visit,
+		wrapperchecker.KindNewExpression:  visit,
+	}
+}
+
+func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+	args := n.CallArguments()
+	for i, arg := range args {
+		argT := ctx.TypeOf(arg)
+		if argT == nil || !argT.IsAny() {
+			continue
+		}
+		paramT := ctx.Checker().ContextualTypeForArgument(n, i)
+		if paramT == nil {
+			continue
+		}
+		if paramT.IsAny() || paramT.IsUnknown() {
+			continue
+		}
+		ctx.Report(arg, "passing an `any` value to a parameter with a more specific type")
+	}
 }

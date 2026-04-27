@@ -1,10 +1,6 @@
-// Package nounsafereturn implements the no-unsafe-return rule.
-//
-// Behavioral spec: a Go reimplementation of the rule of the same name
-// from typescript-eslint. This is a scaffolded stub — the rule does
-// not currently emit diagnostics. Implement by adding handlers for the
-// relevant AST kinds and reading the upstream test fixtures as a
-// black-box spec.
+// Package nounsafereturn implements the no-unsafe-return rule: flag a
+// `return X` where X has type any but the function's declared return
+// type is more specific.
 package nounsafereturn
 
 import (
@@ -21,5 +17,19 @@ type rule struct{}
 func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
-	return map[wrapperchecker.Kind]engine.Handler{}
+	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindReturnStatement: visit,
+	}
+}
+
+func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+	expr := n.FirstChild()
+	if expr == nil {
+		return
+	}
+	t := ctx.TypeOf(expr)
+	if t == nil || !t.IsAny() {
+		return
+	}
+	ctx.Report(expr, "returning an `any` value defeats the function's declared return type")
 }

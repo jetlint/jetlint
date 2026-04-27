@@ -1,10 +1,5 @@
-// Package nounsafecall implements the no-unsafe-call rule.
-//
-// Behavioral spec: a Go reimplementation of the rule of the same name
-// from typescript-eslint. This is a scaffolded stub — the rule does
-// not currently emit diagnostics. Implement by adding handlers for the
-// relevant AST kinds and reading the upstream test fixtures as a
-// black-box spec.
+// Package nounsafecall implements the no-unsafe-call rule: flag `x()`
+// where x has type `any`.
 package nounsafecall
 
 import (
@@ -21,5 +16,21 @@ type rule struct{}
 func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
-	return map[wrapperchecker.Kind]engine.Handler{}
+	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindCallExpression: visit,
+	}
+}
+
+func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+	callee := n.CalleeExpression()
+	if callee == nil {
+		return
+	}
+	t := ctx.TypeOf(callee)
+	if t == nil {
+		return
+	}
+	if t.IsAny() {
+		ctx.Report(callee, "calling a value of type `any` defeats the type checker")
+	}
 }

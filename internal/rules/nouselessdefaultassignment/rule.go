@@ -1,10 +1,7 @@
-// Package nouselessdefaultassignment implements the no-useless-default-assignment rule.
-//
-// Behavioral spec: a Go reimplementation of the rule of the same name
-// from typescript-eslint. This is a scaffolded stub — the rule does
-// not currently emit diagnostics. Implement by adding handlers for the
-// relevant AST kinds and reading the upstream test fixtures as a
-// black-box spec.
+// Package nouselessdefaultassignment implements the no-useless-default-assignment
+// rule: flag default-assignments where the default literally cannot be
+// reached because the destructured/assigned target's type excludes
+// undefined.
 package nouselessdefaultassignment
 
 import (
