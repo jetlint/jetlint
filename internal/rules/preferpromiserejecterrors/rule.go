@@ -35,6 +35,7 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		if recv := callee.PropertyAccessReceiver(); recv != nil {
 			if recv.Kind() == wrapperchecker.KindIdentifier && recv.LiteralText() == "Promise" {
 				if len(args) == 0 {
+					ctx.Report(n, "Promise.reject() should be called with an Error instance")
 					return
 				}
 				checkArg(ctx, n, args[0])
@@ -51,7 +52,8 @@ func checkArg(ctx *engine.Context, call, arg *wrapperchecker.Node) {
 	if t == nil {
 		return
 	}
-	if isAcceptable(t, 0) {
+	errorT := ctx.Checker().GlobalErrorType()
+	if isAcceptable(t, errorT, 0) {
 		return
 	}
 	ctx.Report(call, "Promise.reject() should be called with an Error instance")
@@ -59,16 +61,19 @@ func checkArg(ctx *engine.Context, call, arg *wrapperchecker.Node) {
 
 const recursionLimit = 16
 
-func isAcceptable(t *wrapperchecker.Type, depth int) bool {
+func isAcceptable(t, errorT *wrapperchecker.Type, depth int) bool {
 	if t == nil || depth > recursionLimit {
 		return true
 	}
-	if t.IsAny() || t.IsUnknown() {
+	if t.IsAny() {
 		return true
+	}
+	if t.IsUnknown() || t.IsNever() {
+		return false
 	}
 	if t.IsUnion() {
 		for _, m := range t.UnionMembers() {
-			if !isAcceptable(m, depth+1) {
+			if !isAcceptable(m, errorT, depth+1) {
 				return false
 			}
 		}
@@ -76,7 +81,7 @@ func isAcceptable(t *wrapperchecker.Type, depth int) bool {
 	}
 	if t.IsIntersection() {
 		for _, m := range t.IntersectionMembers() {
-			if isAcceptable(m, depth+1) {
+			if isAcceptable(m, errorT, depth+1) {
 				return true
 			}
 		}
@@ -90,8 +95,14 @@ func isAcceptable(t *wrapperchecker.Type, depth int) bool {
 			return true
 		}
 	}
+	// Structural assignability — catches Readonly<Error>, mapped
+	// wrappers, and other shapes whose symbol isn't Error but whose
+	// shape is.
+	if errorT != nil && t.IsAssignableTo(errorT) {
+		return true
+	}
 	if c := t.BaseConstraint(); c != nil && c != t {
-		return isAcceptable(c, depth+1)
+		return isAcceptable(c, errorT, depth+1)
 	}
 	return false
 }
