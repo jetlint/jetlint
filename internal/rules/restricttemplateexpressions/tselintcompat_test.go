@@ -32,7 +32,8 @@ func TestRestrictTemplateExpressions_TypescriptEslintCompatibility(t *testing.T)
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := optionsFromCase(c)
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -46,6 +47,9 @@ func TestRestrictTemplateExpressions_TypescriptEslintCompatibility(t *testing.T)
 			continue
 		}
 		failed++
+		valid := "invalid"
+		if c.Valid { valid = "valid" }
+		t.Logf("FAIL [%s #%d] exp=%d act=%d hasOpts=%v\n%s\n", valid, c.SourceIndex, expected, actual, c.HasOptions, c.Code)
 	}
 	total := passed + failed
 	pct := 0.0
@@ -55,7 +59,54 @@ func TestRestrictTemplateExpressions_TypescriptEslintCompatibility(t *testing.T)
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func optionsFromCase(c tselintcompat.Case) restricttemplateexpressions.Options {
+	opts := restricttemplateexpressions.DefaultOptions()
+	if c.Options == nil {
+		return opts
+	}
+	if v, ok := c.Options["allowNumber"].(bool); ok {
+		opts.AllowNumber = v
+	}
+	if v, ok := c.Options["allowBoolean"].(bool); ok {
+		opts.AllowBoolean = v
+	}
+	if v, ok := c.Options["allowAny"].(bool); ok {
+		opts.AllowAny = v
+	}
+	if v, ok := c.Options["allowNullish"].(bool); ok {
+		opts.AllowNullish = v
+	}
+	if v, ok := c.Options["allowRegExp"].(bool); ok {
+		opts.AllowRegExp = v
+	}
+	if v, ok := c.Options["allowNever"].(bool); ok {
+		opts.AllowNever = v
+	}
+	if v, ok := c.Options["allowArray"].(bool); ok {
+		opts.AllowArray = v
+	}
+	if arr, ok := c.Options["allow"].([]any); ok {
+		out := make([]restricttemplateexpressions.TypeMatcher, 0, len(arr))
+		for _, e := range arr {
+			switch x := e.(type) {
+			case string:
+				if x != "" {
+					out = append(out, restricttemplateexpressions.TypeMatcher{Name: x})
+				}
+			case map[string]any:
+				name, _ := x["name"].(string)
+				from, _ := x["from"].(string)
+				if name != "" {
+					out = append(out, restricttemplateexpressions.TypeMatcher{Name: name, From: from})
+				}
+			}
+		}
+		opts.Allow = out
+	}
+	return opts
+}
+
+func runCase(t *testing.T, code string, opts restricttemplateexpressions.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -68,7 +119,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{restricttemplateexpressions.New()},
+		[]engine.Rule{restricttemplateexpressions.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"restrict-template-expressions": wrapperlint.SeverityError},
 	)
 	count := 0
