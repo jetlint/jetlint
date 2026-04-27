@@ -24,40 +24,124 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 }
 
 func visitUnion(ctx *engine.Context, n *wrapperchecker.Node) {
-	// In a union: `any` and `unknown` make every other member redundant.
-	// Find the dominator and report each non-dominator member.
-	var dominatorIdx = -1
-	var dominatorName string
 	var members []*wrapperchecker.Node
 	n.ForEachChild(func(c *wrapperchecker.Node) bool {
 		members = append(members, c)
 		return false
 	})
+	types := make([]*wrapperchecker.Type, len(members))
 	for i, m := range members {
-		t := ctx.Checker().TypeFromTypeNode(m)
+		types[i] = ctx.Checker().TypeFromTypeNode(m)
+	}
+	// First: dominators (any / unknown) collapse the entire union.
+	for i, t := range types {
 		if t == nil {
 			continue
 		}
-		if t.IsAny() {
-			dominatorIdx = i
-			dominatorName = "any"
-			break
-		}
-		if t.IsUnknown() {
-			dominatorIdx = i
-			dominatorName = "unknown"
-			break
+		if t.IsAny() || t.IsUnknown() {
+			name := "unknown"
+			if t.IsAny() {
+				name = "any"
+			}
+			for j, m := range members {
+				if j == i {
+					continue
+				}
+				ctx.Report(m, "type constituent is overridden by `"+name+"` in this union")
+			}
+			return
 		}
 	}
-	if dominatorIdx < 0 {
-		return
+	// `never` is the union identity — every never is redundant in a
+	// regular position. Function return-type unions are exempt:
+	// `() => string | never` documents the function may throw.
+	if !isFunctionReturnTypeUnion(n) {
+		for i, t := range types {
+			if t == nil {
+				continue
+			}
+			if t.IsNever() {
+				ctx.Report(members[i], "`never` is redundant as a union constituent")
+			}
+		}
 	}
-	for i, m := range members {
-		if i == dominatorIdx {
+	// Literal types subsumed by a primitive sibling: `number | 0` →
+	// 0 is redundant.
+	primitives := primitiveKindsPresent(types)
+	for i, t := range types {
+		if t == nil {
 			continue
 		}
-		ctx.Report(m, "type constituent is overridden by `"+dominatorName+"` in this union")
+		if t.IsNever() {
+			continue
+		}
+		if k := literalPrimitiveKind(t); k != "" && primitives[k] {
+			ctx.Report(members[i], "literal type is redundant — its primitive parent already appears in the union")
+		}
 	}
+}
+
+// isFunctionReturnTypeUnion reports whether the union node sits in
+// the return-type position of a function-like declaration, walking
+// through parenthesized type wrappers.
+func isFunctionReturnTypeUnion(n *wrapperchecker.Node) bool {
+	parent := n.Parent()
+	for parent != nil {
+		switch parent.Kind() {
+		case wrapperchecker.KindFunctionType,
+			wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindCallSignature,
+			wrapperchecker.KindMethodSignature,
+			wrapperchecker.KindConstructorType:
+			return true
+		case wrapperchecker.KindParenthesizedType,
+			wrapperchecker.KindTypeLiteral:
+			parent = parent.Parent()
+			continue
+		}
+		return false
+	}
+	return false
+}
+
+func primitiveKindsPresent(ts []*wrapperchecker.Type) map[string]bool {
+	out := map[string]bool{}
+	for _, t := range ts {
+		if t == nil {
+			continue
+		}
+		// Only treat exact primitive types as the dominator — literal
+		// types must NOT match themselves.
+		if t.String() == "string" {
+			out["string"] = true
+		} else if t.String() == "number" {
+			out["number"] = true
+		} else if t.String() == "bigint" {
+			out["bigint"] = true
+		} else if t.String() == "boolean" {
+			out["boolean"] = true
+		}
+	}
+	return out
+}
+
+func literalPrimitiveKind(t *wrapperchecker.Type) string {
+	if t.IsStringLike() && t.String() != "string" {
+		return "string"
+	}
+	if t.IsNumberLike() && t.String() != "number" {
+		return "number"
+	}
+	if t.IsBigIntLike() && t.String() != "bigint" {
+		return "bigint"
+	}
+	if t.IsBooleanLike() && t.String() != "boolean" {
+		return "boolean"
+	}
+	return ""
 }
 
 func visitIntersection(ctx *engine.Context, n *wrapperchecker.Node) {
