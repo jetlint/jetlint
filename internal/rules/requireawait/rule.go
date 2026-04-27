@@ -97,7 +97,7 @@ func bodyReturnsPromise(ctx *engine.Context, body *wrapperchecker.Node, fn *wrap
 // iterator) or `yield <promise>` (yields a Promise the consumer
 // awaits). Both count as the function "using await semantics".
 func isAsyncYield(ctx *engine.Context, n *wrapperchecker.Node) bool {
-	op := n.FirstChild()
+	op := n.YieldOperand()
 	if op == nil {
 		return false
 	}
@@ -165,10 +165,12 @@ func matchAsync(t *wrapperchecker.Type) bool {
 			return true
 		}
 	}
-	if name := t.SymbolName(); containsSubstring(name, "AsyncIter") {
+	name := t.SymbolName()
+	if containsSubstring(name, "AsyncIter") || containsSubstring(name, "AsyncGenerator") {
 		return true
 	}
-	return containsSubstring(t.String(), "AsyncIter")
+	s := t.String()
+	return containsSubstring(s, "AsyncIter") || containsSubstring(s, "AsyncGenerator")
 }
 
 func containsSubstring(s, sub string) bool {
