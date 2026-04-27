@@ -15,7 +15,7 @@ import (
 const fixtureTsconfigBody = `{
   "compilerOptions": {
     "strict": true, "target": "es2022", "module": "esnext",
-    "moduleResolution": "bundler", "lib": ["es2022", "dom"],
+    "moduleResolution": "bundler", "lib": ["esnext", "dom"],
     "skipLibCheck": true
   },
   "include": ["case.ts"]
@@ -46,6 +46,9 @@ func TestRequireAwait_TypescriptEslintCompatibility(t *testing.T) {
 			continue
 		}
 		failed++
+		valid := "invalid"
+		if c.Valid { valid = "valid" }
+		t.Logf("FAIL [%s #%d] exp=%d act=%d\n%s\n", valid, c.SourceIndex, expected, actual, c.Code)
 	}
 	total := passed + failed
 	pct := 0.0
