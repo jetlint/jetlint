@@ -32,7 +32,8 @@ func TestDotNotation_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := optsFromCase(c)
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -46,6 +47,11 @@ func TestDotNotation_TypescriptEslintCompatibility(t *testing.T) {
 			continue
 		}
 		failed++
+		valid := "invalid"
+		if c.Valid {
+			valid = "valid"
+		}
+		t.Logf("FAIL [%s #%d] exp=%d act=%d\n%s\n", valid, c.SourceIndex, expected, actual, c.Code)
 	}
 	total := passed + failed
 	pct := 0.0
@@ -55,7 +61,30 @@ func TestDotNotation_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func optsFromCase(c tselintcompat.Case) dotnotation.Options {
+	opts := dotnotation.DefaultOptions()
+	if c.Options == nil {
+		return opts
+	}
+	if v, ok := c.Options["allowKeywords"].(bool); ok {
+		opts.AllowKeywords = v
+	}
+	if v, ok := c.Options["allowPattern"].(string); ok {
+		opts.AllowPattern = v
+	}
+	if v, ok := c.Options["allowPrivateClassPropertyAccess"].(bool); ok {
+		opts.AllowPrivateClassPropertyAccess = v
+	}
+	if v, ok := c.Options["allowProtectedClassPropertyAccess"].(bool); ok {
+		opts.AllowProtectedClassPropertyAccess = v
+	}
+	if v, ok := c.Options["allowIndexSignaturePropertyAccess"].(bool); ok {
+		opts.AllowIndexSignaturePropertyAccess = v
+	}
+	return opts
+}
+
+func runCase(t *testing.T, code string, opts dotnotation.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -68,7 +97,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{dotnotation.New()},
+		[]engine.Rule{dotnotation.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"dot-notation": wrapperlint.SeverityError},
 	)
 	count := 0
