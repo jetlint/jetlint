@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	// Imported to anchor the wrapper-API dependency: the binary statically
@@ -29,6 +30,7 @@ import (
 	"github.com/tommymorgan/tsgolint/internal/rules/nobasetotostring"
 	"github.com/tommymorgan/tsgolint/internal/rules/nofloatingpromises"
 	"github.com/tommymorgan/tsgolint/internal/rules/nomisusedpromises"
+	"github.com/tommymorgan/tsgolint/internal/rules"
 	"github.com/tommymorgan/tsgolint/internal/rules/nounsafeassignment"
 	"github.com/tommymorgan/tsgolint/internal/rules/strictbooleanexpressions"
 	"github.com/tommymorgan/tsgolint/internal/toolerr"
@@ -56,6 +58,10 @@ Flags:
                        Cap on rendered diagnostics for the human format.
                        0 disables truncation. Overrides .tsgolintrc.json's
                        maxDiagnostics value. Default: 20 (matches biome).
+    --only <rule-id>   Restrict execution to the named rule. Repeatable
+                       to allow a small set: --only no-floating-promises
+                       --only no-base-to-string. Useful for head-to-head
+                       comparisons against other linters.
 
 Exit codes:
     0    No diagnostics produced.
@@ -84,6 +90,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	// value (or DefaultMaxDiagnostics when no config) wins in that
 	// case. 0 means "render every diagnostic".
 	maxDiagnosticsFlag := fs.Int("max-diagnostics", -1, "cap on rendered diagnostics for the human format (0 = unlimited; overrides config)")
+	var onlyRules stringSliceFlag
+	fs.Var(&onlyRules, "only", "restrict execution to the named rule (repeatable: --only no-floating-promises --only no-base-to-string)")
 	daemonFlag := fs.String("daemon", "", "internal: run as the per-project daemon listening on the given socket")
 
 	if err := fs.Parse(args); err != nil {
@@ -123,7 +131,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		targets = append(targets, extra...)
 	}
 
-	return runLint(targets, stdout, stderr, formatter, *maxDiagnosticsFlag)
+	return runLint(targets, stdout, stderr, formatter, *maxDiagnosticsFlag, onlyRules)
 }
 
 // readFileList returns the newline-separated target paths from path. The
@@ -177,7 +185,25 @@ func runDaemon(socketPath string, stderr io.Writer) int {
 // runLint is the entry point for a normal CLI invocation. For v0.1 it
 // proves the daemon round-trip end-to-end and renders the (currently
 // always empty) diagnostic set via the chosen formatter.
-func runLint(targets []string, stdout, stderr io.Writer, formatter format.Formatter, maxDiagnosticsFlag int) int {
+// stringSliceFlag is a flag.Value implementation for --only and any
+// future repeated string flag. Each occurrence on the command line
+// appends to the slice; the value method returns a quoted joined
+// string so flag's default printout stays readable.
+type stringSliceFlag []string
+
+func (s *stringSliceFlag) String() string {
+	if s == nil {
+		return ""
+	}
+	return strings.Join(*s, ",")
+}
+
+func (s *stringSliceFlag) Set(value string) error {
+	*s = append(*s, value)
+	return nil
+}
+
+func runLint(targets []string, stdout, stderr io.Writer, formatter format.Formatter, maxDiagnosticsFlag int, onlyRules []string) int {
 	if len(targets) == 0 {
 		emitToolError(stderr, formatter.Name(),
 			toolerr.New(toolerr.CodeNoTargets, "no targets provided"))
@@ -284,6 +310,33 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 					"target file is not part of the discovered TypeScript program; ensure the file is included by tsconfig.json's include/files",
 					abs))
 		}
+	}
+
+	// Apply --only filtering: validate every named rule against the
+	// registry, then restrict the resolved severities map to just
+	// those rules. Unknown rules fail fast with a structured error.
+	if len(onlyRules) > 0 {
+		for _, ruleID := range onlyRules {
+			if !rules.IsKnown(ruleID) {
+				emitToolError(stderr, formatter.Name(),
+					toolerr.New(toolerr.CodeConfigUnknownRule,
+						fmt.Sprintf("unknown rule %q passed via --only (known rules: %v)", ruleID, rules.MVPRuleIDs)))
+				return 2
+			}
+		}
+		filtered := make(map[string]wrapperlint.Severity, len(onlyRules))
+		for _, ruleID := range onlyRules {
+			if sev, ok := resolved.Rules[ruleID]; ok {
+				filtered[ruleID] = sev
+			} else {
+				// Rule was disabled in config but explicitly requested
+				// via --only; honor the override at error severity so
+				// the user always sees the head-to-head comparison they
+				// asked for.
+				filtered[ruleID] = wrapperlint.SeverityError
+			}
+		}
+		resolved.Rules = filtered
 	}
 
 	eng := engine.New(activeRules(), resolved.Rules)

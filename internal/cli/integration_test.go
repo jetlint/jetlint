@@ -525,6 +525,140 @@ func TestCLI_DegradedModeWarningWhenProgramHasTypeErrors(t *testing.T) {
 	}
 }
 
+func TestCLI_OnlyFlagRestrictsToTheNamedRule(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	// Source produces a finding from BOTH no-floating-promises (the
+	// async call) AND no-base-to-string (the template literal). With
+	// --only=no-floating-promises, only the floating-promise diagnostic
+	// should appear.
+	for path, content := range map[string]string{
+		"tsconfig.json": `{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"}}`,
+		"main.ts": "" +
+			"async function fn(): Promise<void> { return; }\n" +
+			"const obj = { x: 1 };\n" +
+			"const msg = `${obj}`;\n" +
+			"fn();\n",
+	} {
+		if err := os.WriteFile(filepath.Join(dir, path), []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+
+	cmd := exec.Command(bin, "--only", "no-floating-promises", "--format", "json", filepath.Join(dir, "main.ts"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_ = cmd.Run()
+
+	var doc struct {
+		Diagnostics []map[string]any
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &doc); err != nil {
+		t.Fatalf("decode: %v\n%s", err, stdout.String())
+	}
+	for _, d := range doc.Diagnostics {
+		if d["ruleId"] != "no-floating-promises" {
+			t.Errorf("expected only no-floating-promises diagnostics with --only, got %v", d["ruleId"])
+		}
+	}
+	if len(doc.Diagnostics) == 0 {
+		t.Errorf("expected at least one no-floating-promises diagnostic, got none")
+	}
+}
+
+func TestCLI_OnlyFlagAcceptsMultipleValues(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	for path, content := range map[string]string{
+		"tsconfig.json": `{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"}}`,
+		"main.ts": "" +
+			"async function fn(): Promise<void> { return; }\n" +
+			"const obj = { x: 1 };\n" +
+			"const msg = `${obj}`;\n" +
+			"fn();\n",
+	} {
+		if err := os.WriteFile(filepath.Join(dir, path), []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+
+	// Repeated --only accumulates: both rules contribute findings,
+	// no other rules do.
+	cmd := exec.Command(bin,
+		"--only", "no-floating-promises",
+		"--only", "no-base-to-string",
+		"--format", "json",
+		filepath.Join(dir, "main.ts"),
+	)
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	out, _ := cmd.CombinedOutput()
+	var doc struct {
+		Diagnostics []map[string]any
+	}
+	if err := json.Unmarshal(out, &doc); err != nil {
+		t.Fatalf("decode: %v\n%s", err, out)
+	}
+	allowed := map[string]bool{
+		"no-floating-promises": true,
+		"no-base-to-string":    true,
+	}
+	for _, d := range doc.Diagnostics {
+		ruleID, _ := d["ruleId"].(string)
+		if !allowed[ruleID] {
+			t.Errorf("expected only the two requested rules with repeated --only, got %v", ruleID)
+		}
+	}
+}
+
+func TestCLI_OnlyFlagRejectsUnknownRule(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	for path, content := range map[string]string{
+		"tsconfig.json": `{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"}}`,
+		"main.ts":       "export {};\n",
+	} {
+		if err := os.WriteFile(filepath.Join(dir, path), []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+
+	cmd := exec.Command(bin, "--only", "made-up-rule", filepath.Join(dir, "main.ts"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	err = cmd.Run()
+	exitErr, _ := err.(*exec.ExitError)
+	if exitErr == nil || exitErr.ExitCode() != 2 {
+		t.Fatalf("expected exit 2 for unknown rule, got %v", err)
+	}
+	if !strings.Contains(stderr.String(), "made-up-rule") {
+		t.Errorf("expected stderr to name the unknown rule, got: %s", stderr.String())
+	}
+}
+
 func TestCLI_MaxDiagnosticsFlagTruncatesHumanOutput(t *testing.T) {
 	bin := buildBinary(t)
 	rt := runtimeDir(t)
