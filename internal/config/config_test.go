@@ -229,3 +229,76 @@ func TestResolveCascade_ChildLevelListReplacesParentLevelList(t *testing.T) {
 			got.Rules["no-misused-promises"])
 	}
 }
+
+func TestResolveCascade_RuleEntryArrayCarriesOptions(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, ".tsgolintrc.json"),
+		`{"rules": {"no-floating-promises": ["error", {"ignoreVoid": false}]}}`)
+	got, err := config.ResolveCascade(dir)
+	if err != nil {
+		t.Fatalf("ResolveCascade: %v", err)
+	}
+	if got.Rules["no-floating-promises"] != wrapperlint.SeverityError {
+		t.Errorf("expected severity 'error', got %q", got.Rules["no-floating-promises"])
+	}
+	rawOpts := got.RuleOptions["no-floating-promises"]
+	if len(rawOpts) == 0 {
+		t.Fatal("expected RuleOptions to carry the parsed options for no-floating-promises")
+	}
+	if string(rawOpts) != `{"ignoreVoid": false}` {
+		t.Errorf("unexpected raw options: %s", rawOpts)
+	}
+}
+
+func TestResolveCascade_ChildArrayShapeReplacesParentScalar(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, ".tsgolintrc.json"),
+		`{"rules": {"no-floating-promises": "warning"}}`)
+	child := filepath.Join(root, "child")
+	writeFile(t, filepath.Join(child, ".tsgolintrc.json"),
+		`{"rules": {"no-floating-promises": ["error", {"checkThenables": true}]}}`)
+	got, err := config.ResolveCascade(child)
+	if err != nil {
+		t.Fatalf("ResolveCascade: %v", err)
+	}
+	if got.Rules["no-floating-promises"] != wrapperlint.SeverityError {
+		t.Errorf("child severity should win; got %q", got.Rules["no-floating-promises"])
+	}
+	if string(got.RuleOptions["no-floating-promises"]) != `{"checkThenables": true}` {
+		t.Errorf("child options should win; got %s", got.RuleOptions["no-floating-promises"])
+	}
+}
+
+func TestResolveCascade_OffClearsParentOptions(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, ".tsgolintrc.json"),
+		`{"rules": {"no-floating-promises": ["error", {"ignoreVoid": false}]}}`)
+	child := filepath.Join(root, "child")
+	writeFile(t, filepath.Join(child, ".tsgolintrc.json"),
+		`{"rules": {"no-floating-promises": "off"}}`)
+	got, err := config.ResolveCascade(child)
+	if err != nil {
+		t.Fatalf("ResolveCascade: %v", err)
+	}
+	if _, present := got.Rules["no-floating-promises"]; present {
+		t.Error("rule should be off")
+	}
+	if _, present := got.RuleOptions["no-floating-promises"]; present {
+		t.Error("options should be cleared when rule is off'd")
+	}
+}
+
+func TestLoadFile_RejectsRuleEntryWithBadShape(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, ".tsgolintrc.json")
+	writeFile(t, path,
+		`{"rules": {"no-floating-promises": 42}}`)
+	_, err := config.LoadFile(path)
+	if err == nil {
+		t.Fatal("expected error for numeric rule entry")
+	}
+	var te *toolerr.Error
+	if !errors.As(err, &te) || te.Code != toolerr.CodeConfigInvalid {
+		t.Errorf("expected CodeConfigInvalid tool error, got %v", err)
+	}
+}

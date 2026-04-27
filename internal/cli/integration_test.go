@@ -812,3 +812,139 @@ func TestCLI_JSONModeOnCleanProjectEmitsValidJSON(t *testing.T) {
 		t.Errorf("expected empty diagnostics array, got: %v", got["diagnostics"])
 	}
 }
+
+// TestCLI_TsgolintrcOptionsTuneRuleBehavior verifies the full
+// .tsgolintrc.json -> resolved options -> rule construction path. We
+// configure no-floating-promises with `ignoreVoid: false`, which
+// should make `void promise;` flag (it would not under the default
+// `ignoreVoid: true`). A second invocation with `ignoreIIFE: true`
+// confirms an option that suppresses something that would otherwise
+// flag.
+func TestCLI_TsgolintrcOptionsTuneRuleBehavior(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	for path, content := range map[string]string{
+		"tsconfig.json": `{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"}}`,
+		// `void` of a promise — default ignoreVoid=true would suppress
+		// this; with ignoreVoid=false the rule must flag it.
+		"voiding.ts": "async function f() { return; }\nvoid f();\n",
+		// IIFE — default ignoreIIFE=false flags it; with ignoreIIFE=true
+		// the rule should suppress.
+		"iife.ts": "(async () => { return 1; })();\n",
+	} {
+		if err := os.WriteFile(filepath.Join(dir, path), []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+
+	rcPath := filepath.Join(dir, ".tsgolintrc.json")
+	runJSON := func(t *testing.T, target string) []map[string]any {
+		t.Helper()
+		cmd := exec.Command(bin, "--format", "json", filepath.Join(dir, target))
+		cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+		_ = cmd.Run() // exit code may be 1 (findings) or 0 (clean); both fine
+		var doc struct {
+			Diagnostics []map[string]any
+		}
+		if err := json.Unmarshal(stdout.Bytes(), &doc); err != nil {
+			t.Fatalf("decode output for %s: %v\nstdout: %s\nstderr: %s",
+				target, err, stdout.String(), stderr.String())
+		}
+		// The engine lints the whole tsconfig program, so diagnostics
+		// from sibling files in the same project leak into every
+		// invocation. Filter to the target file so each sub-scenario
+		// is independent. Also strip the program-has-type-errors
+		// warning so we only count rule diagnostics.
+		targetAbs := filepath.Join(dir, target)
+		out := make([]map[string]any, 0, len(doc.Diagnostics))
+		for _, d := range doc.Diagnostics {
+			if d["ruleId"] == "tsgolint/program-has-type-errors" {
+				continue
+			}
+			if file, _ := d["file"].(string); file != targetAbs {
+				continue
+			}
+			out = append(out, d)
+		}
+		return out
+	}
+
+	// First, verify defaults: voiding.ts has 0 findings, iife.ts has 1.
+	if err := os.WriteFile(rcPath, []byte(`{}`), 0o644); err != nil {
+		t.Fatalf("write rc: %v", err)
+	}
+	if got := runJSON(t, "voiding.ts"); len(got) != 0 {
+		t.Errorf("default ignoreVoid=true should suppress; got %d diags: %v", len(got), got)
+	}
+	if got := runJSON(t, "iife.ts"); len(got) != 1 {
+		t.Errorf("default ignoreIIFE=false should flag IIFE; got %d diags: %v", len(got), got)
+	}
+
+	// Now flip both options via the .tsgolintrc.json tuple form.
+	if err := os.WriteFile(rcPath, []byte(`{
+		"rules": {
+			"no-floating-promises": ["error", {"ignoreVoid": false, "ignoreIIFE": true}]
+		}
+	}`), 0o644); err != nil {
+		t.Fatalf("write rc: %v", err)
+	}
+	if got := runJSON(t, "voiding.ts"); len(got) != 1 {
+		t.Errorf("ignoreVoid=false should flag; got %d diags: %v", len(got), got)
+	}
+	if got := runJSON(t, "iife.ts"); len(got) != 0 {
+		t.Errorf("ignoreIIFE=true should suppress; got %d diags: %v", len(got), got)
+	}
+}
+
+// TestCLI_TsgolintrcRejectsUnknownRuleOption verifies that an unknown
+// option key in the config produces a structured config error rather
+// than a silent ignore.
+func TestCLI_TsgolintrcRejectsUnknownRuleOption(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	for path, content := range map[string]string{
+		"tsconfig.json": `{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"}}`,
+		"main.ts":       "export const x = 1;\n",
+		".tsgolintrc.json": `{
+			"rules": {
+				"no-floating-promises": ["error", {"unknownTypoOption": true}]
+			}
+		}`,
+	} {
+		if err := os.WriteFile(filepath.Join(dir, path), []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+
+	cmd := exec.Command(bin, "--format", "json", filepath.Join(dir, "main.ts"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
+	exitErr, _ := err.(*exec.ExitError)
+	if exitErr == nil || exitErr.ExitCode() != 2 {
+		t.Fatalf("expected exit code 2 for unknown option, got %v\nstdout: %s\nstderr: %s",
+			err, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "unknownTypoOption") {
+		t.Errorf("expected stderr to mention the unknown option, got: %s", stderr.String())
+	}
+}

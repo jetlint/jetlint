@@ -6,6 +6,7 @@ package cli
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -339,7 +340,12 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 		resolved.Rules = filtered
 	}
 
-	eng := engine.New(activeRules(), resolved.Rules)
+	rulesList, ruleErr := buildRules(resolved.RuleOptions)
+	if ruleErr != nil {
+		emitToolError(stderr, formatter.Name(), ruleErr)
+		return 2
+	}
+	eng := engine.New(rulesList, resolved.Rules)
 	lintStart := time.Now()
 	diagnostics := eng.Lint(prog)
 	lintDuration := time.Since(lintStart)
@@ -385,17 +391,40 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 	return 0
 }
 
-// activeRules returns the registered rule instances. The engine filters
-// by the resolved configuration so rules disabled at runtime have zero
-// overhead per node.
-func activeRules() []engine.Rule {
+// buildRules constructs every shipped rule, applying any per-rule
+// options the resolved config supplied. Options for rules that don't
+// accept any are rejected with a structured config error so typos
+// surface at startup. The engine filters by severity, so rules
+// disabled at runtime have zero overhead per node.
+func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr.Error) {
+	nfpOpts, err := nofloatingpromises.OptionsFromJSON(ruleOptions["no-floating-promises"])
+	if err != nil {
+		return nil, toolerr.New(toolerr.CodeConfigInvalid, err.Error())
+	}
+	rejectIfOptionsPresent := func(ruleID string) *toolerr.Error {
+		if len(ruleOptions[ruleID]) == 0 {
+			return nil
+		}
+		return toolerr.New(toolerr.CodeConfigInvalid,
+			fmt.Sprintf("rule %q does not accept options yet", ruleID))
+	}
+	for _, ruleID := range []string{
+		"no-misused-promises",
+		"strict-boolean-expressions",
+		"no-unsafe-assignment",
+		"no-base-to-string",
+	} {
+		if e := rejectIfOptionsPresent(ruleID); e != nil {
+			return nil, e
+		}
+	}
 	return []engine.Rule{
-		nofloatingpromises.New(),
+		nofloatingpromises.NewWithOptions(nfpOpts),
 		nomisusedpromises.New(),
 		strictbooleanexpressions.New(),
 		nounsafeassignment.New(),
 		nobasetotostring.New(),
-	}
+	}, nil
 }
 
 // hasError reports whether any diagnostic in the slice was emitted at

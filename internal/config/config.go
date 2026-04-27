@@ -28,15 +28,54 @@ const ConfigFileName = ".tsgolintrc.json"
 // file. Fields are pointers so the resolver can distinguish "absent"
 // from "explicitly empty" during cascade merging.
 type FileConfig struct {
-	// Rules maps a rule identifier to a severity ("error", "warning",
-	// "off"). Absence means "no opinion at this level"; cascade resolution
+	// Rules maps a rule identifier to either a bare severity string
+	// (`"error"`, `"warning"`, `"off"`) or a tuple
+	// `["<severity>", { ...options }]` for rules that accept options.
+	// Absence means "no opinion at this level"; cascade resolution
 	// then defers to the parent.
-	Rules map[string]string `json:"rules,omitempty"`
+	Rules map[string]RuleEntry `json:"rules,omitempty"`
 
 	// MaxDiagnostics caps the number of diagnostic blocks the human
 	// formatter renders. A pointer distinguishes "absent" (defer to
 	// parent / default) from "0" (explicit "render everything").
 	MaxDiagnostics *int `json:"maxDiagnostics,omitempty"`
+}
+
+// RuleEntry is one rule's configuration: a severity plus optional
+// rule-specific options. The on-disk JSON accepts two shapes —
+// `"error"` (severity only) or `["error", { ...options }]` (severity
+// plus options) — matching typescript-eslint's convention.
+type RuleEntry struct {
+	Severity string
+	// Options is the raw JSON of the options object, or nil when no
+	// options were provided. Each rule parses its own raw options at
+	// rule-construction time so the config layer doesn't need to know
+	// the option schema of every shipped rule.
+	Options json.RawMessage
+}
+
+// UnmarshalJSON accepts either `"<severity>"` or
+// `["<severity>", { ...options }]`. Any other shape is a parse error.
+func (r *RuleEntry) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		r.Severity = s
+		return nil
+	}
+	var arr []json.RawMessage
+	if err := json.Unmarshal(data, &arr); err != nil {
+		return errors.New("rule entry must be a severity string or [severity, options] array")
+	}
+	if len(arr) == 0 {
+		return errors.New("rule entry array must contain at least a severity")
+	}
+	if err := json.Unmarshal(arr[0], &r.Severity); err != nil {
+		return errors.New("rule entry first element must be a severity string")
+	}
+	if len(arr) >= 2 {
+		r.Options = arr[1]
+	}
+	return nil
 }
 
 // DefaultMaxDiagnostics is the truncation threshold applied when no
@@ -49,7 +88,12 @@ const DefaultMaxDiagnostics = 20
 // will produce diagnostics, with their effective severity. Rules set to
 // "off" at any level are absent from the map.
 type ResolvedConfig struct {
-	Rules          map[string]wrapperlint.Severity
+	Rules map[string]wrapperlint.Severity
+	// RuleOptions is the per-rule raw JSON options for rules that have
+	// any. Rules without options are absent from the map; rule
+	// constructors must treat absent and empty raw-message as
+	// equivalent. Cascade semantics: child wins (replace, not merge).
+	RuleOptions    map[string]json.RawMessage
 	MaxDiagnostics int
 	// Sources lists the configuration files that contributed to this
 	// resolution, in cascade order (outermost first). Useful for "why is
@@ -70,14 +114,14 @@ func LoadFile(path string) (FileConfig, error) {
 		return FileConfig{}, toolerr.WithPath(toolerr.CodeConfigInvalid,
 			fmt.Sprintf("parse %s: %v", path, err), path)
 	}
-	for ruleID, sev := range cfg.Rules {
+	for ruleID, entry := range cfg.Rules {
 		if !rules.IsKnown(ruleID) {
 			return FileConfig{}, toolerr.WithPath(toolerr.CodeConfigUnknownRule,
 				fmt.Sprintf("unknown rule %q in %s", ruleID, path), path)
 		}
-		if !validSeverity(sev) {
+		if !validSeverity(entry.Severity) {
 			return FileConfig{}, toolerr.WithPath(toolerr.CodeConfigInvalid,
-				fmt.Sprintf("rule %q has invalid severity %q (expected error, warning, or off)", ruleID, sev), path)
+				fmt.Sprintf("rule %q has invalid severity %q (expected error, warning, or off)", ruleID, entry.Severity), path)
 		}
 	}
 	if cfg.MaxDiagnostics != nil && *cfg.MaxDiagnostics < 0 {
@@ -118,6 +162,7 @@ func ResolveCascade(startDir string) (ResolvedConfig, error) {
 
 	resolved := ResolvedConfig{
 		Rules:          defaultRules(),
+		RuleOptions:    map[string]json.RawMessage{},
 		MaxDiagnostics: DefaultMaxDiagnostics,
 	}
 	for _, path := range stack {
@@ -141,16 +186,25 @@ func defaultRules() map[string]wrapperlint.Severity {
 
 // mergeFileInto applies a single FileConfig as a cascade override.
 // Replace semantics: any rule mentioned in the child sets the effective
-// severity for that rule, including the explicit "off" value which
-// removes the rule from the resolved set. Scalar settings like
-// MaxDiagnostics use child-wins replace.
+// severity (and options) for that rule, including the explicit "off"
+// value which removes the rule from the resolved set. Options are
+// replaced wholesale on each child entry — the rule that mentions
+// options at the deepest level wins; mixing parent-options with
+// child-severity is not supported (the user can replicate the parent's
+// options in the child if they want both).
 func mergeFileInto(resolved *ResolvedConfig, child FileConfig) {
-	for ruleID, sev := range child.Rules {
-		if sev == "off" {
+	for ruleID, entry := range child.Rules {
+		if entry.Severity == "off" {
 			delete(resolved.Rules, ruleID)
+			delete(resolved.RuleOptions, ruleID)
 			continue
 		}
-		resolved.Rules[ruleID] = wrapperlint.Severity(sev)
+		resolved.Rules[ruleID] = wrapperlint.Severity(entry.Severity)
+		if len(entry.Options) > 0 {
+			resolved.RuleOptions[ruleID] = entry.Options
+		} else {
+			delete(resolved.RuleOptions, ruleID)
+		}
 	}
 	if child.MaxDiagnostics != nil {
 		resolved.MaxDiagnostics = *child.MaxDiagnostics
