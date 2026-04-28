@@ -32,7 +32,17 @@ func TestSwitchExhaustivenessCheck_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := switchexhaustivenesscheck.DefaultOptions()
+		if v, ok := c.Options["allowDefaultCaseForExhaustiveSwitch"].(bool); ok {
+			opts.AllowDefaultCaseForExhaustiveSwitch = v
+		}
+		if v, ok := c.Options["requireDefaultForNonUnion"].(bool); ok {
+			opts.RequireDefaultForNonUnion = v
+		}
+		if v, ok := c.Options["considerDefaultExhaustiveForUnions"].(bool); ok {
+			opts.ConsiderDefaultExhaustiveForUnions = v
+		}
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -46,6 +56,9 @@ func TestSwitchExhaustivenessCheck_TypescriptEslintCompatibility(t *testing.T) {
 			continue
 		}
 		failed++
+		valid := "invalid"
+		if c.Valid { valid = "valid" }
+		t.Logf("FAIL [%s #%d] exp=%d act=%d hasOpts=%v\n%s\n", valid, c.SourceIndex, expected, actual, c.HasOptions, c.Code)
 	}
 	total := passed + failed
 	pct := 0.0
@@ -55,7 +68,7 @@ func TestSwitchExhaustivenessCheck_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func runCase(t *testing.T, code string, opts switchexhaustivenesscheck.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -68,7 +81,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{switchexhaustivenesscheck.New()},
+		[]engine.Rule{switchexhaustivenesscheck.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"switch-exhaustiveness-check": wrapperlint.SeverityError},
 	)
 	count := 0
