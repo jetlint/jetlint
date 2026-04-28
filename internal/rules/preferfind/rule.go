@@ -22,6 +22,12 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 }
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+	// Skip optional-chained access — `arr.filter(...)?.[0]` is OK; the
+	// optional chain is meaningful when the filter receiver itself is
+	// nullable.
+	if n.IsOptionalChain() {
+		return
+	}
 	idx := n.ElementAccessIndex()
 	if idx == nil {
 		return
