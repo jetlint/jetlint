@@ -306,5 +306,15 @@ func (r *rule) scalarAcceptable(t *wrapperchecker.Type) bool {
 			return r.isAcceptable(c)
 		}
 	}
+	// Branded intersections (`boolean & { __BRAND }`) keep the
+	// flavor of their primitive member — accept the intersection if
+	// any member is itself acceptable in a boolean position.
+	if t.IsIntersection() {
+		for _, m := range t.IntersectionMembers() {
+			if r.scalarAcceptable(m) {
+				return true
+			}
+		}
+	}
 	return false
 }
