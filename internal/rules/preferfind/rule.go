@@ -1,10 +1,5 @@
-// Package preferfind implements the prefer-find rule.
-//
-// Behavioral spec: a Go reimplementation of the rule of the same name
-// from typescript-eslint. This is a scaffolded stub — the rule does
-// not currently emit diagnostics. Implement by adding handlers for the
-// relevant AST kinds and reading the upstream test fixtures as a
-// black-box spec.
+// Package preferfind implements the prefer-find rule: flag
+// `arr.filter(p)[0]` in favor of `arr.find(p)`.
 package preferfind
 
 import (
@@ -21,5 +16,54 @@ type rule struct{}
 func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
-	return map[wrapperchecker.Kind]engine.Handler{}
+	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindElementAccessExpression: visit,
+	}
+}
+
+func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+	idx := n.ElementAccessIndex()
+	if idx == nil {
+		return
+	}
+	if !isZero(ctx, idx) {
+		return
+	}
+	recv := n.ElementAccessReceiver()
+	if recv == nil || recv.Kind() != wrapperchecker.KindCallExpression {
+		return
+	}
+	callee := recv.CalleeExpression()
+	if callee == nil || callee.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return
+	}
+	if callee.PropertyAccessName() != "filter" {
+		return
+	}
+	filterRecv := callee.PropertyAccessReceiver()
+	if filterRecv == nil {
+		return
+	}
+	rt := ctx.TypeOf(filterRecv)
+	if rt == nil {
+		return
+	}
+	if rt.ArrayElementType() == nil && !rt.IsArrayLikeType() && !rt.IsTupleType() {
+		return
+	}
+	ctx.Report(n, "use .find() instead of .filter()[0]")
+}
+
+func isZero(ctx *engine.Context, n *wrapperchecker.Node) bool {
+	if n.Kind() == wrapperchecker.KindNumericLiteral && n.LiteralText() == "0" {
+		return true
+	}
+	t := ctx.TypeOf(n)
+	if t == nil {
+		return false
+	}
+	if v, ok := t.NumericLiteralValue(); ok && v == 0 {
+		return true
+	}
+	return false
 }
