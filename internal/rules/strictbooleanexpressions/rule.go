@@ -1,44 +1,114 @@
 // Package strictbooleanexpressions implements the strict-boolean-expressions
 // rule: flag any boolean-context expression whose type is not strictly
-// boolean. Common offenders are nullable strings used in `if (x)` style
-// truthiness checks, where the developer may have meant to compare to
-// something more specific.
+// boolean.
 package strictbooleanexpressions
 
 import (
+	"encoding/json"
+	"fmt"
+
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	"github.com/tommymorgan/tsgolint/internal/engine"
 )
 
 const id = "strict-boolean-expressions"
 
-// New constructs a fresh rule instance.
-func New() engine.Rule { return rule{} }
+// Options is the configurable surface of the rule.
+type Options struct {
+	AllowString          bool
+	AllowNumber          bool
+	AllowNullableObject  bool
+	AllowNullableBoolean bool
+	AllowNullableString  bool
+	AllowNullableNumber  bool
+	AllowNullableEnum    bool
+	AllowAny             bool
+	AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing bool
+}
 
-type rule struct{}
-
-func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
-
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
-	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindIfStatement:           visitTestPosition,
-		wrapperchecker.KindConditionalExpression: visitTestPosition,
-		wrapperchecker.KindWhileStatement:        visitTestPosition,
-		wrapperchecker.KindDoStatement:           visitTestPosition,
-		wrapperchecker.KindForStatement:          visitForStatement,
-		wrapperchecker.KindPrefixUnaryExpression: visitPrefixUnary,
+func DefaultOptions() Options {
+	return Options{
+		AllowString:         true,
+		AllowNumber:         true,
+		AllowNullableObject: true,
 	}
 }
 
-func visitForStatement(ctx *engine.Context, n *wrapperchecker.Node) {
+func OptionsFromJSON(raw json.RawMessage) (Options, error) {
+	out := DefaultOptions()
+	if len(raw) == 0 || string(raw) == "null" {
+		return out, nil
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return Options{}, fmt.Errorf("strict-boolean-expressions options must be a JSON object: %w", err)
+	}
+	for key, val := range fields {
+		switch key {
+		case "allowString":
+			if err := json.Unmarshal(val, &out.AllowString); err != nil {
+				return Options{}, err
+			}
+		case "allowNumber":
+			if err := json.Unmarshal(val, &out.AllowNumber); err != nil {
+				return Options{}, err
+			}
+		case "allowNullableObject":
+			if err := json.Unmarshal(val, &out.AllowNullableObject); err != nil {
+				return Options{}, err
+			}
+		case "allowNullableBoolean":
+			if err := json.Unmarshal(val, &out.AllowNullableBoolean); err != nil {
+				return Options{}, err
+			}
+		case "allowNullableString":
+			if err := json.Unmarshal(val, &out.AllowNullableString); err != nil {
+				return Options{}, err
+			}
+		case "allowNullableNumber":
+			if err := json.Unmarshal(val, &out.AllowNullableNumber); err != nil {
+				return Options{}, err
+			}
+		case "allowNullableEnum":
+			if err := json.Unmarshal(val, &out.AllowNullableEnum); err != nil {
+				return Options{}, err
+			}
+		case "allowAny":
+			if err := json.Unmarshal(val, &out.AllowAny); err != nil {
+				return Options{}, err
+			}
+		}
+	}
+	return out, nil
+}
+
+func New() engine.Rule                        { return NewWithOptions(DefaultOptions()) }
+func NewWithOptions(opts Options) engine.Rule { return &rule{opts: opts} }
+
+type rule struct{ opts Options }
+
+func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+
+func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindIfStatement:           r.visitTestPosition,
+		wrapperchecker.KindConditionalExpression: r.visitTestPosition,
+		wrapperchecker.KindWhileStatement:        r.visitTestPosition,
+		wrapperchecker.KindDoStatement:           r.visitTestPosition,
+		wrapperchecker.KindForStatement:          r.visitForStatement,
+		wrapperchecker.KindPrefixUnaryExpression: r.visitPrefixUnary,
+	}
+}
+
+func (r *rule) visitForStatement(ctx *engine.Context, n *wrapperchecker.Node) {
 	cond := n.ForStatementCondition()
 	if cond == nil {
 		return
 	}
-	checkBoolean(ctx, cond)
+	r.checkBoolean(ctx, cond)
 }
 
-func visitPrefixUnary(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visitPrefixUnary(ctx *engine.Context, n *wrapperchecker.Node) {
 	if n.PrefixUnaryOperator() != "!" {
 		return
 	}
@@ -46,22 +116,19 @@ func visitPrefixUnary(ctx *engine.Context, n *wrapperchecker.Node) {
 	if operand == nil {
 		return
 	}
-	checkBoolean(ctx, operand)
+	r.checkBoolean(ctx, operand)
 }
 
-// checkBoolean reports the expression if its type isn't strictly
-// boolean. Descends into `&&`/`||` operands so each branch of a
-// short-circuit chain is checked at its truthiness position.
-func checkBoolean(ctx *engine.Context, expr *wrapperchecker.Node) {
+func (r *rule) checkBoolean(ctx *engine.Context, expr *wrapperchecker.Node) {
 	if expr.Kind() == wrapperchecker.KindBinaryExpression {
 		switch expr.BinaryOperatorKind() {
 		case wrapperchecker.KindAmpersandAmpersandToken,
 			wrapperchecker.KindBarBarToken:
 			if l := expr.BinaryLeft(); l != nil {
-				checkBoolean(ctx, l)
+				r.checkBoolean(ctx, l)
 			}
-			if r := expr.BinaryRight(); r != nil {
-				checkBoolean(ctx, r)
+			if rr := expr.BinaryRight(); rr != nil {
+				r.checkBoolean(ctx, rr)
 			}
 			return
 		}
@@ -70,7 +137,7 @@ func checkBoolean(ctx *engine.Context, expr *wrapperchecker.Node) {
 	if t == nil {
 		return
 	}
-	if isStrictlyBoolean(t) {
+	if r.isAcceptable(t) {
 		return
 	}
 	if t.IsAny() || t.IsUnknown() {
@@ -80,15 +147,12 @@ func checkBoolean(ctx *engine.Context, expr *wrapperchecker.Node) {
 	ctx.Report(expr, "boolean test on a value whose type is not strictly boolean; coerce explicitly or compare against the intended sentinel")
 }
 
-// visitTestPosition checks the test/condition expression of the
-// given node, descending into short-circuit operators so each branch
-// is verified at its truthiness position.
-func visitTestPosition(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visitTestPosition(ctx *engine.Context, n *wrapperchecker.Node) {
 	test := testExpressionOf(n)
 	if test == nil {
 		return
 	}
-	checkBoolean(ctx, test)
+	r.checkBoolean(ctx, test)
 }
 
 func testExpressionOf(n *wrapperchecker.Node) *wrapperchecker.Node {
@@ -103,38 +167,107 @@ func testExpressionOf(n *wrapperchecker.Node) *wrapperchecker.Node {
 	return nil
 }
 
-// isStrictlyBoolean reports whether t is acceptable as a boolean test
-// per the rule's defaults: a strictly boolean type, or a type whose
-// every member is a "safe" coercion target (boolean, string, or
-// number). Nullables and other oddities are not safe — the whole point
-// of the rule is to surface implicit nullability checks. This matches
-// typescript-eslint's defaults of allowString=true, allowNumber=true,
-// allowNullableString=false, allowNullableNumber=false.
-func isStrictlyBoolean(t *wrapperchecker.Type) bool {
-	if t.IsUnion() {
-		for _, m := range t.UnionMembers() {
-			if !memberIsAcceptable(m) {
+// isAcceptable reports whether t is OK in a boolean test under the
+// configured options.
+func (r *rule) isAcceptable(t *wrapperchecker.Type) bool {
+	if t.IsAny() || t.IsUnknown() {
+		return r.opts.AllowAny
+	}
+	if !t.IsUnion() {
+		return r.scalarAcceptable(t)
+	}
+	hasNullable := false
+	hasBool := false
+	hasString := false
+	hasNumber := false
+	hasEnum := false
+	hasOther := false
+	for _, m := range t.UnionMembers() {
+		switch {
+		case m.IsNullOrUndefined():
+			hasNullable = true
+		case m.IsBooleanLike():
+			hasBool = true
+		case m.IsStringLike():
+			hasString = true
+		case m.IsNumberLike() || m.IsBigIntLike():
+			hasNumber = true
+		case m.IsEnumLike():
+			hasEnum = true
+		case m.IsNever():
+			// Unreachable.
+		case m.IsTypeParameter():
+			if c := m.BaseConstraint(); c != nil && c != m && r.isAcceptable(c) {
+				continue
+			}
+			hasOther = true
+		default:
+			hasOther = true
+		}
+	}
+	if hasOther {
+		// Object/function-typed members count as "nullable-object" only
+		// when paired with a nullable.
+		return hasNullable && r.opts.AllowNullableObject &&
+			!hasBool && !hasString && !hasNumber && !hasEnum
+	}
+	if hasNullable {
+		switch {
+		case hasBool && !hasString && !hasNumber && !hasEnum:
+			return r.opts.AllowNullableBoolean
+		case hasString && !hasBool && !hasNumber && !hasEnum:
+			return r.opts.AllowNullableString && r.opts.AllowString
+		case hasNumber && !hasBool && !hasString && !hasEnum:
+			return r.opts.AllowNullableNumber && r.opts.AllowNumber
+		case hasEnum && !hasBool && !hasString && !hasNumber:
+			return r.opts.AllowNullableEnum
+		case !hasBool && !hasString && !hasNumber && !hasEnum:
+			// Pure null/undefined union.
+			return r.opts.AllowNullableObject
+		}
+		return false
+	}
+	// No nullable.
+	if hasBool && !hasString && !hasNumber && !hasEnum {
+		return true
+	}
+	if hasString && !hasBool && !hasNumber && !hasEnum {
+		return r.opts.AllowString
+	}
+	if hasNumber && !hasBool && !hasString && !hasEnum {
+		return r.opts.AllowNumber
+	}
+	if hasBool || hasString || hasNumber || hasEnum {
+		// Mixed primitive union — only OK if all components are.
+		if hasBool {
+			if hasString && !r.opts.AllowString {
 				return false
 			}
+			if hasNumber && !r.opts.AllowNumber {
+				return false
+			}
+			return true
 		}
-		return true
 	}
-	return memberIsAcceptable(t)
+	return false
 }
 
-func memberIsAcceptable(m *wrapperchecker.Type) bool {
-	if m.IsBooleanLike() || m.IsStringLike() || m.IsNumberLike() || m.IsBigIntLike() {
+func (r *rule) scalarAcceptable(t *wrapperchecker.Type) bool {
+	if t.IsBooleanLike() {
 		return true
 	}
-	// `never` is unreachable — testing it can't actually trigger the
-	// rule's concerns about implicit coercion.
-	if m.IsNever() {
+	if t.IsStringLike() {
+		return r.opts.AllowString
+	}
+	if t.IsNumberLike() || t.IsBigIntLike() {
+		return r.opts.AllowNumber
+	}
+	if t.IsNever() {
 		return true
 	}
-	// Generic type parameter: defer to its base constraint.
-	if m.IsTypeParameter() {
-		if c := m.BaseConstraint(); c != nil && c != m {
-			return isStrictlyBoolean(c)
+	if t.IsTypeParameter() {
+		if c := t.BaseConstraint(); c != nil && c != t {
+			return r.isAcceptable(c)
 		}
 	}
 	return false

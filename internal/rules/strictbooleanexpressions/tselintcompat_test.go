@@ -32,7 +32,8 @@ func TestStrictBooleanExpressions_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := optsFromCase(c)
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -60,7 +61,39 @@ func TestStrictBooleanExpressions_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func optsFromCase(c tselintcompat.Case) strictbooleanexpressions.Options {
+	opts := strictbooleanexpressions.DefaultOptions()
+	if c.Options == nil {
+		return opts
+	}
+	if v, ok := c.Options["allowString"].(bool); ok {
+		opts.AllowString = v
+	}
+	if v, ok := c.Options["allowNumber"].(bool); ok {
+		opts.AllowNumber = v
+	}
+	if v, ok := c.Options["allowNullableObject"].(bool); ok {
+		opts.AllowNullableObject = v
+	}
+	if v, ok := c.Options["allowNullableBoolean"].(bool); ok {
+		opts.AllowNullableBoolean = v
+	}
+	if v, ok := c.Options["allowNullableString"].(bool); ok {
+		opts.AllowNullableString = v
+	}
+	if v, ok := c.Options["allowNullableNumber"].(bool); ok {
+		opts.AllowNullableNumber = v
+	}
+	if v, ok := c.Options["allowNullableEnum"].(bool); ok {
+		opts.AllowNullableEnum = v
+	}
+	if v, ok := c.Options["allowAny"].(bool); ok {
+		opts.AllowAny = v
+	}
+	return opts
+}
+
+func runCase(t *testing.T, code string, opts strictbooleanexpressions.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -73,7 +106,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{strictbooleanexpressions.New()},
+		[]engine.Rule{strictbooleanexpressions.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"strict-boolean-expressions": wrapperlint.SeverityError},
 	)
 	count := 0
