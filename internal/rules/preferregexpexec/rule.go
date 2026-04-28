@@ -77,23 +77,18 @@ func isPureString(t *wrapperchecker.Type) bool {
 }
 
 // argIsNonGlobalRegExpOrString reports whether the argument can be
-// safely rewritten as `regex.exec(s)`. Literals are inspected directly
-// (a regex literal with the `g` flag changes match semantics so we
-// must skip those); for non-literals, fall back to the type — RegExp
-// or string-typed values are equivalent for the rewrite. Invalid
-// pattern strings (e.g. `'[a-z'`) are rejected since the autofix
-// would produce a runtime error.
+// safely rewritten as `regex.exec(s)`. Literals and known RegExp
+// constructions are inspected for the `g` flag (which changes match
+// semantics and disqualifies the rewrite). Identifiers are traced to
+// their initializers when those exist on a single-declaration
+// variable. Invalid pattern strings (e.g. `'[a-z'`) are rejected
+// since the autofix would produce a runtime error.
 func argIsNonGlobalRegExpOrString(ctx *engine.Context, arg *wrapperchecker.Node) bool {
+	hasG, known := regexExprHasGlobalFlag(ctx, arg, 4)
+	if known {
+		return !hasG
+	}
 	switch arg.Kind() {
-	case wrapperchecker.KindRegularExpressionLiteral:
-		text := arg.LiteralText()
-		if idx := strings.LastIndexByte(text, '/'); idx >= 0 {
-			flags := text[idx+1:]
-			if strings.Contains(flags, "g") {
-				return false
-			}
-		}
-		return true
 	case wrapperchecker.KindStringLiteral,
 		wrapperchecker.KindNoSubstitutionTemplateLiteral:
 		return looksLikeValidRegexPattern(arg.LiteralText())
@@ -102,14 +97,75 @@ func argIsNonGlobalRegExpOrString(ctx *engine.Context, arg *wrapperchecker.Node)
 	if t == nil {
 		return false
 	}
-	// Non-literal string-typed expression: rewriting is safe because
-	// strings carry no flags. RegExp values are intentionally excluded
-	// — without knowing the flag set we can't tell whether the rewrite
-	// is semantics-preserving.
 	if t.IsStringLike() {
 		return true
 	}
 	return false
+}
+
+// regexExprHasGlobalFlag inspects an expression that produces a
+// RegExp value. Returns (hasG, known=true) when the flag set can be
+// determined from one of: a regex literal, a `new RegExp(p, flags)`
+// or `RegExp(p, flags)` call with a literal flags string, or an
+// identifier whose lone initializer matches one of the above.
+// Returns known=false otherwise.
+func regexExprHasGlobalFlag(ctx *engine.Context, n *wrapperchecker.Node, depth int) (bool, bool) {
+	if n == nil || depth <= 0 {
+		return false, false
+	}
+	switch n.Kind() {
+	case wrapperchecker.KindRegularExpressionLiteral:
+		text := n.LiteralText()
+		if idx := strings.LastIndexByte(text, '/'); idx >= 0 {
+			return strings.Contains(text[idx+1:], "g"), true
+		}
+		return false, true
+	case wrapperchecker.KindNewExpression, wrapperchecker.KindCallExpression:
+		callee := n.CalleeExpression()
+		if callee == nil || callee.Kind() != wrapperchecker.KindIdentifier {
+			return false, false
+		}
+		if callee.LiteralText() != "RegExp" {
+			return false, false
+		}
+		args := n.CallArguments()
+		if len(args) < 2 {
+			return false, true
+		}
+		flagsArg := args[1]
+		switch flagsArg.Kind() {
+		case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral:
+			return strings.Contains(flagsArg.LiteralText(), "g"), true
+		case wrapperchecker.KindIdentifier:
+			if flagsArg.LiteralText() == "undefined" {
+				return false, true
+			}
+		}
+		return false, false
+	case wrapperchecker.KindIdentifier:
+		init := identifierSoleInitializer(ctx, n)
+		if init == nil {
+			return false, false
+		}
+		return regexExprHasGlobalFlag(ctx, init, depth-1)
+	}
+	return false, false
+}
+
+// identifierSoleInitializer returns the initializer of the variable
+// declaration that uniquely defines `id`, or nil when the symbol has
+// no declaration, multiple declarations, or no initializer (typed
+// parameters, function-scoped lets without init, etc.).
+func identifierSoleInitializer(ctx *engine.Context, id *wrapperchecker.Node) *wrapperchecker.Node {
+	sym := ctx.Checker().SymbolOf(id)
+	if sym == nil {
+		return nil
+	}
+	decls := sym.Declarations()
+	if len(decls) != 1 {
+		return nil
+	}
+	return decls[0].VariableDeclarationInitializer()
 }
 
 // looksLikeValidRegexPattern is a quick gate against obviously
