@@ -10,19 +10,29 @@ import (
 
 const id = "prefer-string-starts-ends-with"
 
-func New() engine.Rule { return rule{} }
+// Options is the configurable surface of the rule.
+type Options struct {
+	// AllowSingleElementEquality, when "always", suppresses flags for
+	// `s[0] === 'a'` and `s[s.length - 1] === 'a'` — single-character
+	// equality is sometimes preferable for readability or perf.
+	AllowSingleElementEquality string
+}
 
-type rule struct{}
+func DefaultOptions() Options                 { return Options{AllowSingleElementEquality: "never"} }
+func New() engine.Rule                        { return NewWithOptions(DefaultOptions()) }
+func NewWithOptions(opts Options) engine.Rule { return &rule{opts: opts} }
 
-func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+type rule struct{ opts Options }
 
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+
+func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindBinaryExpression: visit,
+		wrapperchecker.KindBinaryExpression: r.visit,
 	}
 }
 
-func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	op := n.BinaryOperatorKind()
 	if op != wrapperchecker.KindEqualsEqualsEqualsToken &&
 		op != wrapperchecker.KindExclamationEqualsEqualsToken &&
@@ -35,17 +45,59 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if left == nil || right == nil {
 		return
 	}
-	if matchStartsWith(ctx, left, right) || matchStartsWith(ctx, right, left) {
+	allowSingle := r.opts.AllowSingleElementEquality == "always"
+	if !allowSingle && (matchStartsWith(ctx, left, right) || matchStartsWith(ctx, right, left)) {
 		ctx.Report(n, "use String.startsWith instead of comparing the first character")
+		return
+	}
+	if matchCharAt(ctx, left, right) || matchCharAt(ctx, right, left) {
+		ctx.Report(n, "use String.startsWith instead of charAt(0) comparison")
 		return
 	}
 	if matchIndexOfZero(ctx, left, right) || matchIndexOfZero(ctx, right, left) {
 		ctx.Report(n, "use String.startsWith instead of indexOf-against-zero")
 		return
 	}
-	if matchEndsWith(ctx, left, right) || matchEndsWith(ctx, right, left) {
+	if !allowSingle && (matchEndsWith(ctx, left, right) || matchEndsWith(ctx, right, left)) {
 		ctx.Report(n, "use String.endsWith instead of comparing the last character")
 	}
+}
+
+// matchCharAt reports whether call/literal form `s.charAt(0) === 'x'`
+// (or any equality op) where s is string-typed.
+func matchCharAt(ctx *engine.Context, call, other *wrapperchecker.Node) bool {
+	if call.Kind() != wrapperchecker.KindCallExpression {
+		return false
+	}
+	callee := call.CalleeExpression()
+	if callee == nil || callee.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return false
+	}
+	if callee.PropertyAccessName() != "charAt" {
+		return false
+	}
+	args := call.CallArguments()
+	if len(args) != 1 {
+		return false
+	}
+	if args[0].Kind() != wrapperchecker.KindNumericLiteral || args[0].LiteralText() != "0" {
+		return false
+	}
+	recv := callee.PropertyAccessReceiver()
+	if recv == nil {
+		return false
+	}
+	rt := ctx.TypeOf(recv)
+	if rt == nil || !rt.IsStringLike() {
+		return false
+	}
+	// Other side: string literal, or string-typed expression.
+	if other.Kind() == wrapperchecker.KindStringLiteral ||
+		other.Kind() == wrapperchecker.KindNoSubstitutionTemplateLiteral {
+		return true
+	}
+	ot := ctx.TypeOf(other)
+	return ot != nil && ot.IsStringLike()
 }
 
 // matchEndsWith reports whether (access, literal) form
@@ -156,14 +208,15 @@ func matchStartsWith(ctx *engine.Context, indexAccess, literal *wrapperchecker.N
 	if rt == nil || !rt.IsStringLike() {
 		return false
 	}
-	if literal.Kind() != wrapperchecker.KindStringLiteral &&
-		literal.Kind() != wrapperchecker.KindNoSubstitutionTemplateLiteral {
-		return false
+	switch literal.Kind() {
+	case wrapperchecker.KindStringLiteral,
+		wrapperchecker.KindNoSubstitutionTemplateLiteral:
+		// Must be exactly one character to map to startsWith.
+		return len([]rune(literal.LiteralText())) == 1
 	}
-	// Must be exactly one character to map to startsWith.
-	text := literal.LiteralText()
-	if len([]rune(text)) != 1 {
-		return false
-	}
-	return true
+	// Non-literal RHS is allowed when its type is string-like — `s[0] === t`
+	// where t: string is still equivalent to `s.startsWith(t)` when t
+	// has length 1, and the rule prefers the explicit method either way.
+	ot := ctx.TypeOf(literal)
+	return ot != nil && ot.IsStringLike()
 }

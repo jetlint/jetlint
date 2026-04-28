@@ -32,7 +32,11 @@ func TestPreferStringStartsEndsWith_TypescriptEslintCompatibility(t *testing.T) 
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := preferstringstartsendswith.DefaultOptions()
+		if v, ok := c.Options["allowSingleElementEquality"].(string); ok {
+			opts.AllowSingleElementEquality = v
+		}
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -46,6 +50,9 @@ func TestPreferStringStartsEndsWith_TypescriptEslintCompatibility(t *testing.T) 
 			continue
 		}
 		failed++
+		valid := "invalid"
+		if c.Valid { valid = "valid" }
+		t.Logf("FAIL [%s #%d] exp=%d act=%d hasOpts=%v\n%s\n", valid, c.SourceIndex, expected, actual, c.HasOptions, c.Code)
 	}
 	total := passed + failed
 	pct := 0.0
@@ -55,7 +62,7 @@ func TestPreferStringStartsEndsWith_TypescriptEslintCompatibility(t *testing.T) 
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func runCase(t *testing.T, code string, opts preferstringstartsendswith.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -68,7 +75,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{preferstringstartsendswith.New()},
+		[]engine.Rule{preferstringstartsendswith.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"prefer-string-starts-ends-with": wrapperlint.SeverityError},
 	)
 	count := 0
