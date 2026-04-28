@@ -3,6 +3,7 @@ package noconfusingvoidexpression_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
@@ -15,10 +16,10 @@ import (
 const fixtureTsconfigBody = `{
   "compilerOptions": {
     "strict": true, "target": "es2022", "module": "esnext",
-    "moduleResolution": "bundler", "lib": ["es2022", "dom"],
+    "moduleResolution": "bundler", "jsx": "preserve", "lib": ["es2022", "dom"],
     "skipLibCheck": true
   },
-  "include": ["case.ts"]
+  "include": ["case.ts", "case.tsx"]
 }`
 
 func TestNoConfusingVoidExpression_TypescriptEslintCompatibility(t *testing.T) {
@@ -84,7 +85,11 @@ func runCase(t *testing.T, code string, opts noconfusingvoidexpression.Options) 
 	defer os.RemoveAll(dir)
 	tsc := filepath.Join(dir, "tsconfig.json")
 	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
-	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
+	caseName := "case.ts"
+	if strings.Contains(code, "<button") || strings.Contains(code, "<div") || strings.Contains(code, "</") {
+		caseName = "case.tsx"
+	}
+	os.WriteFile(filepath.Join(dir, caseName), []byte(code), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err

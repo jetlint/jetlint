@@ -90,6 +90,13 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if r.opts.IgnoreVoidReturningFunctions && enclosingFunctionReturnsVoid(ctx, n) {
 		return
 	}
+	// JSX attribute callbacks (`onClick={() => doStuff()}`) carry an
+	// implicit void contextual return type from the prop's signature.
+	// Even when ContextualTypeOf can't resolve that (tsgo's JSX
+	// support is partial), the syntactic position is unambiguous.
+	if r.opts.IgnoreVoidReturningFunctions && enclosedByJsxAttribute(n) {
+		return
+	}
 	ctx.Report(n, "void-returning call placed where a value is expected")
 }
 
@@ -124,6 +131,20 @@ func anyCallSignatureReturnsVoid(t *wrapperchecker.Type) bool {
 			if anyCallSignatureReturnsVoid(m) {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+// enclosedByJsxAttribute reports whether n sits inside a JSX
+// attribute expression (e.g. `onClick={...}`). The attribute's prop
+// type is the contextual return type, but tsgo doesn't always
+// surface it — the syntactic check is a reliable proxy.
+func enclosedByJsxAttribute(n *wrapperchecker.Node) bool {
+	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
+		switch cur.Kind() {
+		case wrapperchecker.KindJsxExpression, wrapperchecker.KindJsxAttribute, wrapperchecker.KindJsxAttributes:
+			return true
 		}
 	}
 	return false
