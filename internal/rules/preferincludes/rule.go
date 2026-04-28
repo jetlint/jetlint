@@ -19,7 +19,82 @@ func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
 		wrapperchecker.KindBinaryExpression: visit,
+		wrapperchecker.KindCallExpression:   visitRegexpTest,
 	}
+}
+
+// visitRegexpTest flags `/foo/.test(s)` and `pattern.test(s)` where
+// pattern is a RegExp — these read better as `s.includes('foo')`.
+func visitRegexpTest(ctx *engine.Context, n *wrapperchecker.Node) {
+	callee := n.CalleeExpression()
+	if callee == nil || callee.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return
+	}
+	if callee.PropertyAccessName() != "test" {
+		return
+	}
+	if len(n.CallArguments()) != 1 {
+		return
+	}
+	recv := callee.PropertyAccessReceiver()
+	if recv == nil {
+		return
+	}
+	rt := ctx.TypeOf(recv)
+	if rt == nil {
+		return
+	}
+	// The receiver must be the lib `RegExp` type — user-defined types
+	// named RegExp or other shapes can't be assumed to behave the same.
+	if rt.SymbolName() != "RegExp" {
+		return
+	}
+	if !isPlainRegexpLiteral(recv) {
+		// Only flag literals whose pattern is a plain string of
+		// non-special characters and that has no flags. Patterns with
+		// metacharacters (`[]`, `|`, `?`, escapes) or flags (`i`, etc.)
+		// can't be naively rewritten as `s.includes('foo')`.
+		return
+	}
+	ctx.Report(n, "use String.prototype.includes instead of RegExp.test")
+}
+
+// isPlainRegexpLiteral reports whether n is a regex literal of the
+// form `/<plain text>/` — no flags, no metacharacters, no escapes.
+func isPlainRegexpLiteral(n *wrapperchecker.Node) bool {
+	if n == nil || n.Kind() != wrapperchecker.KindRegularExpressionLiteral {
+		return false
+	}
+	src := n.LiteralText()
+	// Need at least `/x/` with no flags — minimum length 3, last char `/`.
+	if len(src) < 3 || src[0] != '/' {
+		return false
+	}
+	end := -1
+	for i := len(src) - 1; i > 0; i-- {
+		if src[i] == '/' {
+			end = i
+			break
+		}
+	}
+	if end < 0 || end == len(src)-1 == false {
+		// Trailing flags after the closing slash — disqualify.
+		return false
+	}
+	pattern := src[1:end]
+	if pattern == "" {
+		return false
+	}
+	for _, r := range pattern {
+		switch r {
+		case '\\', '[', ']', '(', ')', '|', '?', '*', '+', '.', '^', '$', '{', '}':
+			return false
+		}
+		if r > 0x7e || r < 0x20 {
+			return false
+		}
+	}
+	return true
 }
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -90,6 +165,9 @@ func isComparisonShape(op wrapperchecker.Kind, call, other *wrapperchecker.Node)
 		return isNumericLiteral(other, "0")
 	case wrapperchecker.KindLessThanToken:
 		return isNumericLiteral(other, "0")
+	case wrapperchecker.KindLessThanEqualsToken:
+		// `indexOf <= -1` is `indexOf === -1` (since indexOf ≥ -1).
+		return isNumericLiteral(other, "-1")
 	}
 	return false
 }
@@ -125,10 +203,24 @@ func isNumericLiteral(n *wrapperchecker.Node, want string) bool {
 
 // typeHasIncludesMethod reports whether t carries a usable `includes`
 // method. The rule's autofix uses it as the replacement, so the type
-// must provide it.
+// must provide it. For `T | undefined` (optional chains) the check is
+// satisfied if the non-nullish constituents all have `.includes`.
 func typeHasIncludesMethod(t *wrapperchecker.Type) bool {
 	if t == nil {
 		return false
+	}
+	if t.IsUnion() {
+		seen := false
+		for _, m := range t.UnionMembers() {
+			if m.IsNullOrUndefined() {
+				continue
+			}
+			if !typeHasIncludesMethod(m) {
+				return false
+			}
+			seen = true
+		}
+		return seen
 	}
 	return t.PropertyType("includes") != nil
 }
