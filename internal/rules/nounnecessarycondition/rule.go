@@ -21,20 +21,75 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 		wrapperchecker.KindIfStatement:           visitIf,
 		wrapperchecker.KindWhileStatement:        visitWhile,
 		wrapperchecker.KindDoStatement:           visitWhile,
+		wrapperchecker.KindForStatement:          visitFor,
 		wrapperchecker.KindConditionalExpression: visitConditional,
+		wrapperchecker.KindBinaryExpression:      visitBinary,
+		wrapperchecker.KindPrefixUnaryExpression: visitPrefixUnary,
+	}
+}
+
+func visitPrefixUnary(ctx *engine.Context, n *wrapperchecker.Node) {
+	if n.PrefixUnaryOperator() != "!" {
+		return
+	}
+	check(ctx, n.FirstChild())
+}
+
+// visitBinary covers `a && b` and `a || b` outside an explicit test
+// position — the operator's branching depends on `a`'s truthiness,
+// so a constant `a` makes the whole expression redundant. `??` is
+// excluded because TS doesn't always model index access as nullable
+// (the `noUncheckedIndexedAccess` flag changes the type), so a
+// trailing `?? default` is often a deliberate runtime guard.
+func visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
+	switch n.BinaryOperatorKind() {
+	case wrapperchecker.KindAmpersandAmpersandToken,
+		wrapperchecker.KindBarBarToken:
+	default:
+		return
+	}
+	if l := n.BinaryLeft(); l != nil {
+		check(ctx, l)
 	}
 }
 
 func visitIf(ctx *engine.Context, n *wrapperchecker.Node) {
-	check(ctx, n.IfCondition())
+	checkRecursive(ctx, n.IfCondition())
 }
 
 func visitWhile(ctx *engine.Context, n *wrapperchecker.Node) {
-	check(ctx, n.WhileCondition())
+	checkRecursive(ctx, n.WhileCondition())
+}
+
+func visitFor(ctx *engine.Context, n *wrapperchecker.Node) {
+	checkRecursive(ctx, n.ForStatementCondition())
 }
 
 func visitConditional(ctx *engine.Context, n *wrapperchecker.Node) {
-	check(ctx, n.ConditionalCondition())
+	checkRecursive(ctx, n.ConditionalCondition())
+}
+
+// checkRecursive walks &&/||/?? chains at the test position so each
+// operand is checked individually. `b1 && b2` where b1 is always
+// truthy reports on b1, since the conjunction collapses to just b2.
+func checkRecursive(ctx *engine.Context, expr *wrapperchecker.Node) {
+	if expr == nil {
+		return
+	}
+	if expr.Kind() == wrapperchecker.KindBinaryExpression {
+		switch expr.BinaryOperatorKind() {
+		case wrapperchecker.KindAmpersandAmpersandToken,
+			wrapperchecker.KindBarBarToken:
+			checkRecursive(ctx, expr.BinaryLeft())
+			checkRecursive(ctx, expr.BinaryRight())
+			return
+		}
+	}
+	if expr.Kind() == wrapperchecker.KindParenthesizedExpression {
+		checkRecursive(ctx, expr.FirstChild())
+		return
+	}
+	check(ctx, expr)
 }
 
 func check(ctx *engine.Context, expr *wrapperchecker.Node) {
@@ -45,10 +100,96 @@ func check(ctx *engine.Context, expr *wrapperchecker.Node) {
 	if t == nil {
 		return
 	}
-	switch t.String() {
-	case "true":
+	if isAlwaysTruthy(t) {
 		ctx.Report(expr, "condition is always truthy")
-	case "false":
+		return
+	}
+	if isAlwaysFalsy(t) {
 		ctx.Report(expr, "condition is always falsy")
 	}
+}
+
+// isAlwaysTruthy reports whether t is a type whose every inhabitant
+// is truthy at runtime. Covers `true`, non-empty string literals,
+// non-zero number literals, and unions of such.
+func isAlwaysTruthy(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if !isAlwaysTruthy(m) {
+				return false
+			}
+		}
+		return true
+	}
+	s := t.String()
+	switch {
+	case t.IsBooleanLike() && s == "true":
+		return true
+	case t.IsStringLike() && s != "string" && s != "\"\"" && s != "''":
+		return true
+	case t.IsNumberLike() && s != "number" && s != "0":
+		return true
+	case t.IsBigIntLike() && s != "bigint" && s != "0n":
+		return true
+	}
+	// Non-primitive, non-nullable types (objects, arrays, functions,
+	// classes) are always truthy in JS — only `null`/`undefined`/empty
+	// strings/zero numbers are falsy. We've already excluded those.
+	if isNonNullableNonPrimitive(t) {
+		return true
+	}
+	return false
+}
+
+func isNonNullableNonPrimitive(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsAny() || t.IsUnknown() || t.IsNullOrUndefined() || t.IsNever() || t.IsVoid() {
+		return false
+	}
+	if t.IsBooleanLike() || t.IsStringLike() || t.IsNumberLike() || t.IsBigIntLike() || t.IsEnumLike() {
+		return false
+	}
+	if t.IsTypeParameter() {
+		return false
+	}
+	if t.IsIntersection() {
+		// Branded primitives like `boolean & { __brand: string }` look
+		// like an intersection but their truth value is governed by
+		// the underlying primitive, not the brand.
+		for _, m := range t.IntersectionMembers() {
+			if m.IsBooleanLike() || m.IsStringLike() || m.IsNumberLike() || m.IsBigIntLike() {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// isAlwaysFalsy reports whether t can never be truthy at runtime.
+func isAlwaysFalsy(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if !isAlwaysFalsy(m) {
+				return false
+			}
+		}
+		return true
+	}
+	if t.IsNullOrUndefined() {
+		return true
+	}
+	s := t.String()
+	switch s {
+	case "false", "\"\"", "''", "0", "0n":
+		return true
+	}
+	return false
 }
