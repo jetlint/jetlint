@@ -5,46 +5,93 @@
 package noconfusingvoidexpression
 
 import (
+	"encoding/json"
+	"fmt"
+
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	"github.com/tommymorgan/tsgolint/internal/engine"
 )
 
 const id = "no-confusing-void-expression"
 
-func New() engine.Rule { return rule{} }
+// Options is the configurable surface of the rule.
+type Options struct {
+	IgnoreArrowShorthand        bool
+	IgnoreVoidOperator          bool
+	IgnoreVoidReturningFunctions bool
+}
 
-type rule struct{}
+func DefaultOptions() Options { return Options{} }
 
-func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+func OptionsFromJSON(raw json.RawMessage) (Options, error) {
+	out := DefaultOptions()
+	if len(raw) == 0 || string(raw) == "null" {
+		return out, nil
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return Options{}, fmt.Errorf("no-confusing-void-expression options must be a JSON object: %w", err)
+	}
+	for key, val := range fields {
+		switch key {
+		case "ignoreArrowShorthand":
+			if err := json.Unmarshal(val, &out.IgnoreArrowShorthand); err != nil {
+				return Options{}, err
+			}
+		case "ignoreVoidOperator":
+			if err := json.Unmarshal(val, &out.IgnoreVoidOperator); err != nil {
+				return Options{}, err
+			}
+		case "ignoreVoidReturningFunctions":
+			if err := json.Unmarshal(val, &out.IgnoreVoidReturningFunctions); err != nil {
+				return Options{}, err
+			}
+		}
+	}
+	return out, nil
+}
 
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+func New() engine.Rule                        { return NewWithOptions(DefaultOptions()) }
+func NewWithOptions(opts Options) engine.Rule { return &rule{opts: opts} }
+
+type rule struct{ opts Options }
+
+func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+
+func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindCallExpression: visit,
+		wrapperchecker.KindCallExpression: r.visit,
 	}
 }
 
-func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	t := ctx.TypeOf(n)
 	if t == nil || !t.IsVoid() {
 		return
 	}
-	if isInValuePosition(n) {
-		ctx.Report(n, "void-returning call placed where a value is expected")
+	pos, kind := isInValuePosition(n)
+	if !pos {
+		return
 	}
+	if r.opts.IgnoreArrowShorthand && kind == "arrow" {
+		return
+	}
+	if r.opts.IgnoreVoidOperator && kind == "void-operator" {
+		return
+	}
+	ctx.Report(n, "void-returning call placed where a value is expected")
 }
 
-// isInValuePosition walks up parents through transparent wrappers
-// (parens, non-null assertions, as-expressions) and returns true when
-// the surrounding context evaluates the expression for its value.
-// Logical operators (&&, ||, ??) and conditional expressions pass
-// through to whatever consumes them — if their parent ultimately
-// discards the value (an expression statement), so does this call.
-func isInValuePosition(n *wrapperchecker.Node) bool {
+// isInValuePosition walks up parents through transparent wrappers and
+// short-circuit operators, returning whether the expression's value
+// is actually consumed and a tag identifying the consuming context
+// when one of the option-controlled forms applies.
+func isInValuePosition(n *wrapperchecker.Node) (bool, string) {
 	cur := n
 	for {
 		parent := cur.Parent()
 		if parent == nil {
-			return false
+			return false, ""
 		}
 		switch parent.Kind() {
 		case wrapperchecker.KindParenthesizedExpression,
@@ -54,8 +101,6 @@ func isInValuePosition(n *wrapperchecker.Node) bool {
 			cur = parent
 			continue
 		case wrapperchecker.KindConditionalExpression:
-			// Each branch produces the conditional's value — pass
-			// through to whatever consumes the conditional.
 			cur = parent
 			continue
 		case wrapperchecker.KindBinaryExpression:
@@ -64,8 +109,6 @@ func isInValuePosition(n *wrapperchecker.Node) bool {
 			case wrapperchecker.KindAmpersandAmpersandToken,
 				wrapperchecker.KindBarBarToken,
 				wrapperchecker.KindQuestionQuestionToken:
-				// Short-circuit operators forward the chosen operand's
-				// value to whatever consumes them.
 				cur = parent
 				continue
 			case wrapperchecker.KindCommaToken:
@@ -74,14 +117,12 @@ func isInValuePosition(n *wrapperchecker.Node) bool {
 					cur = parent
 					continue
 				}
-				return false
+				return false, ""
 			}
-			// Assignment, comparison, arithmetic, etc. all consume the
-			// value as data.
-			return true
+			return true, ""
 		case wrapperchecker.KindExpressionStatement,
 			wrapperchecker.KindForStatement:
-			return false
+			return false, ""
 		case wrapperchecker.KindVariableDeclaration,
 			wrapperchecker.KindArrayLiteralExpression,
 			wrapperchecker.KindPropertyAssignment,
@@ -89,22 +130,19 @@ func isInValuePosition(n *wrapperchecker.Node) bool {
 			wrapperchecker.KindReturnStatement,
 			wrapperchecker.KindTemplateSpan,
 			wrapperchecker.KindSpreadElement:
-			return true
+			return true, ""
 		case wrapperchecker.KindArrowFunction:
-			// Arrow concise body — the value becomes the return value,
-			// which the call site may or may not consume. Without
-			// option-aware contextual analysis we conservatively flag.
-			return true
+			return true, "arrow"
 		case wrapperchecker.KindCallExpression,
 			wrapperchecker.KindNewExpression:
 			callee := parent.CalleeExpression()
 			if callee != nil && callee.Pos() == cur.Pos() {
-				return false
+				return false, ""
 			}
-			return true
+			return true, ""
 		case wrapperchecker.KindVoidExpression:
-			return true
+			return true, "void-operator"
 		}
-		return false
+		return false, ""
 	}
 }

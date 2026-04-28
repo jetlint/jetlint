@@ -32,7 +32,8 @@ func TestNoConfusingVoidExpression_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := optsFromCase(c)
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -60,7 +61,24 @@ func TestNoConfusingVoidExpression_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func optsFromCase(c tselintcompat.Case) noconfusingvoidexpression.Options {
+	opts := noconfusingvoidexpression.DefaultOptions()
+	if c.Options == nil {
+		return opts
+	}
+	if v, ok := c.Options["ignoreArrowShorthand"].(bool); ok {
+		opts.IgnoreArrowShorthand = v
+	}
+	if v, ok := c.Options["ignoreVoidOperator"].(bool); ok {
+		opts.IgnoreVoidOperator = v
+	}
+	if v, ok := c.Options["ignoreVoidReturningFunctions"].(bool); ok {
+		opts.IgnoreVoidReturningFunctions = v
+	}
+	return opts
+}
+
+func runCase(t *testing.T, code string, opts noconfusingvoidexpression.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -73,7 +91,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{noconfusingvoidexpression.New()},
+		[]engine.Rule{noconfusingvoidexpression.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"no-confusing-void-expression": wrapperlint.SeverityError},
 	)
 	count := 0
