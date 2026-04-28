@@ -1,10 +1,6 @@
-// Package nounnecessarycondition implements the no-unnecessary-condition rule.
-//
-// Behavioral spec: a Go reimplementation of the rule of the same name
-// from typescript-eslint. This is a scaffolded stub — the rule does
-// not currently emit diagnostics. Implement by adding handlers for the
-// relevant AST kinds and reading the upstream test fixtures as a
-// black-box spec.
+// Package nounnecessarycondition implements the no-unnecessary-condition
+// rule: flag conditional positions whose test type is provably
+// constant (always-true or always-false).
 package nounnecessarycondition
 
 import (
@@ -21,5 +17,38 @@ type rule struct{}
 func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
-	return map[wrapperchecker.Kind]engine.Handler{}
+	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindIfStatement:           visitIf,
+		wrapperchecker.KindWhileStatement:        visitWhile,
+		wrapperchecker.KindDoStatement:           visitWhile,
+		wrapperchecker.KindConditionalExpression: visitConditional,
+	}
+}
+
+func visitIf(ctx *engine.Context, n *wrapperchecker.Node) {
+	check(ctx, n.IfCondition())
+}
+
+func visitWhile(ctx *engine.Context, n *wrapperchecker.Node) {
+	check(ctx, n.WhileCondition())
+}
+
+func visitConditional(ctx *engine.Context, n *wrapperchecker.Node) {
+	check(ctx, n.ConditionalCondition())
+}
+
+func check(ctx *engine.Context, expr *wrapperchecker.Node) {
+	if expr == nil {
+		return
+	}
+	t := ctx.TypeOf(expr)
+	if t == nil {
+		return
+	}
+	switch t.String() {
+	case "true":
+		ctx.Report(expr, "condition is always truthy")
+	case "false":
+		ctx.Report(expr, "condition is always falsy")
+	}
 }
