@@ -73,6 +73,28 @@ func optsFromCase(c tselintcompat.Case) preferpromiserejecterrors.Options {
 	if v, ok := c.Options["allowThrowingUnknown"].(bool); ok {
 		opts.AllowThrowingUnknown = v
 	}
+	if raw, ok := c.Options["allow"].([]any); ok {
+		for _, e := range raw {
+			switch v := e.(type) {
+			case string:
+				opts.Allow = append(opts.Allow, preferpromiserejecterrors.TypeMatcher{Name: v})
+			case map[string]any:
+				m := preferpromiserejecterrors.TypeMatcher{}
+				if s, ok := v["from"].(string); ok {
+					m.From = s
+				}
+				if s, ok := v["name"].(string); ok {
+					m.Name = s
+				}
+				if s, ok := v["package"].(string); ok {
+					m.Package = s
+				}
+				if m.Name != "" {
+					opts.Allow = append(opts.Allow, m)
+				}
+			}
+		}
+	}
 	return opts
 }
 

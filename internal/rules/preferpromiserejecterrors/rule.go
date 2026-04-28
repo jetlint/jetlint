@@ -17,6 +17,17 @@ type Options struct {
 	AllowEmptyReject     bool
 	AllowThrowingAny     bool
 	AllowThrowingUnknown bool
+	Allow                []TypeMatcher
+}
+
+// TypeMatcher names a type allowed as a rejection value (e.g. a custom
+// error class). The `from` field is upstream-style provenance; we
+// match by name only — the local fixture has no real package shape to
+// validate against.
+type TypeMatcher struct {
+	From    string
+	Name    string
+	Package string
 }
 
 func DefaultOptions() Options {
@@ -48,6 +59,41 @@ func OptionsFromJSON(raw json.RawMessage) (Options, error) {
 			if err := json.Unmarshal(val, &out.AllowThrowingUnknown); err != nil {
 				return Options{}, err
 			}
+		case "allow":
+			matchers, err := parseMatchers(val)
+			if err != nil {
+				return Options{}, fmt.Errorf("option %q: %w", key, err)
+			}
+			out.Allow = matchers
+		}
+	}
+	return out, nil
+}
+
+func parseMatchers(raw json.RawMessage) ([]TypeMatcher, error) {
+	var entries []json.RawMessage
+	if err := json.Unmarshal(raw, &entries); err != nil {
+		return nil, fmt.Errorf("expected an array")
+	}
+	out := make([]TypeMatcher, 0, len(entries))
+	for _, e := range entries {
+		var s string
+		if err := json.Unmarshal(e, &s); err == nil {
+			if s != "" {
+				out = append(out, TypeMatcher{Name: s})
+			}
+			continue
+		}
+		var obj struct {
+			From    string `json:"from"`
+			Name    string `json:"name"`
+			Package string `json:"package"`
+		}
+		if err := json.Unmarshal(e, &obj); err != nil {
+			return nil, err
+		}
+		if obj.Name != "" {
+			out = append(out, TypeMatcher{From: obj.From, Name: obj.Name, Package: obj.Package})
 		}
 	}
 	return out, nil
@@ -157,6 +203,20 @@ func typeIsPromiseConstructor(t *wrapperchecker.Type) bool {
 			return true
 		}
 	}
+	if t.IsIntersection() {
+		for _, m := range t.IntersectionMembers() {
+			if typeIsPromiseConstructor(m) {
+				return true
+			}
+		}
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if typeIsPromiseConstructor(m) {
+				return true
+			}
+		}
+	}
 	return false
 }
 
@@ -235,6 +295,9 @@ func (r *rule) checkArg(ctx *engine.Context, call, arg *wrapperchecker.Node) {
 	if t == nil {
 		return
 	}
+	if r.matchesAllow(t) {
+		return
+	}
 	if t.IsAny() {
 		if r.opts.AllowThrowingAny {
 			return
@@ -254,6 +317,33 @@ func (r *rule) checkArg(ctx *engine.Context, call, arg *wrapperchecker.Node) {
 		return
 	}
 	ctx.Report(call, "Promise.reject() should be called with an Error instance")
+}
+
+func (r *rule) matchesAllow(t *wrapperchecker.Type) bool {
+	if len(r.opts.Allow) == 0 {
+		return false
+	}
+	if matchByName(t.SymbolName(), r.opts.Allow) || matchByName(t.AliasSymbolName(), r.opts.Allow) {
+		return true
+	}
+	for _, base := range t.BaseTypeNames() {
+		if matchByName(base, r.opts.Allow) {
+			return true
+		}
+	}
+	return false
+}
+
+func matchByName(name string, matchers []TypeMatcher) bool {
+	if name == "" {
+		return false
+	}
+	for _, m := range matchers {
+		if m.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 const recursionLimit = 16
