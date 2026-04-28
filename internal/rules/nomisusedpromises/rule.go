@@ -453,6 +453,12 @@ func (r *rule) visitSpreadElement(ctx *engine.Context, n *wrapperchecker.Node) {
 }
 
 func checkPromiseInTest(ctx *engine.Context, expr *wrapperchecker.Node) {
+	// Optional-chain expressions (`a?.()`, `a?.b`) inherently test
+	// for null/undefined as part of their evaluation — passing them
+	// to `if` is a guard pattern, not a confused promise test.
+	if expr.IsOptionalChain() {
+		return
+	}
 	// `a || b` and `a && b` evaluate either operand depending on a's
 	// truthiness; testing the whole expression is testing each operand
 	// in turn. Descend so a promise on one side is flagged even when
