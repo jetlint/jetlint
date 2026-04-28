@@ -59,13 +59,52 @@ func visitPromiseAggregator(ctx *engine.Context, n *wrapperchecker.Node) {
 	if t.IsAny() || t.IsUnknown() {
 		return
 	}
-	elem := iterableElementType(t)
-	if elem == nil {
-		return
-	}
-	if elementHasNonThenableMember(elem) {
+	if iterableHasNonThenableElement(t, 6) {
 		ctx.Report(args[0], "Promise."+callee.PropertyAccessName()+" expects an iterable of thenables — non-thenable elements are not awaited")
 	}
+}
+
+// iterableHasNonThenableElement reports whether any element of the
+// iterable t is non-thenable. Walks unions (every member must be
+// safe), tuples (each slot is an independent element type), and
+// Iterable<T>/Array<T> (the type argument is the element type).
+func iterableHasNonThenableElement(t *wrapperchecker.Type, depth int) bool {
+	if t == nil || depth <= 0 {
+		return false
+	}
+	if t.IsAny() || t.IsUnknown() {
+		return false
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if iterableHasNonThenableElement(m, depth-1) {
+				return true
+			}
+		}
+		return false
+	}
+	if t.IsTupleType() {
+		for _, a := range t.TypeArguments() {
+			if elementHasNonThenableMember(a) {
+				return true
+			}
+		}
+		return false
+	}
+	if elem := t.ArrayElementType(); elem != nil {
+		return elementHasNonThenableMember(elem)
+	}
+	// Iterable<T>/IterableIterator<T>/AsyncIterable<T>: their first
+	// type argument names the yielded element. Match by symbol name
+	// to avoid descending into unrelated generics.
+	switch t.SymbolName() {
+	case "Iterable", "IterableIterator", "AsyncIterable", "ReadonlyArray", "Array", "Set", "ReadonlySet":
+		args := t.TypeArguments()
+		if len(args) > 0 {
+			return elementHasNonThenableMember(args[0])
+		}
+	}
+	return false
 }
 
 // iterableElementType returns the element type of an array-like (or
