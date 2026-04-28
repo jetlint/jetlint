@@ -24,7 +24,8 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 }
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
-	if n.BinaryOperatorKind() != wrapperchecker.KindBarBarToken {
+	op := n.BinaryOperatorKind()
+	if op != wrapperchecker.KindBarBarToken && op != wrapperchecker.KindBarBarEqualsToken {
 		return
 	}
 	left := n.BinaryLeft()
@@ -36,6 +37,10 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	if !typeIsNullable(t) {
+		return
+	}
+	if op == wrapperchecker.KindBarBarEqualsToken {
+		ctx.Report(n, "use ??= for nullable values; ||= treats other falsy values as missing too")
 		return
 	}
 	ctx.Report(n, "use ?? for nullable values; || treats other falsy values as missing too")
