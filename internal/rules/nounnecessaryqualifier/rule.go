@@ -24,14 +24,14 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 }
 
 func visitQualified(ctx *engine.Context, n *wrapperchecker.Node) {
-	check(ctx, n, qualifiedLeft(n))
+	check(ctx, n, qualifiedLeft(n), qualifiedRight(n))
 }
 
 func visitPropertyAccess(ctx *engine.Context, n *wrapperchecker.Node) {
-	check(ctx, n, n.PropertyAccessReceiver())
+	check(ctx, n, n.PropertyAccessReceiver(), n.PropertyAccessName())
 }
 
-func check(ctx *engine.Context, n, prefix *wrapperchecker.Node) {
+func check(ctx *engine.Context, n, prefix *wrapperchecker.Node, propertyName string) {
 	if prefix == nil {
 		return
 	}
@@ -39,20 +39,125 @@ func check(ctx *engine.Context, n, prefix *wrapperchecker.Node) {
 		return
 	}
 	prefixName := prefix.LiteralText()
-	if prefixName == "" {
+	if prefixName == "" || propertyName == "" {
 		return
 	}
 	if !enclosedByNamespace(n, prefixName) {
 		return
 	}
+	// If a closer-scoped declaration shadows the property name, the
+	// qualifier is needed to disambiguate. Walk from n outward and
+	// stop once we hit the declaring namespace.
+	if shadowedBeforeNamespace(n, prefixName, propertyName) {
+		return
+	}
 	ctx.Report(n, "qualifier is unnecessary inside the enclosing namespace")
 }
 
-// enclosedByNamespace reports whether n sits inside a namespace named
-// `name`, walking up the AST.
+// qualifiedRight returns the right-hand identifier of a QualifiedName,
+// e.g. `T` in `X.T`.
+func qualifiedRight(n *wrapperchecker.Node) string {
+	var name string
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() == wrapperchecker.KindIdentifier {
+			name = c.LiteralText()
+		}
+		return false
+	})
+	return name
+}
+
+// shadowedBeforeNamespace reports whether any enclosing block strictly
+// inside the namespace named `prefixName` declares a value named
+// `propertyName`. The namespace's own body is excluded — its
+// declarations are the symbols that `prefixName.propertyName`
+// references, not shadows of them.
+func shadowedBeforeNamespace(n *wrapperchecker.Node, prefixName, propertyName string) bool {
+	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
+		// If we reach the namespace's body or the namespace itself
+		// without finding a closer-scoped declaration, the qualifier
+		// is unnecessary.
+		if cur.Kind() == wrapperchecker.KindModuleDeclaration && moduleName(cur) == prefixName {
+			return false
+		}
+		if cur.Kind() == wrapperchecker.KindModuleBlock {
+			parent := cur.Parent()
+			if parent != nil && parent.Kind() == wrapperchecker.KindModuleDeclaration && moduleName(parent) == prefixName {
+				return false
+			}
+		}
+		if blockDeclares(cur, propertyName) {
+			return true
+		}
+	}
+	return false
+}
+
+// blockDeclares reports whether the immediate children of `block` (or
+// its body) include a type/var/function/enum/namespace declaration of
+// the given simple name.
+func blockDeclares(block *wrapperchecker.Node, name string) bool {
+	found := false
+	visit := func(c *wrapperchecker.Node) bool {
+		if declaresName(c, name) {
+			found = true
+			return true
+		}
+		return false
+	}
+	block.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if found {
+			return true
+		}
+		// ModuleDeclaration's body is the ModuleBlock — descend one
+		// level to see siblings of the access expression.
+		if c.Kind() == wrapperchecker.KindModuleBlock || c.Kind() == wrapperchecker.KindBlock {
+			c.ForEachChild(visit)
+			return found
+		}
+		return visit(c)
+	})
+	return found
+}
+
+// declaresName reports whether stmt declares a top-level binding
+// named `name`. Covers type aliases, var/let/const declarations,
+// function/class/enum declarations, and nested namespaces.
+func declaresName(stmt *wrapperchecker.Node, name string) bool {
+	switch stmt.Kind() {
+	case wrapperchecker.KindTypeAliasDeclaration,
+		wrapperchecker.KindFunctionDeclaration,
+		wrapperchecker.KindClassDeclaration,
+		wrapperchecker.KindEnumDeclaration,
+		wrapperchecker.KindModuleDeclaration:
+		return moduleName(stmt) == name
+	case wrapperchecker.KindVariableStatement:
+		hit := false
+		stmt.ForEachChild(func(decllist *wrapperchecker.Node) bool {
+			decllist.ForEachChild(func(decl *wrapperchecker.Node) bool {
+				if decl.Kind() != wrapperchecker.KindVariableDeclaration {
+					return false
+				}
+				if moduleName(decl) == name {
+					hit = true
+					return true
+				}
+				return false
+			})
+			return hit
+		})
+		return hit
+	}
+	return false
+}
+
+// enclosedByNamespace reports whether n sits inside a namespace or
+// enum named `name`. Enums introduce a `Foo.Bar` qualified scope just
+// like a namespace does.
 func enclosedByNamespace(n *wrapperchecker.Node, name string) bool {
 	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
-		if cur.Kind() == wrapperchecker.KindModuleDeclaration {
+		switch cur.Kind() {
+		case wrapperchecker.KindModuleDeclaration, wrapperchecker.KindEnumDeclaration:
 			if moduleName(cur) == name {
 				return true
 			}
