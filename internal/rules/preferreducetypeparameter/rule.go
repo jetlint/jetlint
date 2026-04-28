@@ -64,12 +64,7 @@ func isArrayLike(t *wrapperchecker.Type) bool {
 		}
 		return true
 	}
-	if t.IsIntersection() {
-		for _, m := range t.IntersectionMembers() {
-			if isArrayLike(m) {
-				return true
-			}
-		}
-	}
+	// Intersection: don't flag — the non-array side may add a custom
+	// reduce signature where the cast is meaningful.
 	return false
 }
