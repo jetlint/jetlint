@@ -85,6 +85,42 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	ctx.Report(n, "void-returning call placed where a value is expected")
 }
 
+// containsVoid reports whether t is `void` or a union with a void
+// member. Functions that return void-or-something accept void
+// callees in any return position.
+func containsVoid(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsVoid() {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if m.IsVoid() {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func anyCallSignatureReturnsVoid(t *wrapperchecker.Type) bool {
+	for _, sig := range t.CallSignatures() {
+		if rt := sig.ReturnType(); rt != nil && containsVoid(rt) {
+			return true
+		}
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if anyCallSignatureReturnsVoid(m) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // enclosingFunctionReturnsVoid reports whether the closest function-
 // like ancestor's declared (or contextually-inferred) return type is
 // void. The rule's ignoreVoidReturningFunctions option suppresses
@@ -98,19 +134,17 @@ func enclosingFunctionReturnsVoid(ctx *engine.Context, n *wrapperchecker.Node) b
 			wrapperchecker.KindMethodDeclaration:
 			if ann := cur.FunctionReturnTypeAnnotation(); ann != nil {
 				rt := ctx.Checker().TypeFromTypeNode(ann)
-				if rt != nil && rt.IsVoid() {
+				if rt != nil && containsVoid(rt) {
 					return true
 				}
 				return false
 			}
 			// No annotation — check contextual return type from
 			// surrounding signature (e.g. the function is passed as a
-			// callback expecting () => void).
+			// callback expecting () => void or () => void | string).
 			if t := ctx.Checker().ContextualTypeOf(cur); t != nil {
-				for _, sig := range t.CallSignatures() {
-					if rt := sig.ReturnType(); rt != nil && rt.IsVoid() {
-						return true
-					}
+				if anyCallSignatureReturnsVoid(t) {
+					return true
 				}
 			}
 			return false
