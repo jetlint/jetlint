@@ -42,7 +42,11 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		if paramT.IsAny() || paramT.IsUnknown() {
 			continue
 		}
-		if argT.IsAny() {
+		// Top-level `any` always flags. Nested `any` inside a generic
+		// type only flags when the user wrote `any` explicitly — bare
+		// `new Map()` defaults to `Map<any, any>` in tsgo, but should
+		// have been narrowed contextually to the parameter's shape.
+		if argT.IsAny() || (argHasExplicitAnyKeyword(arg) && argIsUnsafe(argT, paramT, 8)) {
 			ctx.Report(arg, "passing an `any` value to a parameter with a more specific type")
 		}
 	}
@@ -85,6 +89,29 @@ func checkSpread(ctx *engine.Context, call *wrapperchecker.Node, spread *wrapper
 			}
 		}
 	}
+}
+
+// argHasExplicitAnyKeyword reports whether the AST of an argument
+// expression contains a literal `any` type-keyword node — i.e. the
+// user wrote `<any>` somewhere. Used to distinguish between explicit
+// `any` (which should flag through generic type arguments) and
+// default-inferred any from `new Map()` etc.
+func argHasExplicitAnyKeyword(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	if n.Kind() == wrapperchecker.KindAnyKeyword {
+		return true
+	}
+	found := false
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if argHasExplicitAnyKeyword(c) {
+			found = true
+			return true
+		}
+		return false
+	})
+	return found
 }
 
 func elementTypeIsAny(t *wrapperchecker.Type) bool {
