@@ -79,8 +79,44 @@ func visitUnion(ctx *engine.Context, n *wrapperchecker.Node) {
 		}
 		if k := literalPrimitiveKind(t); k != "" && primitives[k] {
 			ctx.Report(members[i], "literal type is redundant — its primitive parent already appears in the union")
+			continue
+		}
+		// Mixed-kind sub-union member: if any of its leaves is a
+		// literal of a primitive kind already present in the outer
+		// union, the whole member contains redundant constituents.
+		// `(2 | 'other' | 3) | number` — flag the parenthesized group.
+		if t.IsUnion() && unionContainsLiteralOfKind(t, primitives) {
+			ctx.Report(members[i], "literal type is redundant — its primitive parent already appears in the union")
 		}
 	}
+}
+
+// unionContainsLiteralOfKind reports whether any leaf member of a
+// union is a literal whose primitive kind is present in the supplied
+// set. Walks through nested unions.
+func unionContainsLiteralOfKind(t *wrapperchecker.Type, primitives map[string]bool) bool {
+	if t == nil || !t.IsUnion() {
+		return false
+	}
+	// `boolean` is modeled internally as `true | false`. A naked
+	// primitive should not be treated as containing redundant literal
+	// leaves of itself.
+	switch t.String() {
+	case "string", "number", "bigint", "boolean":
+		return false
+	}
+	for _, m := range t.UnionMembers() {
+		if m.IsUnion() {
+			if unionContainsLiteralOfKind(m, primitives) {
+				return true
+			}
+			continue
+		}
+		if k := literalPrimitiveKind(m); k != "" && primitives[k] {
+			return true
+		}
+	}
+	return false
 }
 
 // collectUnionMembers walks the syntactic tree of a union, flattening
