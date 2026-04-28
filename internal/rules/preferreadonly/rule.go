@@ -88,8 +88,24 @@ func classWritesToProperty(cls, field *wrapperchecker.Node, name string) bool {
 			written = true
 			return
 		}
+		if isThisDeleteOf(n, name) {
+			written = true
+			return
+		}
+		// Cross a function-like boundary: writes inside a nested
+		// closure can outlive the constructor, so the field can't be
+		// declared `readonly` even if the closure runs synchronously
+		// during construction.
+		nextInCtor := inCtor
+		switch n.Kind() {
+		case wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindMethodDeclaration:
+			nextInCtor = false
+		}
 		n.ForEachChild(func(c *wrapperchecker.Node) bool {
-			walk(c, inCtor)
+			walk(c, nextInCtor)
 			return written
 		})
 	}
@@ -119,6 +135,21 @@ func isThisAssignmentTo(n *wrapperchecker.Node, name string) bool {
 		return false
 	}
 	recv := left.PropertyAccessReceiver()
+	return recv != nil && recv.Kind() == wrapperchecker.KindThisKeyword
+}
+
+func isThisDeleteOf(n *wrapperchecker.Node, name string) bool {
+	if n.Kind() != wrapperchecker.KindDeleteExpression {
+		return false
+	}
+	target := n.FirstChild()
+	if target == nil || target.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return false
+	}
+	if target.PropertyAccessName() != name {
+		return false
+	}
+	recv := target.PropertyAccessReceiver()
 	return recv != nil && recv.Kind() == wrapperchecker.KindThisKeyword
 }
 
