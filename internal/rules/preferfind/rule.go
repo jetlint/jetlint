@@ -18,7 +18,52 @@ func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
 		wrapperchecker.KindElementAccessExpression: visit,
+		wrapperchecker.KindCallExpression:          visitCall,
 	}
+}
+
+// visitCall handles `arr.filter(...).at(0)`.
+func visitCall(ctx *engine.Context, n *wrapperchecker.Node) {
+	if n.IsOptionalChain() {
+		return
+	}
+	callee := n.CalleeExpression()
+	if callee == nil || callee.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return
+	}
+	if callee.PropertyAccessName() != "at" {
+		return
+	}
+	args := n.CallArguments()
+	if len(args) != 1 {
+		return
+	}
+	if !isZero(ctx, args[0]) {
+		return
+	}
+	atRecv := callee.PropertyAccessReceiver()
+	if atRecv == nil || atRecv.Kind() != wrapperchecker.KindCallExpression {
+		return
+	}
+	filterCallee := atRecv.CalleeExpression()
+	if filterCallee == nil || filterCallee.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return
+	}
+	if filterCallee.PropertyAccessName() != "filter" {
+		return
+	}
+	filterRecv := filterCallee.PropertyAccessReceiver()
+	if filterRecv == nil {
+		return
+	}
+	rt := ctx.TypeOf(filterRecv)
+	if rt == nil {
+		return
+	}
+	if rt.ArrayElementType() == nil && !rt.IsArrayLikeType() && !rt.IsTupleType() {
+		return
+	}
+	ctx.Report(n, "use .find() instead of .filter().at(0)")
 }
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
