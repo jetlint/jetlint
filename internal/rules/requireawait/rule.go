@@ -112,20 +112,22 @@ func isAsyncYield(ctx *engine.Context, n *wrapperchecker.Node) bool {
 		if hasAsyncIteratorMember(t) {
 			return true
 		}
-		// Fallback: tsgo collapses some operand types to `any` at the
-		// yield site. Try the operand's declared type (for identifier
-		// references) or the call's signature return type (for direct
-		// calls).
-		if op.Kind() == wrapperchecker.KindIdentifier {
-			if dt := op.DeclaredTypeOfIdentifier(ctx.Checker()); dt != nil &&
-				hasAsyncIteratorMember(dt) {
-				return true
-			}
-		}
-		if op.Kind() == wrapperchecker.KindCallExpression {
-			if sig := ctx.Checker().ResolvedSignature(op); sig != nil {
-				if rt := sig.ReturnType(); rt != nil && hasAsyncIteratorMember(rt) {
+		// Fallback only when tsgo collapsed the operand to `any` at the
+		// yield site — otherwise the narrowed type at this position is
+		// authoritative (e.g. after a `value is AsyncIterable<…>`
+		// negative type-predicate guard).
+		if t.IsAny() {
+			if op.Kind() == wrapperchecker.KindIdentifier {
+				if dt := op.DeclaredTypeOfIdentifier(ctx.Checker()); dt != nil &&
+					hasAsyncIteratorMember(dt) {
 					return true
+				}
+			}
+			if op.Kind() == wrapperchecker.KindCallExpression {
+				if sig := ctx.Checker().ResolvedSignature(op); sig != nil {
+					if rt := sig.ReturnType(); rt != nil && hasAsyncIteratorMember(rt) {
+						return true
+					}
 				}
 			}
 		}
