@@ -136,6 +136,11 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		// Different primitive kinds — same reasoning.
 		return
 	}
+	if otherKind == "boolean" || otherKind == "bigint" {
+		// Enums can only contain number or string members; the comparison
+		// is dead, not unsafe.
+		return
+	}
 	ctx.Report(n, "comparing an enum to a non-enum value; either use the enum's member or compare two enums of the same type")
 }
 
@@ -242,19 +247,20 @@ func enumName(t *wrapperchecker.Type) string {
 	return t.AliasSymbolName()
 }
 
-// otherCompatibleWithEnumUnion reports whether `other` shares a
-// primitive kind with one of the non-enum union members of `enumSide`
-// (e.g. enumSide=`Fruit | -1` and other=`-1`).
+// otherCompatibleWithEnumUnion reports whether `other` is assignable
+// to one of the non-enum union members of `enumSide` (e.g.
+// enumSide=`Fruit | -1` and other=`-1`). Branded intersections like
+// `string & { __brand: void }` reject plain string literals, so the
+// comparison is still unsafe.
 func otherCompatibleWithEnumUnion(other, enumSide *wrapperchecker.Type) bool {
-	otherKind := classifyPrimitive(other)
-	if otherKind == "" {
+	if !enumSide.IsUnion() {
 		return false
 	}
 	for _, m := range enumSide.UnionMembers() {
 		if m.IsEnumLike() {
 			continue
 		}
-		if classifyPrimitive(m) == otherKind {
+		if other.IsAssignableTo(m) {
 			return true
 		}
 	}
