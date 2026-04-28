@@ -1,10 +1,5 @@
-// Package returnawait implements the return-await rule.
-//
-// Behavioral spec: a Go reimplementation of the rule of the same name
-// from typescript-eslint. This is a scaffolded stub — the rule does
-// not currently emit diagnostics. Implement by adding handlers for the
-// relevant AST kinds and reading the upstream test fixtures as a
-// black-box spec.
+// Package returnawait implements the return-await rule: flag
+// `return await X` where X isn't a Promise — the await is dead.
 package returnawait
 
 import (
@@ -21,5 +16,53 @@ type rule struct{}
 func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
-	return map[wrapperchecker.Kind]engine.Handler{}
+	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindReturnStatement: visit,
+	}
+}
+
+func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+	expr := n.FirstChild()
+	if expr == nil {
+		return
+	}
+	if expr.Kind() != wrapperchecker.KindAwaitExpression {
+		return
+	}
+	operand := expr.FirstChild()
+	if operand == nil {
+		return
+	}
+	t := ctx.TypeOf(operand)
+	if t == nil {
+		return
+	}
+	if isThenableLike(t) {
+		return
+	}
+	ctx.Report(expr, "await of a non-promise value in a return position has no effect; remove `await`")
+}
+
+func isThenableLike(t *wrapperchecker.Type) bool {
+	if t.IsAny() || t.IsUnknown() {
+		return true
+	}
+	if t.IsPromise() || t.IsThenable() {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if isThenableLike(m) {
+				return true
+			}
+		}
+	}
+	if t.IsIntersection() {
+		for _, m := range t.IntersectionMembers() {
+			if isThenableLike(m) {
+				return true
+			}
+		}
+	}
+	return false
 }
