@@ -45,7 +45,7 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	arg := args[0]
-	if !argIsNonGlobalRegExpOrString(arg) {
+	if !argIsNonGlobalRegExpOrString(ctx, arg) {
 		return
 	}
 	ctx.Report(n, "prefer the regex's match-all shape over string.match — it's faster and avoids the global-flag iteration footgun")
@@ -66,9 +66,14 @@ func isPureString(t *wrapperchecker.Type) bool {
 	return t.IsStringLike() && !t.IsAny()
 }
 
-// argIsNonGlobalRegExpOrString reports whether the argument is a
-// regex literal without the global flag, or a string literal.
-func argIsNonGlobalRegExpOrString(arg *wrapperchecker.Node) bool {
+// argIsNonGlobalRegExpOrString reports whether the argument can be
+// safely rewritten as `regex.exec(s)`. Literals are inspected directly
+// (a regex literal with the `g` flag changes match semantics so we
+// must skip those); for non-literals, fall back to the type — RegExp
+// or string-typed values are equivalent for the rewrite. Invalid
+// pattern strings (e.g. `'[a-z'`) are rejected since the autofix
+// would produce a runtime error.
+func argIsNonGlobalRegExpOrString(ctx *engine.Context, arg *wrapperchecker.Node) bool {
 	switch arg.Kind() {
 	case wrapperchecker.KindRegularExpressionLiteral:
 		text := arg.LiteralText()
@@ -81,7 +86,58 @@ func argIsNonGlobalRegExpOrString(arg *wrapperchecker.Node) bool {
 		return true
 	case wrapperchecker.KindStringLiteral,
 		wrapperchecker.KindNoSubstitutionTemplateLiteral:
+		return looksLikeValidRegexPattern(arg.LiteralText())
+	}
+	t := ctx.TypeOf(arg)
+	if t == nil {
+		return false
+	}
+	// Non-literal string-typed expression: rewriting is safe because
+	// strings carry no flags. RegExp values are intentionally excluded
+	// — without knowing the flag set we can't tell whether the rewrite
+	// is semantics-preserving.
+	if t.IsStringLike() {
 		return true
 	}
 	return false
+}
+
+// looksLikeValidRegexPattern is a quick gate against obviously
+// malformed regex patterns expressed as strings. Doesn't aim to be a
+// full regex parser — only catches unmatched character classes and
+// groups, which is the autofix-breaking shape upstream guards against.
+func looksLikeValidRegexPattern(s string) bool {
+	depthGroup := 0
+	inClass := false
+	escape := false
+	for _, c := range s {
+		if escape {
+			escape = false
+			continue
+		}
+		switch c {
+		case '\\':
+			escape = true
+		case '[':
+			if !inClass {
+				inClass = true
+			}
+		case ']':
+			if inClass {
+				inClass = false
+			}
+		case '(':
+			if !inClass {
+				depthGroup++
+			}
+		case ')':
+			if !inClass {
+				depthGroup--
+				if depthGroup < 0 {
+					return false
+				}
+			}
+		}
+	}
+	return depthGroup == 0 && !inClass && !escape
 }
