@@ -254,20 +254,28 @@ func isPromiseExecutorRejectParam(ctx *engine.Context, decl *wrapperchecker.Node
 	if fn.Kind() != wrapperchecker.KindArrowFunction && fn.Kind() != wrapperchecker.KindFunctionExpression {
 		return false
 	}
+	// Position of this parameter among siblings. Position 1 (second
+	// parameter) is the standard `reject` slot. Duplicate-named
+	// parameters (`function (reject, reject)`) make symbol resolution
+	// pick one decl; fall back to "any param named reject" so the
+	// rule still fires.
 	idx := -1
 	pos := 0
 	declPos := decl.Pos()
+	hasRejectNamedParam := false
 	fn.ForEachChild(func(c *wrapperchecker.Node) bool {
 		if c.Kind() == wrapperchecker.KindParameter {
+			if paramName(c) == "reject" {
+				hasRejectNamedParam = true
+			}
 			if c.Pos() == declPos {
 				idx = pos
-				return true
 			}
 			pos++
 		}
 		return false
 	})
-	if idx != 1 {
+	if idx != 1 && !(idx == 0 && hasRejectNamedParam && paramName(decl) == "reject") {
 		return false
 	}
 	call := fn.Parent()
@@ -287,6 +295,18 @@ func isPromiseExecutorRejectParam(ctx *engine.Context, decl *wrapperchecker.Node
 		return true
 	}
 	return false
+}
+
+func paramName(p *wrapperchecker.Node) string {
+	var name string
+	p.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() == wrapperchecker.KindIdentifier && name == "" {
+			name = c.LiteralText()
+			return true
+		}
+		return false
+	})
+	return name
 }
 
 
