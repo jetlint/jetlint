@@ -64,6 +64,16 @@ func isThenableLike(t *wrapperchecker.Type) bool {
 	if t.IsPromise() || t.IsThenable() {
 		return true
 	}
+	// Type parameters are unresolved at the call site — `T` could be
+	// instantiated as `Promise<X>` or as a plain value, so we can't
+	// know whether the await is dead. Match upstream's conservative
+	// "no flag" behavior.
+	if t.IsTypeParameter() {
+		if c := t.BaseConstraint(); c != nil && c != t {
+			return isThenableLike(c)
+		}
+		return true
+	}
 	if t.IsUnion() {
 		for _, m := range t.UnionMembers() {
 			if isThenableLike(m) {
