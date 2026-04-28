@@ -18,13 +18,21 @@ func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindAsExpression: visit,
+		wrapperchecker.KindAsExpression:             visit,
+		wrapperchecker.KindTypeAssertionExpression: visit,
 	}
 }
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
-	src := n.AsExpressionSource()
-	annot := n.AsExpressionTarget()
+	var src, annot *wrapperchecker.Node
+	switch n.Kind() {
+	case wrapperchecker.KindAsExpression:
+		src = n.AsExpressionSource()
+		annot = n.AsExpressionTarget()
+	case wrapperchecker.KindTypeAssertionExpression:
+		src = n.TypeAssertionSource()
+		annot = n.TypeAssertionTarget()
+	}
 	if src == nil || annot == nil {
 		return
 	}
