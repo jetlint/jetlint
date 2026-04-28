@@ -31,7 +31,7 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if body == nil || body.Kind() != wrapperchecker.KindBlock {
 		return
 	}
-	hasValue, hasBare := collectReturns(body, n)
+	hasValue, hasBare := collectReturns(ctx, body, n)
 	if !(hasValue && hasBare) {
 		return
 	}
@@ -43,7 +43,7 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	ctx.Report(n, "function returns values inconsistently — some paths return a value, others use a bare `return;`")
 }
 
-func collectReturns(body, fn *wrapperchecker.Node) (hasValue, hasBare bool) {
+func collectReturns(ctx *engine.Context, body, fn *wrapperchecker.Node) (hasValue, hasBare bool) {
 	var walk func(n *wrapperchecker.Node)
 	walk = func(n *wrapperchecker.Node) {
 		if n == nil || (hasValue && hasBare) {
@@ -64,6 +64,11 @@ func collectReturns(body, fn *wrapperchecker.Node) (hasValue, hasBare bool) {
 			expr := n.FirstChild()
 			if expr == nil {
 				hasBare = true
+			} else if returnsUndefinedOrVoid(ctx, expr) {
+				// `return undefined`, `return void 0`, or returning a
+				// call whose declared type is void — equivalent to a
+				// bare `return;` for consistency-of-return purposes.
+				hasBare = true
 			} else {
 				hasValue = true
 			}
@@ -75,6 +80,41 @@ func collectReturns(body, fn *wrapperchecker.Node) (hasValue, hasBare bool) {
 	}
 	walk(body)
 	return
+}
+
+// returnsUndefinedOrVoid reports whether expr produces only the
+// `undefined` or `void` type — in which case `return expr;` carries
+// no information beyond a bare `return;`.
+func returnsUndefinedOrVoid(ctx *engine.Context, expr *wrapperchecker.Node) bool {
+	if expr == nil {
+		return false
+	}
+	if expr.Kind() == wrapperchecker.KindVoidExpression {
+		return true
+	}
+	if expr.Kind() == wrapperchecker.KindIdentifier && expr.LiteralText() == "undefined" {
+		return true
+	}
+	t := ctx.TypeOf(expr)
+	if t == nil {
+		return false
+	}
+	if t.IsVoid() {
+		return true
+	}
+	if t.String() == "undefined" {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			s := m.String()
+			if s != "undefined" && s != "void" {
+				return false
+			}
+		}
+		return true
+	}
+	return false
 }
 
 // returnTypeIsVoid reports whether the function's declared return
