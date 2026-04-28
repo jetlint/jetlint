@@ -61,10 +61,30 @@ func visitSpreadAssignment(ctx *engine.Context, n *wrapperchecker.Node) {
 	}
 	// `{ ...someSet }` and `{ ...someMap }` — the iteration protocol
 	// produces tuples, not key/value pairs the object literal can use.
-	switch t.SymbolName() {
-	case "Set", "WeakSet", "Map", "WeakMap":
-		ctx.Report(n, "spreading a "+t.SymbolName()+" into an object — Set/Map iteration doesn't produce string-keyed properties")
+	if name := setOrMapSymbol(t); name != "" {
+		ctx.Report(n, "spreading a "+name+" into an object — Set/Map iteration doesn't produce string-keyed properties")
 	}
+}
+
+// setOrMapSymbol returns the named flavor of Set/Map that t (or any
+// union member) carries, or "" when t doesn't reference one. Walks
+// unions so `Set<number> | { a: number }` is still flagged.
+func setOrMapSymbol(t *wrapperchecker.Type) string {
+	if t == nil {
+		return ""
+	}
+	switch t.SymbolName() {
+	case "Set", "ReadonlySet", "WeakSet", "Map", "ReadonlyMap", "WeakMap":
+		return t.SymbolName()
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if name := setOrMapSymbol(m); name != "" {
+				return name
+			}
+		}
+	}
+	return ""
 }
 
 func isArraySpread(t *wrapperchecker.Type) bool {
@@ -98,7 +118,7 @@ func isStringSpread(t *wrapperchecker.Type) bool {
 	}
 	if t.IsUnion() {
 		for _, m := range t.UnionMembers() {
-			if m.IsStringLike() {
+			if isStringSpread(m) {
 				return true
 			}
 		}
@@ -106,7 +126,7 @@ func isStringSpread(t *wrapperchecker.Type) bool {
 	}
 	if t.IsIntersection() {
 		for _, m := range t.IntersectionMembers() {
-			if m.IsStringLike() {
+			if isStringSpread(m) {
 				return true
 			}
 		}
