@@ -167,6 +167,24 @@ func testExpressionOf(n *wrapperchecker.Node) *wrapperchecker.Node {
 	return nil
 }
 
+// isAlwaysTruthyLiteral reports whether t is a literal type that can
+// never be falsy at runtime — non-empty strings, non-zero numbers,
+// the `true` literal, etc.
+func isAlwaysTruthyLiteral(t *wrapperchecker.Type) bool {
+	s := t.String()
+	switch {
+	case t.IsStringLike() && s != "string" && s != "\"\"" && s != "''":
+		return true
+	case t.IsNumberLike() && s != "number" && s != "0":
+		return true
+	case t.IsBigIntLike() && s != "bigint" && s != "0n":
+		return true
+	case t.IsBooleanLike() && s == "true":
+		return true
+	}
+	return false
+}
+
 // isAcceptable reports whether t is OK in a boolean test under the
 // configured options.
 func (r *rule) isAcceptable(t *wrapperchecker.Type) bool {
@@ -182,10 +200,15 @@ func (r *rule) isAcceptable(t *wrapperchecker.Type) bool {
 	hasNumber := false
 	hasEnum := false
 	hasOther := false
+	hasAlwaysTruthy := false
 	for _, m := range t.UnionMembers() {
 		switch {
 		case m.IsNullOrUndefined():
 			hasNullable = true
+		case isAlwaysTruthyLiteral(m):
+			// Non-empty string, non-zero numeric, `true`, etc. — never
+			// confused with the null/undefined branch in a boolean test.
+			hasAlwaysTruthy = true
 		case m.IsBooleanLike():
 			hasBool = true
 		case m.IsStringLike():
@@ -204,6 +227,19 @@ func (r *rule) isAcceptable(t *wrapperchecker.Type) bool {
 		default:
 			hasOther = true
 		}
+	}
+	// If the only non-nullable members are always-truthy literals (or
+	// always-truthy literals + an object), treat the whole union the
+	// same way as `T | null` for an object T.
+	if hasAlwaysTruthy && !hasBool && !hasString && !hasNumber && !hasEnum && !hasOther {
+		if hasNullable {
+			return r.opts.AllowNullableObject
+		}
+		return true
+	}
+	if hasAlwaysTruthy {
+		// Mixed always-truthy with regular primitives — keep checking
+		// the regular primitives below; the literal doesn't add risk.
 	}
 	if hasOther {
 		// Object/function-typed members count as "nullable-object" only
