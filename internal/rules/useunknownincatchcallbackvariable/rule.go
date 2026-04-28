@@ -25,24 +25,112 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	callee := n.CalleeExpression()
-	if callee == nil || callee.Kind() != wrapperchecker.KindPropertyAccessExpression {
+	method, recv := methodCallName(callee)
+	if method == "" {
 		return
 	}
 	args := n.CallArguments()
-	switch callee.PropertyAccessName() {
+	if hasSpreadArg(args) {
+		// `Promise.resolve().then(...arr, cb)` — arg positions are
+		// dynamic; can't reliably identify the catch slot.
+		return
+	}
+	switch method {
 	case "catch":
 		if len(args) >= 1 {
-			checkCatchCallback(ctx, callee, args[0])
+			checkCatchCallback(ctx, recv, args[0])
 		}
 	case "then":
 		if len(args) >= 2 {
-			checkCatchCallback(ctx, callee, args[1])
+			checkCatchCallback(ctx, recv, args[1])
 		}
 	}
 }
 
-func checkCatchCallback(ctx *engine.Context, callee, cb *wrapperchecker.Node) {
-	recv := callee.PropertyAccessReceiver()
+// methodCallName returns the method-name string and receiver node for
+// either a `recv.method` or `recv['method']`-style call. Empty name
+// when the callee isn't a recognizable member access.
+func methodCallName(callee *wrapperchecker.Node) (string, *wrapperchecker.Node) {
+	if callee == nil {
+		return "", nil
+	}
+	switch callee.Kind() {
+	case wrapperchecker.KindPropertyAccessExpression:
+		return callee.PropertyAccessName(), callee.PropertyAccessReceiver()
+	case wrapperchecker.KindElementAccessExpression:
+		idx := callee.ElementAccessIndex()
+		if idx == nil {
+			return "", nil
+		}
+		switch idx.Kind() {
+		case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral:
+			return idx.LiteralText(), callee.ElementAccessReceiver()
+		}
+	}
+	return "", nil
+}
+
+func hasSpreadArg(args []*wrapperchecker.Node) bool {
+	for _, a := range args {
+		if a.Kind() == wrapperchecker.KindSpreadElement {
+			return true
+		}
+	}
+	return false
+}
+
+func checkCatchCallback(ctx *engine.Context, recv, cb *wrapperchecker.Node) {
+	if recv == nil {
+		return
+	}
+	leaves := collectCallbackLeaves(cb)
+	if len(leaves) == 0 {
+		return
+	}
+	for _, leaf := range leaves {
+		checkCatchLeaf(ctx, recv, leaf)
+	}
+}
+
+// collectCallbackLeaves walks a callback expression through parens,
+// ternaries, and short-circuit operators, returning every concrete
+// arrow/function expression that could end up as the runtime handler.
+// For an `||`/`??` chain like `(a || b)`, both `a` and `b` may be the
+// chosen handler; the rule must check each.
+func collectCallbackLeaves(n *wrapperchecker.Node) []*wrapperchecker.Node {
+	if n == nil {
+		return nil
+	}
+	switch n.Kind() {
+	case wrapperchecker.KindParenthesizedExpression:
+		return collectCallbackLeaves(n.FirstChild())
+	case wrapperchecker.KindConditionalExpression:
+		whenTrue, whenFalse := n.ConditionalBranches()
+		out := collectCallbackLeaves(whenTrue)
+		out = append(out, collectCallbackLeaves(whenFalse)...)
+		return out
+	case wrapperchecker.KindBinaryExpression:
+		op := n.BinaryOperatorKind()
+		switch op {
+		case wrapperchecker.KindBarBarToken,
+			wrapperchecker.KindAmpersandAmpersandToken,
+			wrapperchecker.KindQuestionQuestionToken:
+			out := collectCallbackLeaves(n.BinaryLeft())
+			out = append(out, collectCallbackLeaves(n.BinaryRight())...)
+			return out
+		case wrapperchecker.KindCommaToken:
+			// Comma evaluates every operand but yields only the right.
+			// Side-effect callbacks on the left aren't candidates for
+			// the runtime handler.
+			return collectCallbackLeaves(n.BinaryRight())
+		}
+	case wrapperchecker.KindArrowFunction, wrapperchecker.KindFunctionExpression:
+		return []*wrapperchecker.Node{n}
+	}
+	return nil
+}
+
+func checkCatchLeaf(ctx *engine.Context, recv, cb *wrapperchecker.Node) {
 	if recv == nil {
 		return
 	}
@@ -67,10 +155,35 @@ func checkCatchCallback(ctx *engine.Context, callee, cb *wrapperchecker.Node) {
 	if t == nil {
 		return
 	}
-	if t.IsUnknown() {
+	if isAcceptableErrorType(t, param.IsRestParameter()) {
 		return
 	}
 	ctx.Report(param, "use `unknown` for catch-callback parameters; the rejection value is untyped at runtime")
+}
+
+// isAcceptableErrorType reports whether the parameter's annotation is
+// `unknown`-equivalent. Rest parameters carry a tuple/array type whose
+// elements must all be unknown.
+func isAcceptableErrorType(t *wrapperchecker.Type, isRest bool) bool {
+	if t == nil {
+		return false
+	}
+	if !isRest {
+		return t.IsUnknown()
+	}
+	if t.IsTupleType() {
+		args := t.TypeArguments()
+		if len(args) == 0 {
+			return true
+		}
+		// The catch callback receives a single value; for a rest tuple
+		// only the first element corresponds to that rejection value.
+		return args[0].IsUnknown()
+	}
+	if elem := t.ArrayElementType(); elem != nil {
+		return elem.IsUnknown()
+	}
+	return false
 }
 
 func firstParameter(fn *wrapperchecker.Node) *wrapperchecker.Node {
