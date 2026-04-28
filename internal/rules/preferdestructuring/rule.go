@@ -1,10 +1,6 @@
-// Package preferdestructuring implements the prefer-destructuring rule.
-//
-// Behavioral spec: a Go reimplementation of the rule of the same name
-// from typescript-eslint. This is a scaffolded stub — the rule does
-// not currently emit diagnostics. Implement by adding handlers for the
-// relevant AST kinds and reading the upstream test fixtures as a
-// black-box spec.
+// Package preferdestructuring implements the prefer-destructuring
+// rule: flag `var foo = obj.foo` and `var foo = array[0]` patterns
+// that could be destructured.
 package preferdestructuring
 
 import (
@@ -21,5 +17,41 @@ type rule struct{}
 func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
-	return map[wrapperchecker.Kind]engine.Handler{}
+	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindVariableDeclaration: visit,
+	}
+}
+
+func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+	init := n.VariableDeclarationInitializer()
+	if init == nil {
+		return
+	}
+	// Annotated declarations are usually deliberate; skip without an
+	// opt-in option (enforceForDeclarationWithTypeAnnotation:true).
+	if n.VariableDeclarationType() != nil {
+		return
+	}
+	name := variableName(n)
+	if name == "" {
+		return
+	}
+	if init.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return
+	}
+	if init.PropertyAccessName() == name {
+		ctx.Report(n, "use object destructuring: { "+name+" } = obj")
+	}
+}
+
+func variableName(n *wrapperchecker.Node) string {
+	var name string
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() == wrapperchecker.KindIdentifier {
+			name = c.LiteralText()
+			return true
+		}
+		return false
+	})
+	return name
 }
