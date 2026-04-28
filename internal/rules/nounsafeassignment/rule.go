@@ -103,6 +103,12 @@ func visitVariableDeclaration(ctx *engine.Context, n *wrapperchecker.Node) {
 	if init == nil {
 		return
 	}
+	// Destructuring declarations (`const [x] = ...`, `const {x} = ...`)
+	// are handled by visitBindingElement on each leaf — the
+	// declaration-level visit would double-report.
+	if hasDestructuringTarget(n) {
+		return
+	}
 	rhs := ctx.TypeOf(init)
 	if rhs == nil {
 		return
@@ -113,6 +119,22 @@ func visitVariableDeclaration(ctx *engine.Context, n *wrapperchecker.Node) {
 		lhs = ctx.Checker().TypeFromTypeNode(annot)
 	}
 	check(ctx, init, rhs, lhs)
+}
+
+// hasDestructuringTarget reports whether the VariableDeclaration's
+// binding name is an array or object pattern instead of a plain
+// identifier.
+func hasDestructuringTarget(n *wrapperchecker.Node) bool {
+	found := false
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		switch c.Kind() {
+		case wrapperchecker.KindArrayBindingPattern, wrapperchecker.KindObjectBindingPattern:
+			found = true
+			return true
+		}
+		return false
+	})
+	return found
 }
 
 func visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
