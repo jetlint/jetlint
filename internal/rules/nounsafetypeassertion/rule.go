@@ -1,10 +1,6 @@
-// Package nounsafetypeassertion implements the no-unsafe-type-assertion rule.
-//
-// Behavioral spec: a Go reimplementation of the rule of the same name
-// from typescript-eslint. This is a scaffolded stub — the rule does
-// not currently emit diagnostics. Implement by adding handlers for the
-// relevant AST kinds and reading the upstream test fixtures as a
-// black-box spec.
+// Package nounsafetypeassertion implements the no-unsafe-type-assertion
+// rule: flag `x as T` where T is neither a supertype nor a subtype of
+// x's type — the cast bypasses type-checking entirely.
 package nounsafetypeassertion
 
 import (
@@ -21,5 +17,27 @@ type rule struct{}
 func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
-	return map[wrapperchecker.Kind]engine.Handler{}
+	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindAsExpression: visit,
+	}
+}
+
+func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+	src := n.AsExpressionSource()
+	annot := n.AsExpressionTarget()
+	if src == nil || annot == nil {
+		return
+	}
+	srcT := ctx.TypeOf(src)
+	target := ctx.Checker().TypeFromTypeNode(annot)
+	if srcT == nil || target == nil {
+		return
+	}
+	if srcT.IsAny() || srcT.IsUnknown() || target.IsAny() || target.IsUnknown() {
+		return
+	}
+	if srcT.IsAssignableTo(target) || target.IsAssignableTo(srcT) {
+		return
+	}
+	ctx.Report(n, "type assertion bypasses the type checker — neither direction is assignable")
 }
