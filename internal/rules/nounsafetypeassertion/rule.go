@@ -36,8 +36,10 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if srcT.IsAny() || srcT.IsUnknown() || target.IsAny() || target.IsUnknown() {
 		return
 	}
-	if srcT.IsAssignableTo(target) || target.IsAssignableTo(srcT) {
+	// Safe direction: widening (`narrower as wider`). The source's
+	// type is already assignable to the target.
+	if srcT.IsAssignableTo(target) {
 		return
 	}
-	ctx.Report(n, "type assertion bypasses the type checker — neither direction is assignable")
+	ctx.Report(n, "type assertion narrows or sidesteps — the source's type isn't assignable to the asserted type")
 }
