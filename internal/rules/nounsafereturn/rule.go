@@ -62,10 +62,19 @@ func checkReturnedValue(ctx *engine.Context, fn *wrapperchecker.Node, expr *wrap
 		return
 	}
 	if declared == nil {
-		// No declared return: flag deep `any` containment, except when
-		// the value is a Promise — passing through a Promise<any> does
-		// not itself leak any (the caller has to await to materialize
-		// it, at which point the inferred return type is Promise<any>).
+		// No declared return.
+		// For sync functions: passing a Promise<any> through is
+		// inferred as the same Promise<any> return type; not unsafe.
+		// For async functions: every Promise member's awaited type
+		// becomes part of the returned promise's payload. If that
+		// payload contains `any`, we're laundering any through the
+		// async wrapper.
+		if fn != nil && wrapperchecker.HasAsyncModifier(fn) {
+			if awaitedContainsAny(t) {
+				ctx.Report(expr, "returning an `any` value defeats the function's declared return type")
+			}
+			return
+		}
 		if t.IsPromise() {
 			return
 		}
@@ -78,6 +87,37 @@ func checkReturnedValue(ctx *engine.Context, fn *wrapperchecker.Node, expr *wrap
 		return
 	}
 	ctx.Report(expr, "returning an `any` value defeats the function's declared return type")
+}
+
+// awaitedContainsAny reports whether the awaited type of t contains
+// `any` anywhere. Walks unions and intersections so a union of
+// Promise<any> | Promise<object> resolves to (any | object), where
+// the any leaks through.
+func awaitedContainsAny(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	awaited := unwrapPromise(t)
+	if awaited.IsAny() {
+		return true
+	}
+	if awaited.IsUnion() {
+		for _, m := range awaited.UnionMembers() {
+			if awaitedContainsAny(m) {
+				return true
+			}
+		}
+		return false
+	}
+	if awaited.IsIntersection() {
+		for _, m := range awaited.IntersectionMembers() {
+			if awaitedContainsAny(m) {
+				return true
+			}
+		}
+		return false
+	}
+	return false
 }
 
 // unwrapPromise recurses through Promise<…<X>> wrappers and returns
