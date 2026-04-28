@@ -32,7 +32,23 @@ func TestPreferDestructuring_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := preferdestructuring.DefaultOptions()
+		// Upstream's option shape is `[ <enforce config>, <general
+		// options> ]`. Walk every element so we don't miss flags that
+		// live in the second slot.
+		for _, raw := range c.AllOptions {
+			obj, ok := raw.(map[string]any)
+			if !ok {
+				continue
+			}
+			if v, ok := obj["enforceForDeclarationWithTypeAnnotation"].(bool); ok {
+				opts.EnforceForDeclarationWithTypeAnnotation = v
+			}
+			if v, ok := obj["enforceForRenamedProperties"].(bool); ok {
+				opts.EnforceForRenamedProperties = v
+			}
+		}
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -60,7 +76,7 @@ func TestPreferDestructuring_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func runCase(t *testing.T, code string, opts preferdestructuring.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -73,7 +89,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{preferdestructuring.New()},
+		[]engine.Rule{preferdestructuring.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"prefer-destructuring": wrapperlint.SeverityError},
 	)
 	count := 0

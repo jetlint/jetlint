@@ -10,21 +10,35 @@ import (
 
 const id = "prefer-destructuring"
 
-func New() engine.Rule { return rule{} }
+// Options is the configurable surface of the rule.
+type Options struct {
+	// EnforceForDeclarationWithTypeAnnotation: when true, also flag
+	// `var foo: T = obj.foo` and similar — the explicit annotation is
+	// no longer treated as opting out.
+	EnforceForDeclarationWithTypeAnnotation bool
+	// EnforceForRenamedProperties: also flag `var bar = obj.foo` (the
+	// destructured form requires `{ foo: bar } = obj`). Off by default
+	// because the rename adds noise without much benefit.
+	EnforceForRenamedProperties bool
+}
 
-type rule struct{}
+func DefaultOptions() Options { return Options{} }
 
-func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+func New() engine.Rule                        { return NewWithOptions(DefaultOptions()) }
+func NewWithOptions(opts Options) engine.Rule { return &rule{opts: opts} }
 
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+type rule struct{ opts Options }
+
+func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+
+func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindVariableDeclaration: visit,
-		wrapperchecker.KindBinaryExpression:    visitAssignment,
+		wrapperchecker.KindVariableDeclaration: r.visit,
+		wrapperchecker.KindBinaryExpression:    r.visitAssignment,
 	}
 }
 
-// visitAssignment handles `y = x[0]` (array destructuring opportunity).
-func visitAssignment(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visitAssignment(ctx *engine.Context, n *wrapperchecker.Node) {
 	if n.BinaryOperatorKind() != wrapperchecker.KindEqualsToken {
 		return
 	}
@@ -40,22 +54,36 @@ func visitAssignment(ctx *engine.Context, n *wrapperchecker.Node) {
 	if name == "" {
 		return
 	}
-	if right.Kind() == wrapperchecker.KindElementAccessExpression {
-		if !arrayElementZero(ctx, right) {
+	switch right.Kind() {
+	case wrapperchecker.KindElementAccessExpression:
+		if arrayElementZero(ctx, right) {
+			ctx.Report(n, "use array destructuring: [ "+name+" ] = arr")
 			return
 		}
-		ctx.Report(n, "use array destructuring: [ "+name+" ] = arr")
+		// `y = x[i]` where i is a non-zero literal index: only flagged
+		// with `enforceForRenamedProperties`, since the destructured
+		// rewrite would need to rename or reorder.
+		if r.opts.EnforceForRenamedProperties && right.ElementAccessIndex() != nil {
+			ctx.Report(n, "use array destructuring: [ "+name+" ] = arr")
+		}
+	case wrapperchecker.KindPropertyAccessExpression:
+		if right.IsOptionalChain() {
+			return
+		}
+		if right.PropertyAccessName() == name || r.opts.EnforceForRenamedProperties {
+			ctx.Report(n, "use object destructuring: { "+name+" } = obj")
+		}
 	}
 }
 
-func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	init := n.VariableDeclarationInitializer()
 	if init == nil {
 		return
 	}
-	// Annotated declarations are usually deliberate; skip without an
-	// opt-in option (enforceForDeclarationWithTypeAnnotation:true).
-	if n.VariableDeclarationType() != nil {
+	// Annotated declarations: deliberate by default. The
+	// `enforceForDeclarationWithTypeAnnotation` option opts in.
+	if n.VariableDeclarationType() != nil && !r.opts.EnforceForDeclarationWithTypeAnnotation {
 		return
 	}
 	name := variableName(n)
@@ -67,7 +95,7 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		if init.IsOptionalChain() {
 			return
 		}
-		if init.PropertyAccessName() == name {
+		if init.PropertyAccessName() == name || r.opts.EnforceForRenamedProperties {
 			ctx.Report(n, "use object destructuring: { "+name+" } = obj")
 		}
 	case wrapperchecker.KindElementAccessExpression:

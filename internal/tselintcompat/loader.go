@@ -34,6 +34,14 @@ type Case struct {
 	// AST-extracted Go representations: bools as bool, arrays as
 	// []any, objects as map[string]any, string literals as string.
 	Options map[string]any
+	// AllOptions is the parsed contents of the `options:` array in
+	// declaration order, so rules whose option shape spans multiple
+	// elements (e.g. prefer-destructuring's `[ { object: true }, {
+	// enforceForRenamedProperties: true } ]`) can still see every
+	// piece. Each element is an extracted literal (object →
+	// map[string]any, primitive → bool/string/etc., nil for shapes the
+	// loader can't model).
+	AllOptions []any
 	// SourceIndex is the 0-based position of the case within the
 	// containing array (valid or invalid). Useful for stable test names.
 	SourceIndex int
@@ -165,6 +173,10 @@ func caseFromElement(elem *wrapperchecker.Node, valid bool) (Case, bool) {
 					elems := init.ArrayElements()
 					if len(elems) > 0 {
 						c.HasOptions = true
+						c.AllOptions = make([]any, 0, len(elems))
+						for _, e := range elems {
+							c.AllOptions = append(c.AllOptions, literalValue(e))
+						}
 						if first := elems[0]; first.Kind() == wrapperchecker.KindObjectLiteralExpression {
 							if obj, ok := literalValue(first).(map[string]any); ok {
 								c.Options = obj
