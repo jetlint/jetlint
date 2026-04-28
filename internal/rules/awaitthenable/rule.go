@@ -22,7 +22,70 @@ func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
 		wrapperchecker.KindAwaitExpression: visit,
+		wrapperchecker.KindForOfStatement:  visitForOf,
 	}
+}
+
+func visitForOf(ctx *engine.Context, n *wrapperchecker.Node) {
+	if !n.HasAwaitModifier() {
+		return
+	}
+	iter := n.ForOfIterable()
+	if iter == nil {
+		return
+	}
+	t := ctx.TypeOf(iter)
+	if t == nil {
+		return
+	}
+	if isAsyncIterable(t) || t.IsAny() || t.IsUnknown() {
+		return
+	}
+	ctx.Report(iter, "for-await-of of a value that isn't an async iterable; the await has no effect")
+}
+
+// isAsyncIterable reports whether t exposes Symbol.asyncIterator
+// (directly, on its symbol-name, or through a union/intersection).
+func isAsyncIterable(t *wrapperchecker.Type) bool {
+	if matchAsyncIter(t) {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if matchAsyncIter(m) {
+				return true
+			}
+		}
+	}
+	if t.IsIntersection() {
+		for _, m := range t.IntersectionMembers() {
+			if matchAsyncIter(m) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func matchAsyncIter(t *wrapperchecker.Type) bool {
+	for _, name := range t.PropertyNames() {
+		if containsSubstring(name, "@asyncIterator") {
+			return true
+		}
+	}
+	if name := t.SymbolName(); containsSubstring(name, "AsyncIter") || containsSubstring(name, "AsyncGenerator") {
+		return true
+	}
+	return false
+}
+
+func containsSubstring(s, sub string) bool {
+	for i := 0; i+len(sub) <= len(s); i++ {
+		if s[i:i+len(sub)] == sub {
+			return true
+		}
+	}
+	return false
 }
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
