@@ -121,6 +121,7 @@ func isFunctionReturnTypeUnion(n *wrapperchecker.Node) bool {
 			wrapperchecker.KindMethodDeclaration,
 			wrapperchecker.KindCallSignature,
 			wrapperchecker.KindMethodSignature,
+			wrapperchecker.KindConstructSignature,
 			wrapperchecker.KindConstructorType:
 			return true
 		case wrapperchecker.KindParenthesizedType,
@@ -155,16 +156,21 @@ func primitiveKindsPresent(ts []*wrapperchecker.Type) map[string]bool {
 }
 
 func literalPrimitiveKind(t *wrapperchecker.Type) string {
-	if t.IsStringLike() && t.String() != "string" {
+	switch t.String() {
+	case "string", "number", "bigint", "boolean", "null", "undefined", "object", "symbol":
+		// The primitive type itself — never a redundant literal.
+		return ""
+	}
+	if t.IsStringLike() {
 		return "string"
 	}
-	if t.IsNumberLike() && t.String() != "number" {
+	if t.IsNumberLike() {
 		return "number"
 	}
-	if t.IsBigIntLike() && t.String() != "bigint" {
+	if t.IsBigIntLike() {
 		return "bigint"
 	}
-	if t.IsBooleanLike() && t.String() != "boolean" {
+	if t.IsBooleanLike() {
 		return "boolean"
 	}
 	if t.IsUnion() {
@@ -190,30 +196,85 @@ func literalPrimitiveKind(t *wrapperchecker.Type) string {
 }
 
 func visitIntersection(ctx *engine.Context, n *wrapperchecker.Node) {
-	// In an intersection: `never` makes every other member redundant.
-	var dominatorIdx = -1
 	var members []*wrapperchecker.Node
 	n.ForEachChild(func(c *wrapperchecker.Node) bool {
 		members = append(members, c)
 		return false
 	})
+	types := make([]*wrapperchecker.Type, len(members))
 	for i, m := range members {
-		t := ctx.Checker().TypeFromTypeNode(m)
+		types[i] = ctx.Checker().TypeFromTypeNode(m)
+	}
+	// `never` collapses the entire intersection — every sibling is
+	// redundant.
+	for i, t := range types {
 		if t == nil {
 			continue
 		}
 		if t.IsNever() {
-			dominatorIdx = i
-			break
+			for j, m := range members {
+				if j == i {
+					continue
+				}
+				ctx.Report(m, "type constituent is overridden by `never` in this intersection")
+			}
+			return
 		}
 	}
-	if dominatorIdx < 0 {
-		return
-	}
-	for i, m := range members {
-		if i == dominatorIdx {
+	// `any`/`unknown`/`{}` are subsumed by any other constituent in an
+	// intersection — they don't constrain anything.
+	for i, t := range types {
+		if t == nil {
 			continue
 		}
-		ctx.Report(m, "type constituent is overridden by `never` in this intersection")
+		if t.IsUnknown() {
+			ctx.Report(members[i], "`unknown` is redundant as an intersection constituent")
+			continue
+		}
+		if t.IsAny() {
+			ctx.Report(members[i], "`any` overrides the other constituents of this intersection")
+			continue
+		}
 	}
+	// Primitive subsumed by a narrower literal sibling: in `boolean &
+	// false`, boolean is redundant. Detect when a member is one of the
+	// known primitive types and another member is a literal of that
+	// kind.
+	literalKinds := map[string]bool{}
+	for _, t := range types {
+		if t == nil {
+			continue
+		}
+		if k := literalPrimitiveKind(t); k != "" {
+			literalKinds[k] = true
+		}
+	}
+	for i, t := range types {
+		if t == nil {
+			continue
+		}
+		k := primitiveKindOfType(t)
+		if k == "" {
+			continue
+		}
+		if literalKinds[k] {
+			ctx.Report(members[i], "primitive constituent is redundant — a narrower literal of the same kind is also in the intersection")
+		}
+	}
+}
+
+// primitiveKindOfType returns "string"/"number"/"bigint"/"boolean"
+// when t is exactly that primitive type, or "" otherwise.
+func primitiveKindOfType(t *wrapperchecker.Type) string {
+	switch t.String() {
+	case "string":
+		return "string"
+	case "number":
+		return "number"
+	case "bigint":
+		return "bigint"
+	case "boolean":
+		return "boolean"
+	}
+	return ""
 }
