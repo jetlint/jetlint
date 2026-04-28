@@ -18,18 +18,14 @@ func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindSpreadElement: visit,
+		wrapperchecker.KindSpreadElement:    visit,
+		wrapperchecker.KindSpreadAssignment: visitSpreadAssignment,
 	}
 }
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	parent := n.Parent()
 	if parent == nil {
-		return
-	}
-	if parent.Kind() != wrapperchecker.KindArrayLiteralExpression {
-		// Object-spread checks (non-objects, function values, etc.) are
-		// not yet implemented.
 		return
 	}
 	expr := n.FirstChild()
@@ -40,9 +36,47 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if t == nil {
 		return
 	}
-	if isStringSpread(t) {
-		ctx.Report(n, "spreading a string into an array iterates per-character; use Array.from or .split() if that's intentional")
+	switch parent.Kind() {
+	case wrapperchecker.KindArrayLiteralExpression,
+		wrapperchecker.KindCallExpression,
+		wrapperchecker.KindNewExpression:
+		if isStringSpread(t) {
+			ctx.Report(n, "spreading a string iterates per-character; use Array.from or .split() if that's intentional")
+		}
 	}
+}
+
+func visitSpreadAssignment(ctx *engine.Context, n *wrapperchecker.Node) {
+	expr := n.FirstChild()
+	if expr == nil {
+		return
+	}
+	t := ctx.TypeOf(expr)
+	if t == nil {
+		return
+	}
+	// `{ ...arr }` — spreading an array into an object skips the
+	// numeric-index ↔ string-key mismatch the user probably wants.
+	if isArraySpread(t) {
+		ctx.Report(n, "spreading an array into an object — array indices become string keys, which is rarely intentional")
+	}
+}
+
+func isArraySpread(t *wrapperchecker.Type) bool {
+	if t.IsAny() || t.IsUnknown() {
+		return false
+	}
+	if t.IsTupleType() || t.IsArrayLikeType() || t.ArrayElementType() != nil {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if isArraySpread(m) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // isStringSpread reports whether t is a string (or primitive
