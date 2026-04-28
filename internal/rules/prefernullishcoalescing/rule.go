@@ -1,10 +1,7 @@
-// Package prefernullishcoalescing implements the prefer-nullish-coalescing rule.
-//
-// Behavioral spec: a Go reimplementation of the rule of the same name
-// from typescript-eslint. This is a scaffolded stub — the rule does
-// not currently emit diagnostics. Implement by adding handlers for the
-// relevant AST kinds and reading the upstream test fixtures as a
-// black-box spec.
+// Package prefernullishcoalescing implements the
+// prefer-nullish-coalescing rule: flag `x || y` where x is nullable —
+// the `??` operator handles only null/undefined and avoids
+// unintentionally treating other falsy values as the fallback trigger.
 package prefernullishcoalescing
 
 import (
@@ -21,5 +18,44 @@ type rule struct{}
 func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
-	return map[wrapperchecker.Kind]engine.Handler{}
+	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindBinaryExpression: visit,
+	}
+}
+
+func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+	if n.BinaryOperatorKind() != wrapperchecker.KindBarBarToken {
+		return
+	}
+	left := n.BinaryLeft()
+	if left == nil {
+		return
+	}
+	t := ctx.TypeOf(left)
+	if t == nil {
+		return
+	}
+	if !typeIsNullable(t) {
+		return
+	}
+	ctx.Report(n, "use ?? for nullable values; || treats other falsy values as missing too")
+}
+
+// typeIsNullable reports whether t is a union containing null or
+// undefined and at least one non-nullable member. Bare null/undefined
+// alone or non-unions don't make `||` a misuse.
+func typeIsNullable(t *wrapperchecker.Type) bool {
+	if !t.IsUnion() {
+		return false
+	}
+	hasNullable := false
+	hasNonNullable := false
+	for _, m := range t.UnionMembers() {
+		if m.IsNullOrUndefined() {
+			hasNullable = true
+		} else {
+			hasNonNullable = true
+		}
+	}
+	return hasNullable && hasNonNullable
 }
