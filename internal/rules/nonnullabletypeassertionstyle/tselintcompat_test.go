@@ -46,6 +46,11 @@ func TestNonNullableTypeAssertionStyle_TypescriptEslintCompatibility(t *testing.
 			continue
 		}
 		failed++
+		valid := "invalid"
+		if c.Valid {
+			valid = "valid"
+		}
+		t.Logf("FAIL [%s #%d] exp=%d act=%d\n%s\n", valid, c.SourceIndex, expected, actual, c.Code)
 	}
 	total := passed + failed
 	pct := 0.0
