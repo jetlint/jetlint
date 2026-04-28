@@ -63,22 +63,80 @@ func visitSpreadAssignment(ctx *engine.Context, n *wrapperchecker.Node) {
 	// produces tuples, not key/value pairs the object literal can use.
 	if name := setOrMapSymbol(t); name != "" {
 		ctx.Report(n, "spreading a "+name+" into an object — Set/Map iteration doesn't produce string-keyed properties")
+		return
+	}
+	// Class instances and class constructors lose methods and
+	// prototype info when spread into a plain object.
+	if isClassInstanceOrConstructor(t) {
+		ctx.Report(n, "spreading a class instance into an object — methods on the prototype are not copied")
 	}
 }
 
-// setOrMapSymbol returns the named flavor of Set/Map that t (or any
-// union member) carries, or "" when t doesn't reference one. Walks
-// unions so `Set<number> | { a: number }` is still flagged.
+// isClassInstanceOrConstructor reports whether t (or any union/
+// intersection member) is a class instance type or constructor.
+// Class declarations on the symbol are the indicator.
+func isClassInstanceOrConstructor(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsAny() || t.IsUnknown() {
+		return false
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if isClassInstanceOrConstructor(m) {
+				return true
+			}
+		}
+		return false
+	}
+	if t.IsIntersection() {
+		for _, m := range t.IntersectionMembers() {
+			if isClassInstanceOrConstructor(m) {
+				return true
+			}
+		}
+		return false
+	}
+	sym := t.Symbol()
+	if sym == nil {
+		return false
+	}
+	for _, decl := range sym.Declarations() {
+		switch decl.Kind() {
+		case wrapperchecker.KindClassDeclaration, wrapperchecker.KindClassExpression:
+			return true
+		}
+	}
+	return false
+}
+
+// setOrMapSymbol returns the named flavor of an iteration- or
+// reference-typed value that t (or any union/intersection member)
+// carries, or "" when t doesn't reference one. Walks unions and
+// intersections so `Set<number> | { a: number }` and
+// `Map & Set` are still flagged.
 func setOrMapSymbol(t *wrapperchecker.Type) string {
 	if t == nil {
 		return ""
 	}
 	switch t.SymbolName() {
-	case "Set", "ReadonlySet", "WeakSet", "Map", "ReadonlyMap", "WeakMap":
+	case "Set", "ReadonlySet", "WeakSet",
+		"Map", "ReadonlyMap", "WeakMap",
+		"Promise", "WeakRef", "Date", "Iterator",
+		"AsyncIterator", "IterableIterator", "AsyncIterableIterator",
+		"Generator", "AsyncGenerator":
 		return t.SymbolName()
 	}
 	if t.IsUnion() {
 		for _, m := range t.UnionMembers() {
+			if name := setOrMapSymbol(m); name != "" {
+				return name
+			}
+		}
+	}
+	if t.IsIntersection() {
+		for _, m := range t.IntersectionMembers() {
 			if name := setOrMapSymbol(m); name != "" {
 				return name
 			}
