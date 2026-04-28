@@ -159,6 +159,13 @@ func isAlwaysTruthy(t *wrapperchecker.Type) bool {
 	if isNonNullableNonPrimitive(t) {
 		return true
 	}
+	// Type parameter: forward to the constraint when it's narrower
+	// than `unknown`. `T extends object` is always truthy.
+	if t.IsTypeParameter() {
+		if c := t.BaseConstraint(); c != nil && c != t {
+			return isAlwaysTruthy(c)
+		}
+	}
 	return false
 }
 
@@ -201,13 +208,18 @@ func isAlwaysFalsy(t *wrapperchecker.Type) bool {
 		}
 		return true
 	}
-	if t.IsNullOrUndefined() {
+	if t.IsNullOrUndefined() || t.IsVoid() {
 		return true
 	}
 	s := t.String()
 	switch s {
 	case "false", "\"\"", "''", "0", "0n":
 		return true
+	}
+	if t.IsTypeParameter() {
+		if c := t.BaseConstraint(); c != nil && c != t {
+			return isAlwaysFalsy(c)
+		}
 	}
 	return false
 }
