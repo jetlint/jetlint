@@ -79,7 +79,44 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if r.opts.IgnoreVoidOperator && kind == "void-operator" {
 		return
 	}
+	if r.opts.IgnoreVoidReturningFunctions && enclosingFunctionReturnsVoid(ctx, n) {
+		return
+	}
 	ctx.Report(n, "void-returning call placed where a value is expected")
+}
+
+// enclosingFunctionReturnsVoid reports whether the closest function-
+// like ancestor's declared (or contextually-inferred) return type is
+// void. The rule's ignoreVoidReturningFunctions option suppresses
+// flags inside such functions.
+func enclosingFunctionReturnsVoid(ctx *engine.Context, n *wrapperchecker.Node) bool {
+	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
+		switch cur.Kind() {
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindMethodDeclaration:
+			if ann := cur.FunctionReturnTypeAnnotation(); ann != nil {
+				rt := ctx.Checker().TypeFromTypeNode(ann)
+				if rt != nil && rt.IsVoid() {
+					return true
+				}
+				return false
+			}
+			// No annotation — check contextual return type from
+			// surrounding signature (e.g. the function is passed as a
+			// callback expecting () => void).
+			if t := ctx.Checker().ContextualTypeOf(cur); t != nil {
+				for _, sig := range t.CallSignatures() {
+					if rt := sig.ReturnType(); rt != nil && rt.IsVoid() {
+						return true
+					}
+				}
+			}
+			return false
+		}
+	}
+	return false
 }
 
 // isInValuePosition walks up parents through transparent wrappers and
