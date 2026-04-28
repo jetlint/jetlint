@@ -73,6 +73,12 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if className == "" {
 		return
 	}
+	// `this:` parameter annotation explicitly types the receiver as a
+	// concrete class — that's the developer opting out of polymorphic
+	// `this`-typing. Don't second-guess.
+	if hasThisParameterAnnotation(n) {
+		return
+	}
 	annot := n.FunctionReturnTypeAnnotation()
 	if annot == nil {
 		return
@@ -91,6 +97,26 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	ctx.Report(n, "method always returns `this`; declare the return type as `this` so subclasses inherit chaining")
 }
 
+// hasThisParameterAnnotation reports whether the method declares an
+// explicit `this:` parameter — the first parameter named `this`.
+func hasThisParameterAnnotation(fn *wrapperchecker.Node) bool {
+	found := false
+	fn.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() != wrapperchecker.KindParameter {
+			return false
+		}
+		c.ForEachChild(func(inner *wrapperchecker.Node) bool {
+			if inner.Kind() == wrapperchecker.KindIdentifier && inner.LiteralText() == "this" {
+				found = true
+				return true
+			}
+			return false
+		})
+		return found
+	})
+	return found
+}
+
 // classDeclaredName returns the identifier name of a ClassDeclaration
 // or ClassExpression. Empty for anonymous class expressions.
 func classDeclaredName(n *wrapperchecker.Node) string {
@@ -106,10 +132,93 @@ func classDeclaredName(n *wrapperchecker.Node) string {
 }
 
 // typeAnnotationName returns the identifier name of a TypeReference
-// annotation (`Foo` in `: Foo`). Empty for anything else.
+// annotation (`Foo` in `: Foo`). For a union (`Foo | undefined`)
+// returns the first member's name. Empty for anything else.
 func typeAnnotationName(annot *wrapperchecker.Node) string {
+	if annot == nil {
+		return ""
+	}
+	if annot.Kind() == wrapperchecker.KindUnionType {
+		var found string
+		annot.ForEachChild(func(c *wrapperchecker.Node) bool {
+			if name := typeAnnotationName(c); name != "" {
+				found = name
+				return true
+			}
+			return false
+		})
+		return found
+	}
 	var name string
 	annot.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() == wrapperchecker.KindIdentifier && name == "" {
+			name = c.LiteralText()
+			return true
+		}
+		return false
+	})
+	return name
+}
+
+// returnExprIsThis reports whether the return expression carries the
+// `this` reference — either directly (`return this`) or through a
+// const-bound alias declared in the same body (`const self = this;
+// return self;`).
+func returnExprIsThis(expr *wrapperchecker.Node, body *wrapperchecker.Node) bool {
+	if expr == nil {
+		return false
+	}
+	if expr.Kind() == wrapperchecker.KindThisKeyword {
+		return true
+	}
+	if expr.Kind() == wrapperchecker.KindIdentifier {
+		name := expr.LiteralText()
+		if name == "" {
+			return false
+		}
+		return bodyDeclaresThisAlias(body, name)
+	}
+	return false
+}
+
+// bodyDeclaresThisAlias scans the function body for a top-level
+// `const <name> = this;` declaration. Walks the immediate statements
+// of the block; doesn't follow into nested blocks since reassignment
+// inside conditionals would be hard to reason about.
+func bodyDeclaresThisAlias(body *wrapperchecker.Node, name string) bool {
+	if body == nil {
+		return false
+	}
+	found := false
+	body.ForEachChild(func(stmt *wrapperchecker.Node) bool {
+		if stmt.Kind() != wrapperchecker.KindVariableStatement {
+			return false
+		}
+		stmt.ForEachChild(func(decllist *wrapperchecker.Node) bool {
+			decllist.ForEachChild(func(decl *wrapperchecker.Node) bool {
+				if decl.Kind() != wrapperchecker.KindVariableDeclaration {
+					return false
+				}
+				init := decl.VariableDeclarationInitializer()
+				if init == nil || init.Kind() != wrapperchecker.KindThisKeyword {
+					return false
+				}
+				declName := variableDeclName(decl)
+				if declName == name {
+					found = true
+				}
+				return false
+			})
+			return false
+		})
+		return false
+	})
+	return found
+}
+
+func variableDeclName(decl *wrapperchecker.Node) string {
+	var name string
+	decl.ForEachChild(func(c *wrapperchecker.Node) bool {
 		if c.Kind() == wrapperchecker.KindIdentifier && name == "" {
 			name = c.LiteralText()
 			return true
@@ -146,7 +255,7 @@ func methodAlwaysReturnsThis(body *wrapperchecker.Node, fn *wrapperchecker.Node)
 		if n.Kind() == wrapperchecker.KindReturnStatement {
 			hasReturn = true
 			expr := n.FirstChild()
-			if expr == nil || expr.Kind() != wrapperchecker.KindThisKeyword {
+			if !returnExprIsThis(expr, body) {
 				allThis = false
 			}
 		}
