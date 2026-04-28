@@ -70,10 +70,24 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	}
 	required := map[string]bool{}
 	for _, m := range dt.UnionMembers() {
-		if !isCoverable(m) {
-			return
+		// Branded intersections (`'literal' & { _brand }`) keep the
+		// flavor of their primitive member — match against the
+		// underlying literal so a `case 'literal'` covers them.
+		if m.IsIntersection() {
+			for _, sub := range m.IntersectionMembers() {
+				if isCoverable(sub) {
+					required[sub.String()] = true
+					break
+				}
+			}
+			continue
 		}
-		required[m.String()] = true
+		if isCoverable(m) {
+			required[m.String()] = true
+		}
+		// Non-coverable primitives (`number`, `string`, etc.) are
+		// never exhaustive — but partial cases on coverable members
+		// of the same union still merit checks below.
 	}
 	if len(required) == 0 {
 		return
