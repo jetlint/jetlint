@@ -15,11 +15,12 @@ const id = "restrict-plus-operands"
 
 // Options is the configurable surface of the rule.
 type Options struct {
-	AllowAny             bool
-	AllowBoolean         bool
-	AllowNullish         bool
-	AllowNumberAndString bool
-	AllowRegExp          bool
+	AllowAny                bool
+	AllowBoolean            bool
+	AllowNullish            bool
+	AllowNumberAndString    bool
+	AllowRegExp             bool
+	SkipCompoundAssignments bool
 }
 
 func DefaultOptions() Options { return Options{} }
@@ -55,6 +56,10 @@ func OptionsFromJSON(raw json.RawMessage) (Options, error) {
 			if err := json.Unmarshal(val, &out.AllowRegExp); err != nil {
 				return Options{}, err
 			}
+		case "skipCompoundAssignments":
+			if err := json.Unmarshal(val, &out.SkipCompoundAssignments); err != nil {
+				return Options{}, err
+			}
 		}
 	}
 	return out, nil
@@ -78,6 +83,9 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if op != wrapperchecker.KindPlusToken && op != wrapperchecker.KindPlusEqualsToken {
 		return
 	}
+	if op == wrapperchecker.KindPlusEqualsToken && r.opts.SkipCompoundAssignments {
+		return
+	}
 	left := n.BinaryLeft()
 	right := n.BinaryRight()
 	if left == nil || right == nil {
@@ -97,7 +105,15 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		ctx.Report(right, "operand of `+` has a type that doesn't safely compose under string concatenation or numeric addition")
 	}
 	if lk != "" && rk != "" && lk != rk {
-		if r.opts.AllowNumberAndString && (lk == "string" && rk == "number" || lk == "number" && rk == "string") {
+		// `any` is compatible with anything when allowAny is set.
+		if lk == "any" || rk == "any" {
+			return
+		}
+		// Nullish counts as compatible with the other side when allowNullish.
+		if lk == "nullish" || rk == "nullish" {
+			return
+		}
+		if r.opts.AllowNumberAndString && isStringableKind(lk) && isStringableKind(rk) {
 			return
 		}
 		ctx.Report(n, "operands of `+` are different kinds: "+lk+" + "+rk)
@@ -123,13 +139,21 @@ func (r *rule) classify(t *wrapperchecker.Type) string {
 		}
 		return ""
 	}
-	return classify(t, r.opts.AllowRegExp)
+	return classify(t, r.opts)
+}
+
+// isStringableKind reports whether a kind can be coerced into a
+// string for `+` (relevant under allowNumberAndString).
+func isStringableKind(k string) bool {
+	return k == "string" || k == "number" || k == "bigint" || k == "stringable"
 }
 
 // classify reduces a type to one of the categories the `+` operator
 // treats as safe to combine with itself: "string", "number",
-// "bigint", or (with allowRegExp) "regexp".
-func classify(t *wrapperchecker.Type, allowRegExp bool) string {
+// "bigint", or (with allowRegExp) "regexp". With allowRegExp the
+// regex member is treated as string-coercible — typescript-eslint
+// permits `regex + string`.
+func classify(t *wrapperchecker.Type, opts Options) string {
 	if t.IsAny() || t.IsUnknown() {
 		return ""
 	}
@@ -142,29 +166,48 @@ func classify(t *wrapperchecker.Type, allowRegExp bool) string {
 	if t.IsBigIntLike() {
 		return "bigint"
 	}
-	if allowRegExp && t.SymbolName() == "RegExp" {
-		return "regexp"
+	if opts.AllowRegExp && t.SymbolName() == "RegExp" {
+		return "string"
+	}
+	if t.IsNullOrUndefined() && opts.AllowNullish {
+		return "nullish"
 	}
 	if t.IsUnion() {
 		var seen string
+		mixed := false
 		for _, m := range t.UnionMembers() {
-			c := classify(m, allowRegExp)
+			c := classify(m, opts)
 			if c == "" {
 				return ""
 			}
-			if seen == "" {
+			// `nullish` is treated as compatible with whatever else is
+			// in the union — `string | undefined` is still string-like.
+			if c == "nullish" {
+				continue
+			}
+			if seen == "" || seen == "nullish" {
 				seen = c
 				continue
 			}
 			if seen != c {
+				if opts.AllowNumberAndString && isStringableKind(seen) && isStringableKind(c) {
+					mixed = true
+					continue
+				}
 				return ""
 			}
+		}
+		if seen == "" {
+			seen = "nullish"
+		}
+		if mixed {
+			return "stringable"
 		}
 		return seen
 	}
 	if t.IsIntersection() {
 		for _, m := range t.IntersectionMembers() {
-			if c := classify(m, allowRegExp); c != "" {
+			if c := classify(m, opts); c != "" {
 				return c
 			}
 		}
@@ -172,7 +215,7 @@ func classify(t *wrapperchecker.Type, allowRegExp bool) string {
 	}
 	if t.IsTypeParameter() {
 		if c := t.BaseConstraint(); c != nil && c != t {
-			return classify(c, allowRegExp)
+			return classify(c, opts)
 		}
 	}
 	return ""

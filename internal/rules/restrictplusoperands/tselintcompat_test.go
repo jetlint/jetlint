@@ -81,6 +81,9 @@ func optsFromCase(c tselintcompat.Case) restrictplusoperands.Options {
 	if v, ok := c.Options["allowRegExp"].(bool); ok {
 		opts.AllowRegExp = v
 	}
+	if v, ok := c.Options["skipCompoundAssignments"].(bool); ok {
+		opts.SkipCompoundAssignments = v
+	}
 	return opts
 }
 
