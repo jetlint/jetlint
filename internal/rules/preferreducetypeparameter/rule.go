@@ -53,6 +53,15 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 }
 
 func isArrayLike(t *wrapperchecker.Type) bool {
+	if t == nil || t.IsAny() || t.IsUnknown() {
+		return false
+	}
+	if t.IsIntersection() {
+		// Don't flag — the non-array side may add a custom reduce
+		// signature where the cast is meaningful (e.g. `number[] &
+		// Reducer`).
+		return false
+	}
 	if t.IsTupleType() || t.IsArrayLikeType() || t.ArrayElementType() != nil {
 		return true
 	}
@@ -64,7 +73,5 @@ func isArrayLike(t *wrapperchecker.Type) bool {
 		}
 		return true
 	}
-	// Intersection: don't flag — the non-array side may add a custom
-	// reduce signature where the cast is meaningful.
 	return false
 }
