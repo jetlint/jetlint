@@ -123,7 +123,119 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		// `a['while']` with allowKeywords:false: must stay in brackets.
 		return
 	}
+	if r.shouldAllowByType(ctx, n, key) {
+		return
+	}
 	ctx.Report(n, "use dot notation: ."+key)
+}
+
+// shouldAllowByType reports whether the receiver type's shape (private/
+// protected member, or index signature) means bracket access is the
+// appropriate form.
+func (r *rule) shouldAllowByType(ctx *engine.Context, n *wrapperchecker.Node, key string) bool {
+	if !r.opts.AllowPrivateClassPropertyAccess && !r.opts.AllowProtectedClassPropertyAccess && !r.opts.AllowIndexSignaturePropertyAccess {
+		return false
+	}
+	recv := n.ElementAccessReceiver()
+	if recv == nil {
+		return false
+	}
+	rt := ctx.TypeOf(recv)
+	if rt == nil {
+		return false
+	}
+	if (r.opts.AllowPrivateClassPropertyAccess || r.opts.AllowProtectedClassPropertyAccess) && propertyHasAccessModifier(rt, key, r.opts.AllowPrivateClassPropertyAccess, r.opts.AllowProtectedClassPropertyAccess) {
+		return true
+	}
+	if r.opts.AllowIndexSignaturePropertyAccess && typeHasIndexSignature(rt) && !typeHasOwnProperty(rt, key) {
+		return true
+	}
+	return false
+}
+
+// propertyHasAccessModifier reports whether the property `key` on t
+// is declared private (when allowPrivate is set) or protected (when
+// allowProtected is set). Walks union members so `T | undefined`
+// inherits the access modifiers of T.
+func propertyHasAccessModifier(t *wrapperchecker.Type, key string, allowPrivate, allowProtected bool) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if m.IsNullOrUndefined() {
+				continue
+			}
+			if propertyHasAccessModifier(m, key, allowPrivate, allowProtected) {
+				return true
+			}
+		}
+		return false
+	}
+	sym := t.PropertySymbol(key)
+	if sym == nil {
+		return false
+	}
+	for _, decl := range sym.Declarations() {
+		if allowPrivate && decl.HasPrivateModifier() {
+			return true
+		}
+		if allowProtected && decl.HasProtectedModifier() {
+			return true
+		}
+	}
+	return false
+}
+
+// typeHasIndexSignature reports whether t (or any union member) has
+// any index signature (string-like, number-like, or template-literal-
+// typed key).
+func typeHasIndexSignature(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if m.IsNullOrUndefined() {
+				continue
+			}
+			if typeHasIndexSignature(m) {
+				return true
+			}
+		}
+		return false
+	}
+	return t.HasIndexSignature("")
+}
+
+// typeHasOwnProperty reports whether the property `key` exists as a
+// non-index-signature member of t. The index-signature exemption
+// shouldn't apply when the key names a real declared property.
+func typeHasOwnProperty(t *wrapperchecker.Type, key string) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if m.IsNullOrUndefined() {
+				continue
+			}
+			if typeHasOwnProperty(m, key) {
+				return true
+			}
+		}
+		return false
+	}
+	sym := t.PropertySymbol(key)
+	if sym == nil {
+		return false
+	}
+	for _, decl := range sym.Declarations() {
+		if decl.Kind() != wrapperchecker.KindIndexSignature {
+			return true
+		}
+	}
+	return false
 }
 
 // constantStringIndex extracts the property name from a string-like
