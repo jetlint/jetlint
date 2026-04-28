@@ -24,18 +24,49 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 		wrapperchecker.KindIfStatement:           visitTestPosition,
 		wrapperchecker.KindConditionalExpression: visitTestPosition,
 		wrapperchecker.KindWhileStatement:        visitTestPosition,
+		wrapperchecker.KindDoStatement:           visitTestPosition,
+		wrapperchecker.KindForStatement:          visitForStatement,
+		wrapperchecker.KindPrefixUnaryExpression: visitPrefixUnary,
 	}
 }
 
-// visitTestPosition checks the first child of n, which by tsgo's AST
-// generation is always the test/condition expression for these node
-// kinds.
-func visitTestPosition(ctx *engine.Context, n *wrapperchecker.Node) {
-	test := n.FirstChild()
-	if test == nil {
+func visitForStatement(ctx *engine.Context, n *wrapperchecker.Node) {
+	cond := n.ForStatementCondition()
+	if cond == nil {
 		return
 	}
-	t := ctx.TypeOf(test)
+	checkBoolean(ctx, cond)
+}
+
+func visitPrefixUnary(ctx *engine.Context, n *wrapperchecker.Node) {
+	if n.PrefixUnaryOperator() != "!" {
+		return
+	}
+	operand := n.FirstChild()
+	if operand == nil {
+		return
+	}
+	checkBoolean(ctx, operand)
+}
+
+// checkBoolean reports the expression if its type isn't strictly
+// boolean. Descends into `&&`/`||` operands so each branch of a
+// short-circuit chain is checked at its truthiness position.
+func checkBoolean(ctx *engine.Context, expr *wrapperchecker.Node) {
+	if expr.Kind() == wrapperchecker.KindBinaryExpression {
+		switch expr.BinaryOperatorKind() {
+		case wrapperchecker.KindAmpersandAmpersandToken,
+			wrapperchecker.KindBarBarToken:
+			if l := expr.BinaryLeft(); l != nil {
+				checkBoolean(ctx, l)
+			}
+			if r := expr.BinaryRight(); r != nil {
+				checkBoolean(ctx, r)
+			}
+			return
+		}
+	}
+	t := ctx.TypeOf(expr)
 	if t == nil {
 		return
 	}
@@ -43,15 +74,33 @@ func visitTestPosition(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	if t.IsAny() || t.IsUnknown() {
-		// `any` and `unknown` are deliberately excluded; the
-		// no-unsafe-* family handles `any` flow, and `unknown` requires
-		// an explicit narrowing before it can be tested.
-		ctx.Report(test,
-			"boolean test on a value of type any or unknown; narrow the value first")
+		ctx.Report(expr, "boolean test on a value of type any or unknown; narrow the value first")
 		return
 	}
-	ctx.Report(test,
-		"boolean test on a value whose type is not strictly boolean; coerce explicitly or compare against the intended sentinel")
+	ctx.Report(expr, "boolean test on a value whose type is not strictly boolean; coerce explicitly or compare against the intended sentinel")
+}
+
+// visitTestPosition checks the test/condition expression of the
+// given node, descending into short-circuit operators so each branch
+// is verified at its truthiness position.
+func visitTestPosition(ctx *engine.Context, n *wrapperchecker.Node) {
+	test := testExpressionOf(n)
+	if test == nil {
+		return
+	}
+	checkBoolean(ctx, test)
+}
+
+func testExpressionOf(n *wrapperchecker.Node) *wrapperchecker.Node {
+	switch n.Kind() {
+	case wrapperchecker.KindIfStatement:
+		return n.IfCondition()
+	case wrapperchecker.KindWhileStatement, wrapperchecker.KindDoStatement:
+		return n.WhileCondition()
+	case wrapperchecker.KindConditionalExpression:
+		return n.ConditionalCondition()
+	}
+	return nil
 }
 
 // isStrictlyBoolean reports whether t is acceptable as a boolean test
@@ -62,25 +111,31 @@ func visitTestPosition(ctx *engine.Context, n *wrapperchecker.Node) {
 // typescript-eslint's defaults of allowString=true, allowNumber=true,
 // allowNullableString=false, allowNullableNumber=false.
 func isStrictlyBoolean(t *wrapperchecker.Type) bool {
-	if !t.IsUnion() {
-		return memberIsAcceptable(t)
-	}
-	for _, m := range t.UnionMembers() {
-		if !memberIsAcceptable(m) {
-			return false
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if !memberIsAcceptable(m) {
+				return false
+			}
 		}
+		return true
 	}
-	return true
+	return memberIsAcceptable(t)
 }
 
 func memberIsAcceptable(m *wrapperchecker.Type) bool {
-	return m.IsBooleanLike() || m.IsStringLike() || isNumberLike(m)
-}
-
-// isNumberLike reports whether the type is number-shaped. The wrapper
-// does not yet expose an IsNumberLike helper; we approximate with the
-// String() rendering until a real predicate is needed elsewhere.
-func isNumberLike(t *wrapperchecker.Type) bool {
-	s := t.String()
-	return s == "number" || s == "bigint"
+	if m.IsBooleanLike() || m.IsStringLike() || m.IsNumberLike() || m.IsBigIntLike() {
+		return true
+	}
+	// `never` is unreachable — testing it can't actually trigger the
+	// rule's concerns about implicit coercion.
+	if m.IsNever() {
+		return true
+	}
+	// Generic type parameter: defer to its base constraint.
+	if m.IsTypeParameter() {
+		if c := m.BaseConstraint(); c != nil && c != m {
+			return isStrictlyBoolean(c)
+		}
+	}
+	return false
 }
