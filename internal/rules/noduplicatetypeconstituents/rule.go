@@ -26,11 +26,15 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 }
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+	// Skip nested same-kind unions/intersections that are inside
+	// parens of an outer union/intersection — the outer visit will
+	// inspect all leaf members. Without this, `A | (A | A)` reports
+	// twice (once on outer, once on inner).
+	if isNestedSameKind(n) {
+		return
+	}
 	var members []*wrapperchecker.Node
-	n.ForEachChild(func(c *wrapperchecker.Node) bool {
-		members = append(members, c)
-		return false
-	})
+	collect(n, n.Kind(), &members)
 	// Optional parameter: `(a?: string | undefined)` — the `?` already
 	// adds `undefined`, so a literal `undefined` member is duplicate.
 	if n.Kind() == wrapperchecker.KindUnionType && unionIsOptionalParameterType(n) {
@@ -67,6 +71,36 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		}
 		seen[key] = i
 	}
+}
+
+// isNestedSameKind reports whether n is a union/intersection whose
+// closest non-parenthesized ancestor is the same kind. The outer
+// container's visit will already see all leaf members through
+// flattening.
+func isNestedSameKind(n *wrapperchecker.Node) bool {
+	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
+		if cur.Kind() == wrapperchecker.KindParenthesizedType {
+			continue
+		}
+		return cur.Kind() == n.Kind()
+	}
+	return false
+}
+
+// collect walks a union/intersection, descending through parens and
+// nested same-kind unions/intersections so each leaf is appended once.
+func collect(n *wrapperchecker.Node, kind wrapperchecker.Kind, out *[]*wrapperchecker.Node) {
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		switch c.Kind() {
+		case wrapperchecker.KindParenthesizedType:
+			collect(c, kind, out)
+		case kind:
+			collect(c, kind, out)
+		default:
+			*out = append(*out, c)
+		}
+		return false
+	})
 }
 
 // unionIsOptionalParameterType walks up through parens/aliases to see
