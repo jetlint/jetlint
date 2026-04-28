@@ -24,6 +24,8 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 }
 
 func visitUnion(ctx *engine.Context, n *wrapperchecker.Node) {
+	// Direct children only — nested unions get visited independently
+	// when the walker reaches them.
 	var members []*wrapperchecker.Node
 	n.ForEachChild(func(c *wrapperchecker.Node) bool {
 		members = append(members, c)
@@ -79,6 +81,30 @@ func visitUnion(ctx *engine.Context, n *wrapperchecker.Node) {
 			ctx.Report(members[i], "literal type is redundant — its primitive parent already appears in the union")
 		}
 	}
+}
+
+// collectUnionMembers walks the syntactic tree of a union, flattening
+// nested unions and parenthesized type wrappers so each leaf member
+// can be checked individually.
+func collectUnionMembers(n *wrapperchecker.Node, out *[]*wrapperchecker.Node) {
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		switch c.Kind() {
+		case wrapperchecker.KindUnionType:
+			collectUnionMembers(c, out)
+		case wrapperchecker.KindParenthesizedType:
+			c.ForEachChild(func(inner *wrapperchecker.Node) bool {
+				if inner.Kind() == wrapperchecker.KindUnionType {
+					collectUnionMembers(inner, out)
+				} else {
+					*out = append(*out, inner)
+				}
+				return false
+			})
+		default:
+			*out = append(*out, c)
+		}
+		return false
+	})
 }
 
 // isFunctionReturnTypeUnion reports whether the union node sits in
@@ -140,6 +166,25 @@ func literalPrimitiveKind(t *wrapperchecker.Type) string {
 	}
 	if t.IsBooleanLike() && t.String() != "boolean" {
 		return "boolean"
+	}
+	if t.IsUnion() {
+		// Sub-union: every member must classify as the same primitive
+		// for the whole sub-union to be subsumed by a sibling.
+		var seen string
+		for _, m := range t.UnionMembers() {
+			k := literalPrimitiveKind(m)
+			if k == "" {
+				return ""
+			}
+			if seen == "" {
+				seen = k
+				continue
+			}
+			if seen != k {
+				return ""
+			}
+		}
+		return seen
 	}
 	return ""
 }
