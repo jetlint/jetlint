@@ -40,6 +40,11 @@ func DefaultOptions() Options {
 		AllowRegExp:  true,
 		AllowNever:   true,
 		AllowArray:   false,
+		Allow: []TypeMatcher{
+			{Name: "Error"},
+			{Name: "URL"},
+			{Name: "URLSearchParams"},
+		},
 	}
 }
 
