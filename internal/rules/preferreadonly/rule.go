@@ -84,11 +84,11 @@ func classWritesToProperty(cls, field *wrapperchecker.Node, name string) bool {
 			written = true
 			return
 		}
-		if isThisIncrementOf(n, name) {
+		if isThisDeleteOf(n, name) {
 			written = true
 			return
 		}
-		if isThisDeleteOf(n, name) {
+		if isThisIncrementOf(n, name) {
 			written = true
 			return
 		}
@@ -123,7 +123,21 @@ func isThisAssignmentTo(n *wrapperchecker.Node, name string) bool {
 	op := n.BinaryOperatorKind()
 	switch op {
 	case wrapperchecker.KindEqualsToken,
-		wrapperchecker.KindPlusEqualsToken:
+		wrapperchecker.KindPlusEqualsToken,
+		wrapperchecker.KindMinusEqualsToken,
+		wrapperchecker.KindAsteriskEqualsToken,
+		wrapperchecker.KindAsteriskAsteriskEqualsToken,
+		wrapperchecker.KindSlashEqualsToken,
+		wrapperchecker.KindPercentEqualsToken,
+		wrapperchecker.KindAmpersandEqualsToken,
+		wrapperchecker.KindBarEqualsToken,
+		wrapperchecker.KindCaretEqualsToken,
+		wrapperchecker.KindLessThanLessThanEqualsToken,
+		wrapperchecker.KindGreaterThanGreaterThanEqualsToken,
+		wrapperchecker.KindGreaterThanGreaterThanGreaterThanEqualsToken,
+		wrapperchecker.KindBarBarEqualsToken,
+		wrapperchecker.KindAmpersandAmpersandEqualsToken,
+		wrapperchecker.KindQuestionQuestionEqualsToken:
 	default:
 		return false
 	}
@@ -135,6 +149,29 @@ func isThisAssignmentTo(n *wrapperchecker.Node, name string) bool {
 		return false
 	}
 	recv := left.PropertyAccessReceiver()
+	return recv != nil && recv.Kind() == wrapperchecker.KindThisKeyword
+}
+
+// isThisIncrementOf reports whether n is a `++` or `--` (prefix or
+// postfix) on `this.<name>`. These mutate the field just like `=`.
+func isThisIncrementOf(n *wrapperchecker.Node, name string) bool {
+	switch n.Kind() {
+	case wrapperchecker.KindPrefixUnaryExpression, wrapperchecker.KindPostfixUnaryExpression:
+	default:
+		return false
+	}
+	op := n.PrefixUnaryOperator()
+	if op != "++" && op != "--" {
+		return false
+	}
+	target := n.FirstChild()
+	if target == nil || target.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return false
+	}
+	if target.PropertyAccessName() != name {
+		return false
+	}
+	recv := target.PropertyAccessReceiver()
 	return recv != nil && recv.Kind() == wrapperchecker.KindThisKeyword
 }
 
@@ -150,25 +187,5 @@ func isThisDeleteOf(n *wrapperchecker.Node, name string) bool {
 		return false
 	}
 	recv := target.PropertyAccessReceiver()
-	return recv != nil && recv.Kind() == wrapperchecker.KindThisKeyword
-}
-
-func isThisIncrementOf(n *wrapperchecker.Node, name string) bool {
-	if n.Kind() != wrapperchecker.KindPrefixUnaryExpression &&
-		n.Kind() != wrapperchecker.KindPostfixUnaryExpression {
-		return false
-	}
-	op := n.PrefixUnaryOperator()
-	if op != "++" && op != "--" {
-		return false
-	}
-	operand := n.FirstChild()
-	if operand == nil || operand.Kind() != wrapperchecker.KindPropertyAccessExpression {
-		return false
-	}
-	if operand.PropertyAccessName() != name {
-		return false
-	}
-	recv := operand.PropertyAccessReceiver()
 	return recv != nil && recv.Kind() == wrapperchecker.KindThisKeyword
 }
