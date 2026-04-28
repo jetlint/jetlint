@@ -47,13 +47,16 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	hasDefault, caseTypes := collectCases(ctx, n)
-	// requireDefaultForNonUnion: a switch over a single type (literal,
-	// enum, primitive) needs an explicit `default` clause regardless of
-	// case coverage. The exhaustiveness check below only reasons about
-	// unions; this option fills in the non-union side.
+	// requireDefaultForNonUnion: a switch over a single non-union
+	// type usually needs an explicit `default`. A literal type is
+	// already exhaustive once the literal value is cased — adding a
+	// default would be unreachable, and `allowDefaultCaseForExhaustive
+	// Switch=false` would forbid it.
 	if r.opts.RequireDefaultForNonUnion && !dt.IsUnion() && !hasDefault {
-		ctx.Report(disc, "switch over a non-union value should have a `default` clause")
-		return
+		if !nonUnionIsExhaustive(dt, caseTypes) {
+			ctx.Report(disc, "switch over a non-union value should have a `default` clause")
+			return
+		}
 	}
 	// allowDefaultCaseForExhaustiveSwitch=false: even on an exhaustive
 	// switch, a `default` is forbidden (it means the union changed
@@ -132,6 +135,29 @@ func exhaustiveOverUnion(dt *wrapperchecker.Type, covered map[string]bool) bool 
 		}
 	}
 	return true
+}
+
+// nonUnionIsExhaustive reports whether a non-union discriminant type
+// is fully covered by the given set of case-expression keys. A
+// single literal type is exhaustive once its value is cased; an
+// intersection like `'literal' & {brand}` keeps the literal flavor
+// and matches the same way.
+func nonUnionIsExhaustive(dt *wrapperchecker.Type, covered map[string]bool) bool {
+	if dt == nil {
+		return false
+	}
+	if dt.IsIntersection() {
+		for _, m := range dt.IntersectionMembers() {
+			if nonUnionIsExhaustive(m, covered) {
+				return true
+			}
+		}
+		return false
+	}
+	if !isCoverable(dt) {
+		return false
+	}
+	return covered[dt.String()]
 }
 
 func isCoverable(m *wrapperchecker.Type) bool {
