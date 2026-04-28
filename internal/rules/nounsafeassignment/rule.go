@@ -24,7 +24,39 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 		wrapperchecker.KindPropertyAssignment:  visitPropertyAssignment,
 		wrapperchecker.KindParameter:           visitParameter,
 		wrapperchecker.KindPropertyDeclaration: visitPropertyDeclaration,
+		wrapperchecker.KindBindingElement:      visitBindingElement,
 	}
+}
+
+func visitBindingElement(ctx *engine.Context, n *wrapperchecker.Node) {
+	// Walk up to find the enclosing variable declaration / parameter.
+	// If that declaration has an annotation, the user opted in; we
+	// only flag when the inferred type at this binding position is
+	// `any` and there's no annotation in the declaration chain.
+	if hasAnnotationAncestor(n) {
+		return
+	}
+	t := ctx.TypeOf(n)
+	if t == nil {
+		return
+	}
+	if t.IsAny() {
+		ctx.Report(n, "unsafe assignment of an `any` value via destructuring")
+	}
+}
+
+func hasAnnotationAncestor(n *wrapperchecker.Node) bool {
+	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
+		switch cur.Kind() {
+		case wrapperchecker.KindVariableDeclaration:
+			return cur.VariableDeclarationType() != nil
+		case wrapperchecker.KindParameter:
+			return cur.ParameterTypeAnnotation() != nil
+		case wrapperchecker.KindPropertyDeclaration:
+			return cur.PropertyDeclarationType() != nil
+		}
+	}
+	return false
 }
 
 func visitParameter(ctx *engine.Context, n *wrapperchecker.Node) {
