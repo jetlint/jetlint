@@ -88,6 +88,7 @@ func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 		wrapperchecker.KindPropertyAssignment:         r.visitPropertyAssignment,
 		wrapperchecker.KindShorthandPropertyAssignment: r.visitShorthandProperty,
 		wrapperchecker.KindMethodDeclaration:          r.visitMethodDeclaration,
+		wrapperchecker.KindMethodSignature:            r.visitMethodSignature,
 		wrapperchecker.KindSpreadElement:         r.visitSpreadElement,
 		wrapperchecker.KindSpreadAssignment:      r.visitSpreadElement,
 	}
@@ -263,6 +264,50 @@ func (r *rule) visitShorthandProperty(ctx *engine.Context, n *wrapperchecker.Nod
 	if allCallSignaturesExpectVoid(expected) {
 		ctx.Report(n, msgVoidCallback)
 	}
+}
+
+func (r *rule) visitMethodSignature(ctx *engine.Context, n *wrapperchecker.Node) {
+	if !r.opts.ChecksVoidReturn {
+		return
+	}
+	// Method signature on an interface — check return-type annotation.
+	ann := n.FunctionReturnTypeAnnotation()
+	if ann == nil {
+		return
+	}
+	rt := ctx.Checker().TypeFromTypeNode(ann)
+	if rt == nil || (!rt.IsPromise() && !returnTypeIsPromiseUnion(rt)) {
+		return
+	}
+	parent := n.Parent()
+	if parent == nil || parent.Kind() != wrapperchecker.KindInterfaceDeclaration {
+		return
+	}
+	name := methodName(n)
+	if name == "" {
+		return
+	}
+	for _, base := range parent.HeritageTypes(ctx.Checker()) {
+		expected := base.PropertyType(name)
+		if expected == nil {
+			continue
+		}
+		if allCallSignaturesExpectVoid(expected) {
+			ctx.Report(n, msgVoidCallback)
+			return
+		}
+	}
+}
+
+func returnTypeIsPromiseUnion(t *wrapperchecker.Type) bool {
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if m.IsPromise() {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (r *rule) visitMethodDeclaration(ctx *engine.Context, n *wrapperchecker.Node) {
