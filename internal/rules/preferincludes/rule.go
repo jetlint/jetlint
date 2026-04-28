@@ -71,9 +71,10 @@ func reverseOp(op wrapperchecker.Kind) wrapperchecker.Kind {
 }
 
 // isComparisonShape reports whether call/other form one of the
-// "found at least once" shapes:
+// "found at least once" or "not found" shapes:
 //
 //	indexOf !== -1 / != -1 / > -1 / >= 0
+//	indexOf === -1 / == -1 / < 0
 func isComparisonShape(op wrapperchecker.Kind, call, other *wrapperchecker.Node) bool {
 	if !isFindIndexCall(call) {
 		return false
@@ -81,9 +82,13 @@ func isComparisonShape(op wrapperchecker.Kind, call, other *wrapperchecker.Node)
 	switch op {
 	case wrapperchecker.KindExclamationEqualsToken,
 		wrapperchecker.KindExclamationEqualsEqualsToken,
+		wrapperchecker.KindEqualsEqualsToken,
+		wrapperchecker.KindEqualsEqualsEqualsToken,
 		wrapperchecker.KindGreaterThanToken:
 		return isNumericLiteral(other, "-1")
 	case wrapperchecker.KindGreaterThanEqualsToken:
+		return isNumericLiteral(other, "0")
+	case wrapperchecker.KindLessThanToken:
 		return isNumericLiteral(other, "0")
 	}
 	return false
