@@ -106,8 +106,28 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 }
 
 func isZero(ctx *engine.Context, n *wrapperchecker.Node) bool {
-	if n.Kind() == wrapperchecker.KindNumericLiteral && n.LiteralText() == "0" {
-		return true
+	switch n.Kind() {
+	case wrapperchecker.KindNumericLiteral:
+		if n.LiteralText() == "0" {
+			return true
+		}
+	case wrapperchecker.KindBigIntLiteral:
+		t := n.LiteralText()
+		if t == "0n" || t == "0" {
+			return true
+		}
+	case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral:
+		// `arr.filter(...)['0']` indexes the same slot.
+		if n.LiteralText() == "0" {
+			return true
+		}
+	case wrapperchecker.KindPrefixUnaryExpression:
+		// `-0` and `-0n` are still zero.
+		if n.PrefixUnaryOperator() == "-" {
+			if inner := n.FirstChild(); inner != nil {
+				return isZero(ctx, inner)
+			}
+		}
 	}
 	t := ctx.TypeOf(n)
 	if t == nil {
@@ -115,6 +135,13 @@ func isZero(ctx *engine.Context, n *wrapperchecker.Node) bool {
 	}
 	if v, ok := t.NumericLiteralValue(); ok && v == 0 {
 		return true
+	}
+	if t.IsBigIntLike() {
+		// 0n typed via const reference: `const zero = 0n; arr[zero]`.
+		s := t.String()
+		if s == "0n" || s == "-0n" {
+			return true
+		}
 	}
 	return false
 }
