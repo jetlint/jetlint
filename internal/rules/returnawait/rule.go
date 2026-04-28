@@ -18,6 +18,7 @@ func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
 		wrapperchecker.KindReturnStatement: visit,
+		wrapperchecker.KindArrowFunction:   visitArrow,
 	}
 }
 
@@ -26,6 +27,19 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if expr == nil {
 		return
 	}
+	checkReturnedAwait(ctx, expr)
+}
+
+func visitArrow(ctx *engine.Context, n *wrapperchecker.Node) {
+	body := n.FunctionBody()
+	if body == nil || body.Kind() == wrapperchecker.KindBlock {
+		// Block-bodied arrows go through the ReturnStatement handler.
+		return
+	}
+	checkReturnedAwait(ctx, body)
+}
+
+func checkReturnedAwait(ctx *engine.Context, expr *wrapperchecker.Node) {
 	if expr.Kind() != wrapperchecker.KindAwaitExpression {
 		return
 	}
