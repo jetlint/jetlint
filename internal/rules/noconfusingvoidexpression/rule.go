@@ -69,6 +69,14 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if t == nil || !t.IsVoid() {
 		return
 	}
+	// Direct boolean-coercion contexts: `void(x) ? a : b` (void as
+	// ternary test) and `!void(x)` (logical-not). The void value is
+	// being interpreted as a boolean, which is the canonical
+	// confusion this rule warns about.
+	if isTestOfConditional(n) || isOperandOfLogicalNot(n) {
+		ctx.Report(n, "void-returning call placed where a boolean is expected")
+		return
+	}
 	pos, kind := isInValuePosition(n)
 	if !pos {
 		return
@@ -151,6 +159,48 @@ func enclosingFunctionReturnsVoid(ctx *engine.Context, n *wrapperchecker.Node) b
 		}
 	}
 	return false
+}
+
+// isTestOfConditional reports whether n is the test (condition) of
+// the parent ConditionalExpression. Walks through transparent wrappers
+// (parens) so `(void(x)) ? a : b` is detected the same as `void(x) ? a : b`.
+func isTestOfConditional(n *wrapperchecker.Node) bool {
+	cur := n
+	for {
+		parent := cur.Parent()
+		if parent == nil {
+			return false
+		}
+		switch parent.Kind() {
+		case wrapperchecker.KindParenthesizedExpression:
+			cur = parent
+			continue
+		case wrapperchecker.KindConditionalExpression:
+			cond := parent.ConditionalCondition()
+			return cond != nil && cond.Pos() == cur.Pos()
+		}
+		return false
+	}
+}
+
+// isOperandOfLogicalNot reports whether n is the operand of a `!`
+// prefix-unary expression (or wrapped through parens).
+func isOperandOfLogicalNot(n *wrapperchecker.Node) bool {
+	cur := n
+	for {
+		parent := cur.Parent()
+		if parent == nil {
+			return false
+		}
+		if parent.Kind() == wrapperchecker.KindParenthesizedExpression {
+			cur = parent
+			continue
+		}
+		if parent.Kind() == wrapperchecker.KindPrefixUnaryExpression && parent.PrefixUnaryOperator() == "!" {
+			return true
+		}
+		return false
+	}
 }
 
 // isInValuePosition walks up parents through transparent wrappers and
