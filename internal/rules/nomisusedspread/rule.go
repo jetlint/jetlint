@@ -10,17 +10,37 @@ import (
 
 const id = "no-misused-spread"
 
-func New() engine.Rule { return rule{} }
+// Options is the configurable surface of the rule.
+type Options struct {
+	// Allow lists symbol names that should not be flagged when
+	// spread (e.g. `["Promise", "Map"]`). Matched against the type's
+	// SymbolName for a particular spread expression.
+	Allow []string
+}
 
-type rule struct{}
+func DefaultOptions() Options { return Options{} }
 
-func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+func New() engine.Rule                        { return NewWithOptions(DefaultOptions()) }
+func NewWithOptions(opts Options) engine.Rule { return &rule{opts: opts} }
 
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+type rule struct{ opts Options }
+
+func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+
+func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
 		wrapperchecker.KindSpreadElement:    visit,
-		wrapperchecker.KindSpreadAssignment: visitSpreadAssignment,
+		wrapperchecker.KindSpreadAssignment: r.visitSpreadAssignment,
 	}
+}
+
+func (r *rule) isAllowed(name string) bool {
+	for _, a := range r.opts.Allow {
+		if a == name {
+			return true
+		}
+	}
+	return false
 }
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -46,7 +66,7 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	}
 }
 
-func visitSpreadAssignment(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visitSpreadAssignment(ctx *engine.Context, n *wrapperchecker.Node) {
 	expr := n.FirstChild()
 	if expr == nil {
 		return
@@ -61,13 +81,13 @@ func visitSpreadAssignment(ctx *engine.Context, n *wrapperchecker.Node) {
 	}
 	// `{ ...someSet }` and `{ ...someMap }` — the iteration protocol
 	// produces tuples, not key/value pairs the object literal can use.
-	if name := setOrMapSymbol(t); name != "" {
+	if name := setOrMapSymbol(t); name != "" && !r.isAllowed(name) {
 		ctx.Report(n, "spreading a "+name+" into an object — Set/Map iteration doesn't produce string-keyed properties")
 		return
 	}
 	// Class instances and class constructors lose methods and
 	// prototype info when spread into a plain object.
-	if isClassInstanceOrConstructor(t) {
+	if isClassInstanceOrConstructor(t) && !r.isAllowed(t.SymbolName()) {
 		ctx.Report(n, "spreading a class instance into an object — methods on the prototype are not copied")
 	}
 }
