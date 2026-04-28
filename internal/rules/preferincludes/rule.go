@@ -33,7 +33,15 @@ func visitRegexpTest(ctx *engine.Context, n *wrapperchecker.Node) {
 	if callee.PropertyAccessName() != "test" {
 		return
 	}
-	if len(n.CallArguments()) != 1 {
+	args := n.CallArguments()
+	if len(args) != 1 {
+		return
+	}
+	// The test argument must be string-typed for the rewrite to land
+	// on a real `String.prototype.includes` — `any` or unknown drops
+	// to a property-access on a non-string and would become a different
+	// runtime call.
+	if at := ctx.TypeOf(args[0]); at == nil || !at.IsStringLike() {
 		return
 	}
 	recv := callee.PropertyAccessReceiver()
@@ -49,9 +57,9 @@ func visitRegexpTest(ctx *engine.Context, n *wrapperchecker.Node) {
 	if rt.SymbolName() != "RegExp" {
 		return
 	}
-	if !isPlainRegexpLiteral(recv) {
-		// Only flag literals whose pattern is a plain string of
-		// non-special characters and that has no flags. Patterns with
+	if !isPlainRegexpExpression(ctx, recv, 4) {
+		// Only flag patterns we can statically resolve to a plain
+		// string of non-special characters and no flags. Patterns with
 		// metacharacters (`[]`, `|`, `?`, escapes) or flags (`i`, etc.)
 		// can't be naively rewritten as `s.includes('foo')`.
 		return
@@ -59,14 +67,96 @@ func visitRegexpTest(ctx *engine.Context, n *wrapperchecker.Node) {
 	ctx.Report(n, "use String.prototype.includes instead of RegExp.test")
 }
 
-// isPlainRegexpLiteral reports whether n is a regex literal of the
-// form `/<plain text>/` — no flags, no metacharacters, no escapes.
+// isPlainRegexpExpression reports whether expr resolves to a regex
+// value with a plain alphanumeric pattern and no flags. Resolves
+// through identifier initializers and `new RegExp("plain")` calls
+// when the source can be statically determined.
+func isPlainRegexpExpression(ctx *engine.Context, expr *wrapperchecker.Node, depth int) bool {
+	if expr == nil || depth <= 0 {
+		return false
+	}
+	switch expr.Kind() {
+	case wrapperchecker.KindRegularExpressionLiteral:
+		return isPlainRegexpLiteral(expr)
+	case wrapperchecker.KindNewExpression, wrapperchecker.KindCallExpression:
+		callee := expr.CalleeExpression()
+		if callee == nil || callee.Kind() != wrapperchecker.KindIdentifier {
+			return false
+		}
+		if callee.LiteralText() != "RegExp" {
+			return false
+		}
+		args := expr.CallArguments()
+		if len(args) == 0 || len(args) > 2 {
+			return false
+		}
+		if len(args) == 2 {
+			flagsArg := args[1]
+			switch flagsArg.Kind() {
+			case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral:
+				if flagsArg.LiteralText() != "" {
+					return false
+				}
+			case wrapperchecker.KindIdentifier:
+				if flagsArg.LiteralText() != "undefined" {
+					return false
+				}
+			default:
+				return false
+			}
+		}
+		patternArg := args[0]
+		switch patternArg.Kind() {
+		case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral:
+			return isPlainPatternString(patternArg.LiteralText())
+		}
+		return false
+	case wrapperchecker.KindIdentifier:
+		sym := ctx.Checker().SymbolOf(expr)
+		if sym == nil {
+			return false
+		}
+		decls := sym.Declarations()
+		if len(decls) != 1 {
+			return false
+		}
+		init := decls[0].VariableDeclarationInitializer()
+		if init == nil {
+			return false
+		}
+		return isPlainRegexpExpression(ctx, init, depth-1)
+	}
+	return false
+}
+
+// isPlainPatternString reports whether s is a sequence of safe
+// characters that can be passed as-is to `String.prototype.includes`.
+func isPlainPatternString(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		switch r {
+		case '\\', '[', ']', '(', ')', '|', '?', '*', '+', '.', '^', '$', '{', '}':
+			return false
+		}
+		if r > 0x7e || r < 0x20 {
+			return false
+		}
+	}
+	return true
+}
+
+// isPlainRegexpLiteral reports whether n is a regex literal that can
+// be losslessly rewritten as a string literal — no flags, no
+// regex-class escapes (`\d`, `\w`, …), no character classes, no
+// quantifiers, no anchors. Plain character escapes (`\n`, `\\`, etc.)
+// are allowed because they stand for literal characters.
 func isPlainRegexpLiteral(n *wrapperchecker.Node) bool {
 	if n == nil || n.Kind() != wrapperchecker.KindRegularExpressionLiteral {
 		return false
 	}
 	src := n.LiteralText()
-	// Need at least `/x/` with no flags — minimum length 3, last char `/`.
 	if len(src) < 3 || src[0] != '/' {
 		return false
 	}
@@ -77,7 +167,7 @@ func isPlainRegexpLiteral(n *wrapperchecker.Node) bool {
 			break
 		}
 	}
-	if end < 0 || end == len(src)-1 == false {
+	if end < 0 || end != len(src)-1 {
 		// Trailing flags after the closing slash — disqualify.
 		return false
 	}
@@ -85,12 +175,22 @@ func isPlainRegexpLiteral(n *wrapperchecker.Node) bool {
 	if pattern == "" {
 		return false
 	}
-	for _, r := range pattern {
-		switch r {
-		case '\\', '[', ']', '(', ')', '|', '?', '*', '+', '.', '^', '$', '{', '}':
+	for i := 0; i < len(pattern); i++ {
+		c := pattern[i]
+		if c == '\\' {
+			if i+1 >= len(pattern) {
+				return false
+			}
+			next := pattern[i+1]
+			switch next {
+			case 'n', 'r', 't', 'v', 'f', '0', '\'', '"', '\\', '/':
+				i++
+				continue
+			}
 			return false
 		}
-		if r > 0x7e || r < 0x20 {
+		switch c {
+		case '[', ']', '(', ')', '|', '?', '*', '+', '.', '^', '$', '{', '}':
 			return false
 		}
 	}
@@ -125,10 +225,57 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	rt := ctx.TypeOf(recv)
-	if rt == nil || !typeHasIncludesMethod(rt) {
+	if rt == nil || !typeHasCompatibleIncludesMethod(rt) {
 		return
 	}
 	ctx.Report(n, "use .includes() instead of .indexOf() comparison")
+}
+
+// typeHasCompatibleIncludesMethod reports whether t carries an
+// `includes` method whose signature mirrors the receiver's `indexOf`
+// — same parameter count, includes is callable. User types where
+// includes is a non-callable property or has a different shape are
+// skipped because the rule's autofix would change runtime behavior.
+func typeHasCompatibleIncludesMethod(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsUnion() {
+		seen := false
+		for _, m := range t.UnionMembers() {
+			if m.IsNullOrUndefined() {
+				continue
+			}
+			if !typeHasCompatibleIncludesMethod(m) {
+				return false
+			}
+			seen = true
+		}
+		return seen
+	}
+	includesT := t.PropertyType("includes")
+	if includesT == nil {
+		return false
+	}
+	indexOfT := t.PropertyType("indexOf")
+	if indexOfT == nil {
+		return false
+	}
+	includesSigs := includesT.CallSignatures()
+	indexOfSigs := indexOfT.CallSignatures()
+	if len(includesSigs) == 0 || len(indexOfSigs) == 0 {
+		return false
+	}
+	includesSig := includesSigs[0]
+	indexOfSig := indexOfSigs[0]
+	if len(includesSig.ParameterTypes()) != len(indexOfSig.ParameterTypes()) {
+		return false
+	}
+	// includes must accept *at least* the args indexOf considers
+	// optional. If indexOf's `fromIndex?` is optional but includes
+	// requires it, calling `a.includes(b)` with only one arg would
+	// type-error where `a.indexOf(b)` doesn't.
+	return includesSig.MinArgumentCount() <= indexOfSig.MinArgumentCount()
 }
 
 func reverseOp(op wrapperchecker.Kind) wrapperchecker.Kind {
