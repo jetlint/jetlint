@@ -19,8 +19,46 @@ func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindMethodDeclaration: visit,
+		wrapperchecker.KindMethodDeclaration:   visit,
+		wrapperchecker.KindPropertyDeclaration: visitProperty,
 	}
+}
+
+// visitProperty handles `class C { f = (): C => { return this; }; }`.
+func visitProperty(ctx *engine.Context, n *wrapperchecker.Node) {
+	parent := n.Parent()
+	if parent == nil {
+		return
+	}
+	if parent.Kind() != wrapperchecker.KindClassDeclaration && parent.Kind() != wrapperchecker.KindClassExpression {
+		return
+	}
+	className := classDeclaredName(parent)
+	if className == "" {
+		return
+	}
+	init := n.PropertyDeclarationInitializer()
+	if init == nil {
+		return
+	}
+	if init.Kind() != wrapperchecker.KindArrowFunction && init.Kind() != wrapperchecker.KindFunctionExpression {
+		return
+	}
+	annot := init.FunctionReturnTypeAnnotation()
+	if annot == nil {
+		return
+	}
+	if typeAnnotationName(annot) != className {
+		return
+	}
+	body := init.FunctionBody()
+	if body == nil {
+		return
+	}
+	if !methodAlwaysReturnsThis(body, init) {
+		return
+	}
+	ctx.Report(init, "method always returns `this`; declare the return type as `this` so subclasses inherit chaining")
 }
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
