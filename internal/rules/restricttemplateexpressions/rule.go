@@ -203,6 +203,17 @@ func (r *rule) acceptable(t *wrapperchecker.Type, depth int) bool {
 		return r.opts.AllowRegExp
 	}
 	if r.opts.AllowArray && (t.IsTupleType() || t.IsArrayLikeType() || t.ArrayElementType() != nil) {
+		if t.IsTupleType() {
+			for _, elem := range t.TypeArguments() {
+				if !r.acceptable(elem, depth+1) {
+					return false
+				}
+			}
+			return true
+		}
+		if elem := t.ArrayElementType(); elem != nil {
+			return r.acceptable(elem, depth+1)
+		}
 		return true
 	}
 	if t.IsUnion() {
@@ -223,6 +234,13 @@ func (r *rule) acceptable(t *wrapperchecker.Type, depth int) bool {
 		return false
 	}
 	if c := t.BaseConstraint(); c != nil && c != t {
+		// Type parameters constrained by `any` (or `unknown`, which is
+		// what `T extends any` normalizes to) are rejected even when
+		// allowAny is set — the function body can't rely on the value
+		// being string-compatible.
+		if c.IsAny() || c.IsUnknown() {
+			return false
+		}
 		return r.acceptable(c, depth+1)
 	}
 	return false
