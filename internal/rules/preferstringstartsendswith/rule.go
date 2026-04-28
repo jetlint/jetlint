@@ -35,15 +35,40 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if left == nil || right == nil {
 		return
 	}
-	// `s[0] === 'a'` — left is ElementAccess of a string with index 0,
-	// right is a single-char string literal.
-	if matchStartsWith(ctx, left, right) {
+	if matchStartsWith(ctx, left, right) || matchStartsWith(ctx, right, left) {
 		ctx.Report(n, "use String.startsWith instead of comparing the first character")
 		return
 	}
-	if matchStartsWith(ctx, right, left) {
-		ctx.Report(n, "use String.startsWith instead of comparing the first character")
+	if matchIndexOfZero(ctx, left, right) || matchIndexOfZero(ctx, right, left) {
+		ctx.Report(n, "use String.startsWith instead of indexOf-against-zero")
 	}
+}
+
+// matchIndexOfZero reports whether call/literal form `s.indexOf(x) === 0`
+// where s is string-typed. The literal must be the number 0.
+func matchIndexOfZero(ctx *engine.Context, call, zero *wrapperchecker.Node) bool {
+	if call.Kind() != wrapperchecker.KindCallExpression {
+		return false
+	}
+	if zero.Kind() != wrapperchecker.KindNumericLiteral || zero.LiteralText() != "0" {
+		return false
+	}
+	callee := call.CalleeExpression()
+	if callee == nil || callee.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return false
+	}
+	if callee.PropertyAccessName() != "indexOf" {
+		return false
+	}
+	if len(call.CallArguments()) != 1 {
+		return false
+	}
+	recv := callee.PropertyAccessReceiver()
+	if recv == nil {
+		return false
+	}
+	rt := ctx.TypeOf(recv)
+	return rt != nil && rt.IsStringLike()
 }
 
 func matchStartsWith(ctx *engine.Context, indexAccess, literal *wrapperchecker.Node) bool {
