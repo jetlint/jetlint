@@ -120,9 +120,13 @@ func typeAnnotationName(annot *wrapperchecker.Node) string {
 }
 
 // methodAlwaysReturnsThis reports whether every reachable return
-// statement returns the literal `this` keyword. Methods that have no
-// return statement, or that return any non-this expression, fail.
+// statement returns the literal `this` keyword. Concise arrow bodies
+// where the body itself is `this` also count.
 func methodAlwaysReturnsThis(body *wrapperchecker.Node, fn *wrapperchecker.Node) bool {
+	// Concise arrow body — the body's value is the return value.
+	if body.Kind() != wrapperchecker.KindBlock {
+		return body.Kind() == wrapperchecker.KindThisKeyword
+	}
 	hasReturn := false
 	allThis := true
 	var walk func(n *wrapperchecker.Node)
@@ -136,8 +140,6 @@ func methodAlwaysReturnsThis(body *wrapperchecker.Node, fn *wrapperchecker.Node)
 				wrapperchecker.KindFunctionExpression,
 				wrapperchecker.KindArrowFunction,
 				wrapperchecker.KindMethodDeclaration:
-				// Don't descend into nested function-likes — their returns
-				// don't belong to ours.
 				return
 			}
 		}
