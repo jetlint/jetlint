@@ -230,6 +230,13 @@ func isInValuePosition(n *wrapperchecker.Node) (bool, string) {
 			case wrapperchecker.KindAmpersandAmpersandToken,
 				wrapperchecker.KindBarBarToken,
 				wrapperchecker.KindQuestionQuestionToken:
+				// LHS of `&&` / `||` / `??` is always coerced to a
+				// boolean (or null/undefined-tested) by the operator —
+				// flag it directly. RHS just propagates the value, so
+				// keep walking to see what consumes the operator.
+				if left := parent.BinaryLeft(); left != nil && left.Pos() == cur.Pos() {
+					return true, ""
+				}
 				cur = parent
 				continue
 			case wrapperchecker.KindCommaToken:
