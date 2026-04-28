@@ -86,8 +86,22 @@ func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindElementAccessExpression: r.visit,
+		wrapperchecker.KindElementAccessExpression:  r.visit,
+		wrapperchecker.KindPropertyAccessExpression: r.visitPropertyAccess,
 	}
+}
+
+func (r *rule) visitPropertyAccess(ctx *engine.Context, n *wrapperchecker.Node) {
+	// `obj.while` is fine when allowKeywords is true (the default).
+	// With allowKeywords:false, the property MUST be in brackets.
+	if r.opts.AllowKeywords {
+		return
+	}
+	name := n.PropertyAccessName()
+	if !isReservedWord(name) {
+		return
+	}
+	ctx.Report(n, "use bracket notation for reserved word: ['"+name+"']")
 }
 
 func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -160,17 +174,16 @@ func isIdContinue(r rune) bool {
 }
 
 func isReservedWord(s string) bool {
+	// Strict ES5+ reserved words. Contextual identifiers like
+	// `arguments`, `let`, `yield`, `eval` are intentionally excluded —
+	// they're valid property names without bracket access.
 	switch s {
-	case "abstract", "arguments", "await", "boolean", "break", "byte",
-		"case", "catch", "char", "class", "const", "continue", "debugger",
-		"default", "delete", "do", "double", "else", "enum", "eval",
-		"export", "extends", "false", "final", "finally", "float", "for",
-		"function", "goto", "if", "implements", "import", "in",
-		"instanceof", "int", "interface", "let", "long", "native", "new",
-		"null", "package", "private", "protected", "public", "return",
-		"short", "static", "super", "switch", "synchronized", "this",
-		"throw", "throws", "transient", "true", "try", "typeof", "var",
-		"void", "volatile", "while", "with", "yield":
+	case "break", "case", "catch", "class", "const", "continue",
+		"debugger", "default", "delete", "do", "else", "enum", "export",
+		"extends", "false", "finally", "for", "function", "if", "import",
+		"in", "instanceof", "new", "null", "return", "super", "switch",
+		"this", "throw", "true", "try", "typeof", "var", "void", "while",
+		"with":
 		return true
 	}
 	return false
