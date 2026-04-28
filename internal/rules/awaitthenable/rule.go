@@ -23,7 +23,112 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
 		wrapperchecker.KindAwaitExpression: visit,
 		wrapperchecker.KindForOfStatement:  visitForOf,
+		wrapperchecker.KindCallExpression:  visitPromiseAggregator,
 	}
+}
+
+// visitPromiseAggregator flags `Promise.all`/`race`/`allSettled`/`any`
+// calls whose argument is an iterable of values that aren't thenable
+// — passing those would silently succeed but the aggregator wouldn't
+// actually wait on anything.
+func visitPromiseAggregator(ctx *engine.Context, n *wrapperchecker.Node) {
+	callee := n.CalleeExpression()
+	if callee == nil || callee.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return
+	}
+	switch callee.PropertyAccessName() {
+	case "all", "race", "allSettled", "any":
+	default:
+		return
+	}
+	recv := callee.PropertyAccessReceiver()
+	if recv == nil || recv.Kind() != wrapperchecker.KindIdentifier {
+		return
+	}
+	if recv.LiteralText() != "Promise" {
+		return
+	}
+	args := n.CallArguments()
+	if len(args) != 1 {
+		return
+	}
+	t := ctx.TypeOf(args[0])
+	if t == nil {
+		return
+	}
+	if t.IsAny() || t.IsUnknown() {
+		return
+	}
+	elem := iterableElementType(t)
+	if elem == nil {
+		return
+	}
+	if elementHasNonThenableMember(elem) {
+		ctx.Report(args[0], "Promise."+callee.PropertyAccessName()+" expects an iterable of thenables — non-thenable elements are not awaited")
+	}
+}
+
+// iterableElementType returns the element type of an array-like (or
+// union of array-likes) — Array<T>, ReadonlyArray<T>, or a tuple.
+// Returns nil when no array-like shape is involved.
+func iterableElementType(t *wrapperchecker.Type) *wrapperchecker.Type {
+	if t == nil {
+		return nil
+	}
+	if t.IsUnion() {
+		var combined []*wrapperchecker.Type
+		for _, m := range t.UnionMembers() {
+			e := iterableElementType(m)
+			if e == nil {
+				return nil
+			}
+			combined = append(combined, e)
+		}
+		if len(combined) == 0 {
+			return nil
+		}
+		return combined[0]
+	}
+	if elem := t.ArrayElementType(); elem != nil {
+		return elem
+	}
+	if t.IsTupleType() {
+		args := t.TypeArguments()
+		if len(args) > 0 {
+			return args[0]
+		}
+	}
+	return nil
+}
+
+// elementHasNonThenableMember reports whether ANY constituent of the
+// element type is non-thenable. Promise.all etc. require every
+// element to be thenable for the aggregation to be meaningful.
+func elementHasNonThenableMember(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsAny() || t.IsUnknown() {
+		return false
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if elementHasNonThenableMember(m) {
+				return true
+			}
+		}
+		return false
+	}
+	if t.IsThenable() || t.IsPromise() {
+		return false
+	}
+	if t.IsTypeParameter() {
+		if c := t.BaseConstraint(); c != nil && c != t {
+			return elementHasNonThenableMember(c)
+		}
+		return false
+	}
+	return true
 }
 
 func visitForOf(ctx *engine.Context, n *wrapperchecker.Node) {
