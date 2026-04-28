@@ -40,8 +40,9 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 }
 
 // typeIsMutable reports whether t is a mutable container shape
-// (Array<T>, mutable tuple). Conservatively returns false for
-// primitives, readonly arrays, and unknown shapes.
+// (Array<T>, mutable tuple, or any container whose nested elements
+// are mutable). Conservatively returns false for primitives,
+// readonly arrays without mutable inner elements, and unknown shapes.
 func typeIsMutable(t *wrapperchecker.Type, depth int) bool {
 	if t == nil || depth <= 0 {
 		return false
@@ -52,11 +53,25 @@ func typeIsMutable(t *wrapperchecker.Type, depth int) bool {
 	if t.SymbolName() == "Array" {
 		return true
 	}
+	// ReadonlyArray<X> — outer is fine but inner X may be mutable.
+	if t.SymbolName() == "ReadonlyArray" {
+		for _, a := range t.TypeArguments() {
+			if typeIsMutable(a, depth-1) {
+				return true
+			}
+		}
+		return false
+	}
 	if t.IsTupleType() {
-		// `readonly [...]` prints with the readonly keyword; without
-		// it the tuple is mutable.
-		if !strings.HasPrefix(t.String(), "readonly") {
+		readonly := strings.HasPrefix(t.String(), "readonly")
+		if !readonly {
 			return true
+		}
+		// Readonly tuple — check element types.
+		for _, a := range t.TypeArguments() {
+			if typeIsMutable(a, depth-1) {
+				return true
+			}
 		}
 		return false
 	}
