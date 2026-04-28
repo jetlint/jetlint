@@ -54,6 +54,8 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 // isPureString reports whether t is exactly string (or a union where
 // every member is string). Excludes string-or-something-else unions
 // to match upstream's handling of `string | string[]` and similar.
+// Branded intersections like `string & { __brand: void }` are still
+// treated as strings — they're a stylistic flavor of the primitive.
 func isPureString(t *wrapperchecker.Type) bool {
 	if t.IsUnion() {
 		for _, m := range t.UnionMembers() {
@@ -62,6 +64,14 @@ func isPureString(t *wrapperchecker.Type) bool {
 			}
 		}
 		return true
+	}
+	if t.IsIntersection() {
+		for _, m := range t.IntersectionMembers() {
+			if isPureString(m) {
+				return true
+			}
+		}
+		return false
 	}
 	return t.IsStringLike() && !t.IsAny()
 }
