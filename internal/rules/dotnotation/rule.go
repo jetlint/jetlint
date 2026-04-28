@@ -133,9 +133,6 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 // protected member, or index signature) means bracket access is the
 // appropriate form.
 func (r *rule) shouldAllowByType(ctx *engine.Context, n *wrapperchecker.Node, key string) bool {
-	if !r.opts.AllowPrivateClassPropertyAccess && !r.opts.AllowProtectedClassPropertyAccess && !r.opts.AllowIndexSignaturePropertyAccess {
-		return false
-	}
 	recv := n.ElementAccessReceiver()
 	if recv == nil {
 		return false
@@ -150,7 +147,37 @@ func (r *rule) shouldAllowByType(ctx *engine.Context, n *wrapperchecker.Node, ke
 	if r.opts.AllowIndexSignaturePropertyAccess && typeHasIndexSignature(rt) && !typeHasOwnProperty(rt, key) {
 		return true
 	}
+	// Pattern-keyed index signatures (`[key: \`prefix_${string}\`]:
+	// T`, `[key: Lowercase<string>]: T`) only match at runtime
+	// through bracket access — there's no way to phrase
+	// `foo.\`prefix_xyz\`` as a property name. Treat the bracket
+	// form as the only legal access for any key not declared as a
+	// concrete property.
+	if typeHasNonPlainStringIndexSignature(rt) && !typeHasOwnProperty(rt, key) {
+		return true
+	}
 	return false
+}
+
+// typeHasNonPlainStringIndexSignature reports whether t (or any
+// non-nullish union member) has a string-keyed index signature whose
+// key type is narrower than plain `string`.
+func typeHasNonPlainStringIndexSignature(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if m.IsNullOrUndefined() {
+				continue
+			}
+			if typeHasNonPlainStringIndexSignature(m) {
+				return true
+			}
+		}
+		return false
+	}
+	return t.HasNonPlainStringIndexSignature()
 }
 
 // propertyHasAccessModifier reports whether the property `key` on t
