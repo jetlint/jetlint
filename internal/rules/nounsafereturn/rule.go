@@ -86,7 +86,34 @@ func checkReturnedValue(ctx *engine.Context, fn *wrapperchecker.Node, expr *wrap
 	if !returnIsUnsafe(t, declared, 8) {
 		return
 	}
+	// Nested `any` inside generic args (e.g. Map<any, string>) only
+	// counts as unsafe when the user wrote `any` in the expression. A
+	// bare `new Map()` returns Map<any, any> in tsgo's checker but
+	// should have been narrowed contextually to the declared shape.
+	if !t.IsAny() && !exprHasExplicitAnyKeyword(expr) {
+		return
+	}
 	ctx.Report(expr, "returning an `any` value defeats the function's declared return type")
+}
+
+// exprHasExplicitAnyKeyword reports whether the AST of the returned
+// expression contains a literal `any` type-keyword node.
+func exprHasExplicitAnyKeyword(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	if n.Kind() == wrapperchecker.KindAnyKeyword {
+		return true
+	}
+	found := false
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if exprHasExplicitAnyKeyword(c) {
+			found = true
+			return true
+		}
+		return false
+	})
+	return found
 }
 
 // awaitedContainsAny reports whether the awaited type of t contains
