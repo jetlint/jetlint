@@ -55,10 +55,15 @@ func visitSpreadAssignment(ctx *engine.Context, n *wrapperchecker.Node) {
 	if t == nil {
 		return
 	}
-	// `{ ...arr }` — spreading an array into an object skips the
-	// numeric-index ↔ string-key mismatch the user probably wants.
 	if isArraySpread(t) {
 		ctx.Report(n, "spreading an array into an object — array indices become string keys, which is rarely intentional")
+		return
+	}
+	// `{ ...someSet }` and `{ ...someMap }` — the iteration protocol
+	// produces tuples, not key/value pairs the object literal can use.
+	switch t.SymbolName() {
+	case "Set", "WeakSet", "Map", "WeakMap":
+		ctx.Report(n, "spreading a "+t.SymbolName()+" into an object — Set/Map iteration doesn't produce string-keyed properties")
 	}
 }
 
