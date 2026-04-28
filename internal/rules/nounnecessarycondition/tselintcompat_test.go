@@ -32,7 +32,16 @@ func TestNoUnnecessaryCondition_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := nounnecessarycondition.DefaultOptions()
+		switch v := c.Options["allowConstantLoopConditions"].(type) {
+		case bool:
+			opts.AllowConstantLoopConditions = v
+		case string:
+			if v == "always" || v == "only-allowed-literals" {
+				opts.AllowConstantLoopConditions = true
+			}
+		}
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -58,7 +67,7 @@ func TestNoUnnecessaryCondition_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func runCase(t *testing.T, code string, opts nounnecessarycondition.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -71,7 +80,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{nounnecessarycondition.New()},
+		[]engine.Rule{nounnecessarycondition.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"no-unnecessary-condition": wrapperlint.SeverityError},
 	)
 	count := 0

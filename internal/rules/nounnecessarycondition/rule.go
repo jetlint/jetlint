@@ -10,18 +10,30 @@ import (
 
 const id = "no-unnecessary-condition"
 
-func New() engine.Rule { return rule{} }
+// Options is the configurable surface of the rule.
+type Options struct {
+	// AllowConstantLoopConditions: when set, `while/for/do` loops with
+	// statically-constant test expressions are not flagged. The
+	// upstream rule accepts `true | false | "always" | "never" | "only-allowed-literals"`;
+	// this implementation treats anything truthy as "always allow".
+	AllowConstantLoopConditions bool
+}
 
-type rule struct{}
+func DefaultOptions() Options { return Options{} }
 
-func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+func New() engine.Rule                        { return NewWithOptions(DefaultOptions()) }
+func NewWithOptions(opts Options) engine.Rule { return &rule{opts: opts} }
 
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+type rule struct{ opts Options }
+
+func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+
+func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
 		wrapperchecker.KindIfStatement:           visitIf,
-		wrapperchecker.KindWhileStatement:        visitWhile,
-		wrapperchecker.KindDoStatement:           visitWhile,
-		wrapperchecker.KindForStatement:          visitFor,
+		wrapperchecker.KindWhileStatement:        r.visitWhile,
+		wrapperchecker.KindDoStatement:           r.visitWhile,
+		wrapperchecker.KindForStatement:          r.visitFor,
 		wrapperchecker.KindConditionalExpression: visitConditional,
 		wrapperchecker.KindBinaryExpression:      visitBinary,
 		wrapperchecker.KindPrefixUnaryExpression: visitPrefixUnary,
@@ -57,11 +69,17 @@ func visitIf(ctx *engine.Context, n *wrapperchecker.Node) {
 	checkRecursive(ctx, n.IfCondition())
 }
 
-func visitWhile(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visitWhile(ctx *engine.Context, n *wrapperchecker.Node) {
+	if r.opts.AllowConstantLoopConditions {
+		return
+	}
 	checkRecursive(ctx, n.WhileCondition())
 }
 
-func visitFor(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visitFor(ctx *engine.Context, n *wrapperchecker.Node) {
+	if r.opts.AllowConstantLoopConditions {
+		return
+	}
 	checkRecursive(ctx, n.ForStatementCondition())
 }
 
