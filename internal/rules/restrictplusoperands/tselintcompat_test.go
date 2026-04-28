@@ -32,7 +32,8 @@ func TestRestrictPlusOperands_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := optsFromCase(c)
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -60,7 +61,30 @@ func TestRestrictPlusOperands_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func optsFromCase(c tselintcompat.Case) restrictplusoperands.Options {
+	opts := restrictplusoperands.DefaultOptions()
+	if c.Options == nil {
+		return opts
+	}
+	if v, ok := c.Options["allowAny"].(bool); ok {
+		opts.AllowAny = v
+	}
+	if v, ok := c.Options["allowBoolean"].(bool); ok {
+		opts.AllowBoolean = v
+	}
+	if v, ok := c.Options["allowNullish"].(bool); ok {
+		opts.AllowNullish = v
+	}
+	if v, ok := c.Options["allowNumberAndString"].(bool); ok {
+		opts.AllowNumberAndString = v
+	}
+	if v, ok := c.Options["allowRegExp"].(bool); ok {
+		opts.AllowRegExp = v
+	}
+	return opts
+}
+
+func runCase(t *testing.T, code string, opts restrictplusoperands.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -73,7 +97,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{restrictplusoperands.New()},
+		[]engine.Rule{restrictplusoperands.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"restrict-plus-operands": wrapperlint.SeverityError},
 	)
 	count := 0
