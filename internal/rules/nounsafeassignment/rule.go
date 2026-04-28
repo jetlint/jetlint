@@ -165,9 +165,39 @@ func check(ctx *engine.Context, src *wrapperchecker.Node, rhs, lhs *wrappercheck
 	if lhs.IsAny() {
 		return
 	}
-	if assignmentIsUnsafe(rhs, lhs, 8) {
-		ctx.Report(src, "unsafe assignment of an `any` value to a more specific declared type")
+	if !assignmentIsUnsafe(rhs, lhs, 8) {
+		return
 	}
+	// Nested `any` inside generic args (e.g. `new Map()` returns
+	// Map<any, any>) only counts as unsafe when the user wrote `any`
+	// in the rhs expression. Default-inferred any from a bare
+	// constructor call should have been narrowed by the lhs's
+	// annotation through contextual inference.
+	if !rhs.IsAny() && !exprHasExplicitAnyKeyword(src) {
+		return
+	}
+	ctx.Report(src, "unsafe assignment of an `any` value to a more specific declared type")
+}
+
+// exprHasExplicitAnyKeyword reports whether the AST of the assigned
+// expression contains a literal `any` type-keyword node — i.e. the
+// user wrote `<any>` somewhere inside.
+func exprHasExplicitAnyKeyword(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	if n.Kind() == wrapperchecker.KindAnyKeyword {
+		return true
+	}
+	found := false
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if exprHasExplicitAnyKeyword(c) {
+			found = true
+			return true
+		}
+		return false
+	})
+	return found
 }
 
 // assignmentIsUnsafe reports whether the rhs smuggles `any` past the
