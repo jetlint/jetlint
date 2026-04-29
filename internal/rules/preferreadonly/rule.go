@@ -18,7 +18,51 @@ func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
 		wrapperchecker.KindPropertyDeclaration: visit,
+		wrapperchecker.KindParameter:           visitParam,
 	}
+}
+
+// visitParam handles constructor parameter properties — `constructor
+// (private foo = 1) {}` synthesizes a class field with the same
+// modifiers and is subject to the same readonly check.
+func visitParam(ctx *engine.Context, n *wrapperchecker.Node) {
+	if !n.HasPrivateModifier() {
+		return
+	}
+	if n.HasReadonlyModifier() {
+		return
+	}
+	parent := n.Parent()
+	if parent == nil || parent.Kind() != wrapperchecker.KindConstructor {
+		return
+	}
+	cls := parent.Parent()
+	if cls == nil {
+		return
+	}
+	if cls.Kind() != wrapperchecker.KindClassDeclaration && cls.Kind() != wrapperchecker.KindClassExpression {
+		return
+	}
+	name := parameterName(n)
+	if name == "" {
+		return
+	}
+	if classWritesToProperty(cls, n, name) {
+		return
+	}
+	ctx.Report(n, "private parameter property is never reassigned; declare it `readonly`")
+}
+
+func parameterName(n *wrapperchecker.Node) string {
+	var name string
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() == wrapperchecker.KindIdentifier && name == "" {
+			name = c.LiteralText()
+			return true
+		}
+		return false
+	})
+	return name
 }
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -252,6 +296,14 @@ func classWritesToProperty(cls, field *wrapperchecker.Node, name string) bool {
 			wrapperchecker.KindGetAccessor,
 			wrapperchecker.KindSetAccessor:
 			nextInCtor = false
+		case wrapperchecker.KindClassDeclaration,
+			wrapperchecker.KindClassExpression:
+			// A nested class introduces its own `this` binding —
+			// writes inside it can't reach the outer class's field
+			// of the same name.
+			if n != cls {
+				return
+			}
 		}
 		n.ForEachChild(func(c *wrapperchecker.Node) bool {
 			walk(c, nextInCtor, nextAliases)
