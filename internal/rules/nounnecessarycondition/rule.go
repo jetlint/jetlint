@@ -118,6 +118,12 @@ func check(ctx *engine.Context, expr *wrapperchecker.Node) {
 	if t == nil {
 		return
 	}
+	if t.IsNever() {
+		// `never` in a condition position is unreachable — the
+		// surrounding branch can never run.
+		ctx.Report(expr, "condition is unreachable (type never)")
+		return
+	}
 	if isAlwaysTruthy(t) {
 		ctx.Report(expr, "condition is always truthy")
 		return
