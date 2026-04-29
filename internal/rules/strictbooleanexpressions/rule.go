@@ -97,7 +97,35 @@ func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 		wrapperchecker.KindDoStatement:           r.visitTestPosition,
 		wrapperchecker.KindForStatement:          r.visitForStatement,
 		wrapperchecker.KindPrefixUnaryExpression: r.visitPrefixUnary,
+		wrapperchecker.KindBinaryExpression:      r.visitBinary,
 	}
+}
+
+// visitBinary checks the left operand of `&&` and `||` — the
+// short-circuit operators evaluate their LHS as a boolean test, so
+// the same constraints apply. The right operand is not in a boolean
+// position (its value flows out as the expression result), so it
+// isn't checked here.
+func (r *rule) visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
+	switch n.BinaryOperatorKind() {
+	case wrapperchecker.KindAmpersandAmpersandToken, wrapperchecker.KindBarBarToken:
+	default:
+		return
+	}
+	// Skip nested `a && b && c` — the outermost binary's LHS chain
+	// will recursively visit each component when the engine fires on
+	// the inner binaries.
+	if parent := n.Parent(); parent != nil && parent.Kind() == wrapperchecker.KindBinaryExpression {
+		switch parent.BinaryOperatorKind() {
+		case wrapperchecker.KindAmpersandAmpersandToken, wrapperchecker.KindBarBarToken:
+			return
+		}
+	}
+	left := n.BinaryLeft()
+	if left == nil {
+		return
+	}
+	r.checkBoolean(ctx, left)
 }
 
 func (r *rule) visitForStatement(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -258,8 +286,10 @@ func (r *rule) isAcceptable(t *wrapperchecker.Type) bool {
 		case hasEnum && !hasBool && !hasString && !hasNumber:
 			return r.opts.AllowNullableEnum
 		case !hasBool && !hasString && !hasNumber && !hasEnum:
-			// Pure null/undefined union.
-			return r.opts.AllowNullableObject
+			// Pure null/undefined union — the condition is always
+			// false; flag regardless of AllowNullableObject (which is
+			// about nullable object refs, not the no-object case).
+			return false
 		}
 		return false
 	}
