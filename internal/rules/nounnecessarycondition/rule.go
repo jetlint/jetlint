@@ -63,7 +63,9 @@ func visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
 		}
 		return
 	case wrapperchecker.KindQuestionQuestionToken:
-		// `a ?? def` is unnecessary if `a` can't be null/undefined.
+		// `a ?? def` is unnecessary if `a` can't be null/undefined,
+		// or — symmetrically — if `a` is ALWAYS null/undefined (the
+		// default branch always wins).
 		// Skip indexed/keyed access — under noUncheckedIndexedAccess
 		// the value could be undefined regardless of the static
 		// element type.
@@ -72,11 +74,25 @@ func visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
 			return
 		}
 		t := ctx.TypeOf(l)
-		if t == nil || typeIncludesNullOrUndefined(t) {
+		if t == nil {
 			return
 		}
-		ctx.Report(l, "left of `??` is never null or undefined")
+		if t.IsAny() || t.IsUnknown() {
+			return
+		}
+		if !typeIncludesNullOrUndefined(t) {
+			ctx.Report(l, "left of `??` is never null or undefined")
+			return
+		}
+		if isAlwaysNullishOnly(t) {
+			ctx.Report(l, "left of `??` is always null or undefined; remove the `??`")
+		}
 		return
+	case wrapperchecker.KindGreaterThanToken,
+		wrapperchecker.KindGreaterThanEqualsToken,
+		wrapperchecker.KindLessThanToken,
+		wrapperchecker.KindLessThanEqualsToken:
+		checkRelational(ctx, n)
 	case wrapperchecker.KindEqualsEqualsEqualsToken,
 		wrapperchecker.KindExclamationEqualsEqualsToken,
 		wrapperchecker.KindEqualsEqualsToken,
@@ -243,6 +259,44 @@ func typeIncludesNullOrUndefined(t *wrapperchecker.Type) bool {
 		return true
 	}
 	return false
+}
+
+// isAlwaysNullishOnly reports whether t is exclusively null/undefined
+// (every union arm is null or undefined). Used to flag a `??` whose
+// left operand always resolves to the fallback.
+func isAlwaysNullishOnly(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsNullOrUndefined() || t.IsVoid() {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if !isAlwaysNullishOnly(m) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
+
+// checkRelational flags `<`, `<=`, `>`, `>=` between literal types
+// where the result is statically determinable.
+func checkRelational(ctx *engine.Context, n *wrapperchecker.Node) {
+	left, right := n.BinaryLeft(), n.BinaryRight()
+	if left == nil || right == nil {
+		return
+	}
+	lt, rt := ctx.TypeOf(left), ctx.TypeOf(right)
+	if lt == nil || rt == nil {
+		return
+	}
+	if !isSingleLiteral(lt) || !isSingleLiteral(rt) {
+		return
+	}
+	ctx.Report(n, "comparison between literal types is statically determinable")
 }
 
 // isSingleLiteral reports whether t is a non-union, non-generic
