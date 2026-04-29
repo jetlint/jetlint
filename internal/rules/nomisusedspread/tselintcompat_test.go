@@ -37,6 +37,12 @@ func TestNoMisusedSpread_TypescriptEslintCompatibility(t *testing.T) {
 			for _, a := range v {
 				if s, ok := a.(string); ok {
 					opts.Allow = append(opts.Allow, s)
+					continue
+				}
+				if m, ok := a.(map[string]any); ok {
+					if name, ok := m["name"].(string); ok {
+						opts.Allow = append(opts.Allow, name)
+					}
 				}
 			}
 		}
