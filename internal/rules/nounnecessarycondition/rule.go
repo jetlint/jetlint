@@ -57,9 +57,31 @@ func visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
 	op := n.BinaryOperatorKind()
 	switch op {
 	case wrapperchecker.KindAmpersandAmpersandToken,
-		wrapperchecker.KindBarBarToken:
+		wrapperchecker.KindBarBarToken,
+		wrapperchecker.KindAmpersandAmpersandEqualsToken,
+		wrapperchecker.KindBarBarEqualsToken:
 		if l := n.BinaryLeft(); l != nil {
 			check(ctx, l)
+		}
+		return
+	case wrapperchecker.KindQuestionQuestionEqualsToken:
+		l := n.BinaryLeft()
+		if l == nil {
+			return
+		}
+		t := ctx.TypeOf(l)
+		if t == nil || t.IsAny() || t.IsUnknown() {
+			return
+		}
+		if !typeIncludesNullOrUndefined(t) {
+			if isIndexLikeAccess(l) {
+				return
+			}
+			ctx.Report(l, "left of `??=` is never null or undefined; the assignment never runs")
+			return
+		}
+		if isAlwaysNullishOnly(t) {
+			ctx.Report(l, "left of `??=` is always null or undefined; remove the conditional")
 		}
 		return
 	case wrapperchecker.KindQuestionQuestionToken:
