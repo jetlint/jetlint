@@ -22,13 +22,15 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 }
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
-	if !n.HasPrivateModifier() {
+	if !n.HasPrivateModifier() && !hasPrivateIdentifierName(n) {
 		return
 	}
 	if n.HasReadonlyModifier() {
 		return
 	}
-	if n.HasStaticModifier() {
+	if n.HasAccessorModifier() {
+		// Auto-accessor fields desugar into a getter/setter pair —
+		// declaring them readonly would silently drop the setter.
 		return
 	}
 	name := propertyName(n)
@@ -42,15 +44,26 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if cls.Kind() != wrapperchecker.KindClassDeclaration && cls.Kind() != wrapperchecker.KindClassExpression {
 		return
 	}
-	if classWritesToProperty(cls, n, name) {
+	isStatic := n.HasStaticModifier()
+	if isStatic {
+		// Static fields are addressable as `ClassName.field`. Walk the
+		// class once to see whether anything reassigns it that way; if
+		// so, the field can't be readonly.
+		clsName := classDeclarationName(cls)
+		if clsName != "" && classWritesToStatic(cls, n, name, clsName) {
+			return
+		}
+	} else if classWritesToProperty(cls, n, name) {
 		return
 	}
 	ctx.Report(n, "private field is never reassigned; declare it `readonly`")
 }
 
-func propertyName(n *wrapperchecker.Node) string {
+// classDeclarationName returns the identifier text of a class
+// declaration or expression, or "" for unnamed class expressions.
+func classDeclarationName(cls *wrapperchecker.Node) string {
 	var name string
-	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+	cls.ForEachChild(func(c *wrapperchecker.Node) bool {
 		if c.Kind() == wrapperchecker.KindIdentifier && name == "" {
 			name = c.LiteralText()
 			return true
@@ -58,6 +71,132 @@ func propertyName(n *wrapperchecker.Node) string {
 		return false
 	})
 	return name
+}
+
+// classWritesToStatic reports whether any code inside the class
+// assigns to `ClassName.<name>` outside the field declaration itself.
+// Walks every nested expression but stops at the field declaration so
+// the initializer doesn't count as a reassignment.
+func classWritesToStatic(cls, field *wrapperchecker.Node, name, clsName string) bool {
+	written := false
+	var walk func(n *wrapperchecker.Node)
+	walk = func(n *wrapperchecker.Node) {
+		if written || n == nil || n == field {
+			return
+		}
+		if isStaticAssignmentTo(n, name, clsName) ||
+			isStaticIncrementOf(n, name, clsName) ||
+			isStaticDeleteOf(n, name, clsName) {
+			written = true
+			return
+		}
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			walk(c)
+			return written
+		})
+	}
+	cls.ForEachChild(func(c *wrapperchecker.Node) bool {
+		walk(c)
+		return written
+	})
+	return written
+}
+
+func isStaticAssignmentTo(n *wrapperchecker.Node, name, clsName string) bool {
+	if n.Kind() != wrapperchecker.KindBinaryExpression {
+		return false
+	}
+	switch n.BinaryOperatorKind() {
+	case wrapperchecker.KindEqualsToken,
+		wrapperchecker.KindPlusEqualsToken, wrapperchecker.KindMinusEqualsToken,
+		wrapperchecker.KindAsteriskEqualsToken, wrapperchecker.KindAsteriskAsteriskEqualsToken,
+		wrapperchecker.KindSlashEqualsToken, wrapperchecker.KindPercentEqualsToken,
+		wrapperchecker.KindAmpersandEqualsToken, wrapperchecker.KindBarEqualsToken,
+		wrapperchecker.KindCaretEqualsToken,
+		wrapperchecker.KindLessThanLessThanEqualsToken,
+		wrapperchecker.KindGreaterThanGreaterThanEqualsToken,
+		wrapperchecker.KindGreaterThanGreaterThanGreaterThanEqualsToken,
+		wrapperchecker.KindBarBarEqualsToken,
+		wrapperchecker.KindAmpersandAmpersandEqualsToken,
+		wrapperchecker.KindQuestionQuestionEqualsToken:
+	default:
+		return false
+	}
+	left := n.BinaryLeft()
+	if left == nil || left.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return false
+	}
+	if left.PropertyAccessName() != name {
+		return false
+	}
+	recv := left.PropertyAccessReceiver()
+	return recv != nil && recv.Kind() == wrapperchecker.KindIdentifier && recv.LiteralText() == clsName
+}
+
+func isStaticIncrementOf(n *wrapperchecker.Node, name, clsName string) bool {
+	switch n.Kind() {
+	case wrapperchecker.KindPrefixUnaryExpression, wrapperchecker.KindPostfixUnaryExpression:
+	default:
+		return false
+	}
+	if op := n.PrefixUnaryOperator(); op != "++" && op != "--" {
+		return false
+	}
+	target := n.FirstChild()
+	if target == nil || target.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return false
+	}
+	if target.PropertyAccessName() != name {
+		return false
+	}
+	recv := target.PropertyAccessReceiver()
+	return recv != nil && recv.Kind() == wrapperchecker.KindIdentifier && recv.LiteralText() == clsName
+}
+
+func isStaticDeleteOf(n *wrapperchecker.Node, name, clsName string) bool {
+	if n.Kind() != wrapperchecker.KindDeleteExpression {
+		return false
+	}
+	target := n.FirstChild()
+	if target == nil || target.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return false
+	}
+	if target.PropertyAccessName() != name {
+		return false
+	}
+	recv := target.PropertyAccessReceiver()
+	return recv != nil && recv.Kind() == wrapperchecker.KindIdentifier && recv.LiteralText() == clsName
+}
+
+func propertyName(n *wrapperchecker.Node) string {
+	var name string
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if name != "" {
+			return true
+		}
+		switch c.Kind() {
+		case wrapperchecker.KindIdentifier, wrapperchecker.KindPrivateIdentifier:
+			name = c.LiteralText()
+			return true
+		}
+		return false
+	})
+	return name
+}
+
+// hasPrivateIdentifierName reports whether the property declaration's
+// name is a `#`-private identifier (ECMAScript private fields).
+// These are implicitly private without the `private` modifier.
+func hasPrivateIdentifierName(n *wrapperchecker.Node) bool {
+	private := false
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() == wrapperchecker.KindPrivateIdentifier {
+			private = true
+			return true
+		}
+		return false
+	})
+	return private
 }
 
 // classWritesToProperty reports whether any code inside the class
@@ -87,6 +226,10 @@ func classWritesToProperty(cls, field *wrapperchecker.Node, name string) bool {
 			written = true
 			return
 		}
+		if !inCtor && isDestructuringWriteTo(n, name, aliases) {
+			written = true
+			return
+		}
 		if isThisDeleteOf(n, name) || isAliasDeleteOf(n, name, aliases) {
 			written = true
 			return
@@ -105,7 +248,9 @@ func classWritesToProperty(cls, field *wrapperchecker.Node, name string) bool {
 		case wrapperchecker.KindArrowFunction,
 			wrapperchecker.KindFunctionExpression,
 			wrapperchecker.KindFunctionDeclaration,
-			wrapperchecker.KindMethodDeclaration:
+			wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindGetAccessor,
+			wrapperchecker.KindSetAccessor:
 			nextInCtor = false
 		}
 		n.ForEachChild(func(c *wrapperchecker.Node) bool {
@@ -174,6 +319,58 @@ func variableDeclName(decl *wrapperchecker.Node) string {
 
 // isAliasAssignmentTo mirrors isThisAssignmentTo but accepts an
 // identifier receiver as long as it's listed in aliases.
+// isDestructuringWriteTo reports whether n is a destructuring
+// assignment whose left-hand pattern targets `this.<name>` or
+// `<alias>.<name>`. Handles `({ value: this.value } = ...)`,
+// `({ ...this.value } = ...)`, and `[this.value] = ...`.
+func isDestructuringWriteTo(n *wrapperchecker.Node, name string, aliases map[string]bool) bool {
+	if n.Kind() != wrapperchecker.KindBinaryExpression {
+		return false
+	}
+	if n.BinaryOperatorKind() != wrapperchecker.KindEqualsToken {
+		return false
+	}
+	left := n.BinaryLeft()
+	if left == nil {
+		return false
+	}
+	switch left.Kind() {
+	case wrapperchecker.KindArrayLiteralExpression,
+		wrapperchecker.KindObjectLiteralExpression,
+		wrapperchecker.KindParenthesizedExpression:
+	default:
+		return false
+	}
+	return patternTargets(left, name, aliases)
+}
+
+// patternTargets walks a destructuring pattern (an array or object
+// literal used as a pattern) and reports whether any leaf target is
+// `this.<name>` or `<alias>.<name>`.
+func patternTargets(p *wrapperchecker.Node, name string, aliases map[string]bool) bool {
+	found := false
+	var walk func(n *wrapperchecker.Node)
+	walk = func(n *wrapperchecker.Node) {
+		if found || n == nil {
+			return
+		}
+		if n.Kind() == wrapperchecker.KindPropertyAccessExpression && n.PropertyAccessName() == name {
+			recv := n.PropertyAccessReceiver()
+			if recv != nil && (recv.Kind() == wrapperchecker.KindThisKeyword ||
+				(recv.Kind() == wrapperchecker.KindIdentifier && aliases[recv.LiteralText()])) {
+				found = true
+				return
+			}
+		}
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			walk(c)
+			return found
+		})
+	}
+	walk(p)
+	return found
+}
+
 func isAliasAssignmentTo(n *wrapperchecker.Node, name string, aliases map[string]bool) bool {
 	if len(aliases) == 0 || n.Kind() != wrapperchecker.KindBinaryExpression {
 		return false
