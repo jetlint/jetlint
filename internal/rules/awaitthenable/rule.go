@@ -127,7 +127,16 @@ func visitPromiseAggregator(ctx *engine.Context, n *wrapperchecker.Node) {
 	if len(args) != 1 {
 		return
 	}
-	t := ctx.TypeOf(args[0])
+	arg := args[0]
+	// Array-literal arguments get per-element checks: each non-thenable
+	// element is its own report. A union element with at least one
+	// thenable arm is accepted — Promise.all coerces non-thenables and
+	// the user clearly intended the thenable arm to be awaited.
+	if arg.Kind() == wrapperchecker.KindArrayLiteralExpression {
+		reportLiteralElements(ctx, arg, callee.PropertyAccessName())
+		return
+	}
+	t := ctx.TypeOf(arg)
 	if t == nil {
 		return
 	}
@@ -135,8 +144,80 @@ func visitPromiseAggregator(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	if iterableHasNonThenableElement(t, 6) {
-		ctx.Report(args[0], "Promise."+callee.PropertyAccessName()+" expects an iterable of thenables — non-thenable elements are not awaited")
+		ctx.Report(arg, "Promise."+callee.PropertyAccessName()+" expects an iterable of thenables — non-thenable elements are not awaited")
 	}
+}
+
+// reportLiteralElements walks an ArrayLiteralExpression and reports
+// each element whose type contains no thenable arm. Sparse holes
+// (OmittedExpression) and spreads are skipped — neither is a single
+// element whose type we can pinpoint here.
+func reportLiteralElements(ctx *engine.Context, lit *wrapperchecker.Node, aggregator string) {
+	lit.ForEachChild(func(elt *wrapperchecker.Node) bool {
+		if elt.Kind() == wrapperchecker.KindOmittedExpression {
+			return false
+		}
+		if elt.Kind() == wrapperchecker.KindSpreadElement {
+			// `...arr` flattens the elements of `arr`. Use arr's
+			// element type to decide whether to flag once.
+			inner := elt.FirstChild()
+			if inner == nil {
+				return false
+			}
+			t := ctx.TypeOf(inner)
+			if t == nil || t.IsAny() || t.IsUnknown() {
+				return false
+			}
+			if !iterableHasNonThenableElement(t, 6) {
+				return false
+			}
+			ctx.Report(elt, "Promise."+aggregator+" expects an iterable of thenables — spread elements are not")
+			return false
+		}
+		t := ctx.TypeOf(elt)
+		if t == nil {
+			return false
+		}
+		if t.IsAny() || t.IsUnknown() {
+			return false
+		}
+		if elementHasThenableArm(t) {
+			return false
+		}
+		ctx.Report(elt, "Promise."+aggregator+" expects an iterable of thenables — this element is not")
+		return false
+	})
+}
+
+// elementHasThenableArm reports whether t (or any union/intersection
+// arm of t) is thenable. A type-parameter delegates to its constraint.
+func elementHasThenableArm(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsThenable() || t.IsPromise() {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if elementHasThenableArm(m) {
+				return true
+			}
+		}
+	}
+	if t.IsIntersection() {
+		for _, m := range t.IntersectionMembers() {
+			if elementHasThenableArm(m) {
+				return true
+			}
+		}
+	}
+	if t.IsTypeParameter() {
+		if c := t.BaseConstraint(); c != nil && c != t {
+			return elementHasThenableArm(c)
+		}
+	}
+	return false
 }
 
 // iterableHasNonThenableElement reports whether any element of the
@@ -179,6 +260,14 @@ func iterableHasNonThenableElement(t *wrapperchecker.Type, depth int) bool {
 		args := t.TypeArguments()
 		if len(args) > 0 {
 			return elementHasNonThenableMember(args[0])
+		}
+	}
+	// Interface or class extending Array/Iterable: walk heritage
+	// once. `interface MyArray<U,T> extends Array<T>` should resolve
+	// to T's element check.
+	for _, base := range t.BaseTypes() {
+		if iterableHasNonThenableElement(base, depth-1) {
+			return true
 		}
 	}
 	return false
