@@ -54,15 +54,69 @@ func visitPrefixUnary(ctx *engine.Context, n *wrapperchecker.Node) {
 // (the `noUncheckedIndexedAccess` flag changes the type), so a
 // trailing `?? default` is often a deliberate runtime guard.
 func visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
-	switch n.BinaryOperatorKind() {
+	op := n.BinaryOperatorKind()
+	switch op {
 	case wrapperchecker.KindAmpersandAmpersandToken,
 		wrapperchecker.KindBarBarToken:
-	default:
+		if l := n.BinaryLeft(); l != nil {
+			check(ctx, l)
+		}
+		return
+	case wrapperchecker.KindEqualsEqualsEqualsToken,
+		wrapperchecker.KindExclamationEqualsEqualsToken,
+		wrapperchecker.KindEqualsEqualsToken,
+		wrapperchecker.KindExclamationEqualsToken:
+		checkEquality(ctx, n)
+	}
+}
+
+// checkEquality flags `a === b` (and the other equality operators)
+// when the types of both sides make the comparison statically
+// determinable — equal literal types are always true; disjoint
+// primitive literals are always false. Only fires when both sides
+// have a single non-generic literal type — anything wider could be a
+// runtime decision.
+func checkEquality(ctx *engine.Context, n *wrapperchecker.Node) {
+	left, right := n.BinaryLeft(), n.BinaryRight()
+	if left == nil || right == nil {
 		return
 	}
-	if l := n.BinaryLeft(); l != nil {
-		check(ctx, l)
+	lt, rt := ctx.TypeOf(left), ctx.TypeOf(right)
+	if lt == nil || rt == nil {
+		return
 	}
+	if !isSingleLiteral(lt) || !isSingleLiteral(rt) {
+		return
+	}
+	ls, rs := lt.String(), rt.String()
+	if ls == "" || rs == "" {
+		return
+	}
+	ctx.Report(n, "comparison is statically determinable from the literal types ("+ls+" vs "+rs+")")
+}
+
+// isSingleLiteral reports whether t is a non-union, non-generic
+// type whose value is fully determined at compile time — string,
+// number, boolean, or bigint literals plus null/undefined.
+func isSingleLiteral(t *wrapperchecker.Type) bool {
+	if t == nil || t.IsUnion() || t.IsIntersection() || t.IsAny() || t.IsUnknown() || t.IsTypeParameter() {
+		return false
+	}
+	if t.IsNullOrUndefined() {
+		return true
+	}
+	s := t.String()
+	switch {
+	case t.IsBooleanLike() && (s == "true" || s == "false"):
+		return true
+	case t.IsStringLike() && s != "string":
+		return true
+	case t.IsNumberLike() && s != "number":
+		return true
+	case t.IsBigIntLike() && s != "bigint":
+		return true
+	}
+	return false
 }
 
 func visitIf(ctx *engine.Context, n *wrapperchecker.Node) {
