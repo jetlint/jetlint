@@ -62,6 +62,21 @@ func visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
 			check(ctx, l)
 		}
 		return
+	case wrapperchecker.KindQuestionQuestionToken:
+		// `a ?? def` is unnecessary if `a` can't be null/undefined.
+		// Skip indexed/keyed access — under noUncheckedIndexedAccess
+		// the value could be undefined regardless of the static
+		// element type.
+		l := n.BinaryLeft()
+		if l == nil || isIndexLikeAccess(l) {
+			return
+		}
+		t := ctx.TypeOf(l)
+		if t == nil || typeIncludesNullOrUndefined(t) {
+			return
+		}
+		ctx.Report(l, "left of `??` is never null or undefined")
+		return
 	case wrapperchecker.KindEqualsEqualsEqualsToken,
 		wrapperchecker.KindExclamationEqualsEqualsToken,
 		wrapperchecker.KindEqualsEqualsToken,
@@ -73,9 +88,8 @@ func visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
 // checkEquality flags `a === b` (and the other equality operators)
 // when the types of both sides make the comparison statically
 // determinable — equal literal types are always true; disjoint
-// primitive literals are always false. Only fires when both sides
-// have a single non-generic literal type — anything wider could be a
-// runtime decision.
+// primitive literals are always false; one side is null/undefined
+// and the other's type can't be that.
 func checkEquality(ctx *engine.Context, n *wrapperchecker.Node) {
 	left, right := n.BinaryLeft(), n.BinaryRight()
 	if left == nil || right == nil {
@@ -85,14 +99,150 @@ func checkEquality(ctx *engine.Context, n *wrapperchecker.Node) {
 	if lt == nil || rt == nil {
 		return
 	}
-	if !isSingleLiteral(lt) || !isSingleLiteral(rt) {
-		return
+	// Both single literal types — straightforward static comparison.
+	if isSingleLiteral(lt) && isSingleLiteral(rt) {
+		ls, rs := lt.String(), rt.String()
+		if ls != "" && rs != "" {
+			ctx.Report(n, "comparison is statically determinable from the literal types ("+ls+" vs "+rs+")")
+			return
+		}
 	}
-	ls, rs := lt.String(), rt.String()
-	if ls == "" || rs == "" {
-		return
+	// Mixed: one side is null/undefined. If the other side can't be
+	// that value, the comparison is statically false (or always true
+	// for `!==`/`!=`).
+	op := n.BinaryOperatorKind()
+	loose := op == wrapperchecker.KindEqualsEqualsToken || op == wrapperchecker.KindExclamationEqualsToken
+	if comparisonIsAgainstExcludedNullish(lt, rt, right, loose) ||
+		comparisonIsAgainstExcludedNullish(rt, lt, left, loose) {
+		ctx.Report(n, "comparison with null/undefined against a type that excludes it is statically determinable")
 	}
-	ctx.Report(n, "comparison is statically determinable from the literal types ("+ls+" vs "+rs+")")
+}
+
+// comparisonIsAgainstExcludedNullish reports whether the LHS type is
+// exactly the literal value (null or undefined) and the RHS type
+// can never contain that exact value. The corresponding `other`
+// expression is the syntactic node, used to skip element-access
+// targets that may be unsoundly narrower than their declared type.
+func comparisonIsAgainstExcludedNullish(thisSide, otherSide *wrapperchecker.Type, otherNode *wrapperchecker.Node, loose bool) bool {
+	if !isNullOrUndefinedSide(thisSide) || isIndexLikeAccess(otherNode) {
+		return false
+	}
+	// `==`/`!=` treat null and undefined as equivalent — only flag
+	// when the other side excludes BOTH.
+	if loose {
+		return !typeIncludesNullOrUndefined(otherSide)
+	}
+	if thisSide.IsNull() {
+		return !typeIncludesNull(otherSide)
+	}
+	if thisSide.IsUndefined() {
+		return !typeIncludesUndefined(otherSide)
+	}
+	return false
+}
+
+func typeIncludesNull(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsAny() || t.IsUnknown() {
+		return true
+	}
+	if t.IsNull() {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if typeIncludesNull(m) {
+				return true
+			}
+		}
+		return false
+	}
+	if t.IsTypeParameter() {
+		if c := t.BaseConstraint(); c != nil && c != t {
+			return typeIncludesNull(c)
+		}
+		return true
+	}
+	return false
+}
+
+func typeIncludesUndefined(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsAny() || t.IsUnknown() {
+		return true
+	}
+	if t.IsUndefined() || t.IsVoid() {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if typeIncludesUndefined(m) {
+				return true
+			}
+		}
+		return false
+	}
+	if t.IsTypeParameter() {
+		if c := t.BaseConstraint(); c != nil && c != t {
+			return typeIncludesUndefined(c)
+		}
+		return true
+	}
+	return false
+}
+
+// isIndexLikeAccess reports whether n is an element access (`a[x]`)
+// expression. Under noUncheckedIndexedAccess the runtime value can
+// be undefined even when TypeScript types it narrower, so checks
+// for nullishness against such expressions are deliberately allowed.
+func isIndexLikeAccess(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	return n.Kind() == wrapperchecker.KindElementAccessExpression
+}
+
+// isNullOrUndefinedSide reports whether t is exactly null or
+// undefined (the literal types). Excludes wider types that just
+// happen to contain those.
+func isNullOrUndefinedSide(t *wrapperchecker.Type) bool {
+	if t == nil || t.IsUnion() {
+		return false
+	}
+	return t.IsNullOrUndefined()
+}
+
+// typeIncludesNullOrUndefined reports whether t (or any union arm)
+// is null/undefined. Type parameters forward through their constraints.
+func typeIncludesNullOrUndefined(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsAny() || t.IsUnknown() {
+		return true
+	}
+	if t.IsNullOrUndefined() || t.IsVoid() {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if typeIncludesNullOrUndefined(m) {
+				return true
+			}
+		}
+		return false
+	}
+	if t.IsTypeParameter() {
+		if c := t.BaseConstraint(); c != nil && c != t {
+			return typeIncludesNullOrUndefined(c)
+		}
+		return true
+	}
+	return false
 }
 
 // isSingleLiteral reports whether t is a non-union, non-generic
