@@ -66,11 +66,8 @@ func visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
 		// `a ?? def` is unnecessary if `a` can't be null/undefined,
 		// or — symmetrically — if `a` is ALWAYS null/undefined (the
 		// default branch always wins).
-		// Skip indexed/keyed access — under noUncheckedIndexedAccess
-		// the value could be undefined regardless of the static
-		// element type.
 		l := n.BinaryLeft()
-		if l == nil || isIndexLikeAccess(l) {
+		if l == nil {
 			return
 		}
 		t := ctx.TypeOf(l)
@@ -81,6 +78,12 @@ func visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
 			return
 		}
 		if !typeIncludesNullOrUndefined(t) {
+			// Skip indexed/keyed access here — under
+			// noUncheckedIndexedAccess the runtime value can be
+			// undefined even though the static type is narrower.
+			if isIndexLikeAccess(l) {
+				return
+			}
 			ctx.Report(l, "left of `??` is never null or undefined")
 			return
 		}
@@ -278,6 +281,11 @@ func isAlwaysNullishOnly(t *wrapperchecker.Type) bool {
 			}
 		}
 		return true
+	}
+	if t.IsTypeParameter() {
+		if c := t.BaseConstraint(); c != nil && c != t {
+			return isAlwaysNullishOnly(c)
+		}
 	}
 	return false
 }
