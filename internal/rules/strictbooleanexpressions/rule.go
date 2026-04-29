@@ -233,6 +233,13 @@ func (r *rule) isAcceptable(t *wrapperchecker.Type) bool {
 		switch {
 		case m.IsNullOrUndefined():
 			hasNullable = true
+		case m.IsEnumLike():
+			// Check enum membership before the more general string/
+			// number primitive checks — an enum literal is also
+			// IsNumberLike/IsStringLike but the enum identity is
+			// the load-bearing classification for nullable-enum
+			// option handling.
+			hasEnum = true
 		case isAlwaysTruthyLiteral(m):
 			// Non-empty string, non-zero numeric, `true`, etc. — never
 			// confused with the null/undefined branch in a boolean test.
@@ -243,8 +250,6 @@ func (r *rule) isAcceptable(t *wrapperchecker.Type) bool {
 			hasString = true
 		case m.IsNumberLike() || m.IsBigIntLike():
 			hasNumber = true
-		case m.IsEnumLike():
-			hasEnum = true
 		case m.IsNever():
 			// Unreachable.
 		case m.IsTypeParameter():

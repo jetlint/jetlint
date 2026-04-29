@@ -42,6 +42,7 @@ func visitSpan(ctx *engine.Context, n *wrapperchecker.Node) {
 	}
 }
 
+
 // visitTypeSpan handles type-level template literals like `${1}`,
 // `${null}`, `${undefined}`, `${'foo'}`. The interpolated type-node
 // is the first child; when it's a literal type that's already a
