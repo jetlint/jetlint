@@ -43,21 +43,48 @@ func visitAs(ctx *engine.Context, n *wrapperchecker.Node) {
 	if isAsConst(annot) {
 		return
 	}
-	// Asserting a literal expression to its own literal type
-	// (`1 as 1`, `'a' as 'a'`) is sometimes used to preserve literal
-	// inference in object literals and tuple positions; upstream
-	// doesn't flag those.
-	if isLiteralExpression(src) {
-		return
-	}
 	srcT := ctx.TypeOf(src)
 	target := ctx.Checker().TypeFromTypeNode(annot)
 	if srcT == nil || target == nil {
 		return
 	}
+	// Asserting to a literal/tuple type often preserves narrower
+	// inference at a widening boundary (`let z = c as 1` keeps the
+	// literal type when `c` would otherwise widen to `number`).
+	// Skip those — but a literal expression source (`3 as 3`)
+	// already has the narrow type and gains nothing from the
+	// assertion.
+	if isLiteralOrTupleAssertion(target) && !isLiteralExpression(src) {
+		return
+	}
 	if srcT.String() == target.String() {
 		ctx.Report(n, "type assertion is unnecessary — the source already has this type")
 	}
+}
+
+// isLiteralOrTupleAssertion reports whether the assertion target is
+// a literal type, tuple, or readonly tuple. These can preserve
+// narrower typing at widening boundaries even when the source's
+// inferred type currently matches.
+func isLiteralOrTupleAssertion(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsTupleType() {
+		return true
+	}
+	s := t.String()
+	switch {
+	case t.IsBooleanLike() && (s == "true" || s == "false"):
+		return true
+	case t.IsStringLike() && s != "string":
+		return true
+	case t.IsNumberLike() && s != "number":
+		return true
+	case t.IsBigIntLike() && s != "bigint":
+		return true
+	}
+	return false
 }
 
 func isAsConst(annot *wrapperchecker.Node) bool {
@@ -99,20 +126,38 @@ func visitNonNull(ctx *engine.Context, n *wrapperchecker.Node) {
 	if t == nil {
 		return
 	}
+	// `unknown` includes null/undefined but the assertion still
+	// narrows callers' usage — typescript-eslint doesn't flag.
+	if t.IsUnknown() || t.IsAny() {
+		return
+	}
+	// `void` carries undefined-as-the-only-inhabitant semantics —
+	// `foo()!` over a `void`-returning call is treated as legitimate.
+	if t.IsVoid() {
+		return
+	}
 	if !t.IsNullOrUndefined() && !typeContainsNullable(t) {
 		ctx.Report(n, "non-null assertion is unnecessary — the value is already non-nullable")
 	}
 }
 
 func typeContainsNullable(t *wrapperchecker.Type) bool {
-	if t.IsNullOrUndefined() {
+	if t == nil {
+		return false
+	}
+	if t.IsNullOrUndefined() || t.IsVoid() {
 		return true
 	}
 	if t.IsUnion() {
 		for _, m := range t.UnionMembers() {
-			if m.IsNullOrUndefined() {
+			if typeContainsNullable(m) {
 				return true
 			}
+		}
+	}
+	if t.IsTypeParameter() {
+		if c := t.BaseConstraint(); c != nil && c != t {
+			return typeContainsNullable(c)
 		}
 	}
 	return false
