@@ -28,6 +28,13 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if op != wrapperchecker.KindBarBarToken && op != wrapperchecker.KindBarBarEqualsToken {
 		return
 	}
+	if isInConditionalTestPosition(n) {
+		// `x || 'foo' ? a : b` and `if (x || 'foo')` use the `||`
+		// expression as a boolean test — that's the documented
+		// override: typescript-eslint's `ignoreConditionalTests`
+		// option defaults to true.
+		return
+	}
 	left := n.BinaryLeft()
 	if left == nil {
 		return
@@ -44,6 +51,42 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	ctx.Report(n, "use ?? for nullable values; || treats other falsy values as missing too")
+}
+
+// isInConditionalTestPosition reports whether n is the test
+// expression of a conditional/if/while/do/for, possibly nested
+// through `||`/`&&` chains and parenthesized expressions.
+func isInConditionalTestPosition(n *wrapperchecker.Node) bool {
+	cur := n
+	for {
+		parent := cur.Parent()
+		if parent == nil {
+			return false
+		}
+		switch parent.Kind() {
+		case wrapperchecker.KindIfStatement,
+			wrapperchecker.KindWhileStatement,
+			wrapperchecker.KindDoStatement,
+			wrapperchecker.KindConditionalExpression,
+			wrapperchecker.KindForStatement:
+			// Reached a parent that uses one of its children as a
+			// test position; we walked here only through `||`/`&&`/
+			// parens, so the original node is in a test context.
+			return true
+		case wrapperchecker.KindParenthesizedExpression,
+			wrapperchecker.KindPrefixUnaryExpression:
+			cur = parent
+			continue
+		case wrapperchecker.KindBinaryExpression:
+			switch parent.BinaryOperatorKind() {
+			case wrapperchecker.KindAmpersandAmpersandToken,
+				wrapperchecker.KindBarBarToken:
+				cur = parent
+				continue
+			}
+		}
+		return false
+	}
 }
 
 // typeIsNullable reports whether t is a union containing null or
