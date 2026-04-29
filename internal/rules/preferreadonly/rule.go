@@ -222,6 +222,9 @@ func propertyName(n *wrapperchecker.Node) string {
 		case wrapperchecker.KindIdentifier, wrapperchecker.KindPrivateIdentifier:
 			name = c.LiteralText()
 			return true
+		case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral:
+			name = c.LiteralText()
+			return true
 		}
 		return false
 	})
@@ -266,7 +269,8 @@ func classWritesToProperty(cls, field *wrapperchecker.Node, name string) bool {
 			})
 			return
 		}
-		if !inCtor && (isThisAssignmentTo(n, name) || isAliasAssignmentTo(n, name, aliases)) {
+		if !inCtor && (isThisAssignmentTo(n, name) || isAliasAssignmentTo(n, name, aliases) ||
+			isThisElementAssignmentTo(n, name) || isAliasElementAssignmentTo(n, name, aliases)) {
 			written = true
 			return
 		}
@@ -421,6 +425,75 @@ func patternTargets(p *wrapperchecker.Node, name string, aliases map[string]bool
 	}
 	walk(p)
 	return found
+}
+
+// isThisElementAssignmentTo / isAliasElementAssignmentTo handle
+// element-access writes like `this['prop'] = 1`. The string-literal
+// index is the only form that can target a private field by name.
+func isThisElementAssignmentTo(n *wrapperchecker.Node, name string) bool {
+	left := isAssignmentLeft(n)
+	if left == nil || left.Kind() != wrapperchecker.KindElementAccessExpression {
+		return false
+	}
+	if elementAccessLiteralName(left) != name {
+		return false
+	}
+	recv := left.ElementAccessReceiver()
+	return recv != nil && recv.Kind() == wrapperchecker.KindThisKeyword
+}
+
+func isAliasElementAssignmentTo(n *wrapperchecker.Node, name string, aliases map[string]bool) bool {
+	if len(aliases) == 0 {
+		return false
+	}
+	left := isAssignmentLeft(n)
+	if left == nil || left.Kind() != wrapperchecker.KindElementAccessExpression {
+		return false
+	}
+	if elementAccessLiteralName(left) != name {
+		return false
+	}
+	recv := left.ElementAccessReceiver()
+	return recv != nil && recv.Kind() == wrapperchecker.KindIdentifier && aliases[recv.LiteralText()]
+}
+
+// isAssignmentLeft returns the LHS of a binary expression with an
+// assignment operator, or nil for non-assignments.
+func isAssignmentLeft(n *wrapperchecker.Node) *wrapperchecker.Node {
+	if n.Kind() != wrapperchecker.KindBinaryExpression {
+		return nil
+	}
+	switch n.BinaryOperatorKind() {
+	case wrapperchecker.KindEqualsToken,
+		wrapperchecker.KindPlusEqualsToken, wrapperchecker.KindMinusEqualsToken,
+		wrapperchecker.KindAsteriskEqualsToken, wrapperchecker.KindAsteriskAsteriskEqualsToken,
+		wrapperchecker.KindSlashEqualsToken, wrapperchecker.KindPercentEqualsToken,
+		wrapperchecker.KindAmpersandEqualsToken, wrapperchecker.KindBarEqualsToken,
+		wrapperchecker.KindCaretEqualsToken,
+		wrapperchecker.KindLessThanLessThanEqualsToken,
+		wrapperchecker.KindGreaterThanGreaterThanEqualsToken,
+		wrapperchecker.KindGreaterThanGreaterThanGreaterThanEqualsToken,
+		wrapperchecker.KindBarBarEqualsToken,
+		wrapperchecker.KindAmpersandAmpersandEqualsToken,
+		wrapperchecker.KindQuestionQuestionEqualsToken:
+		return n.BinaryLeft()
+	}
+	return nil
+}
+
+// elementAccessLiteralName returns the string-literal index of an
+// element access expression (`a['name']` → "name"), or "" when the
+// index isn't a string literal.
+func elementAccessLiteralName(n *wrapperchecker.Node) string {
+	idx := n.ElementAccessIndex()
+	if idx == nil {
+		return ""
+	}
+	switch idx.Kind() {
+	case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral:
+		return idx.LiteralText()
+	}
+	return ""
 }
 
 func isAliasAssignmentTo(n *wrapperchecker.Node, name string, aliases map[string]bool) bool {
