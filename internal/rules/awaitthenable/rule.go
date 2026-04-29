@@ -98,7 +98,9 @@ func iterableHasNonThenableElement(t *wrapperchecker.Type, depth int) bool {
 	// type argument names the yielded element. Match by symbol name
 	// to avoid descending into unrelated generics.
 	switch t.SymbolName() {
-	case "Iterable", "IterableIterator", "AsyncIterable", "ReadonlyArray", "Array", "Set", "ReadonlySet":
+	case "Iterable", "IterableIterator", "AsyncIterable",
+		"Generator", "AsyncGenerator",
+		"ReadonlyArray", "Array", "Set", "ReadonlySet":
 		args := t.TypeArguments()
 		if len(args) > 0 {
 			return elementHasNonThenableMember(args[0])
