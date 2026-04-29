@@ -21,10 +21,85 @@ func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindAwaitExpression: visit,
-		wrapperchecker.KindForOfStatement:  visitForOf,
-		wrapperchecker.KindCallExpression:  visitPromiseAggregator,
+		wrapperchecker.KindAwaitExpression:    visit,
+		wrapperchecker.KindForOfStatement:     visitForOf,
+		wrapperchecker.KindCallExpression:     visitPromiseAggregator,
+		wrapperchecker.KindVariableStatement:  visitAwaitUsing,
 	}
+}
+
+// visitAwaitUsing flags `await using x = expr` declarations whose
+// initializer isn't async-disposable — the `await` is meaningless when
+// `expr` only implements `Symbol.dispose` (sync) or no disposer at
+// all. `any`/`unknown` initializers are accepted: their disposer
+// shape can't be ruled in or out.
+func visitAwaitUsing(ctx *engine.Context, n *wrapperchecker.Node) {
+	list := n.VariableStatementDeclarationList()
+	if list == nil || !list.IsAwaitUsingDeclaration() {
+		return
+	}
+	list.ForEachChild(func(decl *wrapperchecker.Node) bool {
+		if decl.Kind() != wrapperchecker.KindVariableDeclaration {
+			return false
+		}
+		init := decl.VariableDeclarationInitializer()
+		if init == nil {
+			return false
+		}
+		t := ctx.TypeOf(init)
+		if t == nil {
+			return false
+		}
+		if t.IsAny() || t.IsUnknown() {
+			return false
+		}
+		if isAsyncDisposable(t) {
+			return false
+		}
+		ctx.Report(init, "await using of a value that isn't async-disposable; the await has no effect")
+		return false
+	})
+}
+
+// isAsyncDisposable reports whether t exposes Symbol.asyncDispose
+// (directly, on its symbol-name, or through a union/intersection).
+func isAsyncDisposable(t *wrapperchecker.Type) bool {
+	if matchAsyncDispose(t) {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if matchAsyncDispose(m) {
+				return true
+			}
+			if m.IsAny() || m.IsUnknown() {
+				return true
+			}
+		}
+	}
+	if t.IsIntersection() {
+		for _, m := range t.IntersectionMembers() {
+			if matchAsyncDispose(m) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func matchAsyncDispose(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	for _, name := range t.PropertyNames() {
+		if containsSubstring(name, "asyncDispose") {
+			return true
+		}
+	}
+	if name := t.SymbolName(); name == "AsyncDisposable" {
+		return true
+	}
+	return false
 }
 
 // visitPromiseAggregator flags `Promise.all`/`race`/`allSettled`/`any`

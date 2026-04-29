@@ -15,7 +15,7 @@ import (
 const fixtureTsconfigBody = `{
   "compilerOptions": {
     "strict": true, "target": "es2022", "module": "esnext",
-    "moduleResolution": "bundler", "lib": ["es2022", "dom"],
+    "moduleResolution": "bundler", "lib": ["es2022", "esnext.disposable", "dom"],
     "skipLibCheck": true
   },
   "include": ["case.ts"]
