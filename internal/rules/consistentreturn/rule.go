@@ -5,39 +5,80 @@
 package consistentreturn
 
 import (
+	"encoding/json"
+
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	"github.com/tommymorgan/tsgolint/internal/engine"
 )
 
 const id = "consistent-return"
 
-func New() engine.Rule { return rule{} }
+// Options mirrors the upstream eslint consistent-return options.
+// `TreatUndefinedAsUnspecified`, when true, collapses returns whose
+// value is the `undefined` literal or whose type is `undefined` into
+// the bare-return bucket — so `if(x) return undefined; return;` is
+// considered consistent.
+type Options struct {
+	TreatUndefinedAsUnspecified bool
+}
 
-type rule struct{}
+func DefaultOptions() Options { return Options{} }
 
-func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+func OptionsFromJSON(raw json.RawMessage) (Options, error) {
+	out := DefaultOptions()
+	if len(raw) == 0 {
+		return out, nil
+	}
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &m); err != nil {
+		return out, err
+	}
+	if v, ok := m["treatUndefinedAsUnspecified"]; ok {
+		if err := json.Unmarshal(v, &out.TreatUndefinedAsUnspecified); err != nil {
+			return out, err
+		}
+	}
+	return out, nil
+}
 
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+func New() engine.Rule                        { return &rule{} }
+func NewWithOptions(opts Options) engine.Rule { return &rule{opts: opts} }
+
+type rule struct {
+	opts Options
+}
+
+func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+
+func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindFunctionDeclaration: visit,
-		wrapperchecker.KindFunctionExpression:  visit,
-		wrapperchecker.KindArrowFunction:       visit,
-		wrapperchecker.KindMethodDeclaration:   visit,
+		wrapperchecker.KindFunctionDeclaration: r.visit,
+		wrapperchecker.KindFunctionExpression:  r.visit,
+		wrapperchecker.KindArrowFunction:       r.visit,
+		wrapperchecker.KindMethodDeclaration:   r.visit,
 	}
 }
 
-func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	body := n.FunctionBody()
 	if body == nil || body.Kind() != wrapperchecker.KindBlock {
 		return
 	}
 	hasValue, hasUndefValue, hasBare := collectReturns(ctx, body, n)
-	// Inconsistency comes from mixing bare `return;` with any value-
-	// returning path (whether the value is `undefined` or something
-	// else). Two paths returning values — even if one is typed
-	// `undefined` — are consistent at the language level.
-	if !hasBare || !(hasValue || hasUndefValue) {
-		return
+	// `treatUndefinedAsUnspecified` makes `return undefined` semantically
+	// equivalent to `return;`. With it on, only mixing a non-undefined
+	// value with a bare/undefined return is inconsistent.
+	if r.opts.TreatUndefinedAsUnspecified {
+		if !hasValue || !(hasBare || hasUndefValue) {
+			return
+		}
+	} else {
+		// Default: a typed-undefined return counts as a value return,
+		// so two value paths are consistent even if one is undefined-
+		// typed; only mixing any value with bare `return;` flags.
+		if !hasBare || !(hasValue || hasUndefValue) {
+			return
+		}
 	}
 	// `(): void` explicitly opts into ignoring the value of any
 	// returns; the rule's job is satisfied by the user's annotation.

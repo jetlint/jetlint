@@ -1,6 +1,7 @@
 package consistentreturn_test
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,7 +33,12 @@ func TestConsistentReturn_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := consistentreturn.DefaultOptions()
+		if c.HasOptions {
+			raw, _ := json.Marshal(c.Options)
+			opts, _ = consistentreturn.OptionsFromJSON(raw)
+		}
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -58,7 +64,7 @@ func TestConsistentReturn_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func runCase(t *testing.T, code string, opts consistentreturn.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -71,7 +77,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{consistentreturn.New()},
+		[]engine.Rule{consistentreturn.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"consistent-return": wrapperlint.SeverityError},
 	)
 	count := 0
