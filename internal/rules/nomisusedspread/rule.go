@@ -210,14 +210,20 @@ func isClassInstanceOrConstructor(t *wrapperchecker.Type) bool {
 		return false
 	}
 	sym := t.Symbol()
-	if sym == nil {
-		return false
-	}
-	for _, decl := range sym.Declarations() {
-		switch decl.Kind() {
-		case wrapperchecker.KindClassDeclaration, wrapperchecker.KindClassExpression:
-			return true
+	if sym != nil {
+		for _, decl := range sym.Declarations() {
+			switch decl.Kind() {
+			case wrapperchecker.KindClassDeclaration, wrapperchecker.KindClassExpression:
+				return true
+			}
 		}
+	}
+	// Constructor types declared via lib.d.ts (`SetConstructor`,
+	// `MapConstructor`, etc.) — or generic-instantiation expressions
+	// like `Set<number>` — surface as objects whose only structural
+	// content is `new` signatures plus the `prototype` slot.
+	if len(t.ConstructSignatures()) > 0 {
+		return true
 	}
 	return false
 }
