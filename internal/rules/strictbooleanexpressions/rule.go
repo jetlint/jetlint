@@ -244,11 +244,11 @@ func (r *rule) isAcceptable(t *wrapperchecker.Type) bool {
 			// Non-empty string, non-zero numeric, `true`, etc. — never
 			// confused with the null/undefined branch in a boolean test.
 			hasAlwaysTruthy = true
-		case m.IsBooleanLike():
+		case m.IsBooleanLike() || intersectionContainsBoolean(m):
 			hasBool = true
-		case m.IsStringLike():
+		case m.IsStringLike() || intersectionContainsStringLike(m):
 			hasString = true
-		case m.IsNumberLike() || m.IsBigIntLike():
+		case m.IsNumberLike() || m.IsBigIntLike() || intersectionContainsNumberLike(m):
 			hasNumber = true
 		case m.IsNever():
 			// Unreachable.
@@ -317,6 +317,42 @@ func (r *rule) isAcceptable(t *wrapperchecker.Type) bool {
 			if hasNumber && !r.opts.AllowNumber {
 				return false
 			}
+			return true
+		}
+	}
+	return false
+}
+
+func intersectionContainsBoolean(t *wrapperchecker.Type) bool {
+	if !t.IsIntersection() {
+		return false
+	}
+	for _, m := range t.IntersectionMembers() {
+		if m.IsBooleanLike() {
+			return true
+		}
+	}
+	return false
+}
+
+func intersectionContainsStringLike(t *wrapperchecker.Type) bool {
+	if !t.IsIntersection() {
+		return false
+	}
+	for _, m := range t.IntersectionMembers() {
+		if m.IsStringLike() {
+			return true
+		}
+	}
+	return false
+}
+
+func intersectionContainsNumberLike(t *wrapperchecker.Type) bool {
+	if !t.IsIntersection() {
+		return false
+	}
+	for _, m := range t.IntersectionMembers() {
+		if m.IsNumberLike() || m.IsBigIntLike() {
 			return true
 		}
 	}
