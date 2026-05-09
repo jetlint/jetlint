@@ -19,9 +19,10 @@ const fixtureTsconfigBody = `{
     "module": "esnext",
     "moduleResolution": "bundler",
     "lib": ["es2022", "dom"],
+    "jsx": "preserve",
     "skipLibCheck": true
   },
-  "include": ["case.ts"]
+  "include": ["case.tsx"]
 }`
 
 func TestNoMisusedPromises_TypescriptEslintCompatibility(t *testing.T) {
@@ -88,8 +89,18 @@ func optsFromCase(c tselintcompat.Case) nomisusedpromises.Options {
 	switch v := c.Options["checksVoidReturn"].(type) {
 	case bool:
 		opts.ChecksVoidReturn = v
+		if !v {
+			opts.VoidReturn = nomisusedpromises.VoidReturnSubOptions{}
+		}
 	case map[string]any:
 		opts.ChecksVoidReturn = true
+		sub := make(map[string]bool, len(v))
+		for k, val := range v {
+			if b, ok := val.(bool); ok {
+				sub[k] = b
+			}
+		}
+		opts = nomisusedpromises.ApplyVoidReturnSubOptions(opts, sub)
 	}
 	return opts
 }
@@ -105,7 +116,7 @@ func runCase(t *testing.T, code string, opts nomisusedpromises.Options) (int, er
 	if err := os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644); err != nil {
 		return 0, err
 	}
-	if err := os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "case.tsx"), []byte(code), 0o644); err != nil {
 		return 0, err
 	}
 	prog, err := wrapperchecker.LoadProgram(tsc)
