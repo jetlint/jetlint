@@ -24,14 +24,17 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 
 // visitCall handles `arr.filter(...).at(0)`.
 func visitCall(ctx *engine.Context, n *wrapperchecker.Node) {
-	if n.IsOptionalChain() {
-		return
+	if n.IsOptionalChainRoot() {
+		return // .at?.(0) — don't flag.
 	}
 	callee := n.CalleeExpression()
-	if callee == nil || callee.Kind() != wrapperchecker.KindPropertyAccessExpression {
+	if callee == nil {
 		return
 	}
-	if callee.PropertyAccessName() != "at" {
+	if callee.IsOptionalChainRoot() {
+		return // ?.at(0) — don't flag.
+	}
+	if !isAtAccess(callee) {
 		return
 	}
 	args := n.CallArguments()
@@ -41,37 +44,127 @@ func visitCall(ctx *engine.Context, n *wrapperchecker.Node) {
 	if !isZero(ctx, args[0]) {
 		return
 	}
-	atRecv := callee.PropertyAccessReceiver()
+	atRecv := commaRhs(unparenNode(memberReceiver(callee)))
 	if atRecv == nil || atRecv.Kind() != wrapperchecker.KindCallExpression {
 		return
 	}
-	filterCallee := atRecv.CalleeExpression()
-	if filterCallee == nil || filterCallee.Kind() != wrapperchecker.KindPropertyAccessExpression {
+	if !isFilterCall(atRecv) {
 		return
 	}
-	if filterCallee.PropertyAccessName() != "filter" {
-		return
-	}
-	filterRecv := filterCallee.PropertyAccessReceiver()
+	filterRecv := memberReceiver(atRecv.CalleeExpression())
 	if filterRecv == nil {
 		return
 	}
 	rt := ctx.TypeOf(filterRecv)
-	if rt == nil {
-		return
-	}
-	if rt.ArrayElementType() == nil && !rt.IsArrayLikeType() && !rt.IsTupleType() {
+	if !typeIsFilterable(rt) {
 		return
 	}
 	ctx.Report(n, "use .find() instead of .filter().at(0)")
 }
 
+// typeIsFilterable reports whether t represents an array-like type,
+// possibly hiding inside a nullable union (`T[] | undefined`) — the
+// rule still suggests `.find()` for those.
+func typeIsFilterable(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.ArrayElementType() != nil || t.IsArrayLikeType() || t.IsTupleType() {
+		return true
+	}
+	if !t.IsUnion() {
+		return false
+	}
+	for _, m := range t.UnionMembers() {
+		if m.IsNullOrUndefined() {
+			continue
+		}
+		if m.ArrayElementType() != nil || m.IsArrayLikeType() || m.IsTupleType() {
+			return true
+		}
+	}
+	return false
+}
+
+// isAtAccess returns true when accessor is `.at` or `['at']` or
+// `[`at`]` (template).
+func isAtAccess(accessor *wrapperchecker.Node) bool {
+	switch accessor.Kind() {
+	case wrapperchecker.KindPropertyAccessExpression:
+		return accessor.PropertyAccessName() == "at"
+	case wrapperchecker.KindElementAccessExpression:
+		idx := accessor.ElementAccessIndex()
+		if idx == nil {
+			return false
+		}
+		switch idx.Kind() {
+		case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral:
+			return idx.LiteralText() == "at"
+		}
+	}
+	return false
+}
+
+func isFilterCall(call *wrapperchecker.Node) bool {
+	if call == nil {
+		return false
+	}
+	c := call.CalleeExpression()
+	if c == nil {
+		return false
+	}
+	switch c.Kind() {
+	case wrapperchecker.KindPropertyAccessExpression:
+		return c.PropertyAccessName() == "filter"
+	case wrapperchecker.KindElementAccessExpression:
+		idx := c.ElementAccessIndex()
+		if idx == nil {
+			return false
+		}
+		switch idx.Kind() {
+		case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral:
+			return idx.LiteralText() == "filter"
+		}
+	}
+	return false
+}
+
+// memberReceiver returns the receiver of a property/element access,
+// regardless of which form is used.
+func memberReceiver(member *wrapperchecker.Node) *wrapperchecker.Node {
+	if member == nil {
+		return nil
+	}
+	switch member.Kind() {
+	case wrapperchecker.KindPropertyAccessExpression:
+		return member.PropertyAccessReceiver()
+	case wrapperchecker.KindElementAccessExpression:
+		return member.ElementAccessReceiver()
+	}
+	return nil
+}
+
+// commaRhs returns the rightmost operand of a chained comma expression
+// — `(undefined, x)` is `x` for the purposes of further analysis.
+func commaRhs(n *wrapperchecker.Node) *wrapperchecker.Node {
+	for n != nil && n.Kind() == wrapperchecker.KindBinaryExpression && n.BinaryOperatorKind() == wrapperchecker.KindCommaToken {
+		n = n.BinaryRight()
+	}
+	return n
+}
+
+// unparenNode strips ParenthesizedExpression wrappers so member-chain
+// analysis can see through grouping parentheses.
+func unparenNode(n *wrapperchecker.Node) *wrapperchecker.Node {
+	for n != nil && n.Kind() == wrapperchecker.KindParenthesizedExpression {
+		n = n.FirstChild()
+	}
+	return n
+}
+
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
-	// Skip optional-chained access — `arr.filter(...)?.[0]` is OK; the
-	// optional chain is meaningful when the filter receiver itself is
-	// nullable.
-	if n.IsOptionalChain() {
-		return
+	if n.IsOptionalChainRoot() {
+		return // ?.[0] — don't flag.
 	}
 	idx := n.ElementAccessIndex()
 	if idx == nil {
@@ -80,26 +173,19 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if !isZero(ctx, idx) {
 		return
 	}
-	recv := n.ElementAccessReceiver()
+	recv := commaRhs(unparenNode(n.ElementAccessReceiver()))
 	if recv == nil || recv.Kind() != wrapperchecker.KindCallExpression {
 		return
 	}
-	callee := recv.CalleeExpression()
-	if callee == nil || callee.Kind() != wrapperchecker.KindPropertyAccessExpression {
+	if !isFilterCall(recv) {
 		return
 	}
-	if callee.PropertyAccessName() != "filter" {
-		return
-	}
-	filterRecv := callee.PropertyAccessReceiver()
+	filterRecv := memberReceiver(recv.CalleeExpression())
 	if filterRecv == nil {
 		return
 	}
 	rt := ctx.TypeOf(filterRecv)
-	if rt == nil {
-		return
-	}
-	if rt.ArrayElementType() == nil && !rt.IsArrayLikeType() && !rt.IsTupleType() {
+	if !typeIsFilterable(rt) {
 		return
 	}
 	ctx.Report(n, "use .find() instead of .filter()[0]")
