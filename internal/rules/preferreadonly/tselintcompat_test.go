@@ -32,7 +32,11 @@ func TestPreferReadonly_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := preferreadonly.DefaultOptions()
+		if v, ok := c.Options["onlyInlineLambdas"].(bool); ok {
+			opts.OnlyInlineLambdas = v
+		}
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -58,7 +62,7 @@ func TestPreferReadonly_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func runCase(t *testing.T, code string, opts preferreadonly.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -71,7 +75,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{preferreadonly.New()},
+		[]engine.Rule{preferreadonly.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"prefer-readonly": wrapperlint.SeverityError},
 	)
 	count := 0

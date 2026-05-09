@@ -9,27 +9,42 @@ import (
 
 const id = "prefer-readonly"
 
-func New() engine.Rule { return rule{} }
+// Options configures the rule. `OnlyInlineLambdas` (the upstream
+// option) restricts the readonly suggestion to fields whose initializer
+// is an arrow function, leaving non-lambda fields alone.
+type Options struct {
+	OnlyInlineLambdas bool
+}
 
-type rule struct{}
+func DefaultOptions() Options { return Options{} }
 
-func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+func New() engine.Rule                        { return &rule{} }
+func NewWithOptions(opts Options) engine.Rule { return &rule{opts: opts} }
 
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+type rule struct {
+	opts Options
+}
+
+func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+
+func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindPropertyDeclaration: visit,
-		wrapperchecker.KindParameter:           visitParam,
+		wrapperchecker.KindPropertyDeclaration: r.visit,
+		wrapperchecker.KindParameter:           r.visitParam,
 	}
 }
 
 // visitParam handles constructor parameter properties — `constructor
 // (private foo = 1) {}` synthesizes a class field with the same
 // modifiers and is subject to the same readonly check.
-func visitParam(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visitParam(ctx *engine.Context, n *wrapperchecker.Node) {
 	if !n.HasPrivateModifier() {
 		return
 	}
 	if n.HasReadonlyModifier() {
+		return
+	}
+	if r.opts.OnlyInlineLambdas && !propertyHasArrowInitializer(n) {
 		return
 	}
 	parent := n.Parent()
@@ -53,6 +68,40 @@ func visitParam(ctx *engine.Context, n *wrapperchecker.Node) {
 	ctx.Report(n, "private parameter property is never reassigned; declare it `readonly`")
 }
 
+// propertyHasArrowInitializer reports whether n's initializer (the
+// expression after `=`) is an arrow function. Used to gate the
+// `onlyInlineLambdas` carve-out.
+func propertyHasArrowInitializer(n *wrapperchecker.Node) bool {
+	found := false
+	sawEquals := false
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if sawEquals {
+			if c.Kind() == wrapperchecker.KindArrowFunction {
+				found = true
+			}
+			return true
+		}
+		if c.Kind() == wrapperchecker.KindEqualsToken {
+			sawEquals = true
+		}
+		return false
+	})
+	if found {
+		return true
+	}
+	// Fallback: when EqualsToken is absent in the child stream, look
+	// for an ArrowFunction directly under the declaration. PropertyDecl
+	// children sometimes elide the `=` in tsgo's tree.
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() == wrapperchecker.KindArrowFunction {
+			found = true
+			return true
+		}
+		return false
+	})
+	return found
+}
+
 func parameterName(n *wrapperchecker.Node) string {
 	var name string
 	n.ForEachChild(func(c *wrapperchecker.Node) bool {
@@ -65,7 +114,7 @@ func parameterName(n *wrapperchecker.Node) string {
 	return name
 }
 
-func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if !n.HasPrivateModifier() && !hasPrivateIdentifierName(n) {
 		return
 	}
@@ -75,6 +124,9 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if n.HasAccessorModifier() {
 		// Auto-accessor fields desugar into a getter/setter pair —
 		// declaring them readonly would silently drop the setter.
+		return
+	}
+	if r.opts.OnlyInlineLambdas && !propertyHasArrowInitializer(n) {
 		return
 	}
 	name := propertyName(n)
