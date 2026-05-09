@@ -60,6 +60,16 @@ func typeIsMutable(t *wrapperchecker.Type, depth int) bool {
 		return false
 	}
 	if t.IsIntersection() {
+		// Branded primitives — `string & { __tag: unique symbol }` —
+		// look like an object intersection but at runtime are just the
+		// primitive. typescript-eslint treats them as immutable since
+		// the brand can't be mutated.
+		for _, m := range t.IntersectionMembers() {
+			if m.IsBooleanLike() || m.IsStringLike() || m.IsNumberLike() ||
+				m.IsBigIntLike() || m.IsESSymbolLike() {
+				return false
+			}
+		}
 		for _, m := range t.IntersectionMembers() {
 			if typeIsMutable(m, depth-1) {
 				return true
