@@ -236,15 +236,28 @@ func typeIncludesUndefined(t *wrapperchecker.Type) bool {
 	return false
 }
 
-// isIndexLikeAccess reports whether n is an element access (`a[x]`)
-// expression. Under noUncheckedIndexedAccess the runtime value can
-// be undefined even when TypeScript types it narrower, so checks
-// for nullishness against such expressions are deliberately allowed.
+// isIndexLikeAccess reports whether n is — or whose receiver chain
+// passes through — an element access (`a[x]`) expression. Under
+// noUncheckedIndexedAccess the runtime value can be undefined even
+// when TypeScript types it narrower, so checks for nullishness
+// against such expressions are deliberately allowed. The walk handles
+// `arr[42]?.foo`, `arr[42].foo`, `arr[42].foo.bar`, etc.
 func isIndexLikeAccess(n *wrapperchecker.Node) bool {
-	if n == nil {
+	for n != nil {
+		switch n.Kind() {
+		case wrapperchecker.KindElementAccessExpression:
+			return true
+		case wrapperchecker.KindPropertyAccessExpression:
+			n = n.PropertyAccessReceiver()
+			continue
+		case wrapperchecker.KindParenthesizedExpression,
+			wrapperchecker.KindNonNullExpression:
+			n = n.FirstChild()
+			continue
+		}
 		return false
 	}
-	return n.Kind() == wrapperchecker.KindElementAccessExpression
+	return false
 }
 
 // isNullOrUndefinedSide reports whether t is exactly null or
@@ -412,6 +425,15 @@ func check(ctx *engine.Context, expr *wrapperchecker.Node) {
 		ctx.Report(expr, "condition is unreachable (type never)")
 		return
 	}
+	// `arr[42]` and `obj[key]` look statically truthy/falsy because
+	// the indexed access narrows to T, but at runtime the value can
+	// be undefined whenever noUncheckedIndexedAccess isn't enabled.
+	// typescript-eslint's rule never flags conditions whose value
+	// flows from an element access for that reason. The check covers
+	// `arr[42]`, `arr[42].foo`, `arr[42]?.foo`, and `!arr[42]`.
+	if conditionFromIndexAccess(unwrapParen(expr)) {
+		return
+	}
 	if isAlwaysTruthy(t) {
 		ctx.Report(expr, "condition is always truthy")
 		return
@@ -419,6 +441,36 @@ func check(ctx *engine.Context, expr *wrapperchecker.Node) {
 	if isAlwaysFalsy(t) {
 		ctx.Report(expr, "condition is always falsy")
 	}
+}
+
+// conditionFromIndexAccess reports whether the condition expression
+// derives its value (directly or through `!` / nested prop access)
+// from an element access expression. Index access carves out the
+// noUncheckedIndexedAccess discrepancy upstream documents.
+func conditionFromIndexAccess(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	if n.Kind() == wrapperchecker.KindPrefixUnaryExpression && n.PrefixUnaryOperator() == "!" {
+		return conditionFromIndexAccess(unwrapParen(n.FirstChild()))
+	}
+	return isIndexLikeAccess(n)
+}
+
+// unwrapParen strips parentheses and non-null assertions to reach the
+// underlying expression so isIndexLikeAccess can see through `(arr[i])`
+// and `arr[i]!`.
+func unwrapParen(n *wrapperchecker.Node) *wrapperchecker.Node {
+	for n != nil {
+		switch n.Kind() {
+		case wrapperchecker.KindParenthesizedExpression,
+			wrapperchecker.KindNonNullExpression:
+			n = n.FirstChild()
+			continue
+		}
+		return n
+	}
+	return n
 }
 
 // isAlwaysTruthy reports whether t is a type whose every inhabitant
