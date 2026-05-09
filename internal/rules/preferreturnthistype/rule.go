@@ -83,6 +83,7 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if annot == nil {
 		return
 	}
+	annotIsUnion := annot.Kind() == wrapperchecker.KindUnionType
 	annotName := typeAnnotationName(annot)
 	if annotName != className {
 		return
@@ -91,10 +92,83 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if body == nil {
 		return
 	}
-	if !methodAlwaysReturnsThis(body, n) {
+	// For a bare `: ClassName` annotation, every return path must be
+	// `this` so swapping to `: this` doesn't change semantics. For a
+	// union annotation containing the class name, only the
+	// `ClassName` arm needs `this`-substitution; any return-this is
+	// enough evidence that the arm is meaningful.
+	if annotIsUnion {
+		if !shouldFlagUnionReturn(ctx, parent, body, n) {
+			return
+		}
+	} else if !methodAlwaysReturnsThis(body, n) {
 		return
 	}
 	ctx.Report(n, "method always returns `this`; declare the return type as `this` so subclasses inherit chaining")
+}
+
+// shouldFlagUnionReturn applies the typescript-eslint algorithm for a
+// union annotation containing the class name: flag iff at least one
+// return is `this` AND no return has a type that is (or contains as a
+// union member) the class type. The second clause keeps us from
+// flagging cases like `f(): C | string { return this; return cu; }`
+// where `cu: C | string` — the `C` arm there is reachable through
+// `cu`, not just `this`, so swapping to `this | string` would lose
+// the polymorphic info on the `C` side.
+func shouldFlagUnionReturn(ctx *engine.Context, classNode, body, fn *wrapperchecker.Node) bool {
+	classType := ctx.TypeOf(classNode)
+	hasReturnThis := false
+	hasReturnClassType := false
+	var walk func(n *wrapperchecker.Node)
+	walk = func(n *wrapperchecker.Node) {
+		if n == nil || hasReturnClassType {
+			return
+		}
+		if n != fn {
+			switch n.Kind() {
+			case wrapperchecker.KindFunctionDeclaration,
+				wrapperchecker.KindFunctionExpression,
+				wrapperchecker.KindArrowFunction,
+				wrapperchecker.KindMethodDeclaration:
+				return
+			}
+		}
+		if n.Kind() == wrapperchecker.KindReturnStatement {
+			expr := n.FirstChild()
+			if expr == nil {
+				return
+			}
+			if expr.Kind() == wrapperchecker.KindThisKeyword {
+				hasReturnThis = true
+				return
+			}
+			if returnExprIsThis(expr, body) {
+				hasReturnThis = true
+				return
+			}
+			if classType != nil {
+				exprType := ctx.TypeOf(expr)
+				if exprType != nil {
+					if exprType.Equal(classType) {
+						hasReturnClassType = true
+						return
+					}
+					for _, m := range exprType.UnionMembers() {
+						if m.Equal(classType) {
+							hasReturnClassType = true
+							return
+						}
+					}
+				}
+			}
+		}
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			walk(c)
+			return false
+		})
+	}
+	walk(body)
+	return hasReturnThis && !hasReturnClassType
 }
 
 // hasThisParameterAnnotation reports whether the method declares an
@@ -267,3 +341,4 @@ func methodAlwaysReturnsThis(body *wrapperchecker.Node, fn *wrapperchecker.Node)
 	walk(body)
 	return hasReturn && allThis
 }
+
