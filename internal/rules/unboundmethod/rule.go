@@ -14,20 +14,32 @@ import (
 
 const id = "unbound-method"
 
-func New() engine.Rule { return rule{} }
+// Options configures the rule. `IgnoreStatic` matches the upstream
+// option of the same name — when true, static-method references like
+// `MyClass.someMethod` aren't flagged.
+type Options struct {
+	IgnoreStatic bool
+}
 
-type rule struct{}
+func DefaultOptions() Options { return Options{} }
 
-func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+func New() engine.Rule                        { return &rule{} }
+func NewWithOptions(opts Options) engine.Rule { return &rule{opts: opts} }
 
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+type rule struct {
+	opts Options
+}
+
+func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+
+func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindPropertyAccessExpression: visit,
-		wrapperchecker.KindObjectBindingPattern:     visitObjectPattern,
+		wrapperchecker.KindPropertyAccessExpression: r.visit,
+		wrapperchecker.KindObjectBindingPattern:     r.visitObjectPattern,
 	}
 }
 
-func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if isSafeUse(n) {
 		return
 	}
@@ -38,7 +50,33 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if sym == nil {
 		return
 	}
+	if r.opts.IgnoreStatic && symbolIsStaticMember(sym) {
+		return
+	}
 	checkIfMethodAndReport(ctx, n, sym)
+}
+
+// symbolIsStaticMember reports whether the symbol's declaration is a
+// static class member (method or getter/setter with the `static`
+// keyword). Used by ignoreStatic to skip references to ClassName.member.
+func symbolIsStaticMember(sym *wrapperchecker.Symbol) bool {
+	if sym == nil {
+		return false
+	}
+	for _, d := range sym.Declarations() {
+		switch d.Kind() {
+		case wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindMethodSignature,
+			wrapperchecker.KindGetAccessor,
+			wrapperchecker.KindSetAccessor,
+			wrapperchecker.KindPropertyDeclaration,
+			wrapperchecker.KindPropertySignature:
+			if d.HasStaticModifier() {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // propertyMethodSymbol resolves the method symbol of `obj.prop`. We
@@ -82,7 +120,7 @@ var nativelyBoundGlobals = map[string]struct{}{
 
 // visitObjectPattern flags `const { method } = instance` patterns
 // where `method` is a class method that loses its `this` when extracted.
-func visitObjectPattern(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visitObjectPattern(ctx *engine.Context, n *wrapperchecker.Node) {
 	if isInTypeDeclaration(n) {
 		return
 	}
