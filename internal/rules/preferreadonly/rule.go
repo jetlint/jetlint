@@ -3,6 +3,8 @@
 package preferreadonly
 
 import (
+	"fmt"
+
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	"github.com/tommymorgan/tsgolint/internal/engine"
 )
@@ -266,21 +268,60 @@ func isStaticDeleteOf(n *wrapperchecker.Node, name, clsName string) bool {
 
 func propertyName(n *wrapperchecker.Node) string {
 	var name string
+	var computedExpr *wrapperchecker.Node
 	n.ForEachChild(func(c *wrapperchecker.Node) bool {
-		if name != "" {
+		if name != "" || computedExpr != nil {
 			return true
 		}
 		switch c.Kind() {
 		case wrapperchecker.KindIdentifier, wrapperchecker.KindPrivateIdentifier:
 			name = c.LiteralText()
 			return true
-		case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral:
+		case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral,
+			wrapperchecker.KindNumericLiteral:
 			name = c.LiteralText()
+			return true
+		}
+		// Anything else in the property-name slot is a
+		// ComputedPropertyName wrapping an expression. Capture its
+		// inner expression for the upstream-shaped lookup below — only
+		// numeric literals and `Symbol.<name>` accesses produce a key
+		// the rule tracks; string-literal computed names are ignored.
+		if c.FirstChild() != nil {
+			computedExpr = c.FirstChild()
 			return true
 		}
 		return false
 	})
-	return name
+	if name != "" {
+		return name
+	}
+	if computedExpr == nil {
+		return ""
+	}
+	return computedPropertyKey(computedExpr)
+}
+
+// computedPropertyKey mirrors upstream's getEsNodesForVariable
+// computed-name branch: numeric literals use their text; `Symbol.X`
+// accesses use a synthetic key derived from the property name; any
+// other expression (string literal, arbitrary const, function call)
+// returns "" so the rule treats the field as untrackable and skips it.
+func computedPropertyKey(expr *wrapperchecker.Node) string {
+	if expr == nil {
+		return ""
+	}
+	if expr.Kind() == wrapperchecker.KindNumericLiteral {
+		return expr.LiteralText()
+	}
+	if expr.Kind() == wrapperchecker.KindPropertyAccessExpression {
+		recv := expr.PropertyAccessReceiver()
+		if recv != nil && recv.Kind() == wrapperchecker.KindIdentifier &&
+			recv.LiteralText() == "Symbol" {
+			return fmt.Sprintf("\x00symbol:%s", expr.PropertyAccessName())
+		}
+	}
+	return ""
 }
 
 // hasPrivateIdentifierName reports whether the property declaration's
