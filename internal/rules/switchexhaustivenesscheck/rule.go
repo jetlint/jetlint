@@ -4,9 +4,19 @@
 package switchexhaustivenesscheck
 
 import (
+	"regexp"
+	"strings"
+
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	"github.com/tommymorgan/tsgolint/internal/engine"
 )
+
+// defaultCommentPattern matches typescript-eslint's default
+// `defaultCaseCommentPattern` regex `/^no default$/iu`. A comment with
+// trimmed text "no default" tells the rule the user opted out of a
+// default clause intentionally and the switch should be treated as
+// having one for exhaustiveness purposes.
+var defaultCommentPattern = regexp.MustCompile(`(?i)^no default$`)
 
 const id = "switch-exhaustiveness-check"
 
@@ -47,65 +57,226 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	hasDefault, caseTypes := collectCases(ctx, n)
-	// requireDefaultForNonUnion: a switch over a single non-union
-	// type usually needs an explicit `default`. A literal type is
-	// already exhaustive once the literal value is cased — adding a
-	// default would be unreachable, and `allowDefaultCaseForExhaustive
-	// Switch=false` would forbid it.
-	if r.opts.RequireDefaultForNonUnion && !dt.IsUnion() && !hasDefault {
-		if !nonUnionIsExhaustive(dt, caseTypes) {
-			ctx.Report(disc, "switch over a non-union value should have a `default` clause")
-			return
+	if !hasDefault && hasDefaultCaseComment(n) {
+		hasDefault = true
+	}
+	containsNonLiteral := containsNonLiteralType(dt)
+	missing := missingLiteralBranches(dt, caseTypes)
+
+	r.checkExhaustive(ctx, disc, missing, hasDefault)
+	r.checkUnnecessaryDefault(ctx, disc, missing, hasDefault, containsNonLiteral)
+	r.checkNoUnionDefault(ctx, disc, containsNonLiteral, hasDefault)
+}
+
+// checkExhaustive reports a single error when literal members of the
+// discriminant union are missing case branches. Mirrors upstream's
+// checkSwitchExhaustive: presence of a default clause suppresses the
+// report only when considerDefaultExhaustiveForUnions is enabled.
+func (r *rule) checkExhaustive(ctx *engine.Context, disc *wrapperchecker.Node, missing []string, hasDefault bool) {
+	if r.opts.ConsiderDefaultExhaustiveForUnions && hasDefault {
+		return
+	}
+	if !r.opts.ConsiderDefaultExhaustiveForUnions && hasDefault {
+		// Without the option, a default clause still suppresses the
+		// missing-branch report — TypeScript's exhaustiveness check
+		// trusts the default to handle anything not explicitly cased.
+		return
+	}
+	if len(missing) == 0 {
+		return
+	}
+	ctx.Report(disc, "switch is not exhaustive — missing branches: "+joinBranches(missing))
+}
+
+// checkUnnecessaryDefault reports a default clause as superfluous on a
+// fully-exhaustive switch over only literal-typed members.
+// allowDefaultCaseForExhaustiveSwitch=false enables this guard.
+func (r *rule) checkUnnecessaryDefault(ctx *engine.Context, disc *wrapperchecker.Node, missing []string, hasDefault, containsNonLiteral bool) {
+	if r.opts.AllowDefaultCaseForExhaustiveSwitch {
+		return
+	}
+	if hasDefault && len(missing) == 0 && !containsNonLiteral {
+		ctx.Report(disc, "remove the `default` clause from this exhaustive switch")
+	}
+}
+
+// checkNoUnionDefault reports a missing default clause when the
+// discriminant has any non-literal-typed component (`number`,
+// `string`, branded primitive, etc.). The option forces a default in
+// that shape regardless of literal coverage.
+func (r *rule) checkNoUnionDefault(ctx *engine.Context, disc *wrapperchecker.Node, containsNonLiteral, hasDefault bool) {
+	if !r.opts.RequireDefaultForNonUnion {
+		return
+	}
+	if containsNonLiteral && !hasDefault {
+		ctx.Report(disc, "switch over a non-literal value should have a `default` clause")
+	}
+}
+
+// joinBranches concatenates the missing branch labels into a single
+// pipe-separated string, matching upstream's "{{missingBranches}}"
+// data field shape.
+func joinBranches(parts []string) string {
+	out := ""
+	for i, p := range parts {
+		if i > 0 {
+			out += " | "
+		}
+		out += p
+	}
+	return out
+}
+
+// missingLiteralBranches returns the literal-like union/intersection
+// constituents of dt that aren't already covered by an explicit case
+// clause. Mirrors upstream's missingLiteralBranchTypes computation.
+func missingLiteralBranches(dt *wrapperchecker.Type, caseTypes map[string]bool) []string {
+	var missing []string
+	for _, unionPart := range unionConstituents(dt) {
+		for _, intersectionPart := range intersectionConstituents(unionPart) {
+			if !isLiteralLikeType(intersectionPart) {
+				continue
+			}
+			label := intersectionPart.String()
+			if caseTypes[label] {
+				continue
+			}
+			missing = append(missing, label)
 		}
 	}
-	// allowDefaultCaseForExhaustiveSwitch=false: even on an exhaustive
-	// switch, a `default` is forbidden (it means the union changed
-	// without the case being added).
-	if !r.opts.AllowDefaultCaseForExhaustiveSwitch && hasDefault && dt.IsUnion() && exhaustiveOverUnion(dt, caseTypes) {
-		ctx.Report(disc, "remove the `default` clause from this exhaustive switch")
-		return
+	return missing
+}
+
+// unionConstituents returns t's union members, or [t] for a non-union.
+func unionConstituents(t *wrapperchecker.Type) []*wrapperchecker.Type {
+	if t == nil {
+		return nil
 	}
-	if !dt.IsUnion() {
-		return
+	return t.UnionMembers()
+}
+
+// intersectionConstituents returns t's intersection members, or [t]
+// for a non-intersection.
+func intersectionConstituents(t *wrapperchecker.Type) []*wrapperchecker.Type {
+	if t == nil {
+		return nil
 	}
-	required := map[string]bool{}
-	for _, m := range dt.UnionMembers() {
-		// Branded intersections (`'literal' & { _brand }`) keep the
-		// flavor of their primitive member — match against the
-		// underlying literal so a `case 'literal'` covers them.
-		if m.IsIntersection() {
-			for _, sub := range m.IntersectionMembers() {
-				if isCoverable(sub) {
-					required[sub.String()] = true
-					break
-				}
+	if t.IsIntersection() {
+		return t.IntersectionMembers()
+	}
+	return []*wrapperchecker.Type{t}
+}
+
+// isLiteralLikeType reports whether t is a literal-typed flavor that
+// can be cased — string/number/bigint literals, true/false, null,
+// undefined, or unique symbol references.
+func isLiteralLikeType(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsNullOrUndefined() {
+		return true
+	}
+	if t.IsBooleanLike() {
+		s := t.String()
+		if s == "true" || s == "false" {
+			return true
+		}
+	}
+	s := t.String()
+	if s == "" {
+		return false
+	}
+	if t.IsStringLike() && s != "string" {
+		return true
+	}
+	if t.IsNumberLike() && s != "number" {
+		return true
+	}
+	if t.IsBigIntLike() && s != "bigint" {
+		return true
+	}
+	if t.IsEnumLike() {
+		return true
+	}
+	// Unique symbol references (`typeof a` for `const a = Symbol()`)
+	// stringify to `typeof <name>` and are matchable by case clauses.
+	if t.IsESSymbolLike() && s != "symbol" {
+		return true
+	}
+	return false
+}
+
+// containsNonLiteralType reports whether the discriminant has any
+// constituent (after intersection-flattening) whose every component
+// is non-literal — i.e., a `string` / `number` / branded primitive
+// where no concrete literal value is fixed. Mirrors upstream's
+// doesTypeContainNonLiteralType.
+func containsNonLiteralType(t *wrapperchecker.Type) bool {
+	for _, unionPart := range unionConstituents(t) {
+		nonLit := true
+		for _, sub := range intersectionConstituents(unionPart) {
+			if isLiteralLikeType(sub) {
+				nonLit = false
+				break
 			}
+		}
+		if nonLit {
+			return true
+		}
+	}
+	return false
+}
+
+// hasDefaultCaseComment scans the switch's source for a single-line
+// or block comment whose trimmed text matches the default-comment
+// pattern. Used so `case 'a': break; // no default` is treated as
+// having an explicit default for exhaustiveness purposes.
+func hasDefaultCaseComment(sw *wrapperchecker.Node) bool {
+	src := sw.SourceText()
+	if src == "" {
+		return false
+	}
+	for _, comment := range extractComments(src) {
+		if defaultCommentPattern.MatchString(strings.TrimSpace(comment)) {
+			return true
+		}
+	}
+	return false
+}
+
+// extractComments returns the trimmed text of each `// ...` and `/* ... */`
+// comment in src. Doesn't try to detect comments inside string or
+// regex literals — switch bodies don't typically contain those at the
+// top level, so misclassification is not a concern here.
+func extractComments(src string) []string {
+	var out []string
+	i := 0
+	for i < len(src) {
+		if i+1 >= len(src) {
+			break
+		}
+		if src[i] == '/' && src[i+1] == '/' {
+			end := strings.Index(src[i:], "\n")
+			if end == -1 {
+				end = len(src) - i
+			}
+			out = append(out, src[i+2:i+end])
+			i += end
 			continue
 		}
-		if isCoverable(m) {
-			required[m.String()] = true
+		if src[i] == '/' && src[i+1] == '*' {
+			end := strings.Index(src[i+2:], "*/")
+			if end == -1 {
+				break
+			}
+			out = append(out, src[i+2:i+2+end])
+			i += 2 + end + 2
+			continue
 		}
-		// Non-coverable primitives (`number`, `string`, etc.) are
-		// never exhaustive — but partial cases on coverable members
-		// of the same union still merit checks below.
+		i++
 	}
-	if len(required) == 0 {
-		return
-	}
-	if hasDefault && r.opts.ConsiderDefaultExhaustiveForUnions {
-		return
-	}
-	if hasDefault {
-		// Default branch satisfies coverage by absorbing the missing
-		// members.
-		return
-	}
-	for label := range required {
-		if !caseTypes[label] {
-			ctx.Report(disc, "switch is not exhaustive — missing case for "+label)
-			return
-		}
-	}
+	return out
 }
 
 // collectCases walks the switch body once, returning whether a default
@@ -135,64 +306,4 @@ func collectCases(ctx *engine.Context, sw *wrapperchecker.Node) (bool, map[strin
 		return false
 	})
 	return hasDefault, covered
-}
-
-// exhaustiveOverUnion reports whether every union member is already
-// matched by an explicit case.
-func exhaustiveOverUnion(dt *wrapperchecker.Type, covered map[string]bool) bool {
-	for _, m := range dt.UnionMembers() {
-		if !isCoverable(m) {
-			return false
-		}
-		if !covered[m.String()] {
-			return false
-		}
-	}
-	return true
-}
-
-// nonUnionIsExhaustive reports whether a non-union discriminant type
-// is fully covered by the given set of case-expression keys. A
-// single literal type is exhaustive once its value is cased; an
-// intersection like `'literal' & {brand}` keeps the literal flavor
-// and matches the same way.
-func nonUnionIsExhaustive(dt *wrapperchecker.Type, covered map[string]bool) bool {
-	if dt == nil {
-		return false
-	}
-	if dt.IsIntersection() {
-		for _, m := range dt.IntersectionMembers() {
-			if nonUnionIsExhaustive(m, covered) {
-				return true
-			}
-		}
-		return false
-	}
-	if !isCoverable(dt) {
-		return false
-	}
-	return covered[dt.String()]
-}
-
-func isCoverable(m *wrapperchecker.Type) bool {
-	if m.IsBooleanLike() || m.IsNullOrUndefined() {
-		return true
-	}
-	s := m.String()
-	if s == "" {
-		return false
-	}
-	if m.IsStringLike() && s != "string" {
-		return true
-	}
-	if m.IsNumberLike() && s != "number" {
-		return true
-	}
-	if m.IsBigIntLike() && s != "bigint" {
-		return true
-	}
-	if m.IsEnumLike() {
-		return true
-	}
-	return false
 }
