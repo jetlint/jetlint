@@ -39,11 +39,13 @@ func visitAs(ctx *engine.Context, n *wrapperchecker.Node) {
 	}
 	// `as const` is meaningful on most expressions because it preserves
 	// literal/readonly inference at widening boundaries. On a literal
-	// expression that already has the narrow type, however, the
-	// assertion is redundant (`const a = 1 as const` — the variable
-	// already would have type `1` from the const initializer).
+	// expression that already has the narrow type *and* sits in a
+	// non-widening position, the assertion is redundant. In widening
+	// positions (object-literal property, array-literal element, plain
+	// initializer of `let`/`var`) the assertion still has effect, so
+	// don't flag.
 	if isAsConst(annot) {
-		if !isLiteralExpression(src) {
+		if !isLiteralExpression(src) || isInWideningPosition(n) {
 			return
 		}
 		ctx.Report(n, "type assertion is unnecessary — the literal already has this exact type")
@@ -55,13 +57,13 @@ func visitAs(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	// Asserting to a literal/tuple type often preserves narrower
-	// inference at a widening boundary (`let z = c as 1` keeps the
-	// literal type when `c` would otherwise widen to `number`).
-	// Skip those — but a literal expression source (`3 as 3`)
-	// already has the narrow type and gains nothing from the
-	// assertion.
-	if isLiteralOrTupleAssertion(target) && !isLiteralExpression(src) {
-		return
+	// inference at a widening boundary. Always skip non-literal source
+	// (`let z = c as 1`); literal source is only flaggable when not in
+	// a widening position.
+	if isLiteralOrTupleAssertion(target) {
+		if !isLiteralExpression(src) || isInWideningPosition(n) {
+			return
+		}
 	}
 	if srcT.String() == target.String() {
 		ctx.Report(n, "type assertion is unnecessary — the source already has this type")
@@ -107,6 +109,59 @@ func isAsConst(annot *wrapperchecker.Node) bool {
 		return false
 	})
 	return name == "const"
+}
+
+// isInWideningPosition reports whether n's parent context would widen
+// a literal type if the assertion were removed. Object/array literal
+// elements widen unless the containing literal has an explicit
+// contextual type. `let`/`var` initializers widen too. Conservative
+// heuristic: walk through parens to the structural parent and check
+// for these positions; assume "yes, widens" for ambiguous cases so we
+// don't false-flag.
+func isInWideningPosition(n *wrapperchecker.Node) bool {
+	cur := n.Parent()
+	for cur != nil && cur.Kind() == wrapperchecker.KindParenthesizedExpression {
+		cur = cur.Parent()
+	}
+	if cur == nil {
+		return false
+	}
+	switch cur.Kind() {
+	case wrapperchecker.KindPropertyAssignment,
+		wrapperchecker.KindShorthandPropertyAssignment,
+		wrapperchecker.KindArrayLiteralExpression,
+		wrapperchecker.KindPropertyDeclaration:
+		return true
+	case wrapperchecker.KindVariableDeclaration:
+		// `let x = 'foo' as 'foo'` — widens unless x is `const` or has
+		// an explicit annotation. `const x = 'foo' as 'foo'` doesn't
+		// widen, so the assertion is redundant — return false there.
+		// We conservatively return true (don't flag) when we can't
+		// distinguish — gopls' parent traversal of VariableDeclaration
+		// is ambiguous without checking the parent VariableDeclarationList.
+		if list := cur.Parent(); list != nil {
+			if isConstVariableDeclarationList(list) {
+				return false
+			}
+			return true
+		}
+		return true
+	}
+	return false
+}
+
+func isConstVariableDeclarationList(list *wrapperchecker.Node) bool {
+	if list == nil || list.Kind() != wrapperchecker.KindVariableDeclarationList {
+		return false
+	}
+	// `const` flag isn't directly exposed; approximate by source text.
+	t := list.SourceText()
+	for i := 0; i+5 <= len(t); i++ {
+		if t[i] == 'c' && t[i:i+5] == "const" {
+			return true
+		}
+	}
+	return false
 }
 
 func isLiteralExpression(n *wrapperchecker.Node) bool {
