@@ -19,8 +19,60 @@ const fixtureTsconfigBody = `{
     "jsx": "preserve",
     "skipLibCheck": true
   },
-  "include": ["case.tsx"]
+  "include": ["case.tsx", "deprecated.ts", "mixed-enums-decl.ts", "deprecated.tsx"]
 }`
+
+// fixtureDeprecatedModule mirrors the upstream fixture at
+// packages/eslint-plugin/tests/fixtures/deprecated.ts so cases that
+// import from './deprecated' resolve.
+const fixtureDeprecatedModule = `/** @deprecated */
+export class DeprecatedClass {
+  /** @deprecated */
+  foo: string = '';
+}
+/** @deprecated */
+export const deprecatedVariable = 1;
+/** @deprecated */
+export function deprecatedFunction(): void {}
+class NormalClass {}
+const normalVariable = 1;
+function normalFunction(): void;
+function normalFunction(arg: string): void;
+function normalFunction(arg?: string): void {}
+function deprecatedFunctionWithOverloads(): void;
+/** @deprecated */
+function deprecatedFunctionWithOverloads(arg: string): void;
+function deprecatedFunctionWithOverloads(arg?: string): void {}
+export class ClassWithDeprecatedConstructor {
+  constructor();
+  /** @deprecated */
+  constructor(arg: string);
+  constructor(arg?: string) {}
+}
+export {
+  /** @deprecated */
+  NormalClass,
+  /** @deprecated */
+  normalVariable,
+  /** @deprecated */
+  normalFunction,
+  deprecatedFunctionWithOverloads,
+  /** @deprecated Reason */
+  deprecatedFunctionWithOverloads as reexportedDeprecatedFunctionWithOverloads,
+  /** @deprecated Reason */
+  ClassWithDeprecatedConstructor as ReexportedClassWithDeprecatedConstructor,
+};
+
+/** @deprecated Reason */
+export type T = { a: string };
+
+export type U = { b: string };
+
+/** @deprecated */
+export default {
+  foo: 1,
+};
+`
 
 func TestNoDeprecated_TypescriptEslintCompatibility(t *testing.T) {
 	if testing.Short() {
@@ -68,6 +120,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	tsc := filepath.Join(dir, "tsconfig.json")
 	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
 	os.WriteFile(filepath.Join(dir, "case.tsx"), []byte(code), 0o644)
+	os.WriteFile(filepath.Join(dir, "deprecated.ts"), []byte(fixtureDeprecatedModule), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err
