@@ -31,8 +31,12 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if body == nil || body.Kind() != wrapperchecker.KindBlock {
 		return
 	}
-	hasValue, hasBare := collectReturns(ctx, body, n)
-	if !(hasValue && hasBare) {
+	hasValue, hasUndefValue, hasBare := collectReturns(ctx, body, n)
+	// Inconsistency comes from mixing bare `return;` with any value-
+	// returning path (whether the value is `undefined` or something
+	// else). Two paths returning values — even if one is typed
+	// `undefined` — are consistent at the language level.
+	if !hasBare || !(hasValue || hasUndefValue) {
 		return
 	}
 	// `(): void` explicitly opts into ignoring the value of any
@@ -43,10 +47,10 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	ctx.Report(n, "function returns values inconsistently — some paths return a value, others use a bare `return;`")
 }
 
-func collectReturns(ctx *engine.Context, body, fn *wrapperchecker.Node) (hasValue, hasBare bool) {
+func collectReturns(ctx *engine.Context, body, fn *wrapperchecker.Node) (hasValue, hasUndefValue, hasBare bool) {
 	var walk func(n *wrapperchecker.Node)
 	walk = func(n *wrapperchecker.Node) {
-		if n == nil || (hasValue && hasBare) {
+		if n == nil {
 			return
 		}
 		// Don't descend into nested function-likes — their returns
@@ -62,14 +66,12 @@ func collectReturns(ctx *engine.Context, body, fn *wrapperchecker.Node) (hasValu
 		}
 		if n.Kind() == wrapperchecker.KindReturnStatement {
 			expr := n.FirstChild()
-			if expr == nil {
+			switch {
+			case expr == nil:
 				hasBare = true
-			} else if returnsUndefinedOrVoid(ctx, expr) {
-				// `return undefined`, `return void 0`, or returning a
-				// call whose declared type is void — equivalent to a
-				// bare `return;` for consistency-of-return purposes.
-				hasBare = true
-			} else {
+			case returnsUndefinedOrVoid(ctx, expr):
+				hasUndefValue = true
+			default:
 				hasValue = true
 			}
 		}
@@ -131,23 +133,38 @@ func returnTypeIsVoid(ctx *engine.Context, fn *wrapperchecker.Node) bool {
 		return false
 	}
 	if wrapperchecker.HasAsyncModifier(fn) {
-		// Async: unwrap Promise<X> and check X.
-		if t.SymbolName() == "Promise" {
-			args := t.TypeArguments()
-			if len(args) > 0 {
-				return typeContainsVoid(args[0])
-			}
-		}
-		for _, base := range t.BaseTypeNames() {
-			if base == "Promise" {
-				args := t.TypeArguments()
-				if len(args) > 0 {
-					return typeContainsVoid(args[0])
+		// Async: unwrap Promise<X> recursively. `Promise<ReturnType<typeof
+		// asyncFn>>` resolves to `Promise<Promise<void>>` and the body's
+		// awaited value is `void`, so peel off all Promise layers.
+		return typeContainsVoid(unwrapPromise(t))
+	}
+	return typeContainsVoid(t)
+}
+
+// unwrapPromise repeatedly strips `Promise<X>` from a type. Walks up
+// to a few levels to handle `Promise<ReturnType<typeof asyncFn>>` →
+// `Promise<Promise<void>>` → `void`.
+func unwrapPromise(t *wrapperchecker.Type) *wrapperchecker.Type {
+	for i := 0; i < 8 && t != nil; i++ {
+		isPromise := t.SymbolName() == "Promise"
+		if !isPromise {
+			for _, base := range t.BaseTypeNames() {
+				if base == "Promise" {
+					isPromise = true
+					break
 				}
 			}
 		}
+		if !isPromise {
+			return t
+		}
+		args := t.TypeArguments()
+		if len(args) == 0 {
+			return t
+		}
+		t = args[0]
 	}
-	return typeContainsVoid(t)
+	return t
 }
 
 func typeContainsVoid(t *wrapperchecker.Type) bool {
