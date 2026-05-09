@@ -26,7 +26,26 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 		wrapperchecker.KindIdentifier:              visitIdentifier,
 		wrapperchecker.KindPrivateIdentifier:       visitIdentifier,
 		wrapperchecker.KindElementAccessExpression: visitElementAccess,
+		wrapperchecker.KindSuperKeyword:            visitSuperKeyword,
 	}
+}
+
+// visitSuperKeyword handles `super(...)` constructor calls. The
+// resolved signature points at the base class's constructor; flag it
+// when that constructor carries `@deprecated`.
+func visitSuperKeyword(ctx *engine.Context, n *wrapperchecker.Node) {
+	parent := n.Parent()
+	if parent == nil || parent.Kind() != wrapperchecker.KindCallExpression {
+		return
+	}
+	if !sameNode(parent.CalleeExpression(), n) {
+		return
+	}
+	sig := ctx.Checker().ResolvedSignature(parent)
+	if sig == nil || !sig.IsDeprecated() {
+		return
+	}
+	report(ctx, n, "super", sig.DeprecationReason())
 }
 
 func visitIdentifier(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -38,6 +57,13 @@ func visitIdentifier(ctx *engine.Context, n *wrapperchecker.Node) {
 	// property. We flag the use here before treating the node as a
 	// declaration site.
 	if checkDestructuringPropertyUse(ctx, n) {
+		return
+	}
+	// JSX attribute names — `<A b={...} />` flags `b` if `A`'s prop
+	// type marks the property deprecated. Resolved through the
+	// contextual type of the opening element's name, not via the local
+	// identifier symbol.
+	if checkJsxAttributeUse(ctx, n) {
 		return
 	}
 	if isDeclarationSite(n) {
@@ -53,6 +79,66 @@ func visitIdentifier(ctx *engine.Context, n *wrapperchecker.Node) {
 		}
 	}
 	reportIfDeprecated(ctx, n)
+}
+
+// checkJsxAttributeUse handles `<Component prop={x} />`: the `prop`
+// identifier is structurally a JsxAttribute name; check it against
+// the contextual type of the opening element to flag a deprecated
+// prop. Returns true when the visit was handled (reported, or
+// confirmed non-deprecated and no further handling needed).
+func checkJsxAttributeUse(ctx *engine.Context, n *wrapperchecker.Node) bool {
+	p := n.Parent()
+	if p == nil || p.Kind() != wrapperchecker.KindJsxAttribute {
+		return false
+	}
+	pp := p.Parent()
+	if pp == nil || pp.Kind() != wrapperchecker.KindJsxAttributes {
+		return false
+	}
+	opening := pp.Parent()
+	if opening == nil {
+		return true
+	}
+	switch opening.Kind() {
+	case wrapperchecker.KindJsxOpeningElement,
+		wrapperchecker.KindJsxSelfClosingElement:
+	default:
+		return true
+	}
+	tag := jsxOpeningTagName(opening)
+	if tag == nil {
+		return true
+	}
+	t := ctx.Checker().ContextualTypeOf(tag)
+	if t == nil {
+		t = ctx.TypeOf(tag)
+		if t == nil {
+			return true
+		}
+	}
+	prop := t.PropertySymbol(n.LiteralText())
+	if prop == nil || !prop.IsDeprecated() {
+		return true
+	}
+	report(ctx, n, n.LiteralText(), prop.DeprecationReason())
+	return true
+}
+
+// jsxOpeningTagName returns the tag-name child of a JsxOpeningElement
+// or JsxSelfClosingElement (the component identifier or property
+// access used as the JSX tag).
+func jsxOpeningTagName(opening *wrapperchecker.Node) *wrapperchecker.Node {
+	var name *wrapperchecker.Node
+	opening.ForEachChild(func(c *wrapperchecker.Node) bool {
+		switch c.Kind() {
+		case wrapperchecker.KindIdentifier,
+			wrapperchecker.KindPropertyAccessExpression:
+			name = c
+			return true
+		}
+		return false
+	})
+	return name
 }
 
 // checkDestructuringPropertyUse reports the deprecation of a source
@@ -74,49 +160,101 @@ func checkDestructuringPropertyUse(ctx *engine.Context, n *wrapperchecker.Node) 
 	if pp == nil || pp.Kind() != wrapperchecker.KindObjectBindingPattern {
 		return false
 	}
-	source := destructuringSource(pp)
-	if source == nil {
-		return true
-	}
-	srcT := ctx.TypeOf(source)
+	srcT := destructuringSourceType(ctx, pp)
 	if srcT == nil {
 		return true
 	}
-	prop := srcT.PropertySymbol(n.LiteralText())
+	// Use the property name (`a` in `{ a: b }`) when present; otherwise
+	// the binding name (`{ b }` shorthand).
+	key := n.LiteralText()
+	if pn := p.BindingElementPropertyName(); pn != nil {
+		switch pn.Kind() {
+		case wrapperchecker.KindIdentifier,
+			wrapperchecker.KindPrivateIdentifier,
+			wrapperchecker.KindStringLiteral,
+			wrapperchecker.KindNoSubstitutionTemplateLiteral,
+			wrapperchecker.KindNumericLiteral:
+			key = pn.LiteralText()
+		}
+		// If propertyName exists and the binding-name identifier IS our
+		// node, the actual lookup happens against the propertyName, not
+		// the local. Skip when our node is the local-binding side of a
+		// `propName: localName` shape — the propertyName visit covers it.
+		if !sameNode(pn, n) {
+			return true
+		}
+	}
+	prop := srcT.PropertySymbol(key)
 	if prop == nil || !prop.IsDeprecated() {
 		return true
 	}
-	report(ctx, n, n.LiteralText(), prop.DeprecationReason())
+	report(ctx, n, key, prop.DeprecationReason())
 	return true
 }
 
-// destructuringSource walks up from the binding pattern to the
-// expression whose value is being destructured (the right-hand side of
-// `const { ... } = expr`). Returns nil for parameters or other
-// destructuring-without-source contexts.
-func destructuringSource(pattern *wrapperchecker.Node) *wrapperchecker.Node {
-	cur := pattern.Parent()
-	for cur != nil {
-		switch cur.Kind() {
-		case wrapperchecker.KindVariableDeclaration:
-			return cur.VariableDeclarationInitializer()
-		case wrapperchecker.KindBindingElement:
-			// Nested: `const { bar: { anchor } } = x` — the outer
-			// BindingElement carries the source via its property name's
-			// type; we use its parent's source recursively.
-			return destructuringNestedSource(cur)
+// destructuringSourceType resolves the type whose properties are
+// being destructured by the given pattern. Walks outward through
+// nested BindingElement / ObjectBindingPattern wrappers, looking up
+// the property at each level so `const { bar: { anchor } } = x`
+// resolves anchor against x.bar.
+func destructuringSourceType(ctx *engine.Context, pattern *wrapperchecker.Node) *wrapperchecker.Type {
+	parent := pattern.Parent()
+	if parent == nil {
+		return nil
+	}
+	switch parent.Kind() {
+	case wrapperchecker.KindVariableDeclaration:
+		init := parent.VariableDeclarationInitializer()
+		if init == nil {
+			return nil
 		}
-		cur = cur.Parent()
+		return ctx.TypeOf(init)
+	case wrapperchecker.KindBindingElement:
+		// Nested: walk to the outer source type, then narrow by the
+		// property this BindingElement binds.
+		outerPattern := parent.Parent()
+		if outerPattern == nil {
+			return nil
+		}
+		outerT := destructuringSourceType(ctx, outerPattern)
+		if outerT == nil {
+			return nil
+		}
+		key := bindingElementKeyName(parent)
+		if key == "" {
+			return nil
+		}
+		return outerT.PropertyType(key)
 	}
 	return nil
 }
 
-func destructuringNestedSource(_ *wrapperchecker.Node) *wrapperchecker.Node {
-	// Nested destructuring requires resolving the property type of an
-	// outer source — too many wrapper-API gaps to implement cleanly
-	// today. Returning nil leaves nested cases unhandled.
-	return nil
+// bindingElementKeyName returns the source-property name a
+// BindingElement reads from. Uses the explicit propertyName when set
+// (`a: x` reads `a`); falls back to the binding-name identifier for
+// shorthand entries (`{ a }` reads `a`).
+func bindingElementKeyName(elem *wrapperchecker.Node) string {
+	if pn := elem.BindingElementPropertyName(); pn != nil {
+		switch pn.Kind() {
+		case wrapperchecker.KindIdentifier,
+			wrapperchecker.KindPrivateIdentifier,
+			wrapperchecker.KindStringLiteral,
+			wrapperchecker.KindNoSubstitutionTemplateLiteral,
+			wrapperchecker.KindNumericLiteral:
+			return pn.LiteralText()
+		}
+		return ""
+	}
+	name := elem.BindingElementName()
+	if name == nil {
+		return ""
+	}
+	if name.Kind() == wrapperchecker.KindIdentifier {
+		return name.LiteralText()
+	}
+	return ""
 }
+
 
 func visitElementAccess(ctx *engine.Context, n *wrapperchecker.Node) {
 	idx := n.ElementAccessIndex()
@@ -258,7 +396,6 @@ func isFirstNameChild(parent, child *wrapperchecker.Node) bool {
 	})
 	return first != nil && sameNode(first, child)
 }
-
 
 func isInsideImport(n *wrapperchecker.Node) bool {
 	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
