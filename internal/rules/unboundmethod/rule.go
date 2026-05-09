@@ -36,8 +36,67 @@ func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
 		wrapperchecker.KindPropertyAccessExpression: r.visit,
 		wrapperchecker.KindObjectBindingPattern:     r.visitObjectPattern,
+		wrapperchecker.KindObjectLiteralExpression:  r.visitObjectAssignmentPattern,
 	}
 }
+
+// visitObjectAssignmentPattern handles destructuring assignment of the
+// form `({ method } = instance)` — the object literal is the LHS of an
+// assignment, parsed as ObjectLiteralExpression (not a binding pattern)
+// because the syntax is ambiguous at parse time. Only visits when the
+// object literal is actually a destructuring target.
+func (r *rule) visitObjectAssignmentPattern(ctx *engine.Context, n *wrapperchecker.Node) {
+	bin := n.Parent()
+	if bin == nil {
+		return
+	}
+	// `({ x } = ...)` — the parent is a Parenthesized then a Binary.
+	if bin.Kind() == wrapperchecker.KindParenthesizedExpression {
+		bin = bin.Parent()
+	}
+	if bin == nil || bin.Kind() != wrapperchecker.KindBinaryExpression {
+		return
+	}
+	if bin.BinaryOperatorKind() != wrapperchecker.KindEqualsToken {
+		return
+	}
+	left := bin.BinaryLeft()
+	for left != nil && left.Kind() == wrapperchecker.KindParenthesizedExpression {
+		left = left.FirstChild()
+	}
+	if left == nil || left != n && !sameNode(left, n) {
+		return
+	}
+	right := bin.BinaryRight()
+	if right == nil {
+		return
+	}
+	if right.Kind() == wrapperchecker.KindIdentifier {
+		if _, ok := nativelyBoundGlobals[right.LiteralText()]; ok {
+			return
+		}
+	}
+	srcT := ctx.TypeOf(right)
+	if srcT == nil {
+		return
+	}
+	n.ForEachChild(func(elem *wrapperchecker.Node) bool {
+		if elem.Kind() != wrapperchecker.KindShorthandPropertyAssignment {
+			return false
+		}
+		name := elem.FirstChild()
+		if name == nil || name.Kind() != wrapperchecker.KindIdentifier {
+			return false
+		}
+		propName := name.LiteralText()
+		if propName == "" {
+			return false
+		}
+		reportFirstMethodInType(ctx, srcT, propName, name)
+		return false
+	})
+}
+
 
 func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if isSafeUse(n) {
