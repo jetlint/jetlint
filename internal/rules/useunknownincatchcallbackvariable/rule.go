@@ -25,7 +25,7 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 
 func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	callee := n.CalleeExpression()
-	method, recv := methodCallName(callee)
+	method, recv := methodCallName(ctx, callee)
 	if method == "" {
 		return
 	}
@@ -50,7 +50,7 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 // methodCallName returns the method-name string and receiver node for
 // either a `recv.method` or `recv['method']`-style call. Empty name
 // when the callee isn't a recognizable member access.
-func methodCallName(callee *wrapperchecker.Node) (string, *wrapperchecker.Node) {
+func methodCallName(ctx *engine.Context, callee *wrapperchecker.Node) (string, *wrapperchecker.Node) {
 	if callee == nil {
 		return "", nil
 	}
@@ -66,8 +66,49 @@ func methodCallName(callee *wrapperchecker.Node) (string, *wrapperchecker.Node) 
 		case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral:
 			return idx.LiteralText(), callee.ElementAccessReceiver()
 		}
+		// `let method = 'catch'; obj[method](...)` — narrowing usually
+		// gives the literal type; otherwise walk the symbol's variable
+		// declaration to read the initializer's string value.
+		if t := ctx.TypeOf(idx); t != nil {
+			if v, ok := t.StringLiteralValue(); ok {
+				return v, callee.ElementAccessReceiver()
+			}
+		}
+		if v, ok := staticStringFromIdentifier(ctx, idx); ok {
+			return v, callee.ElementAccessReceiver()
+		}
 	}
 	return "", nil
+}
+
+// staticStringFromIdentifier resolves an identifier reference to its
+// declared string-literal initializer. Returns the literal value when
+// the symbol declares a single VariableDeclaration whose initializer
+// is a string literal — covering `let method = 'catch'` patterns that
+// TypeScript widens to plain `string`.
+func staticStringFromIdentifier(ctx *engine.Context, n *wrapperchecker.Node) (string, bool) {
+	if n == nil || n.Kind() != wrapperchecker.KindIdentifier {
+		return "", false
+	}
+	sym := ctx.Checker().SymbolOf(n)
+	if sym == nil {
+		return "", false
+	}
+	for _, decl := range sym.Declarations() {
+		if decl == nil || decl.Kind() != wrapperchecker.KindVariableDeclaration {
+			continue
+		}
+		init := decl.VariableDeclarationInitializer()
+		if init == nil {
+			continue
+		}
+		switch init.Kind() {
+		case wrapperchecker.KindStringLiteral,
+			wrapperchecker.KindNoSubstitutionTemplateLiteral:
+			return init.LiteralText(), true
+		}
+	}
+	return "", false
 }
 
 func hasSpreadArg(args []*wrapperchecker.Node) bool {
