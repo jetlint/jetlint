@@ -161,7 +161,8 @@ func (r *rule) shouldAllowByType(ctx *engine.Context, n *wrapperchecker.Node, ke
 
 // typeHasNonPlainStringIndexSignature reports whether t (or any
 // non-nullish union member) has a string-keyed index signature whose
-// key type is narrower than plain `string`.
+// key type is narrower than plain `string`. Walks type-parameter
+// constraints so `T extends Foo` inherits Foo's pattern signature.
 func typeHasNonPlainStringIndexSignature(t *wrapperchecker.Type) bool {
 	if t == nil {
 		return false
@@ -176,6 +177,11 @@ func typeHasNonPlainStringIndexSignature(t *wrapperchecker.Type) bool {
 			}
 		}
 		return false
+	}
+	if t.IsTypeParameter() {
+		if c := t.BaseConstraint(); c != nil && c != t {
+			return typeHasNonPlainStringIndexSignature(c)
+		}
 	}
 	return t.HasNonPlainStringIndexSignature()
 }
