@@ -69,21 +69,24 @@ func qualifiedRight(n *wrapperchecker.Node) string {
 
 // shadowedBeforeNamespace reports whether any enclosing block strictly
 // inside the namespace named `prefixName` declares a value named
-// `propertyName`. The namespace's own body is excluded — its
-// declarations are the symbols that `prefixName.propertyName`
+// `propertyName`, OR whether the named namespace itself does not
+// declare `propertyName` (in which case the qualifier resolves to
+// some merged declaration such as an enum or imported namespace and
+// is load-bearing). The namespace's own body otherwise is excluded —
+// its declarations are the symbols that `prefixName.propertyName`
 // references, not shadows of them.
 func shadowedBeforeNamespace(n *wrapperchecker.Node, prefixName, propertyName string) bool {
 	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
-		// If we reach the namespace's body or the namespace itself
-		// without finding a closer-scoped declaration, the qualifier
-		// is unnecessary.
+		// If we reach the namespace's body or the namespace itself,
+		// confirm the namespace actually owns `propertyName` before
+		// declaring the qualifier unnecessary.
 		if cur.Kind() == wrapperchecker.KindModuleDeclaration && moduleName(cur) == prefixName {
-			return false
+			return !namespaceDeclares(cur, propertyName)
 		}
 		if cur.Kind() == wrapperchecker.KindModuleBlock {
 			parent := cur.Parent()
 			if parent != nil && parent.Kind() == wrapperchecker.KindModuleDeclaration && moduleName(parent) == prefixName {
-				return false
+				return !namespaceDeclares(parent, propertyName)
 			}
 		}
 		if blockDeclares(cur, propertyName) {
@@ -91,6 +94,28 @@ func shadowedBeforeNamespace(n *wrapperchecker.Node, prefixName, propertyName st
 		}
 	}
 	return false
+}
+
+// namespaceDeclares reports whether the given module/namespace
+// declaration declares `name` directly inside its body. Walks the
+// ModuleBlock's immediate statements; nested namespaces, enums,
+// classes, type aliases, and var/let/const declarations all count.
+func namespaceDeclares(mod *wrapperchecker.Node, name string) bool {
+	found := false
+	mod.ForEachChild(func(body *wrapperchecker.Node) bool {
+		if body.Kind() != wrapperchecker.KindModuleBlock {
+			return false
+		}
+		body.ForEachChild(func(stmt *wrapperchecker.Node) bool {
+			if declaresName(stmt, name) {
+				found = true
+				return true
+			}
+			return false
+		})
+		return true
+	})
+	return found
 }
 
 // blockDeclares reports whether the immediate children of `block` (or
