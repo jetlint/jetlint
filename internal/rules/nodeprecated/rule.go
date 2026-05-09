@@ -148,6 +148,15 @@ func visitElementAccess(ctx *engine.Context, n *wrapperchecker.Node) {
 
 func reportIfDeprecated(ctx *engine.Context, n *wrapperchecker.Node) {
 	sym := ctx.Checker().SymbolOf(n)
+	// Shorthand property `{ x }` resolves SymbolOf to the new object's
+	// property; the deprecation actually attaches to the value-binding
+	// symbol (the local `x`). Prefer that when the parent is a
+	// ShorthandPropertyAssignment.
+	if p := n.Parent(); p != nil && p.Kind() == wrapperchecker.KindShorthandPropertyAssignment {
+		if v := ctx.Checker().ShorthandAssignmentValueSymbol(p); v != nil {
+			sym = v
+		}
+	}
 	if sym == nil {
 		return
 	}
