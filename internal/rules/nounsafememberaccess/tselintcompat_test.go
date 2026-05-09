@@ -32,7 +32,8 @@ func TestNoUnsafeMemberAccess_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := optsFromCase(c)
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -58,7 +59,18 @@ func TestNoUnsafeMemberAccess_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func optsFromCase(c tselintcompat.Case) nounsafememberaccess.Options {
+	opts := nounsafememberaccess.DefaultOptions()
+	if c.Options == nil {
+		return opts
+	}
+	if v, ok := c.Options["allowOptionalChaining"].(bool); ok {
+		opts.AllowOptionalChaining = v
+	}
+	return opts
+}
+
+func runCase(t *testing.T, code string, opts nounsafememberaccess.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -71,7 +83,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{nounsafememberaccess.New()},
+		[]engine.Rule{nounsafememberaccess.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"no-unsafe-member-access": wrapperlint.SeverityError},
 	)
 	count := 0

@@ -3,46 +3,94 @@
 package nounsafememberaccess
 
 import (
+	"encoding/json"
+	"fmt"
+
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	"github.com/tommymorgan/tsgolint/internal/engine"
 )
 
 const id = "no-unsafe-member-access"
 
-func New() engine.Rule { return rule{} }
+// Options is the configurable surface of the rule.
+type Options struct {
+	// AllowOptionalChaining permits `?.` accesses on `any`-typed
+	// receivers without reporting. Mirrors typescript-eslint's option
+	// of the same name; when true, an optional link breaks the
+	// "unsafe" propagation through the chain so a later non-optional
+	// access on a still-`any` value can be reported separately.
+	AllowOptionalChaining bool
+}
 
-type rule struct{}
+func DefaultOptions() Options { return Options{AllowOptionalChaining: false} }
 
-func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+func OptionsFromJSON(raw json.RawMessage) (Options, error) {
+	out := DefaultOptions()
+	if len(raw) == 0 || string(raw) == "null" {
+		return out, nil
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return Options{}, fmt.Errorf("no-unsafe-member-access options must be a JSON object: %w", err)
+	}
+	for key, val := range fields {
+		switch key {
+		case "allowOptionalChaining":
+			if err := json.Unmarshal(val, &out.AllowOptionalChaining); err != nil {
+				return Options{}, fmt.Errorf("no-unsafe-member-access option %q: %w", key, err)
+			}
+		default:
+			return Options{}, fmt.Errorf("no-unsafe-member-access has no option %q", key)
+		}
+	}
+	return out, nil
+}
 
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+func New() engine.Rule                        { return NewWithOptions(DefaultOptions()) }
+func NewWithOptions(opts Options) engine.Rule { return &rule{opts: opts} }
+
+type rule struct{ opts Options }
+
+func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+
+func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindPropertyAccessExpression: visit,
-		wrapperchecker.KindElementAccessExpression:  visit,
+		wrapperchecker.KindPropertyAccessExpression: r.visit,
+		wrapperchecker.KindElementAccessExpression:  r.visit,
 	}
 }
 
-func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+// chainState classifies a member-access node's contribution to the
+// chain. Mirrors upstream's State enum.
+type chainState int
+
+const (
+	stateSafe chainState = iota
+	stateUnsafe
+	stateChained
+)
+
+func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	// Skip access expressions inside heritage clauses (`extends X.Y`,
 	// `implements X.Y`) — these are type-position references, not
 	// runtime member accesses.
 	if isInHeritagePosition(n) {
 		return
 	}
-	// Only flag the outermost access in a chain so `x.a.b.c.d` (where
-	// x is any) reports once instead of four times. We're the
-	// outermost when our parent isn't a property/element access whose
-	// own receiver is us.
-	if isInnerAccessOfChain(n) {
+	// Optional accesses break the chain when the option is on; the
+	// `?.` consumer has already promised to handle nullishness, so we
+	// don't second-guess the access on `any`.
+	if r.opts.AllowOptionalChaining && n.IsOptionalChainRoot() {
 		return
 	}
-	var recv *wrapperchecker.Node
-	if n.Kind() == wrapperchecker.KindPropertyAccessExpression {
-		recv = n.PropertyAccessReceiver()
-	} else {
-		recv = n.ElementAccessReceiver()
-	}
+	recv := accessReceiver(n)
 	if recv == nil {
+		return
+	}
+	// If the receiver itself is a member access whose recursive state
+	// is already Unsafe, the inner access has already been reported —
+	// skip to avoid double-reporting through the chain.
+	if isMemberAccess(recv) && r.stateOf(ctx, recv) == stateUnsafe {
 		return
 	}
 	rT := ctx.TypeOf(recv)
@@ -64,6 +112,55 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	}
 }
 
+// stateOf walks a chain of member accesses and returns the
+// inner-most state without reporting. Used by the outer visit to
+// decide whether the current access has already been reported on
+// transitively.
+func (r *rule) stateOf(ctx *engine.Context, n *wrapperchecker.Node) chainState {
+	if !isMemberAccess(n) {
+		return stateSafe
+	}
+	if r.opts.AllowOptionalChaining && n.IsOptionalChainRoot() {
+		return stateChained
+	}
+	recv := accessReceiver(n)
+	if recv == nil {
+		return stateSafe
+	}
+	if isMemberAccess(recv) {
+		if s := r.stateOf(ctx, recv); s == stateUnsafe {
+			return stateUnsafe
+		}
+	}
+	t := ctx.TypeOf(recv)
+	if t != nil && t.IsAny() {
+		return stateUnsafe
+	}
+	return stateSafe
+}
+
+func accessReceiver(n *wrapperchecker.Node) *wrapperchecker.Node {
+	switch n.Kind() {
+	case wrapperchecker.KindPropertyAccessExpression:
+		return n.PropertyAccessReceiver()
+	case wrapperchecker.KindElementAccessExpression:
+		return n.ElementAccessReceiver()
+	}
+	return nil
+}
+
+func isMemberAccess(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	switch n.Kind() {
+	case wrapperchecker.KindPropertyAccessExpression,
+		wrapperchecker.KindElementAccessExpression:
+		return true
+	}
+	return false
+}
+
 func isInHeritagePosition(n *wrapperchecker.Node) bool {
 	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
 		switch cur.Kind() {
@@ -78,33 +175,4 @@ func isInHeritagePosition(n *wrapperchecker.Node) bool {
 		}
 	}
 	return false
-}
-
-func isInnerAccessOfChain(n *wrapperchecker.Node) bool {
-	p := n.Parent()
-	if p == nil {
-		return false
-	}
-	var pRecv *wrapperchecker.Node
-	switch p.Kind() {
-	case wrapperchecker.KindPropertyAccessExpression:
-		pRecv = p.PropertyAccessReceiver()
-	case wrapperchecker.KindElementAccessExpression:
-		pRecv = p.ElementAccessReceiver()
-	default:
-		return false
-	}
-	if pRecv == nil {
-		return false
-	}
-	return sameNodeIdentity(pRecv, n)
-}
-
-func sameNodeIdentity(a, b *wrapperchecker.Node) bool {
-	if a == nil || b == nil {
-		return false
-	}
-	af, asl, asc, ael, aec := a.SourceRange()
-	bf, bsl, bsc, bel, bec := b.SourceRange()
-	return af == bf && asl == bsl && asc == bsc && ael == bel && aec == bec
 }
