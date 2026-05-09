@@ -32,7 +32,30 @@ func TestPromiseFunctionAsync_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := promisefunctionasync.DefaultOptions()
+		if v, ok := c.Options["allowAny"].(bool); ok {
+			opts.AllowAny = v
+		}
+		if v, ok := c.Options["checkArrowFunctions"].(bool); ok {
+			opts.CheckArrowFunctions = v
+		}
+		if v, ok := c.Options["checkFunctionDeclarations"].(bool); ok {
+			opts.CheckFunctionDeclarations = v
+		}
+		if v, ok := c.Options["checkFunctionExpressions"].(bool); ok {
+			opts.CheckFunctionExpressions = v
+		}
+		if v, ok := c.Options["checkMethodDeclarations"].(bool); ok {
+			opts.CheckMethodDeclarations = v
+		}
+		if v, ok := c.Options["allowedPromiseNames"].([]any); ok {
+			for _, raw := range v {
+				if s, ok := raw.(string); ok {
+					opts.AllowedPromiseNames = append(opts.AllowedPromiseNames, s)
+				}
+			}
+		}
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -60,7 +83,7 @@ func TestPromiseFunctionAsync_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func runCase(t *testing.T, code string, opts promisefunctionasync.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -73,7 +96,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{promisefunctionasync.New()},
+		[]engine.Rule{promisefunctionasync.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"promise-function-async": wrapperlint.SeverityError},
 	)
 	count := 0
