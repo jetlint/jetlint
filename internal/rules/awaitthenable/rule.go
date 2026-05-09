@@ -250,6 +250,12 @@ func iterableHasNonThenableElement(t *wrapperchecker.Type, depth int) bool {
 	if elem := t.ArrayElementType(); elem != nil {
 		return elementHasNonThenableMember(elem)
 	}
+	// Interface inheriting from Array<T>: ArrayElementType doesn't see
+	// through the heritage instantiation, so ask the checker for the
+	// numeric-index type which IS instantiated.
+	if numIdx := t.NumberIndexType(); numIdx != nil {
+		return elementHasNonThenableMember(numIdx)
+	}
 	// Iterable<T>/IterableIterator<T>/AsyncIterable<T>: their first
 	// type argument names the yielded element. Match by symbol name
 	// to avoid descending into unrelated generics.
