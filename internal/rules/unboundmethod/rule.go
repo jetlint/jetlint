@@ -188,11 +188,14 @@ func (r *rule) visitObjectPattern(ctx *engine.Context, n *wrapperchecker.Node) {
 	if isDestructuringFromNativelyBoundSource(ctx, n) {
 		return
 	}
-	// Resolve the type of the value being destructured. If there's a
-	// runtime source (initializer / RHS), use its type; otherwise use
-	// the pattern's own type (parameter annotation, contextual type).
-	srcT := destructuringType(ctx, n)
-	if srcT == nil {
+	// Two type sources to consider: the runtime initializer (when one
+	// exists, e.g. `({x} = init)` / `function ({x}: T = init) {}`) and
+	// the pattern's own contextual type. typescript-eslint flags a
+	// method appearing on either side because the runtime value can
+	// come from either path.
+	initT := destructuringInitType(ctx, n)
+	patT := ctx.TypeOf(n)
+	if initT == nil && patT == nil {
 		return
 	}
 	n.ForEachChild(func(elem *wrapperchecker.Node) bool {
@@ -214,13 +217,41 @@ func (r *rule) visitObjectPattern(ctx *engine.Context, n *wrapperchecker.Node) {
 		if propName == "" {
 			return false
 		}
-		// Walk union/intersection constituents — a method on any
-		// constituent is enough to flag.
-		if reportFirstMethodInType(ctx, srcT, propName, name) {
+		if initT != nil && reportFirstMethodInType(ctx, initT, propName, name) {
+			return false
+		}
+		if patT != nil && reportFirstMethodInType(ctx, patT, propName, name) {
 			return false
 		}
 		return false
 	})
+}
+
+// destructuringInitType returns the type of the runtime initializer/
+// right-hand-side feeding the destructuring pattern, or nil when no
+// initializer is present. Mirrors typescript-eslint's `initNode`
+// resolution: VariableDeclarator → init, parameter default → init,
+// destructuring-assignment → right.
+func destructuringInitType(ctx *engine.Context, pattern *wrapperchecker.Node) *wrapperchecker.Type {
+	p := pattern.Parent()
+	if p == nil {
+		return nil
+	}
+	switch p.Kind() {
+	case wrapperchecker.KindVariableDeclaration:
+		if init := p.VariableDeclarationInitializer(); init != nil {
+			return ctx.TypeOf(init)
+		}
+	case wrapperchecker.KindParameter:
+		if init := p.ParameterInitializer(); init != nil {
+			return ctx.TypeOf(init)
+		}
+	case wrapperchecker.KindBindingElement:
+		// `({x = default})` shape — BindingElement initializer is the
+		// default value, but it gates the slot, not the source.
+		// typescript-eslint doesn't treat per-slot defaults as initNode.
+	}
+	return nil
 }
 
 func reportFirstMethodInType(ctx *engine.Context, t *wrapperchecker.Type, name string, at *wrapperchecker.Node) bool {
@@ -266,7 +297,15 @@ func isInTypeDeclaration(n *wrapperchecker.Node) bool {
 			if cur.HasAbstractModifier() {
 				return true
 			}
-			return false
+			// Don't return — a method declaration may itself be inside
+			// a `declare class`, which the loop reaches one ancestor
+			// up. Only the function-likes with bodies (FunctionExpression,
+			// ArrowFunction) act as "I'm a runtime binding" guards.
+		case wrapperchecker.KindMethodSignature,
+			wrapperchecker.KindCallSignature,
+			wrapperchecker.KindConstructSignature,
+			wrapperchecker.KindIndexSignature:
+			return true
 		case wrapperchecker.KindClassDeclaration,
 			wrapperchecker.KindVariableStatement,
 			wrapperchecker.KindFunctionDeclaration:
@@ -371,36 +410,77 @@ func isNativelyBound(ctx *engine.Context, access *wrapperchecker.Node) bool {
 	if recv == nil {
 		return false
 	}
-	// Direct-name shortcut: `Math.floor`, `JSON.stringify`, etc.
-	if recv.Kind() == wrapperchecker.KindIdentifier {
-		name := recv.LiteralText()
-		if _, ok := nativelyBoundGlobals[name]; ok &&
-			!recv.SymbolHasUserDeclaration(ctx.Checker()) {
-			return true
-		}
-	}
-	// Type-level fallback: `const foo = Math; foo.floor` — foo's type
-	// symbol is `Math`, the property symbol comes from a lib file. The
-	// type itself must originate from the default library to avoid
-	// matching user-defined classes that happen to share a global
-	// type name (`class Console {}`).
 	recvT := ctx.TypeOf(recv)
 	if recvT == nil {
 		return false
 	}
-	tsym := recvT.SymbolName()
-	if _, ok := supportedGlobalTypeSymbolNames[tsym]; !ok {
+	if !typeMatchesNativelyBoundGlobal(recvT) {
 		return false
 	}
-	if !typeOriginatesInDeclarationFile(recvT) {
-		return false
-	}
+	// The property must come purely from the default library —
+	// otherwise the user has overridden it (e.g. via declaration
+	// merging) and the access could resolve to a `this`-relying
+	// implementation.
 	propSym := ctx.Checker().SymbolOf(access)
 	if propSym == nil {
 		return false
 	}
 	for _, d := range propSym.Declarations() {
-		if d.IsInDeclarationFile() {
+		if !d.IsInDeclarationFile() {
+			return false
+		}
+	}
+	return true
+}
+
+// typeMatchesNativelyBoundGlobal reports whether t (or any base type
+// reachable through inheritance) is one of the natively-bound globals.
+// Walks the same intersection/union/type-param/heritage shape as
+// typescript-eslint's `isBuiltinSymbolLikeRecurser`, so subclasses of
+// the supported globals (`class Foo extends Array {}`) inherit the
+// classification.
+func typeMatchesNativelyBoundGlobal(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsIntersection() {
+		for _, m := range t.IntersectionMembers() {
+			if typeMatchesNativelyBoundGlobal(m) {
+				return true
+			}
+		}
+		return false
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if !typeMatchesNativelyBoundGlobal(m) {
+				return false
+			}
+		}
+		return true
+	}
+	if t.IsTypeParameter() {
+		if c := t.BaseConstraint(); c != nil && c != t {
+			return typeMatchesNativelyBoundGlobal(c)
+		}
+		return false
+	}
+	if _, ok := supportedGlobalTypeSymbolNames[t.SymbolName()]; ok {
+		if typeOriginatesInDeclarationFile(t) {
+			return true
+		}
+	}
+	// Walk both the structural base types (when t is the instance
+	// side) and the heritage clauses on the symbol's declarations
+	// (when t is the constructor side, e.g. `typeof Foo` for `class
+	// Foo extends Array {}`).
+	for _, base := range t.BaseTypes() {
+		if typeMatchesNativelyBoundGlobal(base) {
+			return true
+		}
+	}
+	for _, base := range t.HeritageBaseTypes() {
+		if typeMatchesNativelyBoundGlobal(base) {
 			return true
 		}
 	}
@@ -520,6 +600,16 @@ func isSafeUse(n *wrapperchecker.Node) bool {
 		case wrapperchecker.KindEqualsToken:
 			if l := parent.BinaryLeft(); l != nil && sameNode(l, n) {
 				return true
+			}
+			// `this.x = super.method` — assigning a super-method to a
+			// `this` slot keeps the receiver bound through the slot,
+			// so the extraction is safe in that idiom.
+			if recv := n.PropertyAccessReceiver(); recv != nil && recv.Kind() == wrapperchecker.KindSuperKeyword {
+				if l := parent.BinaryLeft(); l != nil && l.Kind() == wrapperchecker.KindPropertyAccessExpression {
+					if lr := l.PropertyAccessReceiver(); lr != nil && lr.Kind() == wrapperchecker.KindThisKeyword {
+						return true
+					}
+				}
 			}
 		case wrapperchecker.KindAmpersandAmpersandToken:
 			if l := parent.BinaryLeft(); l != nil && sameNode(l, n) {

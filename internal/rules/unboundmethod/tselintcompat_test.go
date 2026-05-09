@@ -18,8 +18,26 @@ const fixtureTsconfigBody = `{
     "moduleResolution": "bundler", "lib": ["es2022", "dom"],
     "skipLibCheck": true
   },
-  "include": ["case.ts"]
+  "include": ["case.ts", "class.ts"]
 }`
+
+// fixtureClassModule mirrors the upstream
+// packages/eslint-plugin/tests/fixtures/class.ts so cases that import
+// from './class' (a few unbound-method scenarios) resolve.
+const fixtureClassModule = `// used by no-throw-literal test case to validate custom error
+export class Error {}
+
+// used by unbound-method test case to test imports
+export const console = { log() {} };
+
+// used by prefer-reduce-type-parameter to test native vs userland check
+export class Reducable {
+  reduce() {}
+}
+
+// used by no-implied-eval test function imports
+export class Function {}
+`
 
 func TestUnboundMethod_TypescriptEslintCompatibility(t *testing.T) {
 	if testing.Short() {
@@ -71,6 +89,7 @@ func runCase(t *testing.T, code string, opts unboundmethod.Options) (int, error)
 	tsc := filepath.Join(dir, "tsconfig.json")
 	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
 	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
+	os.WriteFile(filepath.Join(dir, "class.ts"), []byte(fixtureClassModule), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err
