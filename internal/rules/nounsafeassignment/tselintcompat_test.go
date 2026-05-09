@@ -16,9 +16,10 @@ const fixtureTsconfigBody = `{
   "compilerOptions": {
     "strict": true, "target": "es2022", "module": "esnext",
     "moduleResolution": "bundler", "lib": ["es2022", "dom"],
+    "jsx": "preserve",
     "skipLibCheck": true
   },
-  "include": ["case.ts"]
+  "include": ["case.tsx"]
 }`
 
 func TestNoUnsafeAssignment_TypescriptEslintCompatibility(t *testing.T) {
@@ -71,7 +72,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	defer os.RemoveAll(dir)
 	tsc := filepath.Join(dir, "tsconfig.json")
 	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
-	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
+	os.WriteFile(filepath.Join(dir, "case.tsx"), []byte(code), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err
