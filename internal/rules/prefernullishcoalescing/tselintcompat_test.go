@@ -32,7 +32,8 @@ func TestPreferNullishCoalescing_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := optsFromCase(c)
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -60,7 +61,49 @@ func TestPreferNullishCoalescing_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func optsFromCase(c tselintcompat.Case) prefernullishcoalescing.Options {
+	opts := prefernullishcoalescing.DefaultOptions()
+	if v, ok := c.Options["ignoreConditionalTests"].(bool); ok {
+		opts.IgnoreConditionalTests = v
+	}
+	if v, ok := c.Options["ignoreMixedLogicalExpressions"].(bool); ok {
+		opts.IgnoreMixedLogicalExpressions = v
+	}
+	if v, ok := c.Options["ignoreBooleanCoercion"].(bool); ok {
+		opts.IgnoreBooleanCoercion = v
+	}
+	if v, ok := c.Options["ignoreTernaryTests"].(bool); ok {
+		opts.IgnoreTernaryTests = v
+	}
+	if v, ok := c.Options["ignoreIfStatements"].(bool); ok {
+		opts.IgnoreIfStatements = v
+	}
+	switch p := c.Options["ignorePrimitives"].(type) {
+	case bool:
+		if p {
+			opts.IgnorePrimitives.Boolean = true
+			opts.IgnorePrimitives.BigInt = true
+			opts.IgnorePrimitives.Number = true
+			opts.IgnorePrimitives.String = true
+		}
+	case map[string]interface{}:
+		if v, ok := p["boolean"].(bool); ok {
+			opts.IgnorePrimitives.Boolean = v
+		}
+		if v, ok := p["bigint"].(bool); ok {
+			opts.IgnorePrimitives.BigInt = v
+		}
+		if v, ok := p["number"].(bool); ok {
+			opts.IgnorePrimitives.Number = v
+		}
+		if v, ok := p["string"].(bool); ok {
+			opts.IgnorePrimitives.String = v
+		}
+	}
+	return opts
+}
+
+func runCase(t *testing.T, code string, opts prefernullishcoalescing.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -73,7 +116,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{prefernullishcoalescing.New()},
+		[]engine.Rule{prefernullishcoalescing.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"prefer-nullish-coalescing": wrapperlint.SeverityError},
 	)
 	count := 0
