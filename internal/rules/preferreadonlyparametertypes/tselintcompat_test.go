@@ -32,7 +32,8 @@ func TestPreferReadonlyParameterTypes_TypescriptEslintCompatibility(t *testing.T
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := optsFromCase(c)
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -58,7 +59,21 @@ func TestPreferReadonlyParameterTypes_TypescriptEslintCompatibility(t *testing.T
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func optsFromCase(c tselintcompat.Case) preferreadonlyparametertypes.Options {
+	opts := preferreadonlyparametertypes.DefaultOptions()
+	if c.Options == nil {
+		return opts
+	}
+	if v, ok := c.Options["treatMethodsAsReadonly"].(bool); ok {
+		opts.TreatMethodsAsReadonly = v
+	}
+	if v, ok := c.Options["ignoreInferredTypes"].(bool); ok {
+		opts.IgnoreInferredTypes = v
+	}
+	return opts
+}
+
+func runCase(t *testing.T, code string, opts preferreadonlyparametertypes.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -71,7 +86,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{preferreadonlyparametertypes.New()},
+		[]engine.Rule{preferreadonlyparametertypes.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"prefer-readonly-parameter-types": wrapperlint.SeverityError},
 	)
 	count := 0
