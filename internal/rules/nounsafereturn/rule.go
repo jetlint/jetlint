@@ -149,19 +149,49 @@ func awaitedContainsAny(t *wrapperchecker.Type) bool {
 
 // unwrapPromise recurses through Promise<…<X>> wrappers and returns
 // the innermost non-Promise type. Async returns flatten any number of
-// promise layers, so `Promise<Promise<X>>` resolves to `X`.
+// promise layers, so `Promise<Promise<X>>` resolves to `X`. For
+// promise-like interfaces that extend `Promise<X>` (e.g.
+// `interface Alias<T> extends Promise<any>`), the awaited type comes
+// from the base — the user's own type parameter is unrelated to the
+// thenable contract.
 func unwrapPromise(t *wrapperchecker.Type) *wrapperchecker.Type {
 	for i := 0; i < 8 && t != nil; i++ {
 		if !t.IsPromise() {
 			return t
 		}
 		args := t.TypeArguments()
+		if t.SymbolName() != "Promise" {
+			// Inherited Promise — find the base Promise's argument.
+			if base := promiseBase(t); base != nil {
+				bargs := base.TypeArguments()
+				if len(bargs) == 1 {
+					t = bargs[0]
+					continue
+				}
+			}
+		}
 		if len(args) != 1 {
 			return t
 		}
 		t = args[0]
 	}
 	return t
+}
+
+// promiseBase walks BaseTypes looking for the literal Promise<X> base
+// of an interface that extends it.
+func promiseBase(t *wrapperchecker.Type) *wrapperchecker.Type {
+	for _, b := range t.BaseTypes() {
+		if b.SymbolName() == "Promise" {
+			return b
+		}
+		if b.IsPromise() {
+			if inner := promiseBase(b); inner != nil {
+				return inner
+			}
+		}
+	}
+	return nil
 }
 
 // typeContainsAnyDeep reports whether the type or any of its nested
