@@ -90,50 +90,86 @@ func typeParameterName(tp *wrapperchecker.Node) string {
 // type-parameter's own name slot is excluded so the declaration
 // itself doesn't count.
 func countTypeParameterUsesInSignature(fn, owner *wrapperchecker.Node, name string) int {
+	// First pass: collect parameter names whose annotations reference
+	// the type parameter — these are the parameters that "carry" T
+	// through `typeof`/`keyof typeof` indirection in the return type.
+	paramsByT := map[string]bool{}
 	count := 0
-	var walk func(n *wrapperchecker.Node)
-	walk = func(n *wrapperchecker.Node) {
+	var walk func(n *wrapperchecker.Node, inTypeQuery bool)
+	walk = func(n *wrapperchecker.Node, inTypeQuery bool) {
 		if n == nil {
 			return
 		}
-		if n.Kind() == wrapperchecker.KindIdentifier && n.LiteralText() == name {
-			count++
-			return
+		if n.Kind() == wrapperchecker.KindIdentifier {
+			text := n.LiteralText()
+			if text == name {
+				count++
+				return
+			}
+			if inTypeQuery && paramsByT[text] {
+				// `typeof param` where param: ...T... — semantic use.
+				count++
+				return
+			}
 		}
+		isTQ := inTypeQuery || n.Kind() == wrapperchecker.KindTypeQuery
 		n.ForEachChild(func(c *wrapperchecker.Node) bool {
-			walk(c)
+			walk(c, isTQ)
 			return false
 		})
 	}
+	// First: gather param name → carries T.
 	fn.ForEachChild(func(c *wrapperchecker.Node) bool {
-		switch c.Kind() {
-		case wrapperchecker.KindParameter:
-			if annot := c.ParameterTypeAnnotation(); annot != nil {
-				walk(annot)
+		if c.Kind() != wrapperchecker.KindParameter {
+			return false
+		}
+		annot := c.ParameterTypeAnnotation()
+		if annot == nil {
+			return false
+		}
+		before := count
+		walk(annot, false)
+		if count > before {
+			if pname := parameterIdentifier(c); pname != "" {
+				paramsByT[pname] = true
 			}
-		case wrapperchecker.KindTypeParameter:
-			if c == owner {
-				return false
-			}
-			// Constraint / default of a sibling type parameter — walk
-			// every child except the parameter's own name identifier.
-			first := true
-			c.ForEachChild(func(part *wrapperchecker.Node) bool {
-				if first && part.Kind() == wrapperchecker.KindIdentifier {
-					first = false
-					return false
-				}
-				first = false
-				walk(part)
-				return false
-			})
 		}
 		return false
 	})
+	// Now visit sibling type parameter constraints/defaults.
+	fn.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() != wrapperchecker.KindTypeParameter || c == owner {
+			return false
+		}
+		first := true
+		c.ForEachChild(func(part *wrapperchecker.Node) bool {
+			if first && part.Kind() == wrapperchecker.KindIdentifier {
+				first = false
+				return false
+			}
+			first = false
+			walk(part, false)
+			return false
+		})
+		return false
+	})
 	if rt := returnTypeAnnotation(fn); rt != nil {
-		walk(rt)
+		walk(rt, false)
 	}
 	return count
+}
+
+// parameterIdentifier returns the binding name of a Parameter node.
+func parameterIdentifier(p *wrapperchecker.Node) string {
+	var name string
+	p.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() == wrapperchecker.KindIdentifier {
+			name = c.LiteralText()
+			return true
+		}
+		return false
+	})
+	return name
 }
 
 // returnTypeAnnotation returns the explicit return-type-annotation node
