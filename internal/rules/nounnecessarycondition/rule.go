@@ -45,15 +45,161 @@ func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindIfStatement:           visitIf,
-		wrapperchecker.KindWhileStatement:        r.visitWhile,
-		wrapperchecker.KindDoStatement:           r.visitWhile,
-		wrapperchecker.KindForStatement:          r.visitFor,
-		wrapperchecker.KindConditionalExpression: visitConditional,
-		wrapperchecker.KindBinaryExpression:      visitBinary,
-		wrapperchecker.KindPrefixUnaryExpression: visitPrefixUnary,
-		wrapperchecker.KindCallExpression:        visitCall,
+		wrapperchecker.KindIfStatement:              visitIf,
+		wrapperchecker.KindWhileStatement:           r.visitWhile,
+		wrapperchecker.KindDoStatement:              r.visitWhile,
+		wrapperchecker.KindForStatement:             r.visitFor,
+		wrapperchecker.KindConditionalExpression:    visitConditional,
+		wrapperchecker.KindBinaryExpression:         visitBinary,
+		wrapperchecker.KindPrefixUnaryExpression:    visitPrefixUnary,
+		wrapperchecker.KindCallExpression:           visitCall,
+		wrapperchecker.KindPropertyAccessExpression: visitOptionalChain,
+		wrapperchecker.KindElementAccessExpression:  visitOptionalChain,
 	}
+}
+
+// visitOptionalChain flags `x?.y`, `x?.[i]`, `x?.()` when x's type is
+// already non-nullable. Only the root link of each chain carries the
+// `?.` token, so inner links are skipped; downstream optional links
+// inherit their receiver's nullability and the static type of the
+// inner expression won't be nullable even if the receiver is.
+func visitOptionalChain(ctx *engine.Context, n *wrapperchecker.Node) {
+	if !n.IsOptionalChainRoot() {
+		return
+	}
+	recv := optionalChainReceiver(n)
+	if recv == nil {
+		return
+	}
+	// Element-access immediate receiver: TypeScript doesn't track
+	// index validity without `noUncheckedIndexedAccess`, so `arr[i]?.`
+	// is conventional guarding even when the element type is
+	// non-nullable. Only skip the *direct* element access.
+	if recv.Kind() == wrapperchecker.KindElementAccessExpression {
+		return
+	}
+	t := effectiveReceiverType(ctx, recv)
+	if t == nil {
+		return
+	}
+	if t.IsAny() || t.IsUnknown() {
+		return
+	}
+	if t.IsNullOrUndefined() || typeContainsNullableForOptionalChain(t) {
+		return
+	}
+	ctx.Report(n, "optional chain is unnecessary — the receiver is already non-nullable")
+}
+
+// effectiveReceiverType returns the type the chain link sees AFTER any
+// preceding optional-chain shortcircuit has been considered. For a
+// chained property access like the outer `?.baz` in `foo?.bar?.baz`,
+// the immediate type of `foo?.bar` is `{baz: ...} | undefined` because
+// of the `?.` shortcircuit. But by the time control reaches the second
+// `?.`, we know foo wasn't nullish — so the type that matters is just
+// the property's declared type on the source. Walk one access deeper
+// to get that "would-be-reached" property type.
+func effectiveReceiverType(ctx *engine.Context, recv *wrapperchecker.Node) *wrapperchecker.Type {
+	if recv == nil {
+		return nil
+	}
+	if recv.IsOptionalChain() {
+		// recv is a chain link. The chain may have shortcircuited into
+		// undefined by this point in the type system, but at the time
+		// the next `?.` actually executes we know it didn't. Peel one
+		// level using the property/call's own structure.
+		switch recv.Kind() {
+		case wrapperchecker.KindPropertyAccessExpression:
+			src := recv.PropertyAccessReceiver()
+			name := recv.PropertyAccessName()
+			if src != nil && name != "" {
+				if st := nonNullable(ctx.TypeOf(src)); st != nil {
+					if pt := st.PropertyType(name); pt != nil {
+						return pt
+					}
+				}
+			}
+		case wrapperchecker.KindCallExpression:
+			// `foo?.bar()` — return type of the call signature on the
+			// non-nullable callee gives the value seen at the next link.
+			callee := recv.CalleeExpression()
+			if calleeT := nonNullable(ctx.TypeOf(callee)); calleeT != nil {
+				if sigs := calleeT.CallSignatures(); len(sigs) > 0 {
+					if rt := sigs[0].ReturnType(); rt != nil {
+						return rt
+					}
+				}
+			}
+		}
+	}
+	return ctx.TypeOf(recv)
+}
+
+// nonNullable returns t with the union members for `null`, `undefined`,
+// and `void` removed. For non-union types, returns t unchanged unless
+// it is itself nullish (in which case returns nil).
+func nonNullable(t *wrapperchecker.Type) *wrapperchecker.Type {
+	if t == nil {
+		return nil
+	}
+	if !t.IsUnion() {
+		if t.IsNullOrUndefined() || t.IsVoid() {
+			return nil
+		}
+		return t
+	}
+	var remaining *wrapperchecker.Type
+	for _, m := range t.UnionMembers() {
+		if m == nil || m.IsNullOrUndefined() || m.IsVoid() {
+			continue
+		}
+		// We can only meaningfully return *one* representative member
+		// for property lookup; in the common chain case the receiver is
+		// a single object type plus null/undefined so this is enough.
+		if remaining == nil {
+			remaining = m
+		}
+	}
+	return remaining
+}
+
+func optionalChainReceiver(n *wrapperchecker.Node) *wrapperchecker.Node {
+	switch n.Kind() {
+	case wrapperchecker.KindPropertyAccessExpression:
+		return n.PropertyAccessReceiver()
+	case wrapperchecker.KindElementAccessExpression:
+		return n.ElementAccessReceiver()
+	case wrapperchecker.KindCallExpression:
+		return n.CalleeExpression()
+	}
+	return nil
+}
+
+func typeContainsNullableForOptionalChain(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsNullOrUndefined() || t.IsVoid() || t.IsUnknown() {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if typeContainsNullableForOptionalChain(m) {
+				return true
+			}
+		}
+	}
+	if t.IsTypeParameter() {
+		// Unconstrained `T` (or `T extends unknown`) admits null and
+		// undefined at instantiation, so the optional chain is doing
+		// real work. Forward to the constraint when there is one.
+		c := t.BaseConstraint()
+		if c == nil || c == t {
+			return true
+		}
+		return typeContainsNullableForOptionalChain(c)
+	}
+	return false
 }
 
 // arrayPredicateMethods is the set of Array.prototype methods that
@@ -74,6 +220,11 @@ var arrayPredicateMethods = map[string]bool{
 // like `arr.filter(cb)` are inspected — the receiver must be array
 // or tuple typed.
 func visitCall(ctx *engine.Context, n *wrapperchecker.Node) {
+	// Optional-chain call (`x?.()`): flag when callee is already
+	// non-nullable.
+	if n.IsOptionalChain() {
+		visitOptionalChain(ctx, n)
+	}
 	callee := n.CalleeExpression()
 	if callee == nil || callee.Kind() != wrapperchecker.KindPropertyAccessExpression {
 		return
@@ -143,7 +294,44 @@ func visitPrefixUnary(ctx *engine.Context, n *wrapperchecker.Node) {
 	if n.PrefixUnaryOperator() != "!" {
 		return
 	}
+	// `if (!x)`, `while (!x)`, etc. — the surrounding statement's
+	// condition visitor already reports the redundant test, so don't
+	// fire the unary visitor too. Same for `!!x` patterns: a single
+	// report on the outermost is enough.
+	if isInsideBooleanTest(n) {
+		return
+	}
 	check(ctx, n.FirstChild())
+}
+
+// isInsideBooleanTest reports whether n sits as (or inside) the test
+// of an if/while/do/for/ternary or as an operand of another logical
+// negation that itself sits in such a position. The condition-level
+// visitors (visitIf, visitWhile, etc.) report there; the unary
+// visitor should defer to avoid duplicate reports.
+func isInsideBooleanTest(n *wrapperchecker.Node) bool {
+	cur := n.Parent()
+	for cur != nil {
+		switch cur.Kind() {
+		case wrapperchecker.KindParenthesizedExpression:
+			cur = cur.Parent()
+			continue
+		case wrapperchecker.KindPrefixUnaryExpression:
+			if cur.PrefixUnaryOperator() != "!" {
+				return false
+			}
+			cur = cur.Parent()
+			continue
+		case wrapperchecker.KindIfStatement,
+			wrapperchecker.KindWhileStatement,
+			wrapperchecker.KindDoStatement,
+			wrapperchecker.KindForStatement,
+			wrapperchecker.KindConditionalExpression:
+			return true
+		}
+		return false
+	}
+	return false
 }
 
 // visitBinary covers `a && b` and `a || b` outside an explicit test
@@ -678,12 +866,44 @@ func isAlwaysTruthy(t *wrapperchecker.Type) bool {
 	if isNonNullableNonPrimitive(t) {
 		return true
 	}
+	// Branded primitives (`'foo' & { __brand }` etc.): truthiness
+	// follows the primitive member. Only consider literal-primitive
+	// members — `string & {}` still admits the empty string, so the
+	// intersection's truthiness is indeterminate.
+	if t.IsIntersection() {
+		for _, m := range t.IntersectionMembers() {
+			if isLiteralPrimitive(m) && isAlwaysTruthy(m) {
+				return true
+			}
+		}
+	}
 	// Type parameter: forward to the constraint when it's narrower
 	// than `unknown`. `T extends object` is always truthy.
 	if t.IsTypeParameter() {
 		if c := t.BaseConstraint(); c != nil && c != t {
 			return isAlwaysTruthy(c)
 		}
+	}
+	return false
+}
+
+// isLiteralPrimitive reports whether t is a literal type of a
+// primitive — `'foo'`, `42`, `true`. Used by intersection-branded
+// truthiness checks: only literal members pin the runtime truth.
+func isLiteralPrimitive(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	s := t.String()
+	switch {
+	case t.IsBooleanLike() && (s == "true" || s == "false"):
+		return true
+	case t.IsStringLike() && s != "string":
+		return true
+	case t.IsNumberLike() && s != "number":
+		return true
+	case t.IsBigIntLike() && s != "bigint":
+		return true
 	}
 	return false
 }
@@ -734,6 +954,17 @@ func isAlwaysFalsy(t *wrapperchecker.Type) bool {
 	switch s {
 	case "false", "\"\"", "''", "0", "0n":
 		return true
+	}
+	if t.IsIntersection() {
+		// Branded primitives (`'' & { __brand }`): the brand is purely
+		// nominal — runtime truthiness follows the primitive member.
+		// Only literal-primitive members count: `string & {...}` still
+		// admits any string, so the intersection's truth is not pinned.
+		for _, m := range t.IntersectionMembers() {
+			if isLiteralPrimitive(m) && isAlwaysFalsy(m) {
+				return true
+			}
+		}
 	}
 	if t.IsTypeParameter() {
 		if c := t.BaseConstraint(); c != nil && c != t {
