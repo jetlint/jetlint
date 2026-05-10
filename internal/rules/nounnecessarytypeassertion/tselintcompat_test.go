@@ -72,6 +72,9 @@ func optsFromCase(c tselintcompat.Case) nounnecessarytypeassertion.Options {
 			}
 		}
 	}
+	if v, ok := c.Options["checkLiteralConstAssertions"].(bool); ok {
+		opts.CheckLiteralConstAssertions = v
+	}
 	return opts
 }
 
