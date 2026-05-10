@@ -174,6 +174,12 @@ func (r *rule) typeIsMutable(t *wrapperchecker.Type, depth int) bool {
 		}
 		return false
 	}
+	// A non-readonly index signature lets the holder write `arg[key] =
+	// v` regardless of declared properties — that alone makes the
+	// parameter mutable.
+	if t.HasMutableIndexSignature() {
+		return true
+	}
 	// Object/interface/anonymous type: any non-readonly property
 	// (including methods) makes the parameter mutable. For callable
 	// types, skip the standard Function members — they're declared
@@ -182,8 +188,17 @@ func (r *rule) typeIsMutable(t *wrapperchecker.Type, depth int) bool {
 		if hasCall && isStandardFunctionProp(name) {
 			continue
 		}
+		// Private fields (`#name`) and TypeScript-private members
+		// can't be mutated from outside — they don't affect the
+		// caller's view of the parameter's mutability.
+		if isPrivateName(name) {
+			continue
+		}
 		sym := t.PropertySymbol(name)
 		if sym == nil {
+			continue
+		}
+		if isPrivateSymbol(sym) {
 			continue
 		}
 		if !sym.IsReadonly() {
@@ -226,6 +241,55 @@ func (r *rule) hasNonFunctionProperty(t *wrapperchecker.Type) bool {
 		}
 	}
 	return false
+}
+
+// isPrivateName reports whether name is a JavaScript private-field
+// identifier (`#foo`). These never participate in caller-visible
+// shape so they don't drive the mutable/readonly decision.
+func isPrivateName(name string) bool {
+	return len(name) > 0 && name[0] == '#'
+}
+
+// isPrivateSymbol reports whether sym carries the TS `private` access
+// modifier or is declared with a private-identifier name (`#foo`).
+// Private members can't be written from outside the declaring class.
+func isPrivateSymbol(sym *wrapperchecker.Symbol) bool {
+	if sym == nil {
+		return false
+	}
+	if name := sym.Name(); len(name) > 0 && name[0] == '#' {
+		return true
+	}
+	for _, decl := range sym.Declarations() {
+		if decl == nil {
+			continue
+		}
+		if decl.HasPrivateModifier() {
+			return true
+		}
+		if hasPrivateIdentifierName(decl) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasPrivateIdentifierName reports whether a declaration's name node
+// is a private identifier (`#foo`) — the JS-language private-field
+// flavor that doesn't surface as the `private` modifier.
+func hasPrivateIdentifierName(decl *wrapperchecker.Node) bool {
+	if decl == nil {
+		return false
+	}
+	found := false
+	decl.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() == wrapperchecker.KindPrivateIdentifier {
+			found = true
+			return true
+		}
+		return false
+	})
+	return found
 }
 
 func isStandardFunctionProp(name string) bool {
