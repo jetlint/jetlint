@@ -211,6 +211,18 @@ func destructuringSlotType(ctx *engine.Context, be *wrapperchecker.Node) *wrappe
 				}
 			}
 		}
+		// Optional property (`{ a?: T }`) — the slot can be undefined
+		// at runtime regardless of T's declared type. Treat as
+		// undefined-bearing UNLESS the source expression is a
+		// conditional / logical chain whose every branch supplies the
+		// key directly. TS marks the property as optional when ANY
+		// branch lacks it, which can produce false positives on the
+		// "all branches have it" cases that upstream still flags.
+		if sym := srcT.PropertySymbol(key); sym != nil && sym.IsOptional() {
+			if !propertyInAllBranches(destructuringInit(pattern), key) {
+				return nil
+			}
+		}
 		return srcT.PropertyType(key)
 	case wrapperchecker.KindArrayBindingPattern:
 		idx := arrayBindingIndex(pattern, be)
@@ -294,6 +306,123 @@ func arrayBindingIndex(pattern, target *wrapperchecker.Node) int {
 		return false
 	})
 	return found
+}
+
+// destructuringInit returns the initializer expression feeding the
+// destructure pattern, walking up nested patterns to find the
+// outermost source. Nil when the pattern isn't backed by a runtime
+// expression (e.g. function parameters).
+func destructuringInit(pattern *wrapperchecker.Node) *wrapperchecker.Node {
+	cur := pattern
+	for cur != nil {
+		p := cur.Parent()
+		if p == nil {
+			return nil
+		}
+		switch p.Kind() {
+		case wrapperchecker.KindVariableDeclaration:
+			return p.VariableDeclarationInitializer()
+		case wrapperchecker.KindBindingElement:
+			cur = p.Parent()
+			continue
+		}
+		return nil
+	}
+	return nil
+}
+
+// propertyInAllBranches reports whether expr is an object literal
+// or a conditional/logical/parenthesized chain whose every leaf is
+// an object literal carrying the named property. Mirrors upstream's
+// `hasPropertyInAllBranches`.
+func propertyInAllBranches(expr *wrapperchecker.Node, key string) bool {
+	for expr != nil && expr.Kind() == wrapperchecker.KindParenthesizedExpression {
+		expr = expr.FirstChild()
+	}
+	if expr == nil {
+		return false
+	}
+	switch expr.Kind() {
+	case wrapperchecker.KindObjectLiteralExpression:
+		found := false
+		expr.ForEachChild(func(c *wrapperchecker.Node) bool {
+			if propertyAssignmentMatchesKey(c, key) {
+				found = true
+				return true
+			}
+			return false
+		})
+		return found
+	case wrapperchecker.KindConditionalExpression:
+		whenTrue, whenFalse := expr.ConditionalBranches()
+		return propertyInAllBranches(whenTrue, key) && propertyInAllBranches(whenFalse, key)
+	case wrapperchecker.KindBinaryExpression:
+		// Logical-or/and/?? — both sides must supply the property.
+		switch expr.BinaryOperatorKind() {
+		case wrapperchecker.KindBarBarToken,
+			wrapperchecker.KindAmpersandAmpersandToken,
+			wrapperchecker.KindQuestionQuestionToken:
+			return propertyInAllBranches(expr.BinaryLeft(), key) &&
+				propertyInAllBranches(expr.BinaryRight(), key)
+		}
+	}
+	return false
+}
+
+// propertyAssignmentMatchesKey reports whether prop is a property
+// assignment (`a: ...`), shorthand (`a`), method (`a() {}`), or
+// computed property whose key text matches the given key.
+func propertyAssignmentMatchesKey(prop *wrapperchecker.Node, key string) bool {
+	if prop == nil {
+		return false
+	}
+	switch prop.Kind() {
+	case wrapperchecker.KindPropertyAssignment,
+		wrapperchecker.KindShorthandPropertyAssignment,
+		wrapperchecker.KindMethodDeclaration,
+		wrapperchecker.KindGetAccessor,
+		wrapperchecker.KindSetAccessor:
+		// First child is the name node.
+		var name *wrapperchecker.Node
+		prop.ForEachChild(func(c *wrapperchecker.Node) bool {
+			name = c
+			return true
+		})
+		return propertyKeyText(name) == key
+	}
+	return false
+}
+
+// propertyKeyText returns the textual key of an object-literal
+// property name node — handles bare identifiers, string literals,
+// and `['key']` computed names whose body is a literal.
+func propertyKeyText(name *wrapperchecker.Node) string {
+	if name == nil {
+		return ""
+	}
+	switch name.Kind() {
+	case wrapperchecker.KindIdentifier,
+		wrapperchecker.KindStringLiteral,
+		wrapperchecker.KindNoSubstitutionTemplateLiteral:
+		return name.LiteralText()
+	}
+	// Fallback for computed names like `['a']`: dig through children
+	// and pull the first literal-like node's text.
+	var inner *wrapperchecker.Node
+	name.ForEachChild(func(c *wrapperchecker.Node) bool {
+		switch c.Kind() {
+		case wrapperchecker.KindStringLiteral,
+			wrapperchecker.KindNoSubstitutionTemplateLiteral,
+			wrapperchecker.KindIdentifier:
+			inner = c
+			return true
+		}
+		return false
+	})
+	if inner != nil {
+		return inner.LiteralText()
+	}
+	return ""
 }
 
 // typeIncludesUndefined reports whether t (or any union arm) is
