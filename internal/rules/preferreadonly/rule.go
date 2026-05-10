@@ -172,14 +172,32 @@ func classDeclarationName(cls *wrapperchecker.Node) string {
 }
 
 // classWritesToStatic reports whether any code inside the class
-// assigns to `ClassName.<name>` outside the field declaration itself.
-// Walks every nested expression but stops at the field declaration so
-// the initializer doesn't count as a reassignment.
+// assigns to `ClassName.<name>` (or to `<alias>.<name>` for an alias
+// of `typeof ClassName`) outside the field declaration itself. Walks
+// every nested expression but stops at the field declaration so the
+// initializer doesn't count as a reassignment.
 func classWritesToStatic(cls, field *wrapperchecker.Node, name, clsName string) bool {
 	written := false
-	var walk func(n *wrapperchecker.Node)
-	walk = func(n *wrapperchecker.Node) {
+	var walk func(n *wrapperchecker.Node, aliases map[string]bool)
+	walk = func(n *wrapperchecker.Node, aliases map[string]bool) {
 		if written || n == nil || n == field {
+			return
+		}
+		// Methods, accessors, and the constructor open a new function
+		// scope where `this` and class-name references rebind — collect
+		// per-scope aliases so writes via type-asserted aliases (`const
+		// that = {} as typeof Cls & { ... }`) flag correctly.
+		switch n.Kind() {
+		case wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindGetAccessor,
+			wrapperchecker.KindSetAccessor,
+			wrapperchecker.KindConstructor:
+			scopedAliases := map[string]bool{}
+			collectThisAliases(n, scopedAliases)
+			n.ForEachChild(func(c *wrapperchecker.Node) bool {
+				walk(c, scopedAliases)
+				return written
+			})
 			return
 		}
 		if isStaticAssignmentTo(n, name, clsName) ||
@@ -188,13 +206,19 @@ func classWritesToStatic(cls, field *wrapperchecker.Node, name, clsName string) 
 			written = true
 			return
 		}
+		if isAliasAssignmentTo(n, name, aliases) ||
+			isAliasIncrementOf(n, name, aliases) ||
+			isAliasDeleteOf(n, name, aliases) {
+			written = true
+			return
+		}
 		n.ForEachChild(func(c *wrapperchecker.Node) bool {
-			walk(c)
+			walk(c, aliases)
 			return written
 		})
 	}
 	cls.ForEachChild(func(c *wrapperchecker.Node) bool {
-		walk(c)
+		walk(c, nil)
 		return written
 	})
 	return written
@@ -362,6 +386,24 @@ func classWritesToProperty(cls, field *wrapperchecker.Node, name string) bool {
 			})
 			return
 		}
+		// Methods, getters, and setters open a new function scope
+		// where `this` rebinds — collect per-scope aliases so writes
+		// via type-asserted aliases (`const that = {} as this & {...}`)
+		// flag correctly.
+		switch n.Kind() {
+		case wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindGetAccessor,
+			wrapperchecker.KindSetAccessor:
+			methodAliases := map[string]bool{}
+			collectThisAliases(n, methodAliases)
+			if len(methodAliases) > 0 {
+				n.ForEachChild(func(c *wrapperchecker.Node) bool {
+					walk(c, false, methodAliases)
+					return written
+				})
+				return
+			}
+		}
 		if !inCtor && (isThisAssignmentTo(n, name) || isAliasAssignmentTo(n, name, aliases) ||
 			isThisElementAssignmentTo(n, name) || isAliasElementAssignmentTo(n, name, aliases)) {
 			written = true
@@ -416,7 +458,10 @@ func classWritesToProperty(cls, field *wrapperchecker.Node, name string) bool {
 
 // collectThisAliases walks the immediate body of a function-like
 // node and records `const X = this` declarations so writes through
-// X are credited to `this`.
+// X are credited to `this`. Also picks up type-asserted `this`
+// shapes — `const X = {} as this & { ... }` and unions/intersections
+// involving `this` or `typeof <Class>` — since writes through such
+// aliases mutate the class instance at runtime.
 func collectThisAliases(fn *wrapperchecker.Node, out map[string]bool) {
 	var walk func(n *wrapperchecker.Node)
 	walk = func(n *wrapperchecker.Node) {
@@ -430,11 +475,23 @@ func collectThisAliases(fn *wrapperchecker.Node, out map[string]bool) {
 						return false
 					}
 					init := decl.VariableDeclarationInitializer()
-					if init == nil || init.Kind() != wrapperchecker.KindThisKeyword {
+					if init == nil {
 						return false
 					}
-					if name := variableDeclName(decl); name != "" {
-						out[name] = true
+					if init.Kind() == wrapperchecker.KindThisKeyword {
+						if name := variableDeclName(decl); name != "" {
+							out[name] = true
+						}
+						return false
+					}
+					// `const X = {} as this & { ... }` and similar
+					// type-asserted shapes alias the class instance at
+					// runtime — mutations through X land on `this`.
+					if asTarget := typeAssertionAnnotation(init); asTarget != nil &&
+						typeAnnotationReferencesThisOrEnclosingClass(asTarget) {
+						if name := variableDeclName(decl); name != "" {
+							out[name] = true
+						}
 					}
 					return false
 				})
@@ -442,9 +499,19 @@ func collectThisAliases(fn *wrapperchecker.Node, out map[string]bool) {
 			})
 		}
 		// Don't descend into nested function-likes — `this` rebinds.
-		switch n.Kind() {
-		case wrapperchecker.KindFunctionDeclaration, wrapperchecker.KindFunctionExpression, wrapperchecker.KindMethodDeclaration:
-			return
+		// Skip the rebind check for fn itself (the entry node), so the
+		// caller can pass a Constructor / MethodDeclaration / etc.
+		if n != fn {
+			switch n.Kind() {
+			case wrapperchecker.KindFunctionDeclaration,
+				wrapperchecker.KindFunctionExpression,
+				wrapperchecker.KindMethodDeclaration,
+				wrapperchecker.KindArrowFunction,
+				wrapperchecker.KindGetAccessor,
+				wrapperchecker.KindSetAccessor,
+				wrapperchecker.KindConstructor:
+				return
+			}
 		}
 		n.ForEachChild(func(c *wrapperchecker.Node) bool {
 			walk(c)
@@ -730,4 +797,55 @@ func isThisDeleteOf(n *wrapperchecker.Node, name string) bool {
 	}
 	recv := target.PropertyAccessReceiver()
 	return recv != nil && recv.Kind() == wrapperchecker.KindThisKeyword
+}
+
+// typeAssertionAnnotation returns the annotation of an `expr as T` or
+// `<T>expr` form, peeling parentheses. Nil for non-assertion shapes.
+func typeAssertionAnnotation(expr *wrapperchecker.Node) *wrapperchecker.Node {
+	for expr != nil && expr.Kind() == wrapperchecker.KindParenthesizedExpression {
+		expr = expr.FirstChild()
+	}
+	if expr == nil {
+		return nil
+	}
+	switch expr.Kind() {
+	case wrapperchecker.KindAsExpression:
+		return expr.AsExpressionTarget()
+	case wrapperchecker.KindTypeAssertionExpression:
+		return expr.TypeAssertionTarget()
+	}
+	return nil
+}
+
+// typeAnnotationReferencesThisOrEnclosingClass reports whether the
+// type-node references `this` (e.g. `this`, `this & X`, `this | X`)
+// or a `typeof <Class>` reference. The walk is structural — it
+// doesn't resolve symbols. A typeof query in a `const X = {} as ...`
+// declaration almost always refers to the enclosing class; the
+// declaration shape is uncommon enough elsewhere that the heuristic
+// is acceptable.
+func typeAnnotationReferencesThisOrEnclosingClass(annot *wrapperchecker.Node) bool {
+	if annot == nil {
+		return false
+	}
+	found := false
+	var walk func(n *wrapperchecker.Node)
+	walk = func(n *wrapperchecker.Node) {
+		if found || n == nil {
+			return
+		}
+		switch n.Kind() {
+		case wrapperchecker.KindThisType,
+			wrapperchecker.KindThisKeyword,
+			wrapperchecker.KindTypeQuery:
+			found = true
+			return
+		}
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			walk(c)
+			return found
+		})
+	}
+	walk(annot)
+	return found
 }
