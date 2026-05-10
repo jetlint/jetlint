@@ -412,24 +412,23 @@ func (r *rule) checkLoopCondition(ctx *engine.Context, expr *wrapperchecker.Node
 	checkRecursive(ctx, expr)
 }
 
-// isAllowedLoopLiteral reports whether expr is a primitive literal
-// directly written in source (`while (true)`, `while (1)`, etc.) —
-// the inline-literal carve-out for `only-allowed-literals`. Reference
-// to a declared constant of literal type is not allowed.
+// isAllowedLoopLiteral reports whether expr is one of the literals
+// upstream's `only-allowed-literals` mode permits in a loop test —
+// `true`, `false`, `0`, or `1`. Other truthy/falsy literals
+// (`'truthy'`, `2`, `null`) are still flagged.
 func isAllowedLoopLiteral(expr *wrapperchecker.Node) bool {
 	expr = unwrapParen(expr)
 	if expr == nil {
 		return false
 	}
 	switch expr.Kind() {
-	case wrapperchecker.KindTrueKeyword,
-		wrapperchecker.KindFalseKeyword,
-		wrapperchecker.KindNumericLiteral,
-		wrapperchecker.KindBigIntLiteral,
-		wrapperchecker.KindStringLiteral,
-		wrapperchecker.KindNoSubstitutionTemplateLiteral,
-		wrapperchecker.KindNullKeyword:
+	case wrapperchecker.KindTrueKeyword, wrapperchecker.KindFalseKeyword:
 		return true
+	case wrapperchecker.KindNumericLiteral:
+		switch expr.LiteralText() {
+		case "0", "1":
+			return true
+		}
 	}
 	return false
 }
