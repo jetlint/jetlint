@@ -475,13 +475,13 @@ func check(ctx *engine.Context, expr *wrapperchecker.Node) {
 		ctx.Report(expr, "condition is unreachable (type never)")
 		return
 	}
-	// `arr[42]` and `obj[key]` look statically truthy/falsy because
-	// the indexed access narrows to T, but at runtime the value can
-	// be undefined whenever noUncheckedIndexedAccess isn't enabled.
-	// typescript-eslint's rule never flags conditions whose value
-	// flows from an element access for that reason. The check covers
-	// `arr[42]`, `arr[42].foo`, `arr[42]?.foo`, and `!arr[42]`.
-	if conditionFromIndexAccess(unwrapParen(expr)) {
+	// Array index access (`arr[i]`) and non-literal tuple index access
+	// (`tuple[n]`) read as the element type without modeling the
+	// out-of-bounds-undefined possibility unless noUncheckedIndexedAccess
+	// is on. typescript-eslint exempts these so safe runtime checks
+	// don't get flagged. Restricted to direct array/tuple receivers —
+	// `Record<string, T>` accesses are still flagged.
+	if conditionFromArrayIndexAccess(ctx, unwrapParen(expr)) {
 		return
 	}
 	if isAlwaysTruthy(t) {
@@ -493,23 +493,63 @@ func check(ctx *engine.Context, expr *wrapperchecker.Node) {
 	}
 }
 
-// conditionFromIndexAccess reports whether the condition expression
-// derives its value (directly or through `!` / nested prop access)
-// from an element access expression. Index access carves out the
-// noUncheckedIndexedAccess discrepancy upstream documents.
-func conditionFromIndexAccess(n *wrapperchecker.Node) bool {
+// conditionFromArrayIndexAccess reports whether expr derives its value
+// from `arr[i]`, `!arr[i]`, or a property/optional chain rooted at one.
+// Mirrors typescript-eslint's isArrayIndexExpression: only computed
+// element access with array- or tuple-typed receivers, and tuple
+// receivers only when the index is non-literal (literal-into-tuple is
+// type-sound).
+func conditionFromArrayIndexAccess(ctx *engine.Context, n *wrapperchecker.Node) bool {
 	if n == nil {
 		return false
 	}
 	if n.Kind() == wrapperchecker.KindPrefixUnaryExpression && n.PrefixUnaryOperator() == "!" {
-		return conditionFromIndexAccess(unwrapParen(n.FirstChild()))
+		return conditionFromArrayIndexAccess(ctx, unwrapParen(n.FirstChild()))
 	}
-	return isIndexLikeAccess(n)
+	switch n.Kind() {
+	case wrapperchecker.KindElementAccessExpression:
+		recv := n.ElementAccessReceiver()
+		idx := n.ElementAccessIndex()
+		if recv == nil {
+			return false
+		}
+		rt := ctx.TypeOf(recv)
+		if rt == nil {
+			return false
+		}
+		if rt.IsArrayLikeType() && !rt.IsTupleType() {
+			return true
+		}
+		if rt.IsTupleType() && idx != nil && !isLiteralIndex(idx) {
+			return true
+		}
+		return false
+	case wrapperchecker.KindPropertyAccessExpression:
+		return conditionFromArrayIndexAccess(ctx, unwrapParen(n.FirstChild()))
+	}
+	return false
+}
+
+// isLiteralIndex reports whether idx is a numeric or string literal —
+// indexing a tuple by such a literal yields a sound element type that
+// shouldn't trigger the array-index carve-out.
+func isLiteralIndex(idx *wrapperchecker.Node) bool {
+	idx = unwrapParen(idx)
+	if idx == nil {
+		return false
+	}
+	switch idx.Kind() {
+	case wrapperchecker.KindNumericLiteral,
+		wrapperchecker.KindStringLiteral,
+		wrapperchecker.KindNoSubstitutionTemplateLiteral:
+		return true
+	}
+	return false
 }
 
 // unwrapParen strips parentheses and non-null assertions to reach the
-// underlying expression so isIndexLikeAccess can see through `(arr[i])`
-// and `arr[i]!`.
+// underlying expression so callers can see through `(arr[i])` and
+// `arr[i]!`.
 func unwrapParen(n *wrapperchecker.Node) *wrapperchecker.Node {
 	for n != nil {
 		switch n.Kind() {
