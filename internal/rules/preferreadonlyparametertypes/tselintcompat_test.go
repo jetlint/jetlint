@@ -70,6 +70,9 @@ func optsFromCase(c tselintcompat.Case) preferreadonlyparametertypes.Options {
 	if v, ok := c.Options["ignoreInferredTypes"].(bool); ok {
 		opts.IgnoreInferredTypes = v
 	}
+	if v, ok := c.Options["checkParameterProperties"].(bool); ok {
+		opts.CheckParameterProperties = v
+	}
 	return opts
 }
 

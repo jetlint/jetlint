@@ -5,7 +5,7 @@ fixtures. Each rule has a vendored fixture under
 `testdata/typescript-eslint/<rule>.test.ts` and a compatibility harness
 under `internal/rules/<pkg>/tselintcompat_test.go`.
 
-**Aggregate: 5758/6193 cases pass (93.0%).**
+**Aggregate: 5759/6193 cases pass (93.0%).**
 
 Run any single rule's harness with:
 
@@ -73,7 +73,7 @@ go -C ~/src/lint test -count=1 -run TypescriptEslintCompatibility -v ./internal/
 | no-deprecated | 241/262 (92.0%) | cross-module re-exports |
 | no-useless-default-assignment | 79/83 (95.2%) | noStrictNullCheck variant + complex callbacks |
 | switch-exhaustiveness-check | 100/104 (96.2%) | defaultCaseCommentPattern + bug fix |
-| prefer-readonly-parameter-types | 117/130 (90.0%) | allow option |
+| prefer-readonly-parameter-types | 118/130 (90.8%) | allow option + Readonly<T> wrapper |
 | consistent-type-exports | 43/47 (91.5%) | export-all + namespace |
 
 ## 70 – 90%

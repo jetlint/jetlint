@@ -26,9 +26,15 @@ type Options struct {
 	// annotation. Useful for callbacks where TypeScript widens an
 	// inferred parameter type for ergonomics.
 	IgnoreInferredTypes bool
+	// CheckParameterProperties controls whether parameter-property
+	// declarations in a constructor (`constructor(private arg: T)`)
+	// are subject to the readonly check. Default true matches upstream.
+	CheckParameterProperties bool
 }
 
-func DefaultOptions() Options { return Options{} }
+func DefaultOptions() Options {
+	return Options{CheckParameterProperties: true}
+}
 
 func OptionsFromJSON(raw json.RawMessage) (Options, error) {
 	out := DefaultOptions()
@@ -47,6 +53,10 @@ func OptionsFromJSON(raw json.RawMessage) (Options, error) {
 			}
 		case "ignoreInferredTypes":
 			if err := json.Unmarshal(val, &out.IgnoreInferredTypes); err != nil {
+				return Options{}, fmt.Errorf("prefer-readonly-parameter-types option %q: %w", key, err)
+			}
+		case "checkParameterProperties":
+			if err := json.Unmarshal(val, &out.CheckParameterProperties); err != nil {
 				return Options{}, fmt.Errorf("prefer-readonly-parameter-types option %q: %w", key, err)
 			}
 		case "allow":
@@ -74,6 +84,9 @@ func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 }
 
 func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
+	if !r.opts.CheckParameterProperties && isParameterProperty(n) {
+		return
+	}
 	annot := n.ParameterTypeAnnotation()
 	if annot == nil {
 		if r.opts.IgnoreInferredTypes {
@@ -91,6 +104,20 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	ctx.Report(n, "parameter is mutable; declare it readonly")
+}
+
+// isParameterProperty reports whether n is a constructor parameter
+// with an access modifier (`public`, `private`, `protected`,
+// `readonly`) — the form that auto-declares a class field.
+func isParameterProperty(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	if n.HasPrivateModifier() || n.HasProtectedModifier() ||
+		n.HasPublicModifier() || n.HasReadonlyModifier() {
+		return true
+	}
+	return false
 }
 
 // typeIsMutable reports whether t is a mutable container shape
