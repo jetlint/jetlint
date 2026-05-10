@@ -52,6 +52,90 @@ func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 		wrapperchecker.KindConditionalExpression: visitConditional,
 		wrapperchecker.KindBinaryExpression:      visitBinary,
 		wrapperchecker.KindPrefixUnaryExpression: visitPrefixUnary,
+		wrapperchecker.KindCallExpression:        visitCall,
+	}
+}
+
+// arrayPredicateMethods is the set of Array.prototype methods that
+// take a boolean-returning predicate. A predicate that always returns
+// the same truthy/falsy value makes the call vacuous.
+var arrayPredicateMethods = map[string]bool{
+	"filter":         true,
+	"find":           true,
+	"findIndex":      true,
+	"findLast":       true,
+	"findLastIndex":  true,
+	"every":          true,
+	"some":           true,
+}
+
+// visitCall flags array-predicate calls whose callback's return type
+// is statically truthy or falsy. Only direct property-access callees
+// like `arr.filter(cb)` are inspected — the receiver must be array
+// or tuple typed.
+func visitCall(ctx *engine.Context, n *wrapperchecker.Node) {
+	callee := n.CalleeExpression()
+	if callee == nil || callee.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return
+	}
+	method := callee.PropertyAccessName()
+	if !arrayPredicateMethods[method] {
+		return
+	}
+	recv := callee.PropertyAccessReceiver()
+	if recv == nil {
+		return
+	}
+	rt := ctx.TypeOf(recv)
+	if rt == nil || (!rt.IsArrayLikeType() && !rt.IsTupleType()) {
+		return
+	}
+	args := n.CallArguments()
+	if len(args) == 0 {
+		return
+	}
+	cb := args[0]
+	cbT := ctx.TypeOf(cb)
+	if cbT == nil {
+		return
+	}
+	sigs := cbT.CallSignatures()
+	if len(sigs) == 0 {
+		return
+	}
+	retT := sigs[0].ReturnType()
+	if retT == nil {
+		return
+	}
+	// `any`/`unknown` returns can be anything at runtime — the
+	// callback isn't constant. Type parameters narrow to their
+	// constraint; if the constraint is statically truthy/falsy
+	// (`<T extends true>`), the call is still vacuous.
+	if retT.IsAny() || retT.IsUnknown() {
+		return
+	}
+	if retT.IsTypeParameter() {
+		if c := retT.BaseConstraint(); c != nil && c != retT {
+			retT = c
+		} else {
+			return
+		}
+	}
+	switch cb.Kind() {
+	case wrapperchecker.KindArrowFunction, wrapperchecker.KindFunctionExpression:
+		// Inline callback — flag with the literal-style message.
+		if isAlwaysTruthy(retT) {
+			ctx.Report(cb, "callback always returns a truthy value — `"+method+"` is unnecessary")
+		} else if isAlwaysFalsy(retT) {
+			ctx.Report(cb, "callback always returns a falsy value — `"+method+"` returns no useful result")
+		}
+	case wrapperchecker.KindIdentifier:
+		// Named function — distinct upstream message ids.
+		if isAlwaysTruthy(retT) {
+			ctx.Report(cb, "function `"+cb.LiteralText()+"` always returns truthy — `"+method+"` is unnecessary")
+		} else if isAlwaysFalsy(retT) {
+			ctx.Report(cb, "function `"+cb.LiteralText()+"` always returns falsy — `"+method+"` returns no useful result")
+		}
 	}
 }
 
