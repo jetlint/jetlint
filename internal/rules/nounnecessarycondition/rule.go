@@ -10,13 +10,28 @@ import (
 
 const id = "no-unnecessary-condition"
 
+// LoopConditionMode controls how strictly statically-constant
+// `while/for/do` test expressions are treated. Mirrors upstream's
+// tri-state `allowConstantLoopConditions` option.
+type LoopConditionMode int
+
+const (
+	// LoopConditionNever flags any statically-constant loop test.
+	LoopConditionNever LoopConditionMode = iota
+	// LoopConditionAlways exempts all loops with constant tests.
+	LoopConditionAlways
+	// LoopConditionOnlyAllowedLiterals exempts loops whose test is a
+	// literal `true`, `false`, `0`, `1`, `''`, etc. expressed inline in
+	// the source — references to declared constants of literal type
+	// (`declare const t: true; while (t) {}`) are still flagged.
+	LoopConditionOnlyAllowedLiterals
+)
+
 // Options is the configurable surface of the rule.
 type Options struct {
-	// AllowConstantLoopConditions: when set, `while/for/do` loops with
-	// statically-constant test expressions are not flagged. The
-	// upstream rule accepts `true | false | "always" | "never" | "only-allowed-literals"`;
-	// this implementation treats anything truthy as "always allow".
-	AllowConstantLoopConditions bool
+	// AllowConstantLoopConditions controls flagging of constant
+	// `while/for/do` test expressions per LoopConditionMode.
+	AllowConstantLoopConditions LoopConditionMode
 }
 
 func DefaultOptions() Options { return Options{} }
@@ -371,17 +386,52 @@ func visitIf(ctx *engine.Context, n *wrapperchecker.Node) {
 }
 
 func (r *rule) visitWhile(ctx *engine.Context, n *wrapperchecker.Node) {
-	if r.opts.AllowConstantLoopConditions {
-		return
-	}
-	checkRecursive(ctx, n.WhileCondition())
+	r.checkLoopCondition(ctx, n.WhileCondition())
 }
 
 func (r *rule) visitFor(ctx *engine.Context, n *wrapperchecker.Node) {
-	if r.opts.AllowConstantLoopConditions {
+	r.checkLoopCondition(ctx, n.ForStatementCondition())
+}
+
+// checkLoopCondition applies the loop-condition mode to the test
+// expression of a `while`/`do`/`for` statement. The recursive walk is
+// skipped under `always`, taken under `never`, and conditionally taken
+// under `only-allowed-literals` (test is an inline literal → skip).
+func (r *rule) checkLoopCondition(ctx *engine.Context, expr *wrapperchecker.Node) {
+	if expr == nil {
 		return
 	}
-	checkRecursive(ctx, n.ForStatementCondition())
+	switch r.opts.AllowConstantLoopConditions {
+	case LoopConditionAlways:
+		return
+	case LoopConditionOnlyAllowedLiterals:
+		if isAllowedLoopLiteral(expr) {
+			return
+		}
+	}
+	checkRecursive(ctx, expr)
+}
+
+// isAllowedLoopLiteral reports whether expr is a primitive literal
+// directly written in source (`while (true)`, `while (1)`, etc.) —
+// the inline-literal carve-out for `only-allowed-literals`. Reference
+// to a declared constant of literal type is not allowed.
+func isAllowedLoopLiteral(expr *wrapperchecker.Node) bool {
+	expr = unwrapParen(expr)
+	if expr == nil {
+		return false
+	}
+	switch expr.Kind() {
+	case wrapperchecker.KindTrueKeyword,
+		wrapperchecker.KindFalseKeyword,
+		wrapperchecker.KindNumericLiteral,
+		wrapperchecker.KindBigIntLiteral,
+		wrapperchecker.KindStringLiteral,
+		wrapperchecker.KindNoSubstitutionTemplateLiteral,
+		wrapperchecker.KindNullKeyword:
+		return true
+	}
+	return false
 }
 
 func visitConditional(ctx *engine.Context, n *wrapperchecker.Node) {

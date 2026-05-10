@@ -35,10 +35,19 @@ func TestNoUnnecessaryCondition_TypescriptEslintCompatibility(t *testing.T) {
 		opts := nounnecessarycondition.DefaultOptions()
 		switch v := c.Options["allowConstantLoopConditions"].(type) {
 		case bool:
-			opts.AllowConstantLoopConditions = v
+			if v {
+				opts.AllowConstantLoopConditions = nounnecessarycondition.LoopConditionAlways
+			} else {
+				opts.AllowConstantLoopConditions = nounnecessarycondition.LoopConditionNever
+			}
 		case string:
-			if v == "always" || v == "only-allowed-literals" {
-				opts.AllowConstantLoopConditions = true
+			switch v {
+			case "always":
+				opts.AllowConstantLoopConditions = nounnecessarycondition.LoopConditionAlways
+			case "only-allowed-literals":
+				opts.AllowConstantLoopConditions = nounnecessarycondition.LoopConditionOnlyAllowedLiterals
+			case "never":
+				opts.AllowConstantLoopConditions = nounnecessarycondition.LoopConditionNever
 			}
 		}
 		actual, runErr := runCase(t, c.Code, opts)
