@@ -25,6 +25,11 @@ type Options struct {
 	AllowDefaultCaseForExhaustiveSwitch bool
 	RequireDefaultForNonUnion           bool
 	ConsiderDefaultExhaustiveForUnions  bool
+	// DefaultCaseCommentPattern overrides the regex used to detect a
+	// "no default" comment that opts a switch out of the
+	// missing-default report. Empty falls back to the upstream default
+	// `^no default$` (case-insensitive).
+	DefaultCaseCommentPattern string
 }
 
 // DefaultOptions matches typescript-eslint's defaults.
@@ -34,10 +39,24 @@ func DefaultOptions() Options {
 	}
 }
 
-func New() engine.Rule                        { return NewWithOptions(DefaultOptions()) }
-func NewWithOptions(opts Options) engine.Rule { return &rule{opts: opts} }
+func New() engine.Rule { return NewWithOptions(DefaultOptions()) }
+func NewWithOptions(opts Options) engine.Rule {
+	r := &rule{opts: opts}
+	if opts.DefaultCaseCommentPattern != "" {
+		if re, err := regexp.Compile("(?i)" + opts.DefaultCaseCommentPattern); err == nil {
+			r.commentPattern = re
+		}
+	}
+	if r.commentPattern == nil {
+		r.commentPattern = defaultCommentPattern
+	}
+	return r
+}
 
-type rule struct{ opts Options }
+type rule struct {
+	opts           Options
+	commentPattern *regexp.Regexp
+}
 
 func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
@@ -57,7 +76,7 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	hasDefault, caseTypes := collectCases(ctx, n)
-	if !hasDefault && hasDefaultCaseComment(n) {
+	if !hasDefault && hasDefaultCaseComment(n, r.commentPattern) {
 		hasDefault = true
 	}
 	containsNonLiteral := containsNonLiteralType(dt)
@@ -74,12 +93,6 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 // report only when considerDefaultExhaustiveForUnions is enabled.
 func (r *rule) checkExhaustive(ctx *engine.Context, disc *wrapperchecker.Node, missing []string, hasDefault bool) {
 	if r.opts.ConsiderDefaultExhaustiveForUnions && hasDefault {
-		return
-	}
-	if !r.opts.ConsiderDefaultExhaustiveForUnions && hasDefault {
-		// Without the option, a default clause still suppresses the
-		// missing-branch report — TypeScript's exhaustiveness check
-		// trusts the default to handle anything not explicitly cased.
 		return
 	}
 	if len(missing) == 0 {
@@ -232,13 +245,13 @@ func containsNonLiteralType(t *wrapperchecker.Type) bool {
 // or block comment whose trimmed text matches the default-comment
 // pattern. Used so `case 'a': break; // no default` is treated as
 // having an explicit default for exhaustiveness purposes.
-func hasDefaultCaseComment(sw *wrapperchecker.Node) bool {
+func hasDefaultCaseComment(sw *wrapperchecker.Node, pattern *regexp.Regexp) bool {
 	src := sw.SourceText()
-	if src == "" {
+	if src == "" || pattern == nil {
 		return false
 	}
 	for _, comment := range extractComments(src) {
-		if defaultCommentPattern.MatchString(strings.TrimSpace(comment)) {
+		if pattern.MatchString(strings.TrimSpace(comment)) {
 			return true
 		}
 	}

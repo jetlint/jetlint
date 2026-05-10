@@ -42,6 +42,9 @@ func TestSwitchExhaustivenessCheck_TypescriptEslintCompatibility(t *testing.T) {
 		if v, ok := c.Options["considerDefaultExhaustiveForUnions"].(bool); ok {
 			opts.ConsiderDefaultExhaustiveForUnions = v
 		}
+		if v, ok := c.Options["defaultCaseCommentPattern"].(string); ok {
+			opts.DefaultCaseCommentPattern = v
+		}
 		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
