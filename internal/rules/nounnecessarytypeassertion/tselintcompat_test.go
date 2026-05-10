@@ -32,7 +32,7 @@ func TestNoUnnecessaryTypeAssertion_TypescriptEslintCompatibility(t *testing.T) 
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		actual, runErr := runCase(t, c.Code, optsFromCase(c))
 		if runErr != nil {
 			failed++
 			continue
@@ -60,7 +60,22 @@ func TestNoUnnecessaryTypeAssertion_TypescriptEslintCompatibility(t *testing.T) 
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func optsFromCase(c tselintcompat.Case) nounnecessarytypeassertion.Options {
+	opts := nounnecessarytypeassertion.DefaultOptions()
+	if c.Options == nil {
+		return opts
+	}
+	if raw, ok := c.Options["typesToIgnore"].([]any); ok {
+		for _, e := range raw {
+			if s, ok := e.(string); ok {
+				opts.TypesToIgnore = append(opts.TypesToIgnore, s)
+			}
+		}
+	}
+	return opts
+}
+
+func runCase(t *testing.T, code string, opts nounnecessarytypeassertion.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -73,7 +88,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{nounnecessarytypeassertion.New()},
+		[]engine.Rule{nounnecessarytypeassertion.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"no-unnecessary-type-assertion": wrapperlint.SeverityError},
 	)
 	count := 0

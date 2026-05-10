@@ -10,21 +10,34 @@ import (
 
 const id = "no-unnecessary-type-assertion"
 
-func New() engine.Rule { return rule{} }
+// Options is the configurable surface of the rule. Mirrors
+// typescript-eslint's `no-unnecessary-type-assertion` options.
+type Options struct {
+	// TypesToIgnore lists target type names whose assertions should be
+	// silently accepted regardless of source-type identity. Useful
+	// when a project applies `as Foo` for documentation-style intent
+	// even though the source is already `Foo`.
+	TypesToIgnore []string
+}
 
-type rule struct{}
+func DefaultOptions() Options { return Options{} }
 
-func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+func New() engine.Rule                        { return NewWithOptions(DefaultOptions()) }
+func NewWithOptions(opts Options) engine.Rule { return &rule{opts: opts} }
 
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+type rule struct{ opts Options }
+
+func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+
+func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindAsExpression:             visitAs,
-		wrapperchecker.KindTypeAssertionExpression: visitAs,
+		wrapperchecker.KindAsExpression:             r.visitAs,
+		wrapperchecker.KindTypeAssertionExpression: r.visitAs,
 		wrapperchecker.KindNonNullExpression:        visitNonNull,
 	}
 }
 
-func visitAs(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visitAs(ctx *engine.Context, n *wrapperchecker.Node) {
 	var src, annot *wrapperchecker.Node
 	switch n.Kind() {
 	case wrapperchecker.KindAsExpression:
@@ -56,6 +69,9 @@ func visitAs(ctx *engine.Context, n *wrapperchecker.Node) {
 	if srcT == nil || target == nil {
 		return
 	}
+	if r.targetIsIgnored(annot) {
+		return
+	}
 	// Asserting to a literal/tuple type often preserves narrower
 	// inference at a widening boundary. Always skip non-literal source
 	// (`let z = c as 1`); literal source is only flaggable when not in
@@ -68,6 +84,24 @@ func visitAs(ctx *engine.Context, n *wrapperchecker.Node) {
 	if srcT.String() == target.String() {
 		ctx.Report(n, "type assertion is unnecessary — the source already has this type")
 	}
+}
+
+// targetIsIgnored reports whether the assertion's target type-node
+// names a type listed in TypesToIgnore. The match is by source text
+// of the type-node so users can write `Foo`, `Foo<T>`, or qualified
+// names and have the option apply consistently with upstream's
+// regex-style match.
+func (r *rule) targetIsIgnored(annot *wrapperchecker.Node) bool {
+	if len(r.opts.TypesToIgnore) == 0 || annot == nil {
+		return false
+	}
+	text := annot.SourceText()
+	for _, ignored := range r.opts.TypesToIgnore {
+		if text == ignored {
+			return true
+		}
+	}
+	return false
 }
 
 // isLiteralOrTupleAssertion reports whether the assertion target is
