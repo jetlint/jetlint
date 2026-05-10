@@ -16,10 +16,20 @@ const fixtureTsconfigBody = `{
   "compilerOptions": {
     "strict": true, "target": "es2022", "module": "esnext",
     "moduleResolution": "bundler", "lib": ["es2022", "dom"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": { "errors": ["./errors.d.ts"] }
   },
-  "include": ["case.ts"]
+  "include": ["case.ts", "errors.d.ts"]
 }`
+
+// fixtureErrorsModule stubs the upstream `errors` virtual module that a
+// few test cases import from. The shape mirrors the upstream fixture in
+// packages/eslint-plugin/tests/fixtures/errors/index.d.ts so cases that
+// configure `allow: [{ from: 'package', name: 'ErrorLike', package: 'errors' }]`
+// can match `createError()`'s return-type symbol name.
+const fixtureErrorsModule = `export interface ErrorLike { stack?: string; message: string; }
+export declare function createError(): ErrorLike;
+`
 
 func TestPreferPromiseRejectErrors_TypescriptEslintCompatibility(t *testing.T) {
 	if testing.Short() {
@@ -105,6 +115,7 @@ func runCase(t *testing.T, code string, opts preferpromiserejecterrors.Options) 
 	tsc := filepath.Join(dir, "tsconfig.json")
 	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
 	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
+	os.WriteFile(filepath.Join(dir, "errors.d.ts"), []byte(fixtureErrorsModule), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err
