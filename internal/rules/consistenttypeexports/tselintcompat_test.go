@@ -18,8 +18,24 @@ const fixtureTsconfigBody = `{
     "moduleResolution": "bundler", "lib": ["es2022", "dom"],
     "skipLibCheck": true
   },
-  "include": ["case.ts"]
+  "include": ["case.ts", "consistent-type-exports.ts"]
 }`
+
+// fixtureConsistentTypeExportsModule mirrors the upstream
+// packages/eslint-plugin/tests/fixtures/consistent-type-exports/index.ts
+// fixture so cases that re-export from './consistent-type-exports'
+// can resolve symbols and the rule can classify each export as a
+// type or value.
+const fixtureConsistentTypeExportsModule = `export type Type1 = 1;
+export type Type2 = 1;
+export const value1 = 2;
+export const value2 = 2;
+
+export class Class1 {}
+
+export type NAME = 'name';
+export const NAME = 'name';
+`
 
 func TestConsistentTypeExports_TypescriptEslintCompatibility(t *testing.T) {
 	if testing.Short() {
@@ -46,6 +62,11 @@ func TestConsistentTypeExports_TypescriptEslintCompatibility(t *testing.T) {
 			continue
 		}
 		failed++
+		valid := "invalid"
+		if c.Valid {
+			valid = "valid"
+		}
+		t.Logf("FAIL [%s #%d] exp=%d act=%d hasOpts=%v\n%s\n", valid, c.SourceIndex, expected, actual, c.HasOptions, c.Code)
 	}
 	total := passed + failed
 	pct := 0.0
@@ -62,6 +83,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	tsc := filepath.Join(dir, "tsconfig.json")
 	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
 	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
+	os.WriteFile(filepath.Join(dir, "consistent-type-exports.ts"), []byte(fixtureConsistentTypeExportsModule), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err
