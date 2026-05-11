@@ -5,7 +5,7 @@ fixtures. Each rule has a vendored fixture under
 `testdata/typescript-eslint/<rule>.test.ts` and a compatibility harness
 under `internal/rules/<pkg>/tselintcompat_test.go`.
 
-**Aggregate: 5920/6193 cases pass (95.6%).**
+**Aggregate: 5929/6193 cases pass (95.7%).**
 
 Run any single rule's harness with:
 
@@ -70,7 +70,7 @@ go -C ~/src/lint test -count=1 -run TypescriptEslintCompatibility -v ./internal/
 | dot-notation | 60/61 (98.4%) | impl |
 | no-unnecessary-boolean-literal-compare | 44/45 (97.8%) | 1 case needs `strictNullChecks: false` per-case |
 | no-unnecessary-qualifier | 16/17 (94.1%) | impl |
-| no-deprecated | 247/262 (94.3%) | cross-module re-exports, JSX intrinsic attrs |
+| no-deprecated | 249/262 (95.0%) | cross-module re-exports, JSX intrinsic attrs |
 | no-useless-default-assignment | 79/83 (95.2%) | noStrictNullCheck variant + complex callbacks |
 | switch-exhaustiveness-check | 100/104 (96.2%) | defaultCaseCommentPattern + bug fix |
 | prefer-readonly-parameter-types | 119/130 (91.5%) | TypeOrValueSpecifier qualifiers + Readonly<T> wrapper |
@@ -84,7 +84,7 @@ go -C ~/src/lint test -count=1 -run TypescriptEslintCompatibility -v ./internal/
 
 | Rule | Score | Status |
 |---|---:|---|
-| prefer-destructuring | 72/92 (78.3%) | impl |
+| prefer-destructuring | 79/92 (85.9%) | impl |
 
 ## 60 – 70%
 

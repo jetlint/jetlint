@@ -32,7 +32,17 @@ func TestReturnAwait_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		opts := returnawait.DefaultOptions()
+		for _, raw := range c.AllOptions {
+			if s, ok := raw.(string); ok {
+				switch returnawait.Mode(s) {
+				case returnawait.ModeAlways, returnawait.ModeErrorHandlingCorrectnessOnly,
+					returnawait.ModeInTryCatch, returnawait.ModeNever:
+					opts.Mode = returnawait.Mode(s)
+				}
+			}
+		}
+		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -60,7 +70,7 @@ func TestReturnAwait_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func runCase(t *testing.T, code string, opts returnawait.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -73,7 +83,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{returnawait.New()},
+		[]engine.Rule{returnawait.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"return-await": wrapperlint.SeverityError},
 	)
 	count := 0

@@ -95,6 +95,11 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		if init.IsOptionalChain() {
 			return
 		}
+		// `super.foo` cannot be destructured — there is no destructuring
+		// form for `super`, so don't suggest one.
+		if recv := init.PropertyAccessReceiver(); recv != nil && recv.Kind() == wrapperchecker.KindSuperKeyword {
+			return
+		}
 		if init.PropertyAccessName() == name || r.opts.EnforceForRenamedProperties {
 			ctx.Report(n, "use object destructuring: { "+name+" } = obj")
 		}
@@ -124,7 +129,29 @@ func arrayElementZero(ctx *engine.Context, expr *wrapperchecker.Node) bool {
 	if rt == nil {
 		return false
 	}
-	return rt.IsTupleType() || rt.IsArrayLikeType() || rt.ArrayElementType() != nil
+	return isAnyOrIterable(rt)
+}
+
+// isAnyOrIterable reports whether t is `any` or carries a
+// `[Symbol.iterator]` member — making `t[0]` rewritable as
+// `const [first] = t`. Union types qualify only when every member
+// qualifies. Mirrors typescript-eslint's `isTypeAnyOrIterableType`.
+func isAnyOrIterable(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsAny() {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if !isAnyOrIterable(m) {
+				return false
+			}
+		}
+		return true
+	}
+	return t.HasSymbolIterator()
 }
 
 func variableName(n *wrapperchecker.Node) string {
