@@ -155,8 +155,137 @@ func countTypeParameterUsesInSignature(fn, owner *wrapperchecker.Node, name stri
 	})
 	if rt := returnTypeAnnotation(fn); rt != nil {
 		walk(rt, false)
+	} else if count > 0 && len(paramsByT) > 0 {
+		// No explicit return type — check whether the body returns one
+		// of the T-carrying parameters in a SHAPE-preserving way:
+		// bare `return param` keeps T in the inferred return type,
+		// `return { x: param }` produces `{ x: T }`, `return [param]`
+		// produces `T[]`. Calls on the parameter (`param.toString()`)
+		// or arithmetic don't escape T — they produce a concrete type.
+		if body := fn.FunctionBody(); body != nil {
+			var bodyWalk func(n *wrapperchecker.Node)
+			added := false
+			bodyWalk = func(n *wrapperchecker.Node) {
+				if n == nil || added {
+					return
+				}
+				if n.Kind() == wrapperchecker.KindReturnStatement {
+					n.ForEachChild(func(c *wrapperchecker.Node) bool {
+						if returnEscapesT(c, paramsByT) {
+							count++
+							added = true
+						}
+						return added
+					})
+				}
+				if n.Kind() == wrapperchecker.KindFunctionDeclaration ||
+					n.Kind() == wrapperchecker.KindFunctionExpression ||
+					n.Kind() == wrapperchecker.KindArrowFunction {
+					// Don't descend into nested functions — their
+					// returns belong to their own signatures.
+					return
+				}
+				n.ForEachChild(func(c *wrapperchecker.Node) bool {
+					bodyWalk(c)
+					return added
+				})
+			}
+			bodyWalk(body)
+		}
 	}
 	return count
+}
+
+// returnEscapesT reports whether the given return-expression
+// shape-preserves a T-carrying parameter into its inferred type.
+// Only structural carriers count: a bare identifier, an object
+// literal whose property values escape T, an array literal whose
+// elements escape T, an `as`/parenthesized wrapper, or a spread of
+// an escaping expression. Calls, member access, arithmetic, and
+// other transforming operators produce a fresh type that no longer
+// carries T even though the parameter is mentioned in the source.
+func returnEscapesT(e *wrapperchecker.Node, paramsByT map[string]bool) bool {
+	if e == nil {
+		return false
+	}
+	switch e.Kind() {
+	case wrapperchecker.KindIdentifier:
+		return paramsByT[e.LiteralText()]
+	case wrapperchecker.KindParenthesizedExpression,
+		wrapperchecker.KindAsExpression,
+		wrapperchecker.KindTypeAssertionExpression,
+		wrapperchecker.KindNonNullExpression,
+		wrapperchecker.KindSatisfiesExpression:
+		var inner *wrapperchecker.Node
+		e.ForEachChild(func(c *wrapperchecker.Node) bool {
+			if inner == nil {
+				inner = c
+				return true
+			}
+			return false
+		})
+		return returnEscapesT(inner, paramsByT)
+	case wrapperchecker.KindObjectLiteralExpression:
+		found := false
+		e.ForEachChild(func(c *wrapperchecker.Node) bool {
+			switch c.Kind() {
+			case wrapperchecker.KindPropertyAssignment:
+				// `{ key: value }` — only the value carries the type.
+				var val *wrapperchecker.Node
+				seenName := false
+				c.ForEachChild(func(p *wrapperchecker.Node) bool {
+					if !seenName {
+						seenName = true
+						return false
+					}
+					val = p
+					return true
+				})
+				if returnEscapesT(val, paramsByT) {
+					found = true
+					return true
+				}
+			case wrapperchecker.KindShorthandPropertyAssignment:
+				// `{ x }` — the property value is the local `x`.
+				c.ForEachChild(func(id *wrapperchecker.Node) bool {
+					if id.Kind() == wrapperchecker.KindIdentifier &&
+						paramsByT[id.LiteralText()] {
+						found = true
+						return true
+					}
+					return false
+				})
+				if found {
+					return true
+				}
+			case wrapperchecker.KindSpreadAssignment:
+				if returnEscapesT(c.FirstChild(), paramsByT) {
+					found = true
+					return true
+				}
+			}
+			return false
+		})
+		return found
+	case wrapperchecker.KindArrayLiteralExpression:
+		found := false
+		e.ForEachChild(func(c *wrapperchecker.Node) bool {
+			if c.Kind() == wrapperchecker.KindSpreadElement {
+				if returnEscapesT(c.FirstChild(), paramsByT) {
+					found = true
+					return true
+				}
+				return false
+			}
+			if returnEscapesT(c, paramsByT) {
+				found = true
+				return true
+			}
+			return false
+		})
+		return found
+	}
+	return false
 }
 
 // parameterIdentifier returns the binding name of a Parameter node.
