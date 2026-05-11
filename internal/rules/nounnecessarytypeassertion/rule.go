@@ -110,6 +110,30 @@ func (r *rule) visitAs(ctx *engine.Context, n *wrapperchecker.Node) {
 		}
 		return
 	}
+	// Object-literal source with the same property names as the cast
+	// target and a widened-mutually-assignable shape: the implicit type
+	// of the literal already structurally matches the named target, so
+	// the cast adds nothing the type system would otherwise reject.
+	// Restricted to object-literal sources to avoid recursive-type
+	// IsAssignableTo calls (e.g. `type T = string | T[]`). Skip empty
+	// source objects and targets with literal-typed properties — the
+	// cast there preserves narrower inference that the implicit type
+	// wouldn't.
+	if effectiveSrc.Kind() == wrapperchecker.KindObjectLiteralExpression &&
+		objectLiteralHasProperties(effectiveSrc) &&
+		!effectiveSrcT.IsAny() && !effectiveSrcT.IsUnknown() &&
+		!target.IsAny() && !target.IsUnknown() &&
+		!effectiveSrcT.IsUnion() && !target.IsUnion() &&
+		!hasLiteralProperty(target) &&
+		hasSameProperties(effectiveSrcT, target) &&
+		effectiveSrcT.IsAssignableTo(target) {
+		if effectiveSrc == src {
+			ctx.Report(n, "type assertion is unnecessary — the source already has this structural shape")
+		} else {
+			ctx.Report(n, "type assertion is unnecessary — the chain through `any`/`unknown` doesn't change the source's shape")
+		}
+		return
+	}
 	// Contextually unnecessary: when the surrounding position only
 	// requires the source's narrower type, the cast adds nothing the
 	// type system would otherwise reject. Mirrors typescript-eslint's
@@ -530,6 +554,76 @@ func isIIFEWithoutReturnAnnotation(n *wrapperchecker.Node) bool {
 		return callee.FunctionReturnType() == nil
 	}
 	return false
+}
+
+// objectLiteralHasProperties reports whether n is a non-empty object
+// literal — i.e. has at least one property assignment or shorthand
+// entry. Empty `{}` typed against a structurally-equivalent target
+// usually serves a documentation purpose.
+func objectLiteralHasProperties(n *wrapperchecker.Node) bool {
+	if n == nil || n.Kind() != wrapperchecker.KindObjectLiteralExpression {
+		return false
+	}
+	found := false
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		switch c.Kind() {
+		case wrapperchecker.KindPropertyAssignment,
+			wrapperchecker.KindShorthandPropertyAssignment,
+			wrapperchecker.KindSpreadAssignment,
+			wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindGetAccessor,
+			wrapperchecker.KindSetAccessor:
+			found = true
+			return true
+		}
+		return false
+	})
+	return found
+}
+
+// hasLiteralProperty reports whether t has any property whose type is
+// a literal (`'foo'`, `42`, `true`). Casts that *preserve* literal
+// inference at a widening boundary are meaningful — the implicit type
+// at the source position would widen the property away.
+func hasLiteralProperty(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	for _, name := range t.PropertyNames() {
+		pt := t.PropertyType(name)
+		if pt == nil {
+			continue
+		}
+		if isLiteralOrTupleAssertion(pt) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasSameProperties reports whether a and b share the same set of
+// property names. Used to gate the structural identity check at
+// widening boundaries (object literal cast to a named type) to avoid
+// false positives when properties differ.
+func hasSameProperties(a, b *wrapperchecker.Type) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	aNames := a.PropertyNames()
+	bNames := b.PropertyNames()
+	if len(aNames) != len(bNames) {
+		return false
+	}
+	bSet := make(map[string]struct{}, len(bNames))
+	for _, n := range bNames {
+		bSet[n] = struct{}{}
+	}
+	for _, n := range aNames {
+		if _, ok := bSet[n]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 // isNullishLiteralExpression reports whether n is the bare `null`
