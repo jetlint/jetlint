@@ -112,16 +112,57 @@ func (r *rule) visitCall(ctx *engine.Context, n *wrapperchecker.Node) {
 
 func (r *rule) checkAssertionArgument(ctx *engine.Context, n *wrapperchecker.Node) {
 	sig := ctx.Checker().ResolvedSignature(n)
-	if sig == nil {
-		return
+	idx := -1
+	hasTypePredicate := false
+	if sig != nil {
+		idx = sig.AssertsParameterIndex()
+		hasTypePredicate = sig.TypePredicateNarrowedType() != nil
 	}
-	idx := sig.AssertsParameterIndex()
 	if idx < 0 {
-		return
+		// Union-of-assertion-functions: `(asserts1 | asserts2)(arg)`
+		// has no single resolved signature, but each call signature on
+		// the callee's type carries the same assertion-parameter index.
+		// Inspect those directly.
+		callee := n.CalleeExpression()
+		if callee == nil {
+			return
+		}
+		ct := ctx.TypeOf(callee)
+		if ct == nil {
+			return
+		}
+		var sigs []*wrapperchecker.Signature
+		if ct.IsUnion() {
+			// Union of function types: collect signatures from each
+			// branch. The union itself often has no synthesized call
+			// signature, but each branch can be its own asserter.
+			for _, m := range ct.UnionMembers() {
+				for _, s := range m.CallSignatures() {
+					sigs = append(sigs, s)
+				}
+			}
+		} else {
+			sigs = ct.CallSignatures()
+		}
+		if len(sigs) == 0 {
+			return
+		}
+		for _, s := range sigs {
+			i := s.AssertsParameterIndex()
+			if i < 0 {
+				return
+			}
+			if s.TypePredicateNarrowedType() != nil {
+				return
+			}
+			if idx == -1 {
+				idx = i
+			} else if idx != i {
+				return
+			}
+		}
 	}
-	// `asserts x is T` narrows to a specific type — that's a type-guard,
-	// not a truthiness test, so don't apply the boolean-shape check.
-	if sig.TypePredicateNarrowedType() != nil {
+	if idx < 0 || hasTypePredicate {
 		return
 	}
 	args := n.CallArguments()
