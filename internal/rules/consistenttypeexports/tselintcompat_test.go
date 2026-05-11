@@ -18,7 +18,12 @@ const fixtureTsconfigBody = `{
     "moduleResolution": "bundler", "lib": ["es2022", "dom"],
     "skipLibCheck": true
   },
-  "include": ["case.ts", "consistent-type-exports.ts"]
+  "include": [
+    "case.ts",
+    "consistent-type-exports.ts",
+    "consistent-type-exports/type-only-exports.ts",
+    "consistent-type-exports/type-only-reexport.ts"
+  ]
 }`
 
 // fixtureConsistentTypeExportsModule mirrors the upstream
@@ -35,6 +40,15 @@ export class Class1 {}
 
 export type NAME = 'name';
 export const NAME = 'name';
+`
+
+// Sibling subdirectory modules used by the cross-module `export *`
+// fixtures: the first is purely type-only, the second forwards an
+// already-type-only re-export.
+const fixtureTypeOnlyExportsModule = `export type A = 1;
+export type B = 2;
+`
+const fixtureTypeOnlyReexportModule = `export type * from '../consistent-type-exports';
 `
 
 func TestConsistentTypeExports_TypescriptEslintCompatibility(t *testing.T) {
@@ -84,6 +98,10 @@ func runCase(t *testing.T, code string) (int, error) {
 	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
 	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
 	os.WriteFile(filepath.Join(dir, "consistent-type-exports.ts"), []byte(fixtureConsistentTypeExportsModule), 0o644)
+	subdir := filepath.Join(dir, "consistent-type-exports")
+	os.MkdirAll(subdir, 0o755)
+	os.WriteFile(filepath.Join(subdir, "type-only-exports.ts"), []byte(fixtureTypeOnlyExportsModule), 0o644)
+	os.WriteFile(filepath.Join(subdir, "type-only-reexport.ts"), []byte(fixtureTypeOnlyReexportModule), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err

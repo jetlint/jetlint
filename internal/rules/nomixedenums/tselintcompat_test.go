@@ -18,8 +18,18 @@ const fixtureTsconfigBody = `{
     "moduleResolution": "bundler", "lib": ["es2022", "dom"],
     "skipLibCheck": true
   },
-  "include": ["case.ts"]
+  "include": ["case.ts", "mixed-enums-decl.ts"]
 }`
+
+// fixtureMixedEnumsDecl mirrors the upstream fixture file at
+// packages/eslint-plugin/tests/fixtures/mixed-enums-decl.ts so cases
+// using `declare module './mixed-enums-decl'` to augment a string
+// enum can resolve the augmented module.
+const fixtureMixedEnumsDecl = `export enum Enum {
+  A = 'A',
+  B = 'B',
+}
+`
 
 func TestNoMixedEnums_TypescriptEslintCompatibility(t *testing.T) {
 	if testing.Short() {
@@ -67,6 +77,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	tsc := filepath.Join(dir, "tsconfig.json")
 	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
 	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
+	os.WriteFile(filepath.Join(dir, "mixed-enums-decl.ts"), []byte(fixtureMixedEnumsDecl), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err
