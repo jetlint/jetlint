@@ -154,14 +154,20 @@ func countTypeParameterUsesInSignature(fn, owner *wrapperchecker.Node, name stri
 		return false
 	})
 	if rt := returnTypeAnnotation(fn); rt != nil {
+		preReturn := count
 		walk(rt, false)
-	} else if count > 0 && len(paramsByT) > 0 {
+		// A return type that mentions T as a type argument (e.g.
+		// `Set<T>`, `Promise<T | null>`) is the load-bearing case
+		// upstream treats as valid even when T appears only once.
+		// Bump by 2 so the "more than one use" gate skips.
+		if count > preReturn && returnAnnotMentionsTAsTypeArg(rt, name) {
+			count += 2
+		}
+	} else {
 		// No explicit return type — check whether the body returns one
-		// of the T-carrying parameters in a SHAPE-preserving way:
-		// bare `return param` keeps T in the inferred return type,
-		// `return { x: param }` produces `{ x: T }`, `return [param]`
-		// produces `T[]`. Calls on the parameter (`param.toString()`)
-		// or arithmetic don't escape T — they produce a concrete type.
+		// of the T-carrying parameters in a SHAPE-preserving way, or
+		// explicitly references T inside a cast target / type argument
+		// position. Both make T appear in the inferred return type.
 		if body := fn.FunctionBody(); body != nil {
 			var bodyWalk func(n *wrapperchecker.Node)
 			added := false
@@ -177,6 +183,23 @@ func countTypeParameterUsesInSignature(fn, owner *wrapperchecker.Node, name stri
 						}
 						return added
 					})
+					// Even when the return shape doesn't preserve T,
+					// look at type-argument and cast positions inside
+					// the return expression — those mentions make T
+					// load-bearing in the inferred return type, mirroring
+					// the upstream rule's "does removing T change the
+					// signature?" check. Bump by 2 so the rule's "more
+					// than one use" gate skips regardless of how many
+					// times T is referenced.
+					if !added {
+						n.ForEachChild(func(c *wrapperchecker.Node) bool {
+							if countExplicitTInTypePos(c, name) > 0 {
+								count += 2
+								added = true
+							}
+							return added
+						})
+					}
 				}
 				if n.Kind() == wrapperchecker.KindFunctionDeclaration ||
 					n.Kind() == wrapperchecker.KindFunctionExpression ||
@@ -194,6 +217,120 @@ func countTypeParameterUsesInSignature(fn, owner *wrapperchecker.Node, name stri
 		}
 	}
 	return count
+}
+
+// returnContainsExplicitT reports whether the return-expression
+// mentions the type parameter name in an explicit type position —
+// a type argument (`new Map<K, V>()`, `fn<T>()`) or a cast target
+// (`as T[]`, `<T>x`). Those positions produce an inferred return
+// type that includes the type parameter even when the value-shape
+// itself doesn't carry it.
+func countExplicitTInTypePos(e *wrapperchecker.Node, name string) int {
+	if e == nil {
+		return 0
+	}
+	hits := 0
+	var walk func(n *wrapperchecker.Node, inTypePos bool)
+	walk = func(n *wrapperchecker.Node, inTypePos bool) {
+		if n == nil {
+			return
+		}
+		if inTypePos && n.Kind() == wrapperchecker.KindIdentifier {
+			if n.LiteralText() == name {
+				hits++
+				return
+			}
+		}
+		// Type-argument and cast-target subtrees enter type position.
+		inSub := inTypePos
+		switch n.Kind() {
+		case wrapperchecker.KindAsExpression:
+			walk(n.AsExpressionSource(), inTypePos)
+			walk(n.AsExpressionTarget(), true)
+			return
+		case wrapperchecker.KindTypeAssertionExpression:
+			walk(n.TypeAssertionSource(), inTypePos)
+			walk(n.TypeAssertionTarget(), true)
+			return
+		case wrapperchecker.KindSatisfiesExpression:
+			first := true
+			n.ForEachChild(func(c *wrapperchecker.Node) bool {
+				if first {
+					first = false
+					walk(c, inTypePos)
+				} else {
+					walk(c, true)
+				}
+				return false
+			})
+			return
+		case wrapperchecker.KindTypeReference,
+			wrapperchecker.KindUnionType,
+			wrapperchecker.KindIntersectionType,
+			wrapperchecker.KindParenthesizedType,
+			wrapperchecker.KindTypeQuery,
+			wrapperchecker.KindFunctionType:
+			inSub = true
+		}
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			walk(c, inSub)
+			return false
+		})
+	}
+	walk(e, false)
+	return hits
+}
+
+// returnAnnotMentionsTAsTypeArg reports whether the return-type
+// annotation mentions the type parameter name as a type argument
+// to another generic (`Set<T>`, `Promise<T | null>`). The presence
+// of such a usage means the return type's shape depends on T —
+// removing T would change the signature, so the parameter is
+// load-bearing even when T appears textually only once.
+func returnAnnotMentionsTAsTypeArg(rt *wrapperchecker.Node, name string) bool {
+	if rt == nil {
+		return false
+	}
+	found := false
+	var walkTypeArg func(n *wrapperchecker.Node)
+	walkTypeArg = func(n *wrapperchecker.Node) {
+		if n == nil || found {
+			return
+		}
+		if n.Kind() == wrapperchecker.KindIdentifier && n.LiteralText() == name {
+			found = true
+			return
+		}
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			walkTypeArg(c)
+			return found
+		})
+	}
+	var top func(n *wrapperchecker.Node)
+	top = func(n *wrapperchecker.Node) {
+		if n == nil || found {
+			return
+		}
+		if n.Kind() == wrapperchecker.KindTypeReference {
+			// Skip the head identifier (the generic's own name) and
+			// scan each type argument for a match.
+			first := true
+			n.ForEachChild(func(c *wrapperchecker.Node) bool {
+				if first {
+					first = false
+					return false
+				}
+				walkTypeArg(c)
+				return found
+			})
+		}
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			top(c)
+			return found
+		})
+	}
+	top(rt)
+	return found
 }
 
 // returnEscapesT reports whether the given return-expression
@@ -267,6 +404,18 @@ func returnEscapesT(e *wrapperchecker.Node, paramsByT map[string]bool) bool {
 			return false
 		})
 		return found
+	case wrapperchecker.KindElementAccessExpression:
+		// `obj[key]` produces `obj_T[key_T]` — an indexed access type
+		// that preserves both T parameters in the inferred return.
+		// Either the receiver or the index expression carrying T is
+		// enough.
+		if returnEscapesT(e.ElementAccessReceiver(), paramsByT) {
+			return true
+		}
+		if returnEscapesT(e.ElementAccessIndex(), paramsByT) {
+			return true
+		}
+		return false
 	case wrapperchecker.KindArrayLiteralExpression:
 		found := false
 		e.ForEachChild(func(c *wrapperchecker.Node) bool {
