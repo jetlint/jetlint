@@ -203,19 +203,41 @@ func (r *rule) checkArrayPredicateCallback(ctx *engine.Context, n *wrapperchecke
 		return
 	}
 	cb := args[0]
-	cbT := ctx.TypeOf(cb)
-	if cbT == nil {
-		return
+	// When the callback carries an explicit return-type annotation,
+	// trust that as the user's declared shape — and check it strictly
+	// against boolean. The general `isAcceptable` is the right gate for
+	// inferred return types (so `array => array` keeps working under
+	// the default `allowString`), but an explicit `(x): boolean | T => ...`
+	// is the exact mistake the predicate-callback check is designed to
+	// flag: the author widened the return for no reason.
+	var retT *wrapperchecker.Type
+	var strictCheck bool
+	if cb.Kind() == wrapperchecker.KindArrowFunction ||
+		cb.Kind() == wrapperchecker.KindFunctionExpression {
+		if annot := cb.FunctionReturnTypeAnnotation(); annot != nil {
+			retT = ctx.Checker().TypeFromTypeNode(annot)
+			strictCheck = retT != nil
+		}
 	}
-	sigs := cbT.CallSignatures()
-	if len(sigs) == 0 {
-		return
-	}
-	retT := sigs[0].ReturnType()
 	if retT == nil {
-		return
+		cbT := ctx.TypeOf(cb)
+		if cbT == nil {
+			return
+		}
+		sigs := cbT.CallSignatures()
+		if len(sigs) == 0 {
+			return
+		}
+		retT = sigs[0].ReturnType()
+		if retT == nil {
+			return
+		}
 	}
-	if r.isAcceptable(retT) {
+	acceptable := r.isAcceptable(retT)
+	if strictCheck {
+		acceptable = isStrictlyBooleanReturn(retT)
+	}
+	if acceptable {
 		return
 	}
 	if retT.IsAny() || retT.IsUnknown() {
@@ -223,6 +245,29 @@ func (r *rule) checkArrayPredicateCallback(ctx *engine.Context, n *wrapperchecke
 		return
 	}
 	ctx.Report(cb, "predicate callback returns a value whose type is not strictly boolean; compare against the intended sentinel")
+}
+
+// isStrictlyBooleanReturn reports whether a declared return-type
+// annotation is acceptable on a predicate callback — i.e., the
+// annotation already commits to boolean (or `boolean | never`).
+// Wider annotations like `boolean | number` are exactly the
+// predicate-return mistake the rule wants to surface.
+func isStrictlyBooleanReturn(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsBooleanLike() {
+		return true
+	}
+	if !t.IsUnion() {
+		return false
+	}
+	for _, m := range t.UnionMembers() {
+		if !m.IsBooleanLike() && !m.IsNever() {
+			return false
+		}
+	}
+	return true
 }
 
 // visitBinary checks the left operand of `&&` and `||` — the
