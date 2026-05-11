@@ -50,6 +50,9 @@ func TestNoUnnecessaryCondition_TypescriptEslintCompatibility(t *testing.T) {
 				opts.AllowConstantLoopConditions = nounnecessarycondition.LoopConditionNever
 			}
 		}
+		if v, ok := c.Options["checkTypePredicates"].(bool); ok {
+			opts.CheckTypePredicates = v
+		}
 		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++

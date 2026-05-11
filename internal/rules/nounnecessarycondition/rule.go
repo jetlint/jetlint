@@ -32,6 +32,10 @@ type Options struct {
 	// AllowConstantLoopConditions controls flagging of constant
 	// `while/for/do` test expressions per LoopConditionMode.
 	AllowConstantLoopConditions LoopConditionMode
+	// CheckTypePredicates enables flagging assertion/predicate
+	// function calls whose argument already matches the predicate's
+	// narrowed type (e.g. `assert(true)`, `isString(strVar)`).
+	CheckTypePredicates bool
 }
 
 func DefaultOptions() Options { return Options{} }
@@ -52,10 +56,75 @@ func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 		wrapperchecker.KindConditionalExpression:    visitConditional,
 		wrapperchecker.KindBinaryExpression:         visitBinary,
 		wrapperchecker.KindPrefixUnaryExpression:    visitPrefixUnary,
-		wrapperchecker.KindCallExpression:           visitCall,
+		wrapperchecker.KindCallExpression:           r.visitCall,
 		wrapperchecker.KindPropertyAccessExpression: visitOptionalChain,
 		wrapperchecker.KindElementAccessExpression:  visitOptionalChain,
 	}
+}
+
+// checkAssertionCall flags a call to a function whose signature has
+// an `asserts <param>` (or `<param> is T`) predicate when the argument
+// already has a type that makes the predicate redundant — `assert(true)`
+// over `asserts x`, `isString(strVar)` over `x is string`, etc.
+func (r *rule) checkAssertionCall(ctx *engine.Context, n *wrapperchecker.Node) {
+	sig := ctx.Checker().ResolvedSignature(n)
+	if sig == nil {
+		return
+	}
+	idx, isAsserts := predicateParamIndex(sig)
+	if idx < 0 {
+		return
+	}
+	args := n.CallArguments()
+	if idx >= len(args) {
+		return
+	}
+	arg := args[idx]
+	argT := ctx.TypeOf(arg)
+	if argT == nil {
+		return
+	}
+	if argT.IsAny() || argT.IsUnknown() {
+		return
+	}
+	narrowed := sig.TypePredicateNarrowedType()
+	if narrowed != nil {
+		// `<name> is T` (asserting or not): redundant when the argument
+		// is already assignable to the target AND either the target is
+		// mutually assignable back to the argument (i.e. equivalent) or
+		// the target is a union the argument lives inside. Mirrors
+		// upstream's gating so narrower literal arguments (like
+		// `'falafel'` flowing into `is string`) aren't flagged.
+		if !argT.IsAssignableTo(narrowed) {
+			return
+		}
+		if !narrowed.IsAssignableTo(argT) && !narrowed.IsUnion() {
+			return
+		}
+		ctx.Report(n, "predicate is unnecessary — the argument already has the predicate's target type")
+		return
+	}
+	if !isAsserts {
+		return
+	}
+	// Bare `asserts x`: redundant only when the argument's truthiness
+	// is statically pinned — `assert(true)` or `assert(false)`.
+	if isAlwaysTruthy(argT) || isAlwaysFalsy(argT) {
+		ctx.Report(n, "assertion is unnecessary — the argument's truthiness is already pinned")
+	}
+}
+
+// predicateParamIndex returns the parameter index covered by the
+// signature's type predicate and whether the predicate is an asserting
+// one. Returns -1 when the signature has no identifier-form predicate.
+func predicateParamIndex(sig *wrapperchecker.Signature) (int, bool) {
+	if idx := sig.AssertsParameterIndex(); idx >= 0 {
+		return idx, true
+	}
+	if idx := sig.TypePredicateParameterIndex(); idx >= 0 {
+		return idx, false
+	}
+	return -1, false
 }
 
 // visitOptionalChain flags `x?.y`, `x?.[i]`, `x?.()` when x's type is
@@ -219,11 +288,14 @@ var arrayPredicateMethods = map[string]bool{
 // is statically truthy or falsy. Only direct property-access callees
 // like `arr.filter(cb)` are inspected — the receiver must be array
 // or tuple typed.
-func visitCall(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visitCall(ctx *engine.Context, n *wrapperchecker.Node) {
 	// Optional-chain call (`x?.()`): flag when callee is already
 	// non-nullable.
 	if n.IsOptionalChain() {
 		visitOptionalChain(ctx, n)
+	}
+	if r.opts.CheckTypePredicates {
+		r.checkAssertionCall(ctx, n)
 	}
 	callee := n.CalleeExpression()
 	if callee == nil || callee.Kind() != wrapperchecker.KindPropertyAccessExpression {
