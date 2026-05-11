@@ -831,6 +831,14 @@ func checkRecursive(ctx *engine.Context, expr *wrapperchecker.Node) {
 		checkRecursive(ctx, expr.FirstChild())
 		return
 	}
+	// `!x` evaluates x in a boolean position — descend so a never-
+	// typed inner operand surfaces as unreachable instead of being
+	// hidden behind the negation's `true` result type.
+	if expr.Kind() == wrapperchecker.KindPrefixUnaryExpression &&
+		expr.PrefixUnaryOperator() == "!" {
+		checkRecursive(ctx, expr.FirstChild())
+		return
+	}
 	check(ctx, expr)
 }
 
