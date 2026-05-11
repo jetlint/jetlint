@@ -26,15 +26,18 @@ func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindFunctionDeclaration: visit,
-		wrapperchecker.KindFunctionExpression:  visit,
-		wrapperchecker.KindArrowFunction:       visit,
-		wrapperchecker.KindMethodDeclaration:   visit,
-		wrapperchecker.KindMethodSignature:     visit,
-		wrapperchecker.KindCallSignature:       visit,
-		wrapperchecker.KindConstructSignature:  visit,
-		wrapperchecker.KindFunctionType:        visit,
-		wrapperchecker.KindConstructorType:     visit,
+		wrapperchecker.KindFunctionDeclaration:  visit,
+		wrapperchecker.KindFunctionExpression:   visit,
+		wrapperchecker.KindArrowFunction:        visit,
+		wrapperchecker.KindMethodDeclaration:    visit,
+		wrapperchecker.KindMethodSignature:      visit,
+		wrapperchecker.KindCallSignature:        visit,
+		wrapperchecker.KindConstructSignature:   visit,
+		wrapperchecker.KindFunctionType:         visit,
+		wrapperchecker.KindConstructorType:      visit,
+		wrapperchecker.KindClassDeclaration:     visitClass,
+		wrapperchecker.KindClassExpression:      visitClass,
+		wrapperchecker.KindInterfaceDeclaration: visitClass,
 	}
 }
 
@@ -56,6 +59,161 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	}
 }
 
+// visitClass checks the type parameters of a class/interface
+// declaration. A class-level T is necessary iff it appears in at
+// least one member's signature (parameter/return annotation, member
+// annotation, heritage clause, or sibling type-parameter constraint).
+// Single-use class type parameters carry no relation between members
+// and are equivalent to `unknown` / their constraint.
+func visitClass(ctx *engine.Context, n *wrapperchecker.Node) {
+	tparams := typeParametersOf(n)
+	if len(tparams) == 0 {
+		return
+	}
+	for _, tp := range tparams {
+		name := typeParameterName(tp)
+		if name == "" {
+			continue
+		}
+		uses := countTypeParameterUsesInClass(n, tp, name)
+		if uses > 1 {
+			continue
+		}
+		ctx.Report(tp, "type parameter `"+name+"` is used only once — replace usages with its constraint or `unknown`")
+	}
+}
+
+// countTypeParameterUsesInClass counts identifier references with the
+// given name across the class's heritage clauses, sibling type-
+// parameter constraints/defaults, and every member's parameter and
+// return-type annotations. Method bodies are not visited — only the
+// declared interfaces of each member contribute.
+func countTypeParameterUsesInClass(cls, owner *wrapperchecker.Node, name string) int {
+	count := 0
+	// walkType walks a type expression. `nested` is true when we are
+	// inside a container (ArrayType, TupleType, TypeReference type
+	// args, etc.) — upstream treats a class T appearing inside such a
+	// container as "multiple uses", since the class T flows through
+	// reads and writes via the wrapping generic. A bare `el: T`
+	// appears as a top-level TypeReference and counts once.
+	var walkType func(n *wrapperchecker.Node, nested bool)
+	walkType = func(n *wrapperchecker.Node, nested bool) {
+		if n == nil {
+			return
+		}
+		if n.Kind() == wrapperchecker.KindIdentifier && n.LiteralText() == name {
+			if nested {
+				count += 2
+			} else {
+				count++
+			}
+			return
+		}
+		// Once we descend into a container kind, mark children as nested.
+		childNested := nested
+		switch n.Kind() {
+		case wrapperchecker.KindArrayType,
+			wrapperchecker.KindTupleType,
+			wrapperchecker.KindUnionType,
+			wrapperchecker.KindIntersectionType,
+			wrapperchecker.KindIndexedAccessType,
+			wrapperchecker.KindMappedType,
+			wrapperchecker.KindConditionalType,
+			wrapperchecker.KindTypeReference,
+			wrapperchecker.KindTypeQuery,
+			wrapperchecker.KindTypeLiteral,
+			wrapperchecker.KindFunctionType,
+			wrapperchecker.KindConstructorType,
+			wrapperchecker.KindParenthesizedType,
+			wrapperchecker.KindTypeOperator,
+			wrapperchecker.KindRestType,
+			wrapperchecker.KindOptionalType:
+			childNested = true
+		}
+		// Special handling for TypeReference: the head identifier (name)
+		// is the "use" itself; only mark type-argument children as nested.
+		if n.Kind() == wrapperchecker.KindTypeReference {
+			first := true
+			n.ForEachChild(func(c *wrapperchecker.Node) bool {
+				if first {
+					first = false
+					walkType(c, nested)
+				} else {
+					walkType(c, true)
+				}
+				return false
+			})
+			return
+		}
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			walkType(c, childNested)
+			return false
+		})
+	}
+	cls.ForEachChild(func(c *wrapperchecker.Node) bool {
+		switch c.Kind() {
+		case wrapperchecker.KindTypeParameter:
+			if c == owner {
+				return false
+			}
+			// Sibling constraint/default — skip the head identifier
+			// (the param name) and walk the rest.
+			first := true
+			c.ForEachChild(func(part *wrapperchecker.Node) bool {
+				if first && part.Kind() == wrapperchecker.KindIdentifier {
+					first = false
+					return false
+				}
+				first = false
+				walkType(part, false)
+				return false
+			})
+		case wrapperchecker.KindHeritageClause:
+			// Heritage like `extends Foo<T>` — T inside type args is a use.
+			walkType(c, false)
+		case wrapperchecker.KindPropertyDeclaration,
+			wrapperchecker.KindPropertySignature:
+			// `name: T` — class property is both read+write; treat any
+			// T appearance here as multiple uses (mirrors upstream
+			// `assumeMultipleUses=true` for class members).
+			c.ForEachChild(func(part *wrapperchecker.Node) bool {
+				if part.Kind() != wrapperchecker.KindIdentifier &&
+					part.Kind() != wrapperchecker.KindPrivateIdentifier {
+					walkType(part, true)
+				}
+				return false
+			})
+		case wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindMethodSignature,
+			wrapperchecker.KindGetAccessor,
+			wrapperchecker.KindSetAccessor,
+			wrapperchecker.KindConstructor,
+			wrapperchecker.KindCallSignature,
+			wrapperchecker.KindConstructSignature,
+			wrapperchecker.KindIndexSignature:
+			// Member's own type parameters shadow the outer if same
+			// name — but to keep the check simple, count any
+			// appearance. Parameter type annotations and the return
+			// annotation contribute.
+			c.ForEachChild(func(part *wrapperchecker.Node) bool {
+				switch part.Kind() {
+				case wrapperchecker.KindParameter:
+					walkType(part, false)
+				case wrapperchecker.KindBlock,
+					wrapperchecker.KindIdentifier,
+					wrapperchecker.KindPrivateIdentifier:
+					// Method body / member name — skip.
+				default:
+					walkType(part, false)
+				}
+				return false
+			})
+		}
+		return false
+	})
+	return count
+}
+
 // typeParametersOf returns the explicit type-parameter declarations
 // of a function-like signature, or nil for none.
 func typeParametersOf(n *wrapperchecker.Node) []*wrapperchecker.Node {
@@ -67,6 +225,36 @@ func typeParametersOf(n *wrapperchecker.Node) []*wrapperchecker.Node {
 		return false
 	})
 	return out
+}
+
+// nodeShadowsTypeParameter reports whether n is a nested function-like
+// type/expression whose own type-parameter list re-declares `name`.
+// When true, identifiers inside n bind to the inner declaration, so
+// counting them as uses of the outer T would be incorrect.
+func nodeShadowsTypeParameter(n *wrapperchecker.Node, name string) bool {
+	switch n.Kind() {
+	case wrapperchecker.KindFunctionType,
+		wrapperchecker.KindConstructorType,
+		wrapperchecker.KindFunctionDeclaration,
+		wrapperchecker.KindFunctionExpression,
+		wrapperchecker.KindArrowFunction,
+		wrapperchecker.KindMethodDeclaration,
+		wrapperchecker.KindMethodSignature,
+		wrapperchecker.KindCallSignature,
+		wrapperchecker.KindConstructSignature,
+		wrapperchecker.KindConstructor,
+		wrapperchecker.KindGetAccessor,
+		wrapperchecker.KindSetAccessor:
+		// fall through
+	default:
+		return false
+	}
+	for _, tp := range typeParametersOf(n) {
+		if typeParameterName(tp) == name {
+			return true
+		}
+	}
+	return false
 }
 
 // typeParameterName returns the identifier text of a TypeParameter
@@ -95,15 +283,22 @@ func countTypeParameterUsesInSignature(fn, owner *wrapperchecker.Node, name stri
 	// through `typeof`/`keyof typeof` indirection in the return type.
 	paramsByT := map[string]bool{}
 	count := 0
-	var walk func(n *wrapperchecker.Node, inTypeQuery bool)
-	walk = func(n *wrapperchecker.Node, inTypeQuery bool) {
+	var walk func(n *wrapperchecker.Node, inTypeQuery, inTypeRefArgs bool)
+	walk = func(n *wrapperchecker.Node, inTypeQuery, inTypeRefArgs bool) {
 		if n == nil {
 			return
 		}
 		if n.Kind() == wrapperchecker.KindIdentifier {
 			text := n.LiteralText()
 			if text == name {
-				count++
+				if inTypeRefArgs {
+					// T appearing as a type-argument of a non-Array/
+					// Tuple generic (e.g. `ItemProps<T>`) is treated
+					// by upstream as a multi-use reference.
+					count += 2
+				} else {
+					count++
+				}
 				return
 			}
 			if inTypeQuery && paramsByT[text] {
@@ -112,9 +307,29 @@ func countTypeParameterUsesInSignature(fn, owner *wrapperchecker.Node, name stri
 				return
 			}
 		}
+		// Stop recursing into a nested function-like that shadows our
+		// type parameter name with its own declaration of the same name.
+		if nodeShadowsTypeParameter(n, name) {
+			return
+		}
 		isTQ := inTypeQuery || n.Kind() == wrapperchecker.KindTypeQuery
+		// TypeReference: the head identifier doesn't put children in
+		// type-arg context, but everything after the head does.
+		if n.Kind() == wrapperchecker.KindTypeReference {
+			first := true
+			n.ForEachChild(func(c *wrapperchecker.Node) bool {
+				if first {
+					first = false
+					walk(c, isTQ, inTypeRefArgs)
+				} else {
+					walk(c, isTQ, true)
+				}
+				return false
+			})
+			return
+		}
 		n.ForEachChild(func(c *wrapperchecker.Node) bool {
-			walk(c, isTQ)
+			walk(c, isTQ, inTypeRefArgs)
 			return false
 		})
 	}
@@ -128,7 +343,7 @@ func countTypeParameterUsesInSignature(fn, owner *wrapperchecker.Node, name stri
 			return false
 		}
 		before := count
-		walk(annot, false)
+		walk(annot, false, false)
 		if count > before {
 			if pname := parameterIdentifier(c); pname != "" {
 				paramsByT[pname] = true
@@ -148,14 +363,14 @@ func countTypeParameterUsesInSignature(fn, owner *wrapperchecker.Node, name stri
 				return false
 			}
 			first = false
-			walk(part, false)
+			walk(part, false, false)
 			return false
 		})
 		return false
 	})
 	if rt := returnTypeAnnotation(fn); rt != nil {
 		preReturn := count
-		walk(rt, false)
+		walk(rt, false, false)
 		// A return type that mentions T as a type argument (e.g.
 		// `Set<T>`, `Promise<T | null>`) is the load-bearing case
 		// upstream treats as valid even when T appears only once.
@@ -282,54 +497,89 @@ func countExplicitTInTypePos(e *wrapperchecker.Node, name string) int {
 }
 
 // returnAnnotMentionsTAsTypeArg reports whether the return-type
-// annotation mentions the type parameter name as a type argument
-// to another generic (`Set<T>`, `Promise<T | null>`). The presence
-// of such a usage means the return type's shape depends on T —
-// removing T would change the signature, so the parameter is
-// load-bearing even when T appears textually only once.
+// annotation mentions the type parameter name in a load-bearing
+// position: as a type argument to another generic (`Set<T>`,
+// `Promise<T | null>`) or as the element type of a non-readonly
+// array (`T[]`). The presence of such a usage means the return
+// type's shape depends on T — removing T would change the
+// signature, so the parameter is load-bearing even when T appears
+// textually only once. Bare `: T` and union/intersection/mapped
+// shapes mentioning T do not qualify on their own.
 func returnAnnotMentionsTAsTypeArg(rt *wrapperchecker.Node, name string) bool {
 	if rt == nil {
 		return false
 	}
 	found := false
-	var walkTypeArg func(n *wrapperchecker.Node)
-	walkTypeArg = func(n *wrapperchecker.Node) {
-		if n == nil || found {
-			return
+	// containsName reports whether the subtree rooted at n contains a
+	// reference to `name` (with shadowing respected).
+	var containsName func(n *wrapperchecker.Node) bool
+	containsName = func(n *wrapperchecker.Node) bool {
+		if n == nil {
+			return false
 		}
 		if n.Kind() == wrapperchecker.KindIdentifier && n.LiteralText() == name {
-			found = true
-			return
+			return true
 		}
+		if nodeShadowsTypeParameter(n, name) {
+			return false
+		}
+		out := false
 		n.ForEachChild(func(c *wrapperchecker.Node) bool {
-			walkTypeArg(c)
-			return found
+			if containsName(c) {
+				out = true
+				return true
+			}
+			return false
 		})
+		return out
 	}
-	var top func(n *wrapperchecker.Node)
-	top = func(n *wrapperchecker.Node) {
+	var top func(n *wrapperchecker.Node, underReadonly bool)
+	top = func(n *wrapperchecker.Node, underReadonly bool) {
 		if n == nil || found {
 			return
 		}
-		if n.Kind() == wrapperchecker.KindTypeReference {
-			// Skip the head identifier (the generic's own name) and
-			// scan each type argument for a match.
+		if nodeShadowsTypeParameter(n, name) {
+			return
+		}
+		switch n.Kind() {
+		case wrapperchecker.KindTypeReference:
+			// Skip the head identifier and scan each type argument.
 			first := true
 			n.ForEachChild(func(c *wrapperchecker.Node) bool {
 				if first {
 					first = false
-					return false
+				} else if containsName(c) {
+					found = true
+					return true
 				}
-				walkTypeArg(c)
-				return found
+				return false
 			})
+			if found {
+				return
+			}
+		case wrapperchecker.KindArrayType:
+			// `T[]` element-type uses T — load-bearing in return.
+			// `readonly T[]` (TypeOperator readonly → ArrayType) does
+			// not count; upstream treats ReadonlyArray as a single use.
+			if !underReadonly && containsName(n) {
+				found = true
+				return
+			}
+		case wrapperchecker.KindTypeOperator:
+			if n.TypeOperatorOperator() == wrapperchecker.KindReadonlyKeyword {
+				n.ForEachChild(func(c *wrapperchecker.Node) bool {
+					top(c, true)
+					return found
+				})
+				return
+			}
 		}
 		n.ForEachChild(func(c *wrapperchecker.Node) bool {
-			top(c)
+			top(c, underReadonly)
 			return found
 		})
 	}
-	top(rt)
+	top(rt, false)
 	return found
 }
 

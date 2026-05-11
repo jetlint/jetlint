@@ -9,6 +9,7 @@ package nodeprecated
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	"github.com/tommymorgan/tsgolint/internal/engine"
@@ -334,14 +335,21 @@ func visitElementAccess(ctx *engine.Context, n *wrapperchecker.Node, opts Option
 	if idx == nil || recv == nil {
 		return
 	}
-	// Resolve the index expression to a string-literal type, if it
-	// reduces to one (e.g. `'b'`, a `const key = 'b'`, a template
-	// literal `${...}` that always concatenates known strings).
+	// Resolve the index expression to a string- or number-literal
+	// type, if it reduces to one (e.g. `'b'`, a `const key = 'b'`, a
+	// template literal `${...}` of known strings, or a numeric-
+	// literal type like `2` or `Keys.B` whose value is a literal).
 	idxT := ctx.TypeOf(idx)
 	if idxT == nil {
 		return
 	}
 	name, ok := idxT.StringLiteralValue()
+	if !ok {
+		if v, isNum := idxT.NumericLiteralValue(); isNum {
+			name = strconv.FormatFloat(v, 'f', -1, 64)
+			ok = true
+		}
+	}
 	if !ok {
 		return
 	}
