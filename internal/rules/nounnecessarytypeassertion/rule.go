@@ -443,6 +443,14 @@ func isLiteralOrTupleAssertion(t *wrapperchecker.Type) bool {
 	if t.IsTupleType() {
 		return true
 	}
+	// Enum members are number/string-like but their literal-ness comes
+	// from the enum declaration, not from a source-position literal —
+	// the cast `a as T.Value1` is a real assignment, not a widening
+	// boundary. Treat enum members as non-literal so the regular
+	// identity check runs.
+	if t.IsEnumLike() {
+		return false
+	}
 	s := t.String()
 	switch {
 	case t.IsBooleanLike() && (s == "true" || s == "false"):
