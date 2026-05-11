@@ -3,13 +3,14 @@ package nodeprecated_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/engine"
-	"github.com/tommymorgan/tsgolint/internal/rules/nodeprecated"
-	"github.com/tommymorgan/tsgolint/internal/tselintcompat"
+	"github.com/jetlint/jetlint/internal/engine"
+	"github.com/jetlint/jetlint/internal/rules/nodeprecated"
+	"github.com/jetlint/jetlint/internal/tselintcompat"
 )
 
 const fixtureTsconfigBody = `{
@@ -19,8 +20,79 @@ const fixtureTsconfigBody = `{
     "jsx": "preserve",
     "skipLibCheck": true
   },
-  "include": ["case.tsx", "deprecated.ts", "mixed-enums-decl.ts", "deprecated.tsx"]
+  "include": ["case.tsx", "deprecated.ts", "mixed-enums-decl.ts", "deprecated.tsx", "node-assert.d.ts", "react.d.ts", "node-fs.d.ts", "jsx.d.ts"]
 }`
+
+// fixtureTsconfigNode16Body mimics the upstream
+// `tsconfig.moduleResolution-node16.json` extension: node16 module
+// resolution with commonjs-style esModuleInterop. This changes how
+// `import('./deprecated.js')` is typed — the result becomes a wrapper
+// whose `.default` is the module's runtime export rather than the
+// deprecated `export default` itself, matching what typescript-eslint
+// expects for the `await import('./X.js')` fixtures.
+const fixtureTsconfigNode16Body = `{
+  "compilerOptions": {
+    "strict": true, "target": "es2022", "module": "node16",
+    "moduleResolution": "node16", "lib": ["es2022", "dom"],
+    "jsx": "preserve",
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["case.tsx", "deprecated.ts", "mixed-enums-decl.ts", "deprecated.tsx", "node-assert.d.ts", "react.d.ts", "node-fs.d.ts", "jsx.d.ts"]
+}`
+
+// fixtureNodeFsStub mirrors the @types/node fs typings used by the
+// upstream allow-by-package fixtures. Only `exists` carries the
+// `@deprecated` tag because it's the only deprecation the test cases
+// exercise.
+const fixtureNodeFsStub = `declare module 'fs' {
+  /** @deprecated Since v1.0.0 - Use {@link stat} or {@link access} instead. */
+  export function exists(path: string, callback: (exists: boolean) => void): void;
+  export function stat(path: string): void;
+  export function access(path: string): void;
+}
+`
+
+// fixtureNodeAssertStub provides just enough of node:assert's typing
+// surface to exercise the deprecated `fail(actual, expected, ...)`
+// overload. typescript-eslint's tests resolve this via real @types/node;
+// stubbing keeps the harness self-contained.
+// fixtureReactStub provides the minimal React surface the JSX deprecation
+// fixtures need — `React.FC<Props>` and a `<div>` intrinsic — so cases
+// using component types resolve without bundling real @types/react.
+const fixtureReactStub = `declare module 'react' {
+  export type FC<P = {}> = (props: P) => any;
+}
+`
+
+// fixtureJsxStub is a global (non-module) ambient script that declares
+// the JSX namespace used when a case writes JSX without importing
+// React. Putting this in a separate ambient file (no top-level
+// import/export) means the `namespace JSX` augments the global scope,
+// matching how @types/react contributes intrinsic-element typings.
+// `div` carries the deprecated ARIA-1.1 `aria-grabbed` attribute that
+// upstream's `<div aria-grabbed>` fixture exercises; other intrinsic
+// elements stay any-shaped via the index signature.
+const fixtureJsxStub = `declare namespace JSX {
+  interface IntrinsicElements {
+    [name: string]: any;
+    div: {
+      /** @deprecated in ARIA 1.1 */
+      'aria-grabbed'?: boolean | 'true' | 'false';
+      children?: any;
+    };
+  }
+}
+`
+
+const fixtureNodeAssertStub = `declare module 'node:assert' {
+  function fail(message?: string | Error): never;
+  /** @deprecated since v10.0.0 - use fail([message]) or other assert functions instead. */
+  function fail(actual: unknown, expected: unknown, message?: string | Error, operator?: string): never;
+  const assertNs: { fail: typeof fail };
+  export default assertNs;
+}
+`
 
 // fixtureDeprecatedModule mirrors the upstream fixture at
 // packages/eslint-plugin/tests/fixtures/deprecated.ts so cases that
@@ -85,7 +157,7 @@ func TestNoDeprecated_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code, optsFromCase(c))
+		actual, runErr := runCase(t, c.Code, optsFromCase(c), tsconfigForCase(c))
 		if runErr != nil {
 			failed++
 			continue
@@ -128,22 +200,47 @@ func optsFromCase(c tselintcompat.Case) nodeprecated.Options {
 		case string:
 			opts.AllowNames[v] = struct{}{}
 		case map[string]any:
-			if name, ok := v["name"].(string); ok {
-				opts.AllowNames[name] = struct{}{}
+			name, _ := v["name"].(string)
+			if name == "" {
+				continue
 			}
+			from, _ := v["from"].(string)
+			pkg, _ := v["package"].(string)
+			if from == "package" && pkg != "" {
+				opts.AllowPackageNames = append(opts.AllowPackageNames, nodeprecated.AllowPackageEntry{Name: name, Package: pkg})
+				continue
+			}
+			opts.AllowNames[name] = struct{}{}
 		}
 	}
 	return opts
 }
 
-func runCase(t *testing.T, code string, opts nodeprecated.Options) (int, error) {
+// tsconfigForCase picks the tsconfig body that matches the case's
+// declared module-resolution preference. Cases whose
+// `languageOptions.parserOptions.project` names the
+// `tsconfig.moduleResolution-node16.json` override get the
+// node16+esModuleInterop body so dynamic-import typing matches what
+// the upstream test suite expects.
+func tsconfigForCase(c tselintcompat.Case) string {
+	if strings.Contains(c.LanguageOptionsText, "moduleResolution-node16") {
+		return fixtureTsconfigNode16Body
+	}
+	return fixtureTsconfigBody
+}
+
+func runCase(t *testing.T, code string, opts nodeprecated.Options, tsconfigBody string) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
 	tsc := filepath.Join(dir, "tsconfig.json")
-	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
+	os.WriteFile(tsc, []byte(tsconfigBody), 0o644)
 	os.WriteFile(filepath.Join(dir, "case.tsx"), []byte(code), 0o644)
 	os.WriteFile(filepath.Join(dir, "deprecated.ts"), []byte(fixtureDeprecatedModule), 0o644)
+	os.WriteFile(filepath.Join(dir, "node-assert.d.ts"), []byte(fixtureNodeAssertStub), 0o644)
+	os.WriteFile(filepath.Join(dir, "react.d.ts"), []byte(fixtureReactStub), 0o644)
+	os.WriteFile(filepath.Join(dir, "node-fs.d.ts"), []byte(fixtureNodeFsStub), 0o644)
+	os.WriteFile(filepath.Join(dir, "jsx.d.ts"), []byte(fixtureJsxStub), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tommymorgan/tsgolint/internal/format"
+	"github.com/jetlint/jetlint/internal/format"
 )
 
 func TestGitHubActionsFormatter_OneCommandPerDiagnostic(t *testing.T) {

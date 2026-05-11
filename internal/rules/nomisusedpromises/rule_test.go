@@ -7,8 +7,8 @@ import (
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/engine"
-	"github.com/tommymorgan/tsgolint/internal/rules/nomisusedpromises"
+	"github.com/jetlint/jetlint/internal/engine"
+	"github.com/jetlint/jetlint/internal/rules/nomisusedpromises"
 )
 
 func fixture(t *testing.T, source string) string {

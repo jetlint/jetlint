@@ -12,7 +12,7 @@ import (
 	"strconv"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 const id = "no-deprecated"
@@ -21,11 +21,24 @@ const id = "no-deprecated"
 // typescript-eslint's `no-deprecated` options.
 type Options struct {
 	// AllowNames lists identifier names whose deprecation warnings
-	// should be suppressed. Mirrors the upstream `allow` option in
-	// its bare-string and `{ name: "..." }`-object forms; we don't
-	// distinguish source qualifiers (file/package/lib) because the
-	// upstream tests we run through use the name alone.
+	// should be suppressed unconditionally. Mirrors the upstream
+	// `allow` option in its bare-string, `{ name: "..." }`, and
+	// `{ from: "file", name: "..." }` forms.
 	AllowNames map[string]struct{}
+	// AllowPackageNames lists identifier names allowed only when the
+	// symbol was imported from a matching module. Mirrors the upstream
+	// `{ from: "package", name: "...", package: "..." }` shape; each
+	// entry suppresses only when the symbol's import source equals the
+	// recorded package name.
+	AllowPackageNames []AllowPackageEntry
+}
+
+// AllowPackageEntry describes a name allowed only when imported from a
+// specific package (the `{ from: "package", name, package }` allow
+// variant). An empty Package matches any package.
+type AllowPackageEntry struct {
+	Name    string
+	Package string
 }
 
 func DefaultOptions() Options { return Options{} }
@@ -42,11 +55,12 @@ func OptionsFromJSON(raw json.RawMessage) (Options, error) {
 	for key, val := range fields {
 		switch key {
 		case "allow":
-			names, err := parseAllowList(val)
+			names, pkgs, err := parseAllowList(val)
 			if err != nil {
 				return Options{}, fmt.Errorf("no-deprecated option %q: %w", key, err)
 			}
 			out.AllowNames = names
+			out.AllowPackageNames = pkgs
 		default:
 			return Options{}, fmt.Errorf("no-deprecated has no option %q", key)
 		}
@@ -54,27 +68,33 @@ func OptionsFromJSON(raw json.RawMessage) (Options, error) {
 	return out, nil
 }
 
-func parseAllowList(raw json.RawMessage) (map[string]struct{}, error) {
+func parseAllowList(raw json.RawMessage) (map[string]struct{}, []AllowPackageEntry, error) {
 	var entries []json.RawMessage
 	if err := json.Unmarshal(raw, &entries); err != nil {
-		return nil, fmt.Errorf("allow must be an array: %w", err)
+		return nil, nil, fmt.Errorf("allow must be an array: %w", err)
 	}
-	out := make(map[string]struct{}, len(entries))
+	names := make(map[string]struct{}, len(entries))
+	var pkgs []AllowPackageEntry
 	for _, e := range entries {
 		var s string
 		if err := json.Unmarshal(e, &s); err == nil {
-			out[s] = struct{}{}
+			names[s] = struct{}{}
 			continue
 		}
 		var obj struct {
-			Name string `json:"name"`
+			From    string `json:"from"`
+			Name    string `json:"name"`
+			Package string `json:"package"`
 		}
 		if err := json.Unmarshal(e, &obj); err == nil && obj.Name != "" {
-			out[obj.Name] = struct{}{}
-			continue
+			if obj.From == "package" && obj.Package != "" {
+				pkgs = append(pkgs, AllowPackageEntry{Name: obj.Name, Package: obj.Package})
+				continue
+			}
+			names[obj.Name] = struct{}{}
 		}
 	}
-	return out, nil
+	return names, pkgs, nil
 }
 
 func New() engine.Rule                        { return NewWithOptions(DefaultOptions()) }
@@ -149,9 +169,74 @@ func visitIdentifier(ctx *engine.Context, n *wrapperchecker.Node, opts Options) 
 			// `b`, not a property of `a`. Don't skip; check the symbol.
 		case wrapperchecker.KindJsxClosingElement:
 			return
+		case wrapperchecker.KindExportSpecifier:
+			// Source-name slot of an ExportSpecifier — a use of the local
+			// or imported symbol. If the only `@deprecated` source for
+			// that symbol is this very specifier (a re-export that
+			// *declares* the deprecation), don't flag.
+			reportIfDeprecatedExceptOwnSpecifier(ctx, n, p, opts)
+			return
 		}
 	}
 	reportIfDeprecated(ctx, n, opts)
+}
+
+// reportIfDeprecatedExceptOwnSpecifier flags `n` only when its symbol's
+// deprecation does not originate at the surrounding `spec` node itself.
+// An export specifier that carries `@deprecated` is *declaring* the
+// deprecation rather than using a deprecated symbol — flagging there
+// would punish the very statement that marks the symbol deprecated.
+// An overload-level deprecation (e.g. one of several function overloads
+// marked `@deprecated`) is also skipped: re-exporting an overloaded
+// function does not pick a specific overload, so no concrete deprecated
+// signature is being used.
+func reportIfDeprecatedExceptOwnSpecifier(ctx *engine.Context, n, spec *wrapperchecker.Node, opts Options) {
+	sym := ctx.Checker().SymbolOf(n)
+	if sym == nil || !sym.IsDeprecated() {
+		return
+	}
+	d := sym.FirstDeprecatedDeclaration()
+	if d != nil && sameNode(d, spec) {
+		return
+	}
+	if !symbolDeprecationAppliesToUnselectedUse(sym) {
+		return
+	}
+	reportSym(ctx, n, n.LiteralText(), sym.DeprecationReason(), sym, opts)
+}
+
+// symbolDeprecationAppliesToUnselectedUse reports whether the symbol's
+// deprecation applies to a use that does *not* select a specific
+// overload (e.g. an export specifier, a bare reference). Returns true
+// when:
+//   - the deprecation is at a binding-level site (import/export
+//     specifier, variable, etc.), or
+//   - every function/method declaration of the symbol is deprecated
+//     (so any use picks a deprecated overload).
+func symbolDeprecationAppliesToUnselectedUse(sym *wrapperchecker.Symbol) bool {
+	if symbolHasBindingLevelDeprecation(sym) {
+		return true
+	}
+	decls := sym.AllDeclarationsFollowingAliases()
+	if len(decls) == 0 {
+		return false
+	}
+	overloadSeen := false
+	for _, d := range decls {
+		switch d.Kind() {
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindMethodSignature,
+			wrapperchecker.KindCallSignature,
+			wrapperchecker.KindConstructSignature,
+			wrapperchecker.KindConstructor:
+			overloadSeen = true
+			if !d.IsDeprecatedDeclaration() {
+				return false
+			}
+		}
+	}
+	return overloadSeen
 }
 
 // checkJsxAttributeUse handles `<Component prop={x} />`: the `prop`
@@ -177,6 +262,17 @@ func checkJsxAttributeUse(ctx *engine.Context, n *wrapperchecker.Node, opts Opti
 		wrapperchecker.KindJsxSelfClosingElement:
 	default:
 		return true
+	}
+	// The JsxAttributes container has a contextual type equal to the
+	// element's props/attributes type — that's where deprecated props
+	// live for both intrinsic elements (via `JSX.IntrinsicElements`) and
+	// component types. ContextualTypeOf on the tag identifier itself
+	// returns `any`, so go through the attributes parent instead.
+	if attrsT := ctx.Checker().ContextualTypeOf(pp); attrsT != nil {
+		if prop := attrsT.PropertySymbol(n.LiteralText()); prop != nil && prop.IsDeprecated() {
+			report(ctx, n, n.LiteralText(), prop.DeprecationReason(), opts)
+			return true
+		}
 	}
 	tag := jsxOpeningTagName(opening)
 	if tag == nil {
@@ -293,6 +389,15 @@ func destructuringSourceType(ctx *engine.Context, pattern *wrapperchecker.Node) 
 		if outerT == nil {
 			return nil
 		}
+		// Array destructuring: the parent is inside an ArrayBindingPattern
+		// and the element's position determines which tuple slot it reads.
+		if outerPattern.Kind() == wrapperchecker.KindArrayBindingPattern {
+			idx := arrayBindingElementIndex(outerPattern, parent)
+			if idx < 0 {
+				return nil
+			}
+			return outerT.PropertyType(strconv.Itoa(idx))
+		}
 		key := bindingElementKeyName(parent)
 		if key == "" {
 			return nil
@@ -300,6 +405,28 @@ func destructuringSourceType(ctx *engine.Context, pattern *wrapperchecker.Node) 
 		return outerT.PropertyType(key)
 	}
 	return nil
+}
+
+// arrayBindingElementIndex returns the source-order index of `elem`
+// inside an ArrayBindingPattern, skipping omitted elements (which are
+// represented as OmittedExpression children). Returns -1 when `elem` is
+// not a direct child of `pattern`.
+func arrayBindingElementIndex(pattern, elem *wrapperchecker.Node) int {
+	idx := -1
+	cur := 0
+	pattern.ForEachChild(func(c *wrapperchecker.Node) bool {
+		switch c.Kind() {
+		case wrapperchecker.KindBindingElement,
+			wrapperchecker.KindOmittedExpression:
+			if sameNode(c, elem) {
+				idx = cur
+				return true
+			}
+			cur++
+		}
+		return false
+	})
+	return idx
 }
 
 // bindingElementKeyName returns the source-property name a
@@ -385,7 +512,7 @@ func reportIfDeprecated(ctx *engine.Context, n *wrapperchecker.Node, opts Option
 	if callLike != nil {
 		if sig := ctx.Checker().ResolvedSignatureGeneral(callLike); sig != nil {
 			if sig.IsDeprecated() {
-				report(ctx, n, n.LiteralText(), sig.DeprecationReason(), opts)
+				reportSym(ctx, n, n.LiteralText(), sig.DeprecationReason(), sym, opts)
 				return
 			}
 			// If the signature isn't deprecated but the symbol's
@@ -394,21 +521,31 @@ func reportIfDeprecated(ctx *engine.Context, n *wrapperchecker.Node, opts Option
 			// the binding-level deprecation applies to every use,
 			// including this non-deprecated-overload call.
 			if symbolHasBindingLevelDeprecation(sym) {
-				report(ctx, n, n.LiteralText(), sym.DeprecationReason(), opts)
+				reportSym(ctx, n, n.LiteralText(), sym.DeprecationReason(), sym, opts)
 			}
 			return
 		}
 	}
 	if sym.IsDeprecated() {
-		report(ctx, n, n.LiteralText(), sym.DeprecationReason(), opts)
+		reportSym(ctx, n, n.LiteralText(), sym.DeprecationReason(), sym, opts)
 	}
 }
 
 func report(ctx *engine.Context, at *wrapperchecker.Node, name, reason string, opts Options) {
+	reportSym(ctx, at, name, reason, nil, opts)
+}
+
+func reportSym(ctx *engine.Context, at *wrapperchecker.Node, name, reason string, sym *wrapperchecker.Symbol, opts Options) {
 	if name == "" {
 		name = at.LiteralText()
 	}
-	if _, allowed := opts.AllowNames[name]; allowed {
+	if isAllowed(name, sym, opts) {
+		return
+	}
+	// Private identifiers report with the leading `#`, but the `allow`
+	// option lists names without it (matching typescript-eslint's
+	// `{ from: 'file', name: 'privateProp' }` shape).
+	if len(name) > 0 && name[0] == '#' && isAllowed(name[1:], sym, opts) {
 		return
 	}
 	if reason == "" {
@@ -416,6 +553,64 @@ func report(ctx *engine.Context, at *wrapperchecker.Node, name, reason string, o
 	} else {
 		ctx.Report(at, fmt.Sprintf("`%s` is deprecated. %s", name, reason))
 	}
+}
+
+// isAllowed reports whether the deprecation use should be suppressed
+// by the configured allow lists. AllowNames matches by bare identifier
+// regardless of source. AllowPackageNames matches only when the symbol
+// was imported from the configured package — `import { X } from 'pkg'`
+// then a use of `X` is allowed by `{ name: 'X', package: 'pkg' }`.
+func isAllowed(name string, sym *wrapperchecker.Symbol, opts Options) bool {
+	if _, ok := opts.AllowNames[name]; ok {
+		return true
+	}
+	if len(opts.AllowPackageNames) == 0 || sym == nil {
+		return false
+	}
+	pkg := symbolImportPackage(sym)
+	if pkg == "" {
+		return false
+	}
+	for _, entry := range opts.AllowPackageNames {
+		if entry.Name == name && entry.Package == pkg {
+			return true
+		}
+	}
+	return false
+}
+
+// symbolImportPackage returns the module specifier (e.g. "fs", "lodash")
+// that introduced this symbol via an import declaration. Returns the
+// empty string if the symbol is locally defined or its alias chain has
+// no import-declaration source. Walks the alias chain to handle
+// re-exports.
+func symbolImportPackage(sym *wrapperchecker.Symbol) string {
+	for _, d := range sym.Declarations() {
+		if pkg := declarationImportPackage(d); pkg != "" {
+			return pkg
+		}
+	}
+	return ""
+}
+
+// declarationImportPackage extracts the string-literal module specifier
+// from an import-related declaration (ImportSpecifier, NamespaceImport,
+// ImportClause). Returns the empty string for non-import declarations.
+func declarationImportPackage(d *wrapperchecker.Node) string {
+	if d == nil {
+		return ""
+	}
+	for cur := d; cur != nil; cur = cur.Parent() {
+		if cur.Kind() != wrapperchecker.KindImportDeclaration {
+			continue
+		}
+		spec := cur.ModuleSpecifier()
+		if spec == nil {
+			return ""
+		}
+		return spec.LiteralText()
+	}
+	return ""
 }
 
 func isDeclarationSite(n *wrapperchecker.Node) bool {
@@ -452,9 +647,13 @@ func isDeclarationSite(n *wrapperchecker.Node) bool {
 		return isFirstNameChild(p, n)
 	case wrapperchecker.KindArrayBindingPattern,
 		wrapperchecker.KindObjectBindingPattern,
-		wrapperchecker.KindImportSpecifier,
-		wrapperchecker.KindExportSpecifier:
+		wrapperchecker.KindImportSpecifier:
 		return true
+	case wrapperchecker.KindExportSpecifier:
+		// `export { foo }`: `foo` is a USE of the local/imported symbol.
+		// `export { foo as bar }`: `foo` is the use, `bar` is the
+		// declaration (new export binding).
+		return isExportSpecifierLocalDeclaration(p, n)
 	case wrapperchecker.KindBindingElement:
 		// `{ a: c = b } = ...` — name and (optional) propertyName are
 		// declarations; the initializer is a use.
@@ -468,6 +667,38 @@ func isDeclarationSite(n *wrapperchecker.Node) bool {
 		return isFirstNameChild(p, n)
 	}
 	return false
+}
+
+// isExportSpecifierLocalDeclaration reports whether `child` is the
+// local-name slot of an ExportSpecifier (the part *after* `as` in
+// `export { foo as bar }`). The propertyName slot — and the single-name
+// form `export { foo }` — both reference an existing local/imported
+// symbol and are therefore uses, not declarations. Specifiers that
+// rename to a string literal (`export { foo as 'bar' }`) are treated as
+// declarations end-to-end: the rename target isn't an addressable name
+// in the new module's namespace, so typescript-eslint elides them.
+func isExportSpecifierLocalDeclaration(parent, child *wrapperchecker.Node) bool {
+	var first, second *wrapperchecker.Node
+	parent.ForEachChild(func(c *wrapperchecker.Node) bool {
+		switch c.Kind() {
+		case wrapperchecker.KindIdentifier,
+			wrapperchecker.KindStringLiteral:
+			if first == nil {
+				first = c
+			} else if second == nil {
+				second = c
+			}
+		}
+		return false
+	})
+	if second == nil {
+		return false
+	}
+	if second.Kind() == wrapperchecker.KindStringLiteral {
+		return true
+	}
+	// `foo as bar` — `bar` (second) is the new export binding.
+	return sameNode(second, child)
 }
 
 func isFirstNameChild(parent, child *wrapperchecker.Node) bool {

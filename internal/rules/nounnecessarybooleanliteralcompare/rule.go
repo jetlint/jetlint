@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 const id = "no-unnecessary-boolean-literal-compare"
@@ -21,6 +21,11 @@ type Options struct {
 	AllowComparingNullableBooleansToTrue bool
 	// AllowComparingNullableBooleansToFalse: same for `=== false`.
 	AllowComparingNullableBooleansToFalse bool
+	// AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing: when
+	// false (the default), emit a per-file advisory diagnostic when
+	// strictNullChecks is off — the rule's analysis assumes those
+	// checks to distinguish plain from nullable booleans.
+	AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing bool
 }
 
 // DefaultOptions matches typescript-eslint's defaults.
@@ -51,6 +56,10 @@ func OptionsFromJSON(raw json.RawMessage) (Options, error) {
 			if err := json.Unmarshal(val, &out.AllowComparingNullableBooleansToFalse); err != nil {
 				return Options{}, fmt.Errorf("option %q: %w", key, err)
 			}
+		case "allowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing":
+			if err := json.Unmarshal(val, &out.AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing); err != nil {
+				return Options{}, fmt.Errorf("option %q: %w", key, err)
+			}
 		default:
 			return Options{}, fmt.Errorf("no-unnecessary-boolean-literal-compare has no option %q", key)
 		}
@@ -67,8 +76,26 @@ func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindSourceFile:       r.visitSourceFile,
 		wrapperchecker.KindBinaryExpression: r.visit,
 	}
+}
+
+// visitSourceFile emits the per-file `noStrictNullCheck` advisory when
+// the program is compiled without strictNullChecks and the caller has
+// not opted in via
+// `allowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing`. The
+// rule's classification of plain vs nullable booleans relies on
+// strictNullChecks; without it, valid programs can be incorrectly
+// flagged or skipped.
+func (r *rule) visitSourceFile(ctx *engine.Context, n *wrapperchecker.Node) {
+	if r.opts.AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing {
+		return
+	}
+	if ctx.Program().HasStrictNullChecks() {
+		return
+	}
+	ctx.Report(n, "this rule requires `strictNullChecks` to be enabled; otherwise nullable booleans cannot be distinguished")
 }
 
 func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -109,6 +136,13 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	classification := classifyBooleanType(t)
 	if classification == notBoolean {
 		return
+	}
+	// Without strictNullChecks, every value can be null/undefined at
+	// runtime — distinguishing plain from nullable boolean is no longer
+	// meaningful. Treat a plain boolean as nullable so the
+	// allow-comparing-nullable-* options apply.
+	if classification == plainBoolean && !ctx.Program().HasStrictNullChecks() {
+		classification = nullableBoolean
 	}
 	if classification == nullableBoolean {
 		if literal == "true" && r.opts.AllowComparingNullableBooleansToTrue {

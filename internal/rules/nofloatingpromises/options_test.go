@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tommymorgan/tsgolint/internal/rules/nofloatingpromises"
+	"github.com/jetlint/jetlint/internal/rules/nofloatingpromises"
 )
 
 func TestOptionsFromJSON_EmptyInputYieldsDefaults(t *testing.T) {

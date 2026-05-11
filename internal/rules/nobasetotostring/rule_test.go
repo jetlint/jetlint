@@ -7,8 +7,8 @@ import (
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/engine"
-	"github.com/tommymorgan/tsgolint/internal/rules/nobasetotostring"
+	"github.com/jetlint/jetlint/internal/engine"
+	"github.com/jetlint/jetlint/internal/rules/nobasetotostring"
 )
 
 func fixture(t *testing.T, source string) string {

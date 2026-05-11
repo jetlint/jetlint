@@ -20,12 +20,10 @@ import (
 	"unicode"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 const id = "naming-convention"
-
-var debug = false
 
 // Options is the configurable surface. typescript-eslint accepts an
 // array of selector configs; we keep that shape.
@@ -35,16 +33,17 @@ type Options struct {
 
 // Selector mirrors a single entry in upstream's options array.
 type Selector struct {
-	Selector            string   // "default" | "variable" | "function" | ...
-	Modifiers           []string // ["const", "exported", ...]
-	Types               []string // ["string", "number", ...]
-	Format              []string // ["camelCase", "UPPER_CASE", ...] — nil = allow any
-	Prefix              []string
-	Suffix              []string
-	LeadingUnderscore   string // "" | "allow" | "allowDouble" | "allowSingleOrDouble" | "forbid" | "require" | "requireDouble"
-	TrailingUnderscore  string
-	Filter              *MatchRegex
-	Custom              *MatchRegex
+	Selectors          []string // one or more of "default" | "variable" | ...
+	Modifiers          []string // ["const", "exported", ...]
+	Types              []string // ["string", "number", ...]
+	Format             []string // ["camelCase", "UPPER_CASE", ...] — nil = allow any
+	FormatNull         bool     // true when `format: null` (accept any)
+	Prefix             []string
+	Suffix             []string
+	LeadingUnderscore  string // "" | "allow" | "allowDouble" | "allowSingleOrDouble" | "forbid" | "require" | "requireDouble"
+	TrailingUnderscore string
+	Filter             *MatchRegex
+	Custom             *MatchRegex
 }
 
 // MatchRegex represents `{ regex, match }` where match: true means
@@ -58,10 +57,10 @@ type MatchRegex struct {
 // parameters → camelCase|UPPER_CASE; everything else → PascalCase.
 func DefaultOptions() Options {
 	return Options{Configs: []Selector{
-		{Selector: "default", Format: []string{"camelCase"}, LeadingUnderscore: "allow", TrailingUnderscore: "allow"},
-		{Selector: "import", Format: []string{"camelCase", "PascalCase"}},
-		{Selector: "variable", Format: []string{"camelCase", "UPPER_CASE"}, LeadingUnderscore: "allow", TrailingUnderscore: "allow"},
-		{Selector: "typeLike", Format: []string{"PascalCase"}},
+		{Selectors: []string{"default"}, Format: []string{"camelCase"}, LeadingUnderscore: "allow", TrailingUnderscore: "allow"},
+		{Selectors: []string{"import"}, Format: []string{"camelCase", "PascalCase"}},
+		{Selectors: []string{"variable"}, Format: []string{"camelCase", "UPPER_CASE"}, LeadingUnderscore: "allow", TrailingUnderscore: "allow"},
+		{Selectors: []string{"typeLike"}, Format: []string{"PascalCase"}},
 	}}
 }
 
@@ -94,29 +93,31 @@ func OptionsFromJSON(raw json.RawMessage) (Options, error) {
 }
 
 type rawSelector struct {
-	Selector            json.RawMessage `json:"selector"`
-	Modifiers           []string        `json:"modifiers"`
-	Types               []string        `json:"types"`
-	Format              []string        `json:"format"`
-	Prefix              []string        `json:"prefix"`
-	Suffix              []string        `json:"suffix"`
-	LeadingUnderscore   string          `json:"leadingUnderscore"`
-	TrailingUnderscore  string          `json:"trailingUnderscore"`
-	Filter              json.RawMessage `json:"filter"`
-	Custom              json.RawMessage `json:"custom"`
+	Selector           json.RawMessage `json:"selector"`
+	Modifiers          []string        `json:"modifiers"`
+	Types              []string        `json:"types"`
+	Format             json.RawMessage `json:"format"`
+	Prefix             []string        `json:"prefix"`
+	Suffix             []string        `json:"suffix"`
+	LeadingUnderscore  string          `json:"leadingUnderscore"`
+	TrailingUnderscore string          `json:"trailingUnderscore"`
+	Filter             json.RawMessage `json:"filter"`
+	Custom             json.RawMessage `json:"custom"`
 }
 
 func (r rawSelector) toSelector() (Selector, error) {
 	out := Selector{
 		Modifiers:          r.Modifiers,
 		Types:              r.Types,
-		Format:             r.Format,
 		Prefix:             r.Prefix,
 		Suffix:             r.Suffix,
 		LeadingUnderscore:  r.LeadingUnderscore,
 		TrailingUnderscore: r.TrailingUnderscore,
 	}
 	if err := parseSelector(r.Selector, &out); err != nil {
+		return Selector{}, err
+	}
+	if err := parseFormat(r.Format, &out); err != nil {
 		return Selector{}, err
 	}
 	if mr, err := parseMatchRegex(r.Filter); err != nil {
@@ -138,20 +139,29 @@ func parseSelector(raw json.RawMessage, out *Selector) error {
 	}
 	var s string
 	if err := json.Unmarshal(raw, &s); err == nil {
-		out.Selector = s
+		out.Selectors = []string{s}
 		return nil
 	}
 	var ss []string
 	if err := json.Unmarshal(raw, &ss); err != nil {
 		return fmt.Errorf("naming-convention: invalid selector: %w", err)
 	}
-	// Array selector: we approximate by joining — only "default" is
-	// actually meaningful in the test corpus and `["variable","parameter"]`
-	// is treated as multiple configs at expansion time. For now, store
-	// the first.
-	if len(ss) > 0 {
-		out.Selector = ss[0]
+	out.Selectors = ss
+	return nil
+}
+
+// parseFormat handles `format: null` (no format constraint) and the
+// usual `format: ["camelCase", ...]` array form.
+func parseFormat(raw json.RawMessage, out *Selector) error {
+	if len(raw) == 0 || string(raw) == "null" {
+		out.FormatNull = true
+		return nil
 	}
+	var fs []string
+	if err := json.Unmarshal(raw, &fs); err != nil {
+		return fmt.Errorf("naming-convention: invalid format: %w", err)
+	}
+	out.Format = fs
 	return nil
 }
 
@@ -186,7 +196,11 @@ func parseMatchRegex(raw json.RawMessage) (*MatchRegex, error) {
 	return &MatchRegex{Regex: re, Match: match}, nil
 }
 
-type rule struct{ opts Options }
+type rule struct {
+	opts            Options
+	usageCache      map[string]map[uintptr]int
+	exportNameCache map[string]map[string]struct{}
+}
 
 func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
@@ -195,6 +209,7 @@ func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 		wrapperchecker.KindVariableDeclaration:    r.visitVariable,
 		wrapperchecker.KindParameter:              r.visitParameter,
 		wrapperchecker.KindFunctionDeclaration:    r.visitFunction,
+		wrapperchecker.KindFunctionExpression:     r.visitFunction,
 		wrapperchecker.KindMethodDeclaration:      r.visitMethod,
 		wrapperchecker.KindPropertyDeclaration:    r.visitClassProperty,
 		wrapperchecker.KindPropertySignature:      r.visitTypeProperty,
@@ -219,24 +234,95 @@ func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 // --- handlers ---
 
 func (r *rule) visitVariable(ctx *engine.Context, n *wrapperchecker.Node) {
-	parent := n.Parent()
-	// VariableDeclaration in a destructuring pattern is handled at the
-	// BindingElement level; only walk the top identifier here.
-	idents := bindingIdents(n)
-	mods := variableModifiers(n)
 	types := variableTypes(ctx, n)
-	for _, id := range idents {
+	for _, id := range bindingIdents(n) {
+		mods := r.variableModifiers(ctx, n, id)
+		// `destructured` only applies to non-renamed bindings — when the
+		// binding element specifies a different property name, the local
+		// identifier was chosen by the developer and is treated as a
+		// "regular" binding.
+		if isRenamedBinding(id) {
+			mods = removeMod(mods, "destructured")
+		}
 		r.check(ctx, id, []string{"variable", "variableLike", "default"}, mods, types)
 	}
-	_ = parent
+}
+
+// isRenamedBinding reports whether idNode is the local-name slot of a
+// BindingElement whose propertyName is explicitly set
+// (`{ a: b } = …` → b is renamed).
+func isRenamedBinding(idNode *wrapperchecker.Node) bool {
+	if idNode == nil {
+		return false
+	}
+	p := idNode.Parent()
+	if p == nil || p.Kind() != wrapperchecker.KindBindingElement {
+		return false
+	}
+	return p.BindingElementPropertyName() != nil
+}
+
+// removeMod returns a new slice with all occurrences of want removed.
+func removeMod(mods []string, want string) []string {
+	out := mods[:0:0]
+	for _, m := range mods {
+		if m != want {
+			out = append(out, m)
+		}
+	}
+	return out
 }
 
 func (r *rule) visitParameter(ctx *engine.Context, n *wrapperchecker.Node) {
-	idents := bindingIdents(n)
 	mods := parameterModifiers(n)
-	for _, id := range idents {
-		r.check(ctx, id, []string{"parameter", "variableLike", "default"}, mods, nil)
+	types := variableTypes(ctx, n)
+	// A constructor parameter that carries an access/readonly modifier
+	// (TypeScript "parameter property") is reported under the
+	// parameterProperty selector and inherits those modifiers.
+	paramPropMods := parameterPropertyModifiers(n)
+	isParamProp := len(paramPropMods) > 0 && isConstructorParameter(n)
+	for _, id := range bindingIdents(n) {
+		thisMods := append([]string{}, mods...)
+		thisMods = append(thisMods, paramPropMods...)
+		if r.isUnused(ctx, id) {
+			thisMods = append(thisMods, "unused")
+		}
+		if isRenamedBinding(id) {
+			thisMods = removeMod(thisMods, "destructured")
+		}
+		selectors := []string{"parameter", "variableLike", "default"}
+		if isParamProp {
+			selectors = []string{"parameterProperty", "property", "memberLike", "default"}
+		}
+		r.check(ctx, id, selectors, thisMods, types)
 	}
+}
+
+// parameterPropertyModifiers returns the access/readonly modifiers
+// present on a constructor parameter that promote it to a class
+// parameter property. Returns nil if no such modifiers are present.
+func parameterPropertyModifiers(n *wrapperchecker.Node) []string {
+	var mods []string
+	for _, m := range modifierKinds(n) {
+		switch m {
+		case wrapperchecker.KindReadonlyKeyword:
+			mods = append(mods, "readonly")
+		case wrapperchecker.KindPrivateKeyword:
+			mods = append(mods, "private")
+		case wrapperchecker.KindProtectedKeyword:
+			mods = append(mods, "protected")
+		case wrapperchecker.KindPublicKeyword:
+			mods = append(mods, "public")
+		case wrapperchecker.KindOverrideKeyword:
+			mods = append(mods, "override")
+		}
+	}
+	return mods
+}
+
+func isConstructorParameter(n *wrapperchecker.Node) bool {
+	p := n.Parent()
+	return p != nil && p.Kind() == wrapperchecker.KindConstructor
 }
 
 func (r *rule) visitFunction(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -245,6 +331,12 @@ func (r *rule) visitFunction(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	mods := functionModifiers(n)
+	if r.isExportedViaBlock(ctx, id) && !containsMod(mods, "exported") {
+		mods = append(mods, "exported")
+	}
+	if r.isUnused(ctx, id) {
+		mods = append(mods, "unused")
+	}
 	r.check(ctx, id, []string{"function", "variableLike", "default"}, mods, nil)
 }
 
@@ -272,7 +364,8 @@ func (r *rule) visitClassProperty(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	mods := classMemberModifiers(n)
-	r.check(ctx, id, []string{"classProperty", "property", "memberLike", "default"}, mods, nil)
+	types := variableTypes(ctx, n)
+	r.check(ctx, id, []string{"classProperty", "property", "memberLike", "default"}, mods, types)
 }
 
 func (r *rule) visitTypeProperty(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -280,7 +373,32 @@ func (r *rule) visitTypeProperty(ctx *engine.Context, n *wrapperchecker.Node) {
 	if id == nil {
 		return
 	}
-	r.check(ctx, id, []string{"typeProperty", "property", "memberLike", "default"}, nil, nil)
+	var mods []string
+	if nameRequiresQuotes(id) {
+		mods = append(mods, "requiresQuotes")
+	}
+	// A property signature whose annotation is a function type is
+	// classified as typeMethod, matching upstream.
+	if propertyTypeIsFunction(n) {
+		r.check(ctx, id, []string{"typeMethod", "method", "memberLike", "default"}, mods, nil)
+		return
+	}
+	r.check(ctx, id, []string{"typeProperty", "property", "memberLike", "default"}, mods, nil)
+}
+
+// propertyTypeIsFunction reports whether a PropertySignature has a
+// function-type annotation (`name: () => T`).
+func propertyTypeIsFunction(n *wrapperchecker.Node) bool {
+	var hasFn bool
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		switch c.Kind() {
+		case wrapperchecker.KindFunctionType:
+			hasFn = true
+			return true
+		}
+		return false
+	})
+	return hasFn
 }
 
 func (r *rule) visitTypeMethod(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -288,7 +406,11 @@ func (r *rule) visitTypeMethod(ctx *engine.Context, n *wrapperchecker.Node) {
 	if id == nil {
 		return
 	}
-	r.check(ctx, id, []string{"typeMethod", "method", "memberLike", "default"}, nil, nil)
+	var mods []string
+	if nameRequiresQuotes(id) {
+		mods = append(mods, "requiresQuotes")
+	}
+	r.check(ctx, id, []string{"typeMethod", "method", "memberLike", "default"}, mods, nil)
 }
 
 func (r *rule) visitAccessor(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -296,7 +418,18 @@ func (r *rule) visitAccessor(ctx *engine.Context, n *wrapperchecker.Node) {
 	if id == nil {
 		return
 	}
-	mods := classMemberModifiers(n)
+	// classMemberModifiers already records requiresQuotes for class
+	// bodies; for object-literal accessors, fall back to the
+	// node-by-node lookup.
+	var mods []string
+	parent := n.Parent()
+	if parent != nil && parent.Kind() == wrapperchecker.KindObjectLiteralExpression {
+		if nameRequiresQuotes(id) {
+			mods = append(mods, "requiresQuotes")
+		}
+	} else {
+		mods = classMemberModifiers(n)
+	}
 	r.check(ctx, id, []string{"accessor", "memberLike", "default"}, mods, nil)
 }
 
@@ -305,7 +438,14 @@ func (r *rule) visitEnum(ctx *engine.Context, n *wrapperchecker.Node) {
 	if id == nil {
 		return
 	}
-	r.check(ctx, id, []string{"enum", "typeLike", "default"}, typeLikeModifiers(n), nil)
+	mods := typeLikeModifiers(n)
+	if r.isExportedViaBlock(ctx, id) && !containsMod(mods, "exported") {
+		mods = append(mods, "exported")
+	}
+	if r.isUnused(ctx, id) {
+		mods = append(mods, "unused")
+	}
+	r.check(ctx, id, []string{"enum", "typeLike", "default"}, mods, nil)
 }
 
 func (r *rule) visitEnumMember(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -313,7 +453,11 @@ func (r *rule) visitEnumMember(ctx *engine.Context, n *wrapperchecker.Node) {
 	if id == nil {
 		return
 	}
-	r.check(ctx, id, []string{"enumMember", "memberLike", "default"}, nil, nil)
+	var mods []string
+	if nameRequiresQuotes(id) {
+		mods = append(mods, "requiresQuotes")
+	}
+	r.check(ctx, id, []string{"enumMember", "memberLike", "default"}, mods, nil)
 }
 
 func (r *rule) visitTypeLike(kind string) engine.Handler {
@@ -322,7 +466,14 @@ func (r *rule) visitTypeLike(kind string) engine.Handler {
 		if id == nil {
 			return
 		}
-		r.check(ctx, id, []string{kind, "typeLike", "default"}, typeLikeModifiers(n), nil)
+		mods := typeLikeModifiers(n)
+		if r.isExportedViaBlock(ctx, id) && !containsMod(mods, "exported") {
+			mods = append(mods, "exported")
+		}
+		if r.isUnused(ctx, id) {
+			mods = append(mods, "unused")
+		}
+		r.check(ctx, id, []string{kind, "typeLike", "default"}, mods, nil)
 	}
 }
 
@@ -361,9 +512,31 @@ func (r *rule) visitImport(ctx *engine.Context, n *wrapperchecker.Node) {
 		// `import { default as foo } from ...` carries default modifier.
 		if isDefaultImportSpecifier(n) {
 			mods = append(mods, "default")
+		} else if !isAliasedImportSpecifier(n) {
+			// `import { foo_bar } from ...` (no alias) — the local
+			// binding name is dictated by the imported module and is
+			// not under the consumer's control. typescript-eslint
+			// skips these.
+			return
 		}
 	}
 	r.check(ctx, id, []string{"import", "default"}, mods, nil)
+}
+
+// isAliasedImportSpecifier reports whether an ImportSpecifier has the
+// form `{ name as alias }` (two distinct identifier children).
+func isAliasedImportSpecifier(n *wrapperchecker.Node) bool {
+	count := 0
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		switch c.Kind() {
+		case wrapperchecker.KindIdentifier,
+			wrapperchecker.KindStringLiteral,
+			wrapperchecker.KindNoSubstitutionTemplateLiteral:
+			count++
+		}
+		return false
+	})
+	return count >= 2
 }
 
 // importNameNode returns the locally-bound name for an import-kind
@@ -408,7 +581,11 @@ func (r *rule) visitObjLitProp(ctx *engine.Context, n *wrapperchecker.Node) {
 	if id == nil {
 		return
 	}
-	r.check(ctx, id, []string{"objectLiteralProperty", "property", "memberLike", "default"}, nil, nil)
+	var mods []string
+	if nameRequiresQuotes(id) {
+		mods = append(mods, "requiresQuotes")
+	}
+	r.check(ctx, id, []string{"objectLiteralProperty", "property", "memberLike", "default"}, mods, nil)
 }
 
 // --- core matcher ---
@@ -437,13 +614,93 @@ func (r *rule) check(
 	// take priority over configs with fewer; types act the same way.
 	// This mirrors upstream's "most specific match wins" behaviour.
 	for _, candidate := range selectors {
-		if cfg := bestConfigFor(r.opts.Configs, candidate, name, modifiers, types); cfg != nil {
-			if msg, ok := validateName(name, *cfg); !ok {
-				ctx.Report(ident, msg)
+		var best *Selector
+		bestScore := -1
+		for i := range r.opts.Configs {
+			cfg := &r.opts.Configs[i]
+			if !cfgSelectsCandidate(cfg, candidate) {
+				continue
 			}
-			return
+			if !modifiersMatch(cfg.Modifiers, modifiers) {
+				continue
+			}
+			if !typesMatch(cfg.Types, types) {
+				continue
+			}
+			if cfg.Filter != nil && !regexAllows(cfg.Filter, name) {
+				continue
+			}
+			if !affixesApply(name, cfg) {
+				continue
+			}
+			s := specificity(cfg)
+			if best == nil || s > bestScore {
+				best = cfg
+				bestScore = s
+			}
+		}
+		if best == nil {
+			continue
+		}
+		if msg, ok := validateName(name, *best); !ok {
+			ctx.Report(ident, msg)
+		}
+		return
+	}
+}
+
+// specificity scores a config by its number of independent constraints
+// (modifiers + types + filter + custom + affixes). Used to break ties
+// between multiple applicable configs at a single selector level.
+func specificity(cfg *Selector) int {
+	score := len(cfg.Modifiers) + len(cfg.Types) + len(cfg.Prefix) + len(cfg.Suffix)
+	if cfg.Filter != nil {
+		score++
+	}
+	if cfg.Custom != nil {
+		score++
+	}
+	return score
+}
+
+// affixesApply reports whether the prefix / suffix / leadingUnderscore /
+// trailingUnderscore constraints of cfg admit the given name. When any
+// of them is required and absent, the config falls through to the next
+// candidate rather than producing an error.
+func affixesApply(name string, cfg *Selector) bool {
+	trimmed, _, ok := stripLeadingUnderscore(name, cfg.LeadingUnderscore)
+	if !ok {
+		return false
+	}
+	trimmed, _, ok = stripTrailingUnderscore(trimmed, cfg.TrailingUnderscore)
+	if !ok {
+		return false
+	}
+	if len(cfg.Prefix) > 0 {
+		matched := false
+		for _, p := range cfg.Prefix {
+			if strings.HasPrefix(trimmed, p) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			return false
 		}
 	}
+	if len(cfg.Suffix) > 0 {
+		matched := false
+		for _, s := range cfg.Suffix {
+			if strings.HasSuffix(trimmed, s) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			return false
+		}
+	}
+	return true
 }
 
 // bestConfigFor picks the most specific config at the given selector
@@ -458,7 +715,7 @@ func bestConfigFor(configs []Selector, candidate, name string, mods, types []str
 	bestScore := [3]int{-1, -1, -1}
 	for i := range configs {
 		cfg := &configs[i]
-		if cfg.Selector != candidate {
+		if !cfgSelectsCandidate(cfg, candidate) {
 			continue
 		}
 		if !modifiersMatch(cfg.Modifiers, mods) {
@@ -483,6 +740,19 @@ func bestConfigFor(configs []Selector, candidate, name string, mods, types []str
 		return nil
 	}
 	return &configs[bestIdx]
+}
+
+// cfgSelectsCandidate reports whether the config applies to the given
+// selector category (one of "default", "variable", ...). A config's
+// Selectors list is matched against the candidate, which may be a
+// concrete category like "variable" or a group like "variableLike".
+func cfgSelectsCandidate(cfg *Selector, candidate string) bool {
+	for _, s := range cfg.Selectors {
+		if s == candidate {
+			return true
+		}
+	}
+	return false
 }
 
 func cmpScore(a, b [3]int) int {
@@ -526,6 +796,13 @@ func typesMatch(required, actual []string) bool {
 	if len(required) == 0 {
 		return true
 	}
+	// For declarations whose type wasn't categorised (functions, class
+	// declarations, imports, ...), the `types` constraint is treated as
+	// "ignored" — upstream's `types` option is only meaningful for
+	// typed-value selectors (variable/parameter/property/etc.).
+	if len(actual) == 0 {
+		return true
+	}
 	for _, req := range required {
 		found := false
 		for _, a := range actual {
@@ -547,24 +824,24 @@ func regexAllows(mr *MatchRegex, name string) bool {
 }
 
 // validateName checks `name` against the selector's format/affix/
-// underscore/custom rules. Returns (msg, false) on failure.
+// underscore/custom rules. Returns (msg, false) on failure. The check
+// peels off leading/trailing underscores and prefix/suffix first; the
+// resulting "processed" name is what the custom regex and format
+// validators see.
 func validateName(name string, cfg Selector) (string, bool) {
-	if cfg.Custom != nil && !regexAllows(cfg.Custom, name) {
-		return "name `" + name + "` doesn't match the configured custom regex", false
+	// Strip the leading `#` from private-identifier names; only the
+	// bare identifier participates in format validation.
+	if strings.HasPrefix(name, "#") {
+		name = name[1:]
 	}
-	// Strip leading and trailing underscores per option, then strip
-	// prefix/suffix, then check format.
-	trimmed, lead, ok := stripLeadingUnderscore(name, cfg.LeadingUnderscore)
+	trimmed, _, ok := stripLeadingUnderscore(name, cfg.LeadingUnderscore)
 	if !ok {
 		return "name `" + name + "` has disallowed leading underscore", false
 	}
-	trimmed, trail, ok := stripTrailingUnderscore(trimmed, cfg.TrailingUnderscore)
+	trimmed, _, ok = stripTrailingUnderscore(trimmed, cfg.TrailingUnderscore)
 	if !ok {
 		return "name `" + name + "` has disallowed trailing underscore", false
 	}
-	_ = lead
-	_ = trail
-	// Affixes.
 	if len(cfg.Prefix) > 0 {
 		matched := false
 		for _, p := range cfg.Prefix {
@@ -591,7 +868,13 @@ func validateName(name string, cfg Selector) (string, bool) {
 			return "name `" + name + "` is missing required suffix", false
 		}
 	}
-	// Format check.
+	if cfg.Custom != nil && !regexAllows(cfg.Custom, trimmed) {
+		return "name `" + name + "` doesn't satisfy the configured custom regex", false
+	}
+	// Format check. `format: null` (FormatNull) accepts any name.
+	if cfg.FormatNull {
+		return "", true
+	}
 	if len(cfg.Format) == 0 {
 		return "", true
 	}
@@ -683,11 +966,11 @@ func formatMatches(format, s string) bool {
 	switch format {
 	case "camelCase":
 		return isCamelCase(s, false)
-	case "strictCamelCase":
+	case "strictCamelCase", "StrictCamelCase":
 		return isCamelCase(s, true)
 	case "PascalCase":
 		return isPascalCase(s, false)
-	case "strictPascalCase":
+	case "strictPascalCase", "StrictPascalCase":
 		return isPascalCase(s, true)
 	case "snake_case":
 		return isSnakeCase(s)
@@ -824,21 +1107,7 @@ func bindingIdents(n *wrapperchecker.Node) []*wrapperchecker.Node {
 			})
 			return
 		case wrapperchecker.KindBindingElement:
-			// BindingElement has [propertyName, name, initializer]. Only
-			// the (renamed-to) name should be checked.
-			var nameSlot *wrapperchecker.Node
-			node.ForEachChild(func(c *wrapperchecker.Node) bool {
-				switch c.Kind() {
-				case wrapperchecker.KindIdentifier,
-					wrapperchecker.KindObjectBindingPattern,
-					wrapperchecker.KindArrayBindingPattern:
-					if nameSlot == nil {
-						nameSlot = c
-					}
-				}
-				return false
-			})
-			walk(nameSlot)
+			walk(node.BindingElementName())
 			return
 		}
 	}
@@ -860,12 +1129,12 @@ func bindingIdents(n *wrapperchecker.Node) []*wrapperchecker.Node {
 
 // --- modifier / type extractors ---
 
-func variableModifiers(n *wrapperchecker.Node) []string {
+func (r *rule) variableModifiers(ctx *engine.Context, n *wrapperchecker.Node, idNode *wrapperchecker.Node) []string {
 	var mods []string
 	if isConstVariable(n) {
 		mods = append(mods, "const")
 	}
-	if hasExportedAncestor(n) {
+	if hasExportedAncestor(n) || r.isExportedViaBlock(ctx, idNode) {
 		mods = append(mods, "exported")
 	}
 	if hasDeclareAncestor(n) {
@@ -877,7 +1146,207 @@ func variableModifiers(n *wrapperchecker.Node) []string {
 	if isDestructuredVariable(n) {
 		mods = append(mods, "destructured")
 	}
+	if r.isUnused(ctx, idNode) {
+		mods = append(mods, "unused")
+	}
+	if init := n.VariableDeclarationInitializer(); init != nil && wrapperchecker.HasAsyncModifier(init) {
+		mods = append(mods, "async")
+	}
 	return mods
+}
+
+// isUnused reports whether the binding represented by idNode has no
+// in-source references besides its own declaration. Computed by walking
+// the SourceFile once per file (cached) and counting symbol references.
+func (r *rule) isUnused(ctx *engine.Context, idNode *wrapperchecker.Node) bool {
+	if idNode == nil {
+		return false
+	}
+	sym := ctx.Checker().SymbolOf(idNode)
+	if sym == nil {
+		return false
+	}
+	// Exported (or default-exported) bindings are by definition used —
+	// any external consumer counts as a reference.
+	if isExportedSymbol(idNode) {
+		return false
+	}
+	usage := r.usageMapFor(ctx, idNode)
+	return usage[sym.ID()] == 0
+}
+
+// isExportedViaBlock reports whether the name has a matching local
+// binding referenced by an `export { ... }` declaration in the same
+// source file. Cached per source file by name text.
+func (r *rule) isExportedViaBlock(ctx *engine.Context, idNode *wrapperchecker.Node) bool {
+	if idNode == nil {
+		return false
+	}
+	name := idNode.LiteralText()
+	if name == "" {
+		return false
+	}
+	sf := containingSourceFile(idNode)
+	if sf == nil {
+		return false
+	}
+	key, _, _, _, _ := sf.SourceRange()
+	if r.exportNameCache == nil {
+		r.exportNameCache = map[string]map[string]struct{}{}
+	}
+	set, ok := r.exportNameCache[key]
+	if !ok {
+		set = map[string]struct{}{}
+		var walk func(n *wrapperchecker.Node)
+		walk = func(n *wrapperchecker.Node) {
+			if n == nil {
+				return
+			}
+			if n.Kind() == wrapperchecker.KindExportSpecifier {
+				// The local-binding identifier is the first
+				// Identifier child (PropertyName when aliased, Name
+				// otherwise). Either way, the first identifier names
+				// the local binding being re-exported.
+				var first *wrapperchecker.Node
+				n.ForEachChild(func(c *wrapperchecker.Node) bool {
+					if first == nil && c.Kind() == wrapperchecker.KindIdentifier {
+						first = c
+					}
+					return false
+				})
+				if first != nil {
+					if t := first.LiteralText(); t != "" {
+						set[t] = struct{}{}
+					}
+				}
+			}
+			n.ForEachChild(func(c *wrapperchecker.Node) bool {
+				walk(c)
+				return false
+			})
+		}
+		walk(sf)
+		r.exportNameCache[key] = set
+	}
+	_, exported := set[name]
+	return exported
+}
+
+func containsMod(mods []string, want string) bool {
+	for _, m := range mods {
+		if m == want {
+			return true
+		}
+	}
+	return false
+}
+
+// isExportedSymbol reports whether the declaration to which idNode
+// belongs is exported (or default-exported) at any enclosing level.
+func isExportedSymbol(idNode *wrapperchecker.Node) bool {
+	for p := idNode.Parent(); p != nil; p = p.Parent() {
+		if p.HasExportModifier() || p.HasDefaultModifier() {
+			return true
+		}
+		switch p.Kind() {
+		case wrapperchecker.KindSourceFile:
+			return false
+		}
+	}
+	return false
+}
+
+// usageMapFor returns a cached map from symbol pointer-key to the
+// number of NON-declaring identifier references in the SourceFile that
+// contains node. The cache is keyed by source file pointer so each file
+// is scanned exactly once per linter run.
+func (r *rule) usageMapFor(ctx *engine.Context, node *wrapperchecker.Node) map[uintptr]int {
+	sf := containingSourceFile(node)
+	if sf == nil {
+		return nil
+	}
+	// Use the source file's reported file path as cache key — wrapper
+	// Node identity isn't stable across walks.
+	key, _, _, _, _ := sf.SourceRange()
+	if r.usageCache == nil {
+		r.usageCache = map[string]map[uintptr]int{}
+	}
+	if m, ok := r.usageCache[key]; ok {
+		return m
+	}
+	m := map[uintptr]int{}
+	var walk func(n *wrapperchecker.Node)
+	walk = func(n *wrapperchecker.Node) {
+		if n == nil {
+			return
+		}
+		if n.Kind() == wrapperchecker.KindIdentifier && !isDeclarationName(n) {
+			if sym := ctx.Checker().SymbolOf(n); sym != nil {
+				m[sym.ID()]++
+			}
+		}
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			walk(c)
+			return false
+		})
+	}
+	walk(sf)
+	r.usageCache[key] = m
+	return m
+}
+
+func containingSourceFile(n *wrapperchecker.Node) *wrapperchecker.Node {
+	for p := n; p != nil; p = p.Parent() {
+		if p.Kind() == wrapperchecker.KindSourceFile {
+			return p
+		}
+	}
+	return nil
+}
+
+// isDeclarationName reports whether an Identifier node is the name slot
+// of a declaration (rather than a reference). Heuristic: parent is a
+// declaration kind and the identifier is its first identifier child.
+func isDeclarationName(id *wrapperchecker.Node) bool {
+	p := id.Parent()
+	if p == nil {
+		return false
+	}
+	switch p.Kind() {
+	case wrapperchecker.KindVariableDeclaration,
+		wrapperchecker.KindParameter,
+		wrapperchecker.KindFunctionDeclaration,
+		wrapperchecker.KindMethodDeclaration,
+		wrapperchecker.KindPropertyDeclaration,
+		wrapperchecker.KindPropertySignature,
+		wrapperchecker.KindMethodSignature,
+		wrapperchecker.KindGetAccessor,
+		wrapperchecker.KindSetAccessor,
+		wrapperchecker.KindClassDeclaration,
+		wrapperchecker.KindClassExpression,
+		wrapperchecker.KindInterfaceDeclaration,
+		wrapperchecker.KindTypeAliasDeclaration,
+		wrapperchecker.KindEnumDeclaration,
+		wrapperchecker.KindEnumMember,
+		wrapperchecker.KindTypeParameter,
+		wrapperchecker.KindImportSpecifier,
+		wrapperchecker.KindImportClause,
+		wrapperchecker.KindNamespaceImport,
+		wrapperchecker.KindPropertyAssignment,
+		wrapperchecker.KindShorthandPropertyAssignment,
+		wrapperchecker.KindBindingElement:
+		// Identifier is a declaration name if it's the first identifier
+		// child of the parent.
+		var first *wrapperchecker.Node
+		p.ForEachChild(func(c *wrapperchecker.Node) bool {
+			if first == nil && c.Kind() == wrapperchecker.KindIdentifier {
+				first = c
+			}
+			return false
+		})
+		return first != nil && first.Same(id)
+	}
+	return false
 }
 
 // isGlobalScope reports whether the declaration is at the top level of
@@ -963,10 +1432,48 @@ func classMemberModifiers(n *wrapperchecker.Node) []string {
 		}
 	}
 	// Private-identifier methods count as #private.
-	if id := nameNode(n); id != nil && id.Kind() == wrapperchecker.KindPrivateIdentifier {
+	id := nameNode(n)
+	if id != nil && id.Kind() == wrapperchecker.KindPrivateIdentifier {
 		mods = append(mods, "#private")
 	}
+	if nameRequiresQuotes(id) {
+		mods = append(mods, "requiresQuotes")
+	}
 	return mods
+}
+
+// nameRequiresQuotes reports whether the given name node would have
+// required quoting to write out (e.g. `'a a'` because of the space).
+// Identifiers and numeric literals never require quotes; string
+// literals do unless every char is a valid identifier char.
+func nameRequiresQuotes(id *wrapperchecker.Node) bool {
+	if id == nil || id.Kind() != wrapperchecker.KindStringLiteral {
+		return false
+	}
+	s := id.LiteralText()
+	if s == "" {
+		return true
+	}
+	for i, r := range s {
+		if i == 0 {
+			if !isIDStart(r) {
+				return true
+			}
+			continue
+		}
+		if !isIDCont(r) {
+			return true
+		}
+	}
+	return false
+}
+
+func isIDStart(r rune) bool {
+	return unicode.IsLetter(r) || r == '_' || r == '$'
+}
+
+func isIDCont(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' || r == '$'
 }
 
 func variableTypes(ctx *engine.Context, n *wrapperchecker.Node) []string {
@@ -1100,39 +1607,7 @@ func modifierKinds(n *wrapperchecker.Node) []wrapperchecker.Kind {
 }
 
 func isConstVariable(varDecl *wrapperchecker.Node) bool {
-	// A VariableDeclaration's parent is a VariableDeclarationList whose
-	// flags indicate const/let/var. We don't have direct access to those
-	// flags in the wrapper, so use a heuristic: look for the
-	// `KindConstKeyword` in the grandparent (VariableStatement).
-	for p := varDecl.Parent(); p != nil; p = p.Parent() {
-		if p.Kind() == wrapperchecker.KindVariableStatement {
-			return varStatementIsConst(p)
-		}
-		// Don't walk past two levels.
-		if p.Parent() != nil && p.Parent().Parent() != nil &&
-			p.Parent().Parent() != nil {
-			break
-		}
-	}
-	return false
-}
-
-func varStatementIsConst(stmt *wrapperchecker.Node) bool {
-	var seenConst bool
-	stmt.ForEachChild(func(c *wrapperchecker.Node) bool {
-		if c.Kind() == wrapperchecker.KindVariableDeclarationList {
-			c.ForEachChild(func(g *wrapperchecker.Node) bool {
-				if g.Kind() == wrapperchecker.KindConstKeyword {
-					seenConst = true
-					return true
-				}
-				return false
-			})
-			return true
-		}
-		return false
-	})
-	return seenConst
+	return varDecl.IsConstVariableDeclaration()
 }
 
 func hasExportedAncestor(n *wrapperchecker.Node) bool {

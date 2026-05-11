@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/tommymorgan/tsgolint/internal/format"
+	"github.com/jetlint/jetlint/internal/format"
 )
 
 func TestSARIFFormatter_EmitsValidSchemaAndVersion(t *testing.T) {

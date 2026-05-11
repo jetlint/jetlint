@@ -1,4 +1,4 @@
-module github.com/tommymorgan/tsgolint
+module github.com/jetlint/jetlint
 
 go 1.26
 

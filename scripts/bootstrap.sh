@@ -59,9 +59,9 @@ phase_check() {
 
 phase_build() {
 	mkdir -p "$BIN_DIR"
-	echo "Building tsgolint binary..."
-	(cd "$REPO_ROOT" && "$GO_BIN" build -o "$BIN_DIR/tsgolint" ./cmd/tsgolint)
-	echo "Build complete: $BIN_DIR/tsgolint"
+	echo "Building jetlint binary..."
+	(cd "$REPO_ROOT" && "$GO_BIN" build -o "$BIN_DIR/jetlint" ./cmd/jetlint)
+	echo "Build complete: $BIN_DIR/jetlint"
 }
 
 # phase_smoke runs the freshly built binary against a checked-in fixture
@@ -72,7 +72,7 @@ phase_smoke() {
 	local fixture="$REPO_ROOT/testdata/fixtures/smoke"
 	echo "Running smoke lint against $fixture ..."
 	local output
-	output=$("$BIN_DIR/tsgolint" --format json "$fixture/main.ts" 2>&1) || true
+	output=$("$BIN_DIR/jetlint" --format json "$fixture/main.ts" 2>&1) || true
 	if printf '%s' "$output" | grep -q '"ruleId":"no-floating-promises"'; then
 		echo "Smoke lint produced expected diagnostic."
 	else

@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/tommymorgan/tsgolint/internal/cli"
+	"github.com/jetlint/jetlint/internal/cli"
 )
 
 func main() {

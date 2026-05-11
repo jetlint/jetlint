@@ -1,25 +1,34 @@
 package nounnecessarybooleanliteralcompare_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/engine"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarybooleanliteralcompare"
-	"github.com/tommymorgan/tsgolint/internal/tselintcompat"
+	"github.com/jetlint/jetlint/internal/engine"
+	"github.com/jetlint/jetlint/internal/rules/nounnecessarybooleanliteralcompare"
+	"github.com/jetlint/jetlint/internal/tselintcompat"
 )
 
-const fixtureTsconfigBody = `{
+// fixtureTsconfigTemplate generates the per-case tsconfig. The single
+// case that needs `strictNullChecks: false` flips `strict` off.
+func fixtureTsconfigTemplate(unstrict bool) string {
+	strict := "true"
+	if unstrict {
+		strict = "false"
+	}
+	return fmt.Sprintf(`{
   "compilerOptions": {
-    "strict": true, "target": "es2022", "module": "esnext",
+    "strict": %s, "target": "es2022", "module": "esnext",
     "moduleResolution": "bundler", "lib": ["es2022", "dom"],
     "skipLibCheck": true
   },
   "include": ["case.ts"]
-}`
+}`, strict)
+}
 
 func TestNoUnnecessaryBooleanLiteralCompare_TypescriptEslintCompatibility(t *testing.T) {
 	if testing.Short() {
@@ -39,7 +48,10 @@ func TestNoUnnecessaryBooleanLiteralCompare_TypescriptEslintCompatibility(t *tes
 		if v, ok := c.Options["allowComparingNullableBooleansToFalse"].(bool); ok {
 			opts.AllowComparingNullableBooleansToFalse = v
 		}
-		actual, runErr := runCase(t, c.Code, opts)
+		if v, ok := c.Options["allowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing"].(bool); ok {
+			opts.AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing = v
+		}
+		actual, runErr := runCase(t, c, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -65,13 +77,13 @@ func TestNoUnnecessaryBooleanLiteralCompare_TypescriptEslintCompatibility(t *tes
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string, opts nounnecessarybooleanliteralcompare.Options) (int, error) {
+func runCase(t *testing.T, c tselintcompat.Case, opts nounnecessarybooleanliteralcompare.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
 	tsc := filepath.Join(dir, "tsconfig.json")
-	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
-	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
+	os.WriteFile(tsc, []byte(fixtureTsconfigTemplate(c.Unstrict)), 0o644)
+	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(c.Code), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err

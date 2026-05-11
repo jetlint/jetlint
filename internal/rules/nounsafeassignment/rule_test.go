@@ -7,8 +7,8 @@ import (
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/engine"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounsafeassignment"
+	"github.com/jetlint/jetlint/internal/engine"
+	"github.com/jetlint/jetlint/internal/rules/nounsafeassignment"
 )
 
 func fixture(t *testing.T, files map[string]string) string {

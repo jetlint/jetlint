@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/tommymorgan/tsgolint/internal/tselintcompat"
+	"github.com/jetlint/jetlint/internal/tselintcompat"
 )
 
 func TestLoad_NoFloatingPromisesFixtureExtractsCases(t *testing.T) {

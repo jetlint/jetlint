@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tommymorgan/tsgolint/internal/transport"
+	"github.com/jetlint/jetlint/internal/transport"
 )
 
 func TestDaemonSocketPath_IsDeterministicForGivenTsconfig(t *testing.T) {
@@ -47,10 +47,10 @@ func TestDaemonSocketPath_LivesUnderTheRuntimeDirectory(t *testing.T) {
 	if !strings.HasPrefix(got, runtimeDir) {
 		t.Errorf("expected path under %s, got %s", runtimeDir, got)
 	}
-	// Sanity: it should also be under a tsgolint subdirectory so we don't
+	// Sanity: it should also be under a jetlint subdirectory so we don't
 	// pollute the runtime dir's root.
-	if filepath.Base(filepath.Dir(got)) != "tsgolint" {
-		t.Errorf("expected path under a tsgolint/ subdirectory, got %s", got)
+	if filepath.Base(filepath.Dir(got)) != "jetlint" {
+		t.Errorf("expected path under a jetlint/ subdirectory, got %s", got)
 	}
 }
 
@@ -69,8 +69,8 @@ func TestLogPath_LivesUnderTheStateDirectoryAndIsKeyedByProject(t *testing.T) {
 	if !strings.HasPrefix(a, stateDir) {
 		t.Errorf("expected log path under %s, got %s", stateDir, a)
 	}
-	if filepath.Base(filepath.Dir(a)) != "tsgolint" {
-		t.Errorf("expected log under tsgolint/ subdirectory, got %s", a)
+	if filepath.Base(filepath.Dir(a)) != "jetlint" {
+		t.Errorf("expected log under jetlint/ subdirectory, got %s", a)
 	}
 	if a == b {
 		t.Errorf("expected distinct log paths for distinct projects, got %s for both", a)

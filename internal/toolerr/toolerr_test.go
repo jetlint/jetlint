@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tommymorgan/tsgolint/internal/toolerr"
+	"github.com/jetlint/jetlint/internal/toolerr"
 )
 
 func TestError_ImplementsErrorInterface(t *testing.T) {

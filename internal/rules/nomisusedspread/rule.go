@@ -5,7 +5,7 @@ package nomisusedspread
 
 import (
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 const id = "no-misused-spread"
@@ -278,10 +278,8 @@ func setOrMapSymbol(t *wrapperchecker.Type) string {
 }
 
 // hasIteratorMember reports whether t exposes a [Symbol.iterator] or
-// [Symbol.asyncIterator] member directly. typescript-go surfaces those
-// as property names containing the substring "@iterator" /
-// "@asyncIterator". Skip array-like types — those are handled by the
-// arraySpread path.
+// [Symbol.asyncIterator] member. Skip array-like types — those are
+// handled by the arraySpread path.
 func hasIteratorMember(t *wrapperchecker.Type) bool {
 	if t == nil {
 		return false
@@ -289,6 +287,12 @@ func hasIteratorMember(t *wrapperchecker.Type) bool {
 	if t.IsArrayLikeType() {
 		return false
 	}
+	if t.HasSymbolIterator() {
+		return true
+	}
+	// Fall back to scanning property names for typescript-go's internal
+	// `__@iterator@N` / `__@asyncIterator@N` form — the public checker
+	// only exposes Symbol.iterator, not Symbol.asyncIterator.
 	for _, name := range t.PropertyNames() {
 		if containsSubstring(name, "@iterator") || containsSubstring(name, "@asyncIterator") {
 			return true

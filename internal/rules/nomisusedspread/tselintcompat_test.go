@@ -3,13 +3,14 @@ package nomisusedspread_test
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/engine"
-	"github.com/tommymorgan/tsgolint/internal/rules/nomisusedspread"
-	"github.com/tommymorgan/tsgolint/internal/tselintcompat"
+	"github.com/jetlint/jetlint/internal/engine"
+	"github.com/jetlint/jetlint/internal/rules/nomisusedspread"
+	"github.com/jetlint/jetlint/internal/tselintcompat"
 )
 
 const fixtureTsconfigBody = `{
@@ -74,12 +75,32 @@ func TestNoMisusedSpread_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
+// declareModulePattern matches `declare module '<name>' { ... }`
+// blocks. Used to lift ambient module declarations into stub
+// .d.ts files under node_modules/<name>/ so subsequent `import
+// { Foo } from '<name>'` statements in the same case can resolve.
+var declareModulePattern = regexp.MustCompile(`(?s)declare\s+module\s+['"]([^'"]+)['"]\s*\{(.*?)\n\s*\}`)
+
 func runCase(t *testing.T, code string, opts nomisusedspread.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
 	tsc := filepath.Join(dir, "tsconfig.json")
 	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
+	// Extract ambient `declare module '<name>'` blocks into separate
+	// stub package files so `import` statements that reference them
+	// resolve. Once moved out, the in-case block is removed.
+	code = declareModulePattern.ReplaceAllStringFunc(code, func(match string) string {
+		groups := declareModulePattern.FindStringSubmatch(match)
+		if len(groups) != 3 {
+			return match
+		}
+		name, body := groups[1], groups[2]
+		pkgDir := filepath.Join(dir, "node_modules", name)
+		os.MkdirAll(pkgDir, 0o755)
+		os.WriteFile(filepath.Join(pkgDir, "index.d.ts"), []byte(body+"\n"), 0o644)
+		return ""
+	})
 	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {

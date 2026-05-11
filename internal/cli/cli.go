@@ -1,4 +1,4 @@
-// Package cli implements the command-line interface for the tsgolint binary.
+// Package cli implements the command-line interface for the jetlint binary.
 // Keeping it out of package main lets tests exercise Run in-process without
 // a build step.
 package cli
@@ -23,85 +23,85 @@ import (
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/config"
-	"github.com/tommymorgan/tsgolint/internal/daemon"
-	"github.com/tommymorgan/tsgolint/internal/engine"
-	"github.com/tommymorgan/tsgolint/internal/format"
-	"github.com/tommymorgan/tsgolint/internal/project"
-	"github.com/tommymorgan/tsgolint/internal/rules"
-	"github.com/tommymorgan/tsgolint/internal/rules/awaitthenable"
-	"github.com/tommymorgan/tsgolint/internal/rules/consistentreturn"
-	"github.com/tommymorgan/tsgolint/internal/rules/consistenttypeexports"
-	"github.com/tommymorgan/tsgolint/internal/rules/dotnotation"
-	"github.com/tommymorgan/tsgolint/internal/rules/namingconvention"
-	"github.com/tommymorgan/tsgolint/internal/rules/noarraydelete"
-	"github.com/tommymorgan/tsgolint/internal/rules/nobasetotostring"
-	"github.com/tommymorgan/tsgolint/internal/rules/noconfusingvoidexpression"
-	"github.com/tommymorgan/tsgolint/internal/rules/nodeprecated"
-	"github.com/tommymorgan/tsgolint/internal/rules/noduplicatetypeconstituents"
-	"github.com/tommymorgan/tsgolint/internal/rules/nofloatingpromises"
-	"github.com/tommymorgan/tsgolint/internal/rules/noforinarray"
-	"github.com/tommymorgan/tsgolint/internal/rules/noimpliedeval"
-	"github.com/tommymorgan/tsgolint/internal/rules/nomeaninglessvoidoperator"
-	"github.com/tommymorgan/tsgolint/internal/rules/nomisusedpromises"
-	"github.com/tommymorgan/tsgolint/internal/rules/nomisusedspread"
-	"github.com/tommymorgan/tsgolint/internal/rules/nomixedenums"
-	"github.com/tommymorgan/tsgolint/internal/rules/nonnullabletypeassertionstyle"
-	"github.com/tommymorgan/tsgolint/internal/rules/noredundanttypeconstituents"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarybooleanliteralcompare"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarycondition"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessaryqualifier"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarytemplateexpression"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarytypearguments"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarytypeassertion"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarytypeconversion"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarytypeparameters"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounsafeargument"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounsafeassignment"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounsafecall"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounsafeenumcomparison"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounsafememberaccess"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounsafereturn"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounsafetypeassertion"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounsafeunaryminus"
-	"github.com/tommymorgan/tsgolint/internal/rules/nouselessdefaultassignment"
-	"github.com/tommymorgan/tsgolint/internal/rules/onlythrowerror"
-	"github.com/tommymorgan/tsgolint/internal/rules/preferdestructuring"
-	"github.com/tommymorgan/tsgolint/internal/rules/preferfind"
-	"github.com/tommymorgan/tsgolint/internal/rules/preferincludes"
-	"github.com/tommymorgan/tsgolint/internal/rules/prefernullishcoalescing"
-	"github.com/tommymorgan/tsgolint/internal/rules/preferoptionalchain"
-	"github.com/tommymorgan/tsgolint/internal/rules/preferpromiserejecterrors"
-	"github.com/tommymorgan/tsgolint/internal/rules/preferreadonly"
-	"github.com/tommymorgan/tsgolint/internal/rules/preferreadonlyparametertypes"
-	"github.com/tommymorgan/tsgolint/internal/rules/preferreducetypeparameter"
-	"github.com/tommymorgan/tsgolint/internal/rules/preferregexpexec"
-	"github.com/tommymorgan/tsgolint/internal/rules/preferreturnthistype"
-	"github.com/tommymorgan/tsgolint/internal/rules/preferstringstartsendswith"
-	"github.com/tommymorgan/tsgolint/internal/rules/promisefunctionasync"
-	"github.com/tommymorgan/tsgolint/internal/rules/relatedgettersetterpairs"
-	"github.com/tommymorgan/tsgolint/internal/rules/requirearraysortcompare"
-	"github.com/tommymorgan/tsgolint/internal/rules/requireawait"
-	"github.com/tommymorgan/tsgolint/internal/rules/restrictplusoperands"
-	"github.com/tommymorgan/tsgolint/internal/rules/restricttemplateexpressions"
-	"github.com/tommymorgan/tsgolint/internal/rules/returnawait"
-	"github.com/tommymorgan/tsgolint/internal/rules/strictbooleanexpressions"
-	"github.com/tommymorgan/tsgolint/internal/rules/strictvoidreturn"
-	"github.com/tommymorgan/tsgolint/internal/rules/switchexhaustivenesscheck"
-	"github.com/tommymorgan/tsgolint/internal/rules/unboundmethod"
-	"github.com/tommymorgan/tsgolint/internal/rules/useunknownincatchcallbackvariable"
-	"github.com/tommymorgan/tsgolint/internal/toolerr"
-	"github.com/tommymorgan/tsgolint/internal/transport"
+	"github.com/jetlint/jetlint/internal/config"
+	"github.com/jetlint/jetlint/internal/daemon"
+	"github.com/jetlint/jetlint/internal/engine"
+	"github.com/jetlint/jetlint/internal/format"
+	"github.com/jetlint/jetlint/internal/project"
+	"github.com/jetlint/jetlint/internal/rules"
+	"github.com/jetlint/jetlint/internal/rules/awaitthenable"
+	"github.com/jetlint/jetlint/internal/rules/consistentreturn"
+	"github.com/jetlint/jetlint/internal/rules/consistenttypeexports"
+	"github.com/jetlint/jetlint/internal/rules/dotnotation"
+	"github.com/jetlint/jetlint/internal/rules/namingconvention"
+	"github.com/jetlint/jetlint/internal/rules/noarraydelete"
+	"github.com/jetlint/jetlint/internal/rules/nobasetotostring"
+	"github.com/jetlint/jetlint/internal/rules/noconfusingvoidexpression"
+	"github.com/jetlint/jetlint/internal/rules/nodeprecated"
+	"github.com/jetlint/jetlint/internal/rules/noduplicatetypeconstituents"
+	"github.com/jetlint/jetlint/internal/rules/nofloatingpromises"
+	"github.com/jetlint/jetlint/internal/rules/noforinarray"
+	"github.com/jetlint/jetlint/internal/rules/noimpliedeval"
+	"github.com/jetlint/jetlint/internal/rules/nomeaninglessvoidoperator"
+	"github.com/jetlint/jetlint/internal/rules/nomisusedpromises"
+	"github.com/jetlint/jetlint/internal/rules/nomisusedspread"
+	"github.com/jetlint/jetlint/internal/rules/nomixedenums"
+	"github.com/jetlint/jetlint/internal/rules/nonnullabletypeassertionstyle"
+	"github.com/jetlint/jetlint/internal/rules/noredundanttypeconstituents"
+	"github.com/jetlint/jetlint/internal/rules/nounnecessarybooleanliteralcompare"
+	"github.com/jetlint/jetlint/internal/rules/nounnecessarycondition"
+	"github.com/jetlint/jetlint/internal/rules/nounnecessaryqualifier"
+	"github.com/jetlint/jetlint/internal/rules/nounnecessarytemplateexpression"
+	"github.com/jetlint/jetlint/internal/rules/nounnecessarytypearguments"
+	"github.com/jetlint/jetlint/internal/rules/nounnecessarytypeassertion"
+	"github.com/jetlint/jetlint/internal/rules/nounnecessarytypeconversion"
+	"github.com/jetlint/jetlint/internal/rules/nounnecessarytypeparameters"
+	"github.com/jetlint/jetlint/internal/rules/nounsafeargument"
+	"github.com/jetlint/jetlint/internal/rules/nounsafeassignment"
+	"github.com/jetlint/jetlint/internal/rules/nounsafecall"
+	"github.com/jetlint/jetlint/internal/rules/nounsafeenumcomparison"
+	"github.com/jetlint/jetlint/internal/rules/nounsafememberaccess"
+	"github.com/jetlint/jetlint/internal/rules/nounsafereturn"
+	"github.com/jetlint/jetlint/internal/rules/nounsafetypeassertion"
+	"github.com/jetlint/jetlint/internal/rules/nounsafeunaryminus"
+	"github.com/jetlint/jetlint/internal/rules/nouselessdefaultassignment"
+	"github.com/jetlint/jetlint/internal/rules/onlythrowerror"
+	"github.com/jetlint/jetlint/internal/rules/preferdestructuring"
+	"github.com/jetlint/jetlint/internal/rules/preferfind"
+	"github.com/jetlint/jetlint/internal/rules/preferincludes"
+	"github.com/jetlint/jetlint/internal/rules/prefernullishcoalescing"
+	"github.com/jetlint/jetlint/internal/rules/preferoptionalchain"
+	"github.com/jetlint/jetlint/internal/rules/preferpromiserejecterrors"
+	"github.com/jetlint/jetlint/internal/rules/preferreadonly"
+	"github.com/jetlint/jetlint/internal/rules/preferreadonlyparametertypes"
+	"github.com/jetlint/jetlint/internal/rules/preferreducetypeparameter"
+	"github.com/jetlint/jetlint/internal/rules/preferregexpexec"
+	"github.com/jetlint/jetlint/internal/rules/preferreturnthistype"
+	"github.com/jetlint/jetlint/internal/rules/preferstringstartsendswith"
+	"github.com/jetlint/jetlint/internal/rules/promisefunctionasync"
+	"github.com/jetlint/jetlint/internal/rules/relatedgettersetterpairs"
+	"github.com/jetlint/jetlint/internal/rules/requirearraysortcompare"
+	"github.com/jetlint/jetlint/internal/rules/requireawait"
+	"github.com/jetlint/jetlint/internal/rules/restrictplusoperands"
+	"github.com/jetlint/jetlint/internal/rules/restricttemplateexpressions"
+	"github.com/jetlint/jetlint/internal/rules/returnawait"
+	"github.com/jetlint/jetlint/internal/rules/strictbooleanexpressions"
+	"github.com/jetlint/jetlint/internal/rules/strictvoidreturn"
+	"github.com/jetlint/jetlint/internal/rules/switchexhaustivenesscheck"
+	"github.com/jetlint/jetlint/internal/rules/unboundmethod"
+	"github.com/jetlint/jetlint/internal/rules/useunknownincatchcallbackvariable"
+	"github.com/jetlint/jetlint/internal/toolerr"
+	"github.com/jetlint/jetlint/internal/transport"
 )
 
 // Version is the linter's reported version. Build pipelines can override
-// the constant via -ldflags "-X 'github.com/tommymorgan/tsgolint/internal/cli.Version=...'".
+// the constant via -ldflags "-X 'github.com/jetlint/jetlint/internal/cli.Version=...'".
 var Version = "0.0.0-dev"
 
-const usage = `tsgolint - fast, type-aware TypeScript linter
+const usage = `jetlint - fast, type-aware TypeScript linter
 
 Usage:
-    tsgolint [flags] [files...]
+    jetlint [flags] [files...]
 
 Flags:
     --version          Print the linter version and exit.
@@ -113,7 +113,7 @@ Flags:
                        rdjson (reviewdog inline PR comments).
     --max-diagnostics <n>
                        Cap on rendered diagnostics for the human format.
-                       0 disables truncation. Overrides .tsgolintrc.json's
+                       0 disables truncation. Overrides .jetlintrc.json's
                        maxDiagnostics value. Default: 20 (matches biome).
     --only <rule-id>   Restrict execution to the named rule. Repeatable
                        to allow a small set: --only no-floating-promises
@@ -135,7 +135,7 @@ const daemonIdleDefault = 10 * time.Minute
 // diagnostics); stderr receives error output (parse failures, tooling
 // errors).
 func Run(args []string, stdout, stderr io.Writer) int {
-	fs := flag.NewFlagSet("tsgolint", flag.ContinueOnError)
+	fs := flag.NewFlagSet("jetlint", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { fmt.Fprint(stderr, usage) }
 
@@ -226,16 +226,16 @@ func readFileList(path string) ([]string, error) {
 func runDaemon(socketPath string, stderr io.Writer) int {
 	srv, err := daemon.NewServer(socketPath, daemonIdleDefault)
 	if err != nil {
-		fmt.Fprintf(stderr, "tsgolint daemon: start failed: %v\n", err)
+		fmt.Fprintf(stderr, "jetlint daemon: start failed: %v\n", err)
 		return 2
 	}
-	fmt.Fprintf(stderr, "tsgolint daemon: started on %s, idle timeout %s\n",
+	fmt.Fprintf(stderr, "jetlint daemon: started on %s, idle timeout %s\n",
 		socketPath, daemonIdleDefault)
 	if err := srv.Run(context.Background()); err != nil {
-		fmt.Fprintf(stderr, "tsgolint daemon: run failed: %v\n", err)
+		fmt.Fprintf(stderr, "jetlint daemon: run failed: %v\n", err)
 		return 2
 	}
-	fmt.Fprintf(stderr, "tsgolint daemon: shut down cleanly\n")
+	fmt.Fprintf(stderr, "jetlint daemon: shut down cleanly\n")
 	return 0
 }
 
@@ -414,7 +414,7 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 	if prog.HasTypeErrors() {
 		diagnostics = append([]wrapperlint.Diagnostic{{
 			Range:    wrapperlint.SourceRange{File: tsconfig, StartLine: 1, StartColumn: 1, EndLine: 1, EndColumn: 1},
-			RuleID:   "tsgolint/program-has-type-errors",
+			RuleID:   "jetlint/program-has-type-errors",
 			Severity: wrapperlint.SeverityWarning,
 			Message:  "the TypeScript program has type errors; lint diagnostics may be unreliable until those are resolved",
 		}}, diagnostics...)
@@ -562,16 +562,16 @@ func hasError(d []wrapperlint.Diagnostic) bool {
 
 // emitToolError writes a tooling failure to stderr in the appropriate
 // shape for the given format. JSON mode emits a single-line JSON object;
-// human mode emits a "tsgolint: <message>" line.
+// human mode emits a "jetlint: <message>" line.
 func emitToolError(stderr io.Writer, formatName string, e *toolerr.Error) {
 	if formatName == "json" {
 		_ = e.WriteJSON(stderr)
 		return
 	}
 	if e.Path != "" {
-		fmt.Fprintf(stderr, "tsgolint: %s: %s\n", e.Path, e.Message)
+		fmt.Fprintf(stderr, "jetlint: %s: %s\n", e.Path, e.Message)
 	} else {
-		fmt.Fprintf(stderr, "tsgolint: %s\n", e.Message)
+		fmt.Fprintf(stderr, "jetlint: %s\n", e.Message)
 	}
 }
 

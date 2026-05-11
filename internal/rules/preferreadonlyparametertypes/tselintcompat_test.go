@@ -7,9 +7,9 @@ import (
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/engine"
-	"github.com/tommymorgan/tsgolint/internal/rules/preferreadonlyparametertypes"
-	"github.com/tommymorgan/tsgolint/internal/tselintcompat"
+	"github.com/jetlint/jetlint/internal/engine"
+	"github.com/jetlint/jetlint/internal/rules/preferreadonlyparametertypes"
+	"github.com/jetlint/jetlint/internal/tselintcompat"
 )
 
 const fixtureTsconfigBody = `{
@@ -48,7 +48,9 @@ func TestPreferReadonlyParameterTypes_TypescriptEslintCompatibility(t *testing.T
 		}
 		failed++
 		valid := "invalid"
-		if c.Valid { valid = "valid" }
+		if c.Valid {
+			valid = "valid"
+		}
 		t.Logf("FAIL [%s #%d] exp=%d act=%d hasOpts=%v\n%s\n", valid, c.SourceIndex, expected, actual, c.HasOptions, c.Code)
 	}
 	total := passed + failed
@@ -74,14 +76,33 @@ func optsFromCase(c tselintcompat.Case) preferreadonlyparametertypes.Options {
 		opts.CheckParameterProperties = v
 	}
 	if raw, ok := c.Options["allow"].([]any); ok {
-		opts.AllowNames = map[string]struct{}{}
+		opts.Allow = nil
 		for _, e := range raw {
 			switch v := e.(type) {
 			case string:
-				opts.AllowNames[v] = struct{}{}
+				opts.Allow = append(opts.Allow, preferreadonlyparametertypes.AllowSpec{Name: v})
 			case map[string]any:
-				if name, ok := v["name"].(string); ok {
-					opts.AllowNames[name] = struct{}{}
+				from, _ := v["from"].(string)
+				pkg, _ := v["package"].(string)
+				var names []string
+				switch n := v["name"].(type) {
+				case string:
+					if n != "" {
+						names = []string{n}
+					}
+				case []any:
+					for _, s := range n {
+						if str, ok := s.(string); ok && str != "" {
+							names = append(names, str)
+						}
+					}
+				}
+				for _, name := range names {
+					opts.Allow = append(opts.Allow, preferreadonlyparametertypes.AllowSpec{
+						Name: name,
+						From: from,
+						Pkg:  pkg,
+					})
 				}
 			}
 		}

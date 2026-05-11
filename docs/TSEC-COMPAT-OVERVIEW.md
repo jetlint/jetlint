@@ -5,7 +5,7 @@ fixtures. Each rule has a vendored fixture under
 `testdata/typescript-eslint/<rule>.test.ts` and a compatibility harness
 under `internal/rules/<pkg>/tselintcompat_test.go`.
 
-**Aggregate: 6091/6193 cases pass (98.4%).**
+**Aggregate: 6193/6193 cases pass (100.0%).**
 
 Run any single rule's harness with:
 
@@ -64,30 +64,20 @@ go -C ~/src/lint test -count=1 -run TypescriptEslintCompatibility -v ./internal/
 | prefer-nullish-coalescing | 617/617 |
 | prefer-destructuring | 92/92 |
 | strict-void-return | 210/210 |
-
-## ≥ 90%
-
-| Rule | Score | Notes |
-|---|---:|---|
-| no-misused-spread | 127/128 (99.2%) | impl |
-| dot-notation | 60/61 (98.4%) | impl |
-| no-unnecessary-boolean-literal-compare | 44/45 (97.8%) | 1 case needs `strictNullChecks: false` per-case |
-| no-unnecessary-qualifier | 16/17 (94.1%) | impl |
-| no-deprecated | 249/262 (95.0%) | cross-module re-exports, JSX intrinsic attrs |
-| no-useless-default-assignment | 79/83 (95.2%) | noStrictNullCheck variant + complex callbacks |
-| switch-exhaustiveness-check | 100/104 (96.2%) | defaultCaseCommentPattern + bug fix |
-| prefer-readonly-parameter-types | 119/130 (91.5%) | TypeOrValueSpecifier qualifiers + Readonly<T> wrapper |
-| consistent-type-exports | 43/47 (91.5%) | export-all + namespace |
-| no-unnecessary-type-assertion | 210/223 (94.2%) | flow analysis, complex contextual narrowing |
-| no-unnecessary-condition | 281/296 (94.9%) | complex chain narrowing, keyof/generic widening |
-| strict-boolean-expressions | 208/214 (97.2%) | spread args, complex overload signatures |
-| no-unnecessary-type-parameters | 155/160 (96.9%) | inferred return type inference |
-
-## 70 – 90%
-
-| Rule | Score | Notes |
-|---|---:|---|
-| naming-convention | 65/88 (73.9%) | unused/requiresQuotes modifiers, export-{}-block tracking |
+| naming-convention | 88/88 |
+| no-misused-spread | 128/128 |
+| no-unnecessary-type-assertion | 223/223 |
+| dot-notation | 61/61 |
+| no-unnecessary-qualifier | 17/17 |
+| no-unnecessary-boolean-literal-compare | 45/45 |
+| strict-boolean-expressions | 214/214 |
+| prefer-readonly-parameter-types | 130/130 |
+| no-unnecessary-condition | 296/296 |
+| no-unnecessary-type-parameters | 160/160 |
+| consistent-type-exports | 47/47 |
+| no-deprecated | 262/262 |
+| no-useless-default-assignment | 83/83 |
+| switch-exhaustiveness-check | 104/104 |
 
 ## Per-rule docs
 

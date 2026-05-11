@@ -13,7 +13,7 @@ package nounnecessarytypeparameters
 
 import (
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 const id = "no-unnecessary-type-parameters"
@@ -46,12 +46,49 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if len(tparams) == 0 {
 		return
 	}
+	// Only fall back to type-checker-based detection when the function
+	// has no explicit return-type annotation. With an annotation, the
+	// AST walk has already counted every reference; bumping via the
+	// inferred type would double-count the explicit T and let
+	// genuinely single-use parameters slip through.
+	hasExplicitReturn := returnTypeAnnotation(n) != nil
+	var rtMentions map[string]bool
+	rtCheck := func(name string) bool {
+		if hasExplicitReturn {
+			return false
+		}
+		if rtMentions == nil {
+			rtMentions = map[string]bool{}
+			sig := ctx.Checker().SignatureOfDeclaration(n)
+			if sig != nil {
+				if rt := sig.ReturnType(); rt != nil {
+					for _, tp := range tparams {
+						pn := typeParameterName(tp)
+						if pn == "" {
+							continue
+						}
+						seen := map[string]bool{}
+						if typeMentionsName(rt, pn, seen) {
+							rtMentions[pn] = true
+						}
+					}
+				}
+			}
+		}
+		return rtMentions[name]
+	}
 	for _, tp := range tparams {
 		name := typeParameterName(tp)
 		if name == "" {
 			continue
 		}
 		uses := countTypeParameterUsesInSignature(n, tp, name)
+		if uses <= 1 && rtCheck(name) {
+			uses++
+		}
+		if uses <= 1 {
+			uses += countTypeParameterUsesInBodySignatures(n, name)
+		}
 		if uses > 1 {
 			continue
 		}
@@ -701,32 +738,233 @@ func parameterIdentifier(p *wrapperchecker.Node) string {
 }
 
 // returnTypeAnnotation returns the explicit return-type-annotation node
-// of a function-like signature, or nil when inferred or absent. The
-// return type is the type-shaped child that appears after the
-// parameter list and before any function body.
+// of a function-like signature, or nil when inferred or absent.
+// Delegates to the wrapper's FunctionReturnTypeAnnotation accessor,
+// which reads the AST's dedicated return-type slot — that's
+// significantly more reliable than guessing from child kinds, which
+// confuses an arrow function's expression body for a return type.
 func returnTypeAnnotation(fn *wrapperchecker.Node) *wrapperchecker.Node {
-	var found *wrapperchecker.Node
-	sawParams := false
+	if fn == nil {
+		return nil
+	}
+	return fn.FunctionReturnTypeAnnotation()
+}
+
+// countTypeParameterUsesInBodySignatures walks the function body
+// looking for nested function-like nodes that are themselves part of
+// the *return value* — only those contribute to the outer's signature
+// from the caller's perspective. Counts references to `name` in
+// their parameter and return-type annotations; nested functions that
+// re-declare the same type-parameter name shadow the outer
+// declaration and are skipped wholesale.
+//
+// For arrow functions with an expression body, the body itself is
+// the returned value, so we descend through it. For block-bodied
+// functions, we descend only through `return X` statements.
+func countTypeParameterUsesInBodySignatures(fn *wrapperchecker.Node, name string) int {
+	if fn == nil {
+		return 0
+	}
+	body := fn.FunctionBody()
+	if body == nil {
+		return 0
+	}
+	count := 0
+	var descend func(n *wrapperchecker.Node)
+	descend = func(n *wrapperchecker.Node) {
+		if n == nil {
+			return
+		}
+		switch n.Kind() {
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindFunctionType,
+			wrapperchecker.KindConstructorType,
+			wrapperchecker.KindCallSignature,
+			wrapperchecker.KindMethodSignature,
+			wrapperchecker.KindConstructSignature:
+			if nestedShadowsName(n, name) {
+				return
+			}
+			countInNestedSignatureAnnotations(n, name, &count)
+			// Don't recurse into the inner function's body — only its
+			// signature contributes to the outer return's shape.
+			return
+		}
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			descend(c)
+			return false
+		})
+	}
+	if body.Kind() == wrapperchecker.KindBlock {
+		// Block-bodied function: only `return X` paths count.
+		var walkBlock func(n *wrapperchecker.Node)
+		walkBlock = func(n *wrapperchecker.Node) {
+			if n == nil {
+				return
+			}
+			if n.Kind() == wrapperchecker.KindReturnStatement {
+				n.ForEachChild(func(c *wrapperchecker.Node) bool {
+					descend(c)
+					return false
+				})
+				return
+			}
+			// Don't descend into nested function definitions when
+			// hunting for return statements — each nested function
+			// owns its own returns.
+			switch n.Kind() {
+			case wrapperchecker.KindFunctionDeclaration,
+				wrapperchecker.KindFunctionExpression,
+				wrapperchecker.KindArrowFunction,
+				wrapperchecker.KindMethodDeclaration:
+				return
+			}
+			n.ForEachChild(func(c *wrapperchecker.Node) bool {
+				walkBlock(c)
+				return false
+			})
+		}
+		walkBlock(body)
+	} else {
+		// Expression-bodied arrow: the body IS the returned value.
+		descend(body)
+	}
+	return count
+}
+
+// nestedShadowsName reports whether a function-like node declares a
+// type parameter with the same name as `name` — in which case the
+// outer parameter is shadowed and any reference inside the nested
+// signature refers to the nested declaration.
+func nestedShadowsName(fn *wrapperchecker.Node, name string) bool {
+	for _, tp := range typeParametersOf(fn) {
+		if typeParameterName(tp) == name {
+			return true
+		}
+	}
+	return false
+}
+
+// countInNestedSignatureAnnotations counts identifier references with
+// the given name across the parameter annotations and return-type
+// annotation of a nested function-like node.
+func countInNestedSignatureAnnotations(fn *wrapperchecker.Node, name string, count *int) {
 	fn.ForEachChild(func(c *wrapperchecker.Node) bool {
-		switch c.Kind() {
-		case wrapperchecker.KindIdentifier,
-			wrapperchecker.KindTypeParameter,
-			wrapperchecker.KindParameter:
-			sawParams = true
-			return false
-		case wrapperchecker.KindBlock:
-			return true
-		}
-		if !sawParams {
-			return false
-		}
-		if isTypeNodeKind(c.Kind()) {
-			found = c
-			return true
+		if c.Kind() == wrapperchecker.KindParameter {
+			if annot := c.ParameterTypeAnnotation(); annot != nil {
+				countIdentInTypeNode(annot, name, count)
+			}
 		}
 		return false
 	})
-	return found
+	if rt := fn.FunctionReturnTypeAnnotation(); rt != nil {
+		countIdentInTypeNode(rt, name, count)
+	}
+}
+
+// countIdentInTypeNode walks a TypeNode subtree and increments
+// `*count` for every Identifier whose text matches `name`.
+func countIdentInTypeNode(n *wrapperchecker.Node, name string, count *int) {
+	if n == nil {
+		return
+	}
+	if n.Kind() == wrapperchecker.KindIdentifier && n.LiteralText() == name {
+		*count++
+		return
+	}
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		countIdentInTypeNode(c, name, count)
+		return false
+	})
+}
+
+// typeMentionsName walks a wrapped Type recursively and returns true
+// once it finds a type-parameter whose declared identifier matches
+// `name`. The `seen` map prevents infinite recursion through self-
+// referential aliases (`type T = { [P in keyof T]: T }`). The String()
+// representation is used for de-duplication: two distinct Type values
+// that print the same name describe the same shape for our purposes.
+func typeMentionsName(t *wrapperchecker.Type, name string, seen map[string]bool) bool {
+	if t == nil {
+		return false
+	}
+	key := t.String()
+	if seen[key] {
+		return false
+	}
+	seen[key] = true
+	if t.IsTypeParameter() && t.SymbolName() == name {
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if typeMentionsName(m, name, seen) {
+				return true
+			}
+		}
+		return false
+	}
+	if t.IsIntersection() {
+		for _, m := range t.IntersectionMembers() {
+			if typeMentionsName(m, name, seen) {
+				return true
+			}
+		}
+		return false
+	}
+	for _, a := range t.TypeArguments() {
+		if typeMentionsName(a, name, seen) {
+			return true
+		}
+	}
+	// Falls back to a textual scan: instantiated mapped/conditional
+	// types, template literal types, and operator types (`keyof X`)
+	// don't always surface their substructure through our wrapper
+	// APIs, but their String() form spells the type parameter out as
+	// an identifier — bordered by characters that aren't part of an
+	// identifier in any of those positions.
+	return identifierAppearsInTypeString(key, name)
+}
+
+// identifierAppearsInTypeString reports whether `name` appears in
+// `s` as a standalone identifier (not as a fragment of a larger
+// identifier like "T" inside "Test"). Identifier characters are the
+// usual ASCII letters/digits/underscore plus `$`; everything else
+// counts as a boundary.
+func identifierAppearsInTypeString(s, name string) bool {
+	if name == "" {
+		return false
+	}
+	for i := 0; i+len(name) <= len(s); i++ {
+		if s[i:i+len(name)] != name {
+			continue
+		}
+		if i > 0 && isIdentChar(s[i-1]) {
+			continue
+		}
+		if i+len(name) < len(s) && isIdentChar(s[i+len(name)]) {
+			continue
+		}
+		return true
+	}
+	return false
+}
+
+func isIdentChar(b byte) bool {
+	switch {
+	case b >= 'a' && b <= 'z':
+		return true
+	case b >= 'A' && b <= 'Z':
+		return true
+	case b >= '0' && b <= '9':
+		return true
+	case b == '_' || b == '$':
+		return true
+	}
+	return false
 }
 
 // isTypeNodeKind reports whether kind names a type-form node. Used to

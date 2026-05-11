@@ -1,25 +1,41 @@
 package nounnecessarycondition_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/engine"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarycondition"
-	"github.com/tommymorgan/tsgolint/internal/tselintcompat"
+	"github.com/jetlint/jetlint/internal/engine"
+	"github.com/jetlint/jetlint/internal/rules/nounnecessarycondition"
+	"github.com/jetlint/jetlint/internal/tselintcompat"
 )
 
-const fixtureTsconfigBody = `{
+// fixtureTsconfigTemplate generates the per-case tsconfig. Cases
+// opt into `noUncheckedIndexedAccess` or the unstrict mode by their
+// `languageOptions` text — the harness flips the corresponding
+// compiler options when those markers appear.
+func fixtureTsconfigTemplate(noUnchecked, unstrict bool) string {
+	strict := "true"
+	extraOpts := ""
+	if noUnchecked {
+		extraOpts += `, "noUncheckedIndexedAccess": true`
+	}
+	if unstrict {
+		strict = "false"
+	}
+	return fmt.Sprintf(`{
   "compilerOptions": {
-    "strict": true, "target": "es2022", "module": "esnext",
+    "strict": %s, "target": "es2022", "module": "esnext",
     "moduleResolution": "bundler", "lib": ["es2022", "dom"],
-    "skipLibCheck": true
+    "skipLibCheck": true%s
   },
   "include": ["case.ts"]
-}`
+}`, strict, extraOpts)
+}
 
 func TestNoUnnecessaryCondition_TypescriptEslintCompatibility(t *testing.T) {
 	if testing.Short() {
@@ -53,7 +69,10 @@ func TestNoUnnecessaryCondition_TypescriptEslintCompatibility(t *testing.T) {
 		if v, ok := c.Options["checkTypePredicates"].(bool); ok {
 			opts.CheckTypePredicates = v
 		}
-		actual, runErr := runCase(t, c.Code, opts)
+		if v, ok := c.Options["allowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing"].(bool); ok {
+			opts.AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing = v
+		}
+		actual, runErr := runCase(t, c, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -81,13 +100,15 @@ func TestNoUnnecessaryCondition_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string, opts nounnecessarycondition.Options) (int, error) {
+func runCase(t *testing.T, c tselintcompat.Case, opts nounnecessarycondition.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
+	noUnchecked := strings.Contains(strings.ToLower(c.LanguageOptionsText), strings.ToLower("noUncheckedIndexedAccess"))
+	unstrict := c.Unstrict
 	tsc := filepath.Join(dir, "tsconfig.json")
-	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
-	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
+	os.WriteFile(tsc, []byte(fixtureTsconfigTemplate(noUnchecked, unstrict)), 0o644)
+	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(c.Code), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err

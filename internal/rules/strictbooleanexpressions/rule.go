@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 const id = "strict-boolean-expressions"
@@ -77,6 +77,10 @@ func OptionsFromJSON(raw json.RawMessage) (Options, error) {
 			if err := json.Unmarshal(val, &out.AllowAny); err != nil {
 				return Options{}, err
 			}
+		case "allowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing":
+			if err := json.Unmarshal(val, &out.AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing); err != nil {
+				return Options{}, err
+			}
 		}
 	}
 	return out, nil
@@ -91,6 +95,7 @@ func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindSourceFile:            r.visitSourceFile,
 		wrapperchecker.KindIfStatement:           r.visitTestPosition,
 		wrapperchecker.KindConditionalExpression: r.visitTestPosition,
 		wrapperchecker.KindWhileStatement:        r.visitTestPosition,
@@ -102,10 +107,40 @@ func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	}
 }
 
+// visitSourceFile emits a per-file `noStrictNullCheck` advisory when
+// the program lacks strictNullChecks and the caller hasn't opted in
+// via `allowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing`. The
+// classification of nullable vs plain types this rule performs relies
+// on strictNullChecks; without it, many results are misleading.
+func (r *rule) visitSourceFile(ctx *engine.Context, n *wrapperchecker.Node) {
+	if r.opts.AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing {
+		return
+	}
+	if ctx.Program().HasStrictNullChecks() {
+		return
+	}
+	ctx.Report(n, "this rule requires `strictNullChecks` to be enabled; otherwise nullable types cannot be reliably distinguished")
+}
+
+// shouldSkipForOptIn reports whether the rule should stop emitting
+// regular diagnostics for this program. When strictNullChecks is off
+// and the user has explicitly opted in via
+// `allowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing: true`,
+// they're declaring they understand the analysis is unreliable; we
+// defer to inline suppressions rather than producing reports the rule
+// would normally make.
+func (r *rule) shouldSkipForOptIn(ctx *engine.Context) bool {
+	return r.opts.AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing &&
+		!ctx.Program().HasStrictNullChecks()
+}
+
 // visitCall checks call expressions for positions that semantically
 // coerce a value to boolean — assertion arguments, array-predicate
 // callback returns.
 func (r *rule) visitCall(ctx *engine.Context, n *wrapperchecker.Node) {
+	if r.shouldSkipForOptIn(ctx) {
+		return
+	}
 	r.checkAssertionArgument(ctx, n)
 	r.checkArrayPredicateCallback(ctx, n)
 }
@@ -169,6 +204,14 @@ func (r *rule) checkAssertionArgument(ctx *engine.Context, n *wrapperchecker.Nod
 	if idx >= len(args) {
 		return
 	}
+	// A spread argument at or before the asserts-parameter index makes
+	// positional alignment ambiguous — we cannot know which call-site
+	// argument the asserted parameter receives.
+	for i := 0; i <= idx && i < len(args); i++ {
+		if args[i].Kind() == wrapperchecker.KindSpreadElement {
+			return
+		}
+	}
 	r.checkBoolean(ctx, args[idx])
 }
 
@@ -224,6 +267,13 @@ func (r *rule) checkArrayPredicateCallback(ctx *engine.Context, n *wrapperchecke
 		if cbT == nil {
 			return
 		}
+		// Look at the callback symbol's declarations to walk every
+		// declared overload — typescript-go's CallSignatures on the
+		// type often returns contextually-narrowed signatures that
+		// don't distinguish overloads with different return types.
+		if r.flagIfDeclaredOverloadsReturnNonBoolean(ctx, cb) {
+			return
+		}
 		sigs := cbT.CallSignatures()
 		if len(sigs) == 0 {
 			return
@@ -245,6 +295,57 @@ func (r *rule) checkArrayPredicateCallback(ctx *engine.Context, n *wrapperchecke
 		return
 	}
 	ctx.Report(cb, "predicate callback returns a value whose type is not strictly boolean; compare against the intended sentinel")
+}
+
+// flagIfDeclaredOverloadsReturnNonBoolean walks the callback symbol's
+// declarations directly (each overload's FunctionDeclaration carries
+// its own return type) and reports the predicate callback when any
+// overload returns a value whose shape isn't acceptable for a boolean
+// test. Returns true when a diagnostic was issued.
+func (r *rule) flagIfDeclaredOverloadsReturnNonBoolean(ctx *engine.Context, cb *wrapperchecker.Node) bool {
+	sym := ctx.Checker().SymbolOf(cb)
+	if sym == nil {
+		return false
+	}
+	decls := sym.Declarations()
+	if len(decls) < 2 {
+		return false
+	}
+	hasOverload := false
+	for _, d := range decls {
+		switch d.Kind() {
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindMethodSignature,
+			wrapperchecker.KindCallSignature:
+		default:
+			continue
+		}
+		hasOverload = true
+		annot := d.FunctionReturnTypeAnnotation()
+		if annot == nil {
+			continue
+		}
+		retT := ctx.Checker().TypeFromTypeNode(annot)
+		if retT == nil {
+			continue
+		}
+		// Predicate-callback positions require strictly boolean return
+		// types — wider returns like `string` or `boolean | T` are the
+		// shape mistake the rule wants to catch even when `allowString`
+		// or similar would normally let those types pass.
+		if isStrictlyBooleanReturn(retT) {
+			continue
+		}
+		if retT.IsAny() || retT.IsUnknown() {
+			ctx.Report(cb, "predicate callback returns a value of type any or unknown; narrow before returning")
+		} else {
+			ctx.Report(cb, "predicate callback returns a value whose type is not strictly boolean; compare against the intended sentinel")
+		}
+		return true
+	}
+	_ = hasOverload
+	return false
 }
 
 // isStrictlyBooleanReturn reports whether a declared return-type
@@ -281,20 +382,82 @@ func (r *rule) visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
 	default:
 		return
 	}
-	// Skip nested `a && b && c` — the outermost binary's LHS chain
-	// will recursively visit each component when the engine fires on
-	// the inner binaries.
-	if parent := n.Parent(); parent != nil && parent.Kind() == wrapperchecker.KindBinaryExpression {
-		switch parent.BinaryOperatorKind() {
-		case wrapperchecker.KindAmpersandAmpersandToken, wrapperchecker.KindBarBarToken:
+	if r.shouldSkipForOptIn(ctx) {
+		return
+	}
+	left := n.BinaryLeft()
+	right := n.BinaryRight()
+	tested := isBinaryTested(n)
+	// LHS is always evaluated as boolean (for short-circuit). RHS is
+	// evaluated as boolean only when the binary itself flows into a
+	// boolean test — the result value is what's tested.
+	if left != nil {
+		r.checkBooleanOperand(ctx, left)
+	}
+	if tested && right != nil {
+		r.checkBooleanOperand(ctx, right)
+	}
+}
+
+// checkBooleanOperand is the per-operand entry point for visitBinary.
+// When the operand is itself a logical &&/|| (possibly under parens),
+// the engine will fire visitBinary on that inner node and handle its
+// operands there; checking here would double-report.
+func (r *rule) checkBooleanOperand(ctx *engine.Context, n *wrapperchecker.Node) {
+	inner := n
+	for inner != nil && inner.Kind() == wrapperchecker.KindParenthesizedExpression {
+		inner = inner.FirstChild()
+	}
+	if inner != nil && inner.Kind() == wrapperchecker.KindBinaryExpression {
+		switch inner.BinaryOperatorKind() {
+		case wrapperchecker.KindAmpersandAmpersandToken,
+			wrapperchecker.KindBarBarToken:
 			return
 		}
 	}
-	left := n.BinaryLeft()
-	if left == nil {
-		return
+	r.checkBoolean(ctx, n)
+}
+
+// isBinaryTested reports whether the boolean result of a `&&`/`||`
+// expression flows into a position that interprets it as boolean. The
+// LHS of a logical operator is the operator's test value; the RHS is
+// the result value, which is only tested when the operator itself is.
+func isBinaryTested(n *wrapperchecker.Node) bool {
+	cur := n
+	for {
+		parent := cur.Parent()
+		if parent == nil {
+			return false
+		}
+		switch parent.Kind() {
+		case wrapperchecker.KindParenthesizedExpression:
+			cur = parent
+			continue
+		case wrapperchecker.KindIfStatement,
+			wrapperchecker.KindWhileStatement,
+			wrapperchecker.KindDoStatement,
+			wrapperchecker.KindForStatement,
+			wrapperchecker.KindConditionalExpression:
+			return true
+		case wrapperchecker.KindPrefixUnaryExpression:
+			return parent.PrefixUnaryOperator() == "!"
+		case wrapperchecker.KindBinaryExpression:
+			switch parent.BinaryOperatorKind() {
+			case wrapperchecker.KindAmpersandAmpersandToken,
+				wrapperchecker.KindBarBarToken:
+				// LHS of a logical operator is always tested for the
+				// short-circuit; RHS is tested only when the operator
+				// itself is.
+				if parent.BinaryLeft().Same(cur) {
+					return true
+				}
+				cur = parent
+				continue
+			}
+			return false
+		}
+		return false
 	}
-	r.checkBoolean(ctx, left)
 }
 
 func (r *rule) visitForStatement(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -317,16 +480,21 @@ func (r *rule) visitPrefixUnary(ctx *engine.Context, n *wrapperchecker.Node) {
 }
 
 func (r *rule) checkBoolean(ctx *engine.Context, expr *wrapperchecker.Node) {
-	if expr.Kind() == wrapperchecker.KindBinaryExpression {
-		switch expr.BinaryOperatorKind() {
+	if r.shouldSkipForOptIn(ctx) {
+		return
+	}
+	// Logical-chain expressions are handled per-operand by visitBinary
+	// so each branch reports against its real operand position; doing
+	// type-checking on the whole chain here would attribute the report
+	// to the wrong node.
+	inner := expr
+	for inner != nil && inner.Kind() == wrapperchecker.KindParenthesizedExpression {
+		inner = inner.FirstChild()
+	}
+	if inner != nil && inner.Kind() == wrapperchecker.KindBinaryExpression {
+		switch inner.BinaryOperatorKind() {
 		case wrapperchecker.KindAmpersandAmpersandToken,
 			wrapperchecker.KindBarBarToken:
-			if l := expr.BinaryLeft(); l != nil {
-				r.checkBoolean(ctx, l)
-			}
-			if rr := expr.BinaryRight(); rr != nil {
-				r.checkBoolean(ctx, rr)
-			}
 			return
 		}
 	}

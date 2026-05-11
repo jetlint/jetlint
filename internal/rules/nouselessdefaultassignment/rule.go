@@ -5,23 +5,80 @@
 package nouselessdefaultassignment
 
 import (
+	"encoding/json"
+	"fmt"
+
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 const id = "no-useless-default-assignment"
 
-func New() engine.Rule { return rule{} }
+// Options is the configurable surface of the rule. Mirrors the upstream
+// `no-useless-default-assignment` options.
+type Options struct {
+	// AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing suppresses
+	// the `noStrictNullCheck` advisory that the rule emits when the
+	// program is compiled without strict null checks. Without strict
+	// null checks the rule still runs but is unsound — the advisory
+	// surfaces that risk; set this flag to acknowledge it.
+	AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing bool
+}
 
-type rule struct{}
+func DefaultOptions() Options { return Options{} }
+
+func OptionsFromJSON(raw json.RawMessage) (Options, error) {
+	out := DefaultOptions()
+	if len(raw) == 0 || string(raw) == "null" {
+		return out, nil
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return Options{}, fmt.Errorf("no-useless-default-assignment options must be a JSON object: %w", err)
+	}
+	for key, val := range fields {
+		switch key {
+		case "allowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing":
+			if err := json.Unmarshal(val, &out.AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing); err != nil {
+				return Options{}, fmt.Errorf("no-useless-default-assignment option %q: %w", key, err)
+			}
+		default:
+			return Options{}, fmt.Errorf("no-useless-default-assignment has no option %q", key)
+		}
+	}
+	return out, nil
+}
+
+func New() engine.Rule                        { return NewWithOptions(DefaultOptions()) }
+func NewWithOptions(opts Options) engine.Rule { return rule{opts: opts} }
+
+type rule struct{ opts Options }
 
 func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+func (r rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindSourceFile:     r.visitSourceFile,
 		wrapperchecker.KindBindingElement: visitBindingElement,
 		wrapperchecker.KindParameter:      visitParameter,
 	}
+}
+
+// visitSourceFile emits the `noStrictNullCheck` advisory when the
+// program was compiled without strict null checks and the user hasn't
+// opted out via the
+// `allowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing` flag. The
+// advisory mirrors upstream's once-per-file diagnostic; the rule's
+// node-level checks still run since the regular flagging surfaces real
+// issues even without strict-null typing.
+func (r rule) visitSourceFile(ctx *engine.Context, n *wrapperchecker.Node) {
+	if r.opts.AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing {
+		return
+	}
+	if ctx.Program().HasStrictNullChecks() {
+		return
+	}
+	ctx.Report(n, "This rule requires the `strictNullChecks` compiler option to be turned on to function correctly.")
 }
 
 // callbackContextualParamType returns the contextual signature's
@@ -29,7 +86,9 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 // arrow used as a callback argument. Mirrors typescript-eslint's
 // upstream lookup: signatures[0].getParameters()[paramIndex]. Returns
 // nil for top-level functions, methods, etc. — only callback-style
-// usages have a contextual signature.
+// usages have a contextual signature, or when the contextual signature
+// is the function being inspected itself (self-contextualised, no
+// outer expectation).
 func callbackContextualParamType(ctx *engine.Context, fn *wrapperchecker.Node, paramIndex int) *wrapperchecker.Type {
 	if fn == nil {
 		return nil
@@ -49,6 +108,13 @@ func callbackContextualParamType(ctx *engine.Context, fn *wrapperchecker.Node, p
 		return nil
 	}
 	sig := sigs[0]
+	// Self-contextualised: the contextual signature's declaration node
+	// equals the function expression we're inspecting. Upstream bails
+	// here so the rule doesn't echo back the function's own annotation
+	// (e.g. `useCallback(<T>arrow)` where T infers to the arrow itself).
+	if decl := sig.DeclarationNode(); decl != nil && sameNode(decl, fn) {
+		return nil
+	}
 	// Rest-parameter signatures (`(...args: T[]) => void`) bind any
 	// number of arguments to the rest slot — the contextual type at
 	// paramIndex is the element type, not the parameter type. Mirror
@@ -61,6 +127,18 @@ func callbackContextualParamType(ctx *engine.Context, fn *wrapperchecker.Node, p
 		return nil
 	}
 	return types[paramIndex]
+}
+
+// sameNode reports whether two AST nodes refer to the same source
+// location. The wrapper hides pointer identity for *Node values, so
+// rules compare by source range.
+func sameNode(a, b *wrapperchecker.Node) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	af, asl, asc, ael, aec := a.SourceRange()
+	bf, bsl, bsc, bel, bec := b.SourceRange()
+	return af == bf && asl == bsl && asc == bsc && ael == bel && aec == bec
 }
 
 // fnParamIndex returns the 0-based position of param within fn's
@@ -173,6 +251,12 @@ func visitParameter(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	if t.IsAny() || t.IsUnknown() {
+		return
+	}
+	// Type parameters and other instantiable types: the actual runtime
+	// type depends on substitution that we can't see, so the default
+	// might genuinely fire at one of the callsites.
+	if t.IsTypeVariable() {
 		return
 	}
 	if typeIncludesUndefined(t) {

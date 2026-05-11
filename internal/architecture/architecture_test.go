@@ -24,7 +24,7 @@ const forkInternalPrefix = "github.com/microsoft/typescript-go/internal/"
 // depend on, in addition to the standard library. Anything else in a rule
 // package fails the build.
 var allowlistForRulePackages = []string{
-	"github.com/tommymorgan/tsgolint/",
+	"github.com/jetlint/jetlint/",
 	"github.com/microsoft/typescript-go/pkg/",
 }
 

@@ -23,7 +23,7 @@ var MVPRuleIDs = []string{
 
 // AdditionalTypeAwareRuleIDs is every type-aware rule beyond the MVP
 // set that ships scaffolded (and in many cases fully implemented).
-// These default to "off" severity — opt-in via .tsgolintrc.json — so
+// These default to "off" severity — opt-in via .jetlintrc.json — so
 // adding new rules to the binary doesn't silently change project
 // behavior. As each rule reaches production-ready completeness it can
 // be promoted to MVPRuleIDs.

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/tommymorgan/tsgolint/internal/project"
+	"github.com/jetlint/jetlint/internal/project"
 )
 
 // makeTree writes a small directory tree under a temp directory and returns

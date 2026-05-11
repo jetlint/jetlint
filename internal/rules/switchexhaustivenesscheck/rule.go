@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 // defaultCommentPattern matches typescript-eslint's default
@@ -150,14 +150,32 @@ func missingLiteralBranches(dt *wrapperchecker.Type, caseTypes map[string]bool) 
 			if !isLiteralLikeType(intersectionPart) {
 				continue
 			}
-			label := intersectionPart.String()
-			if caseTypes[label] {
+			if caseTypes[typeCoverKey(intersectionPart)] {
 				continue
 			}
-			missing = append(missing, label)
+			missing = append(missing, intersectionPart.String())
 		}
 	}
 	return missing
+}
+
+// typeCoverKey produces an identity-stable string key for a literal-
+// like type used to compare case-clause coverage. For unique symbols
+// the displayed type string is ambiguous (TypeScript renders them as
+// `unique symbol` under TypeFormatFlagsAllowUniqueESSymbolType, so two
+// distinct symbol unions collide on the same display name); fall back
+// to the symbol's identifier name to preserve uniqueness. For everything
+// else, the rendered type string is already unique per literal.
+func typeCoverKey(t *wrapperchecker.Type) string {
+	if t == nil {
+		return ""
+	}
+	if t.IsESSymbolLike() {
+		if name := t.SymbolName(); name != "" {
+			return "typeof " + name
+		}
+	}
+	return t.String()
 }
 
 // unionConstituents returns t's union members, or [t] for a non-union.
@@ -312,7 +330,7 @@ func collectCases(ctx *engine.Context, sw *wrapperchecker.Node) (bool, map[strin
 				return false
 			}
 			if t := ctx.TypeOf(expr); t != nil {
-				covered[t.String()] = true
+				covered[typeCoverKey(t)] = true
 			}
 			return false
 		})

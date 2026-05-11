@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tommymorgan/tsgolint/internal/daemon"
+	"github.com/jetlint/jetlint/internal/daemon"
 )
 
 // startServer spins up a daemon server bound to a fresh socket under a temp

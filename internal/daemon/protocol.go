@@ -1,4 +1,4 @@
-// Package daemon implements the per-project tsgolint daemon and the
+// Package daemon implements the per-project jetlint daemon and the
 // CLI-side client that talks to it. Each daemon instance binds to one
 // tsconfig and serves linting requests for files governed by that
 // tsconfig, holding the warm TypeScript program in memory across

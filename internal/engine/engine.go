@@ -93,7 +93,7 @@ func dispatchSafely(ctx *Context, h Handler, n *wrapperchecker.Node, file, ruleI
 					EndLine:     endLine,
 					EndColumn:   endCol,
 				},
-				RuleID:   "tsgolint/rule-panic",
+				RuleID:   "jetlint/rule-panic",
 				Severity: wrapperlint.SeverityWarning,
 				Message:  "rule '" + ruleID + "' panicked while processing this node; remaining files were linted; please report this as a bug",
 			})

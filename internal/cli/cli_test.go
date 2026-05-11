@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tommymorgan/tsgolint/internal/cli"
+	"github.com/jetlint/jetlint/internal/cli"
 )
 
 func TestVersion_PrintsSingleLineSemanticVersionAndExitsZero(t *testing.T) {
@@ -35,7 +35,7 @@ func TestHelp_PrintsUsageAndExitsZero(t *testing.T) {
 		t.Fatalf("expected exit 0, got %d. stderr:\n%s", exit, stderr.String())
 	}
 	out := stdout.String()
-	for _, want := range []string{"Usage", "tsgolint", "--version", "--help", "Exit codes"} {
+	for _, want := range []string{"Usage", "jetlint", "--version", "--help", "Exit codes"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("usage output missing %q. got:\n%s", want, out)
 		}

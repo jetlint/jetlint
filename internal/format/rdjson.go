@@ -15,7 +15,7 @@ type RDJSON struct{}
 // Name returns "rdjson".
 func (RDJSON) Name() string { return "rdjson" }
 
-const rdjsonSourceURL = "https://github.com/tommymorgan/tsgolint"
+const rdjsonSourceURL = "https://github.com/jetlint/jetlint"
 
 type rdjsonDocument struct {
 	Source      rdjsonSource       `json:"source"`
@@ -62,7 +62,7 @@ func (RDJSON) Format(w io.Writer, diagnostics []Diagnostic) error {
 
 	out := rdjsonDocument{
 		Source: rdjsonSource{
-			Name: "tsgolint",
+			Name: "jetlint",
 			URL:  rdjsonSourceURL,
 		},
 		Diagnostics: make([]rdjsonDiagnostic, 0, len(diagnostics)),

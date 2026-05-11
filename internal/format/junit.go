@@ -72,11 +72,11 @@ func (JUnit) Format(w io.Writer, diagnostics []Diagnostic) error {
 	}
 
 	doc := junitTestsuites{
-		Name:     "tsgolint",
+		Name:     "jetlint",
 		Tests:    len(diagnostics),
 		Failures: len(diagnostics),
 		Suites: []junitTestsuite{{
-			Name:     "tsgolint",
+			Name:     "jetlint",
 			Tests:    len(diagnostics),
 			Failures: len(diagnostics),
 			Cases:    cases,

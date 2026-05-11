@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/format"
+	"github.com/jetlint/jetlint/internal/format"
 )
 
 func diag(file string, line, col int, ruleID, msg string) format.Diagnostic {

@@ -25,8 +25,8 @@ func TestBuiltBinary_RunsAndReportsVersion(t *testing.T) {
 func buildBinary(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	out := filepath.Join(dir, "tsgolint")
-	cmd := exec.Command("go", "build", "-o", out, "./cmd/tsgolint")
+	out := filepath.Join(dir, "jetlint")
+	cmd := exec.Command("go", "build", "-o", out, "./cmd/jetlint")
 	cmd.Dir = repoRoot(t)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr

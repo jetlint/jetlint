@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
-	"github.com/tommymorgan/tsgolint/internal/rules/nofloatingpromises"
+	"github.com/jetlint/jetlint/internal/engine"
+	"github.com/jetlint/jetlint/internal/rules/nofloatingpromises"
 
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
 )

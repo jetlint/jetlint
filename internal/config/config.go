@@ -15,14 +15,14 @@ import (
 
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
 
-	"github.com/tommymorgan/tsgolint/internal/rules"
-	"github.com/tommymorgan/tsgolint/internal/toolerr"
+	"github.com/jetlint/jetlint/internal/rules"
+	"github.com/jetlint/jetlint/internal/toolerr"
 )
 
 // ConfigFileName is the filename the resolver looks for at every level
 // of the cascade. The leading dot keeps it out of casual `ls` output and
 // matches the convention of similar tools.
-const ConfigFileName = ".tsgolintrc.json"
+const ConfigFileName = ".jetlintrc.json"
 
 // FileConfig is the on-disk representation of a single configuration
 // file. Fields are pointers so the resolver can distinguish "absent"
@@ -132,7 +132,7 @@ func LoadFile(path string) (FileConfig, error) {
 }
 
 // ResolveCascade walks upward from startDir, collecting every
-// .tsgolintrc.json it finds, and merges them with child-wins replace
+// .jetlintrc.json it finds, and merges them with child-wins replace
 // semantics. The walk stops at the filesystem root. Built-in defaults
 // supply the floor: every shipped rule is active at error severity
 // unless overridden.

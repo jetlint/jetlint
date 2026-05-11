@@ -53,6 +53,12 @@ type Case struct {
 	// prefer-nullish-coalescing's `noStrictNullCheck` diagnostic) can be
 	// exercised.
 	Unstrict bool
+	// LanguageOptionsText is the raw source text of the case's
+	// `languageOptions: { ... }` initializer (if any), empty otherwise.
+	// Per-rule harnesses can scan this text for option-set markers
+	// (e.g. `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`)
+	// to switch on additional compiler options.
+	LanguageOptionsText string
 }
 
 // Load parses the given typescript-eslint test file at path and returns
@@ -195,6 +201,7 @@ func caseFromElement(elem *wrapperchecker.Node, valid bool) (Case, bool) {
 			case "languageOptions":
 				if init := prop.PropertyInitializer(); init != nil {
 					c.Unstrict = referencesUnstrictFixture(init)
+					c.LanguageOptionsText = init.SourceText()
 				}
 			}
 		}

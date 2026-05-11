@@ -23,11 +23,11 @@ func repoRoot(t *testing.T) string {
 	return filepath.Join(filepath.Dir(thisFile), "..", "..")
 }
 
-// buildBinary compiles tsgolint into a temp dir and returns the path.
+// buildBinary compiles jetlint into a temp dir and returns the path.
 func buildBinary(t *testing.T) string {
 	t.Helper()
-	out := filepath.Join(t.TempDir(), "tsgolint")
-	cmd := exec.Command("go", "build", "-o", out, "./cmd/tsgolint")
+	out := filepath.Join(t.TempDir(), "jetlint")
+	cmd := exec.Command("go", "build", "-o", out, "./cmd/jetlint")
 	cmd.Dir = repoRoot(t)
 	if combined, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("build failed: %v\n%s", err, combined)
@@ -40,7 +40,7 @@ func buildBinary(t *testing.T) string {
 func fixtureProject(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "tsconfig.json"), []byte("{}"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "tsconfig.json"), []byte(`{"compilerOptions":{"strict":true}}`), 0o644); err != nil {
 		t.Fatalf("write tsconfig: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(root, "main.ts"), []byte("export {};\n"), 0o644); err != nil {
@@ -85,10 +85,10 @@ func TestCLI_SpawnsDaemonAndReportsOkOnCleanProject(t *testing.T) {
 	}
 
 	// A daemon socket should now exist under the temp runtime dir.
-	tsgolintDir := filepath.Join(rt, "tsgolint")
-	entries, err := os.ReadDir(tsgolintDir)
+	jetlintDir := filepath.Join(rt, "jetlint")
+	entries, err := os.ReadDir(jetlintDir)
 	if err != nil {
-		t.Fatalf("read tsgolint runtime dir: %v", err)
+		t.Fatalf("read jetlint runtime dir: %v", err)
 	}
 	socketCount := 0
 	for _, e := range entries {
@@ -122,15 +122,15 @@ func TestCLI_SecondInvocationReusesTheRunningDaemon(t *testing.T) {
 
 	// Capture the daemon PID by reading the pid file, then run a second
 	// invocation and confirm the same daemon answers.
-	tsgolintDir := filepath.Join(rt, "tsgolint")
-	entries, err := os.ReadDir(tsgolintDir)
+	jetlintDir := filepath.Join(rt, "jetlint")
+	entries, err := os.ReadDir(jetlintDir)
 	if err != nil {
-		t.Fatalf("read tsgolint runtime dir: %v", err)
+		t.Fatalf("read jetlint runtime dir: %v", err)
 	}
 	var pidFile string
 	for _, e := range entries {
 		if strings.HasSuffix(e.Name(), ".pid") {
-			pidFile = filepath.Join(tsgolintDir, e.Name())
+			pidFile = filepath.Join(jetlintDir, e.Name())
 			break
 		}
 	}
@@ -264,26 +264,26 @@ func TestCLI_DaemonWritesPerProjectLogFileToStateDirectory(t *testing.T) {
 		t.Fatalf("invocation failed: %v\n%s", err, out)
 	}
 
-	tsgolintStateDir := filepath.Join(state, "tsgolint")
-	entries, err := os.ReadDir(tsgolintStateDir)
+	jetlintStateDir := filepath.Join(state, "jetlint")
+	entries, err := os.ReadDir(jetlintStateDir)
 	if err != nil {
 		t.Fatalf("read state dir: %v", err)
 	}
 	var logFile string
 	for _, e := range entries {
 		if strings.HasSuffix(e.Name(), ".log") {
-			logFile = filepath.Join(tsgolintStateDir, e.Name())
+			logFile = filepath.Join(jetlintStateDir, e.Name())
 			break
 		}
 	}
 	if logFile == "" {
-		t.Fatalf("no log file found in %s", tsgolintStateDir)
+		t.Fatalf("no log file found in %s", jetlintStateDir)
 	}
 	contents, err := os.ReadFile(logFile)
 	if err != nil {
 		t.Fatalf("read log file: %v", err)
 	}
-	if !strings.Contains(string(contents), "tsgolint daemon: started") {
+	if !strings.Contains(string(contents), "jetlint daemon: started") {
 		t.Errorf("expected start log line in log file, got: %s", string(contents))
 	}
 }
@@ -296,8 +296,8 @@ func TestCLI_StaleSocketIsDetectedAndReplaced(t *testing.T) {
 	// Pre-populate the runtime dir with a stale "socket" file (a regular
 	// file at the path; nothing listening). The CLI must remove it and
 	// spawn a real daemon.
-	tsgolintDir := filepath.Join(rt, "tsgolint")
-	if err := os.MkdirAll(tsgolintDir, 0o700); err != nil {
+	jetlintDir := filepath.Join(rt, "jetlint")
+	if err := os.MkdirAll(jetlintDir, 0o700); err != nil {
 		t.Fatalf("mkdir: %v", err)
 	}
 	// Determine the would-be socket path the CLI will compute by running
@@ -307,14 +307,14 @@ func TestCLI_StaleSocketIsDetectedAndReplaced(t *testing.T) {
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("first invocation failed: %v\n%s", err, out)
 	}
-	entries, err := os.ReadDir(tsgolintDir)
+	entries, err := os.ReadDir(jetlintDir)
 	if err != nil {
-		t.Fatalf("read tsgolint dir: %v", err)
+		t.Fatalf("read jetlint dir: %v", err)
 	}
 	var socketPath string
 	for _, e := range entries {
 		if strings.HasSuffix(e.Name(), ".sock") {
-			socketPath = filepath.Join(tsgolintDir, e.Name())
+			socketPath = filepath.Join(jetlintDir, e.Name())
 			break
 		}
 	}
@@ -512,7 +512,7 @@ func TestCLI_DegradedModeWarningWhenProgramHasTypeErrors(t *testing.T) {
 	}
 	foundWarning := false
 	for _, d := range doc.Diagnostics {
-		if d["ruleId"] == "tsgolint/program-has-type-errors" {
+		if d["ruleId"] == "jetlint/program-has-type-errors" {
 			foundWarning = true
 			if d["severity"] != "warning" {
 				t.Errorf("expected severity 'warning', got %v", d["severity"])
@@ -814,7 +814,7 @@ func TestCLI_JSONModeOnCleanProjectEmitsValidJSON(t *testing.T) {
 }
 
 // TestCLI_TsgolintrcOptionsTuneRuleBehavior verifies the full
-// .tsgolintrc.json -> resolved options -> rule construction path. We
+// .jetlintrc.json -> resolved options -> rule construction path. We
 // configure no-floating-promises with `ignoreVoid: false`, which
 // should make `void promise;` flag (it would not under the default
 // `ignoreVoid: true`). A second invocation with `ignoreIIFE: true`
@@ -844,7 +844,7 @@ func TestCLI_TsgolintrcOptionsTuneRuleBehavior(t *testing.T) {
 		}
 	}
 
-	rcPath := filepath.Join(dir, ".tsgolintrc.json")
+	rcPath := filepath.Join(dir, ".jetlintrc.json")
 	runJSON := func(t *testing.T, target string) []map[string]any {
 		t.Helper()
 		cmd := exec.Command(bin, "--format", "json", filepath.Join(dir, target))
@@ -868,7 +868,7 @@ func TestCLI_TsgolintrcOptionsTuneRuleBehavior(t *testing.T) {
 		targetAbs := filepath.Join(dir, target)
 		out := make([]map[string]any, 0, len(doc.Diagnostics))
 		for _, d := range doc.Diagnostics {
-			if d["ruleId"] == "tsgolint/program-has-type-errors" {
+			if d["ruleId"] == "jetlint/program-has-type-errors" {
 				continue
 			}
 			if file, _ := d["file"].(string); file != targetAbs {
@@ -890,7 +890,7 @@ func TestCLI_TsgolintrcOptionsTuneRuleBehavior(t *testing.T) {
 		t.Errorf("default ignoreIIFE=false should flag IIFE; got %d diags: %v", len(got), got)
 	}
 
-	// Now flip both options via the .tsgolintrc.json tuple form.
+	// Now flip both options via the .jetlintrc.json tuple form.
 	if err := os.WriteFile(rcPath, []byte(`{
 		"rules": {
 			"no-floating-promises": ["error", {"ignoreVoid": false, "ignoreIIFE": true}]
@@ -922,7 +922,7 @@ func TestCLI_TsgolintrcRejectsUnknownRuleOption(t *testing.T) {
 	for path, content := range map[string]string{
 		"tsconfig.json": `{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"}}`,
 		"main.ts":       "export const x = 1;\n",
-		".tsgolintrc.json": `{
+		".jetlintrc.json": `{
 			"rules": {
 				"no-floating-promises": ["error", {"unknownTypoOption": true}]
 			}

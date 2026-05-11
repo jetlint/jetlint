@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tommymorgan/tsgolint/internal/format"
+	"github.com/jetlint/jetlint/internal/format"
 )
 
 // writeSource writes a small TypeScript source file in t.TempDir and
@@ -308,7 +308,7 @@ func TestHumanFormatter_EmptyDiagnosticsProducesNoOutput(t *testing.T) {
 		t.Fatal(err)
 	}
 	// An empty lint run is the success case; the human formatter should
-	// stay silent so a clean 'tsgolint' invocation prints nothing.
+	// stay silent so a clean 'jetlint' invocation prints nothing.
 	if buf.Len() != 0 {
 		t.Errorf("expected empty output for empty diagnostics, got: %q", buf.String())
 	}

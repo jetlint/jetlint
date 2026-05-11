@@ -7,9 +7,9 @@ import (
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/engine"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessaryqualifier"
-	"github.com/tommymorgan/tsgolint/internal/tselintcompat"
+	"github.com/jetlint/jetlint/internal/engine"
+	"github.com/jetlint/jetlint/internal/rules/nounnecessaryqualifier"
+	"github.com/jetlint/jetlint/internal/tselintcompat"
 )
 
 const fixtureTsconfigBody = `{
@@ -18,8 +18,15 @@ const fixtureTsconfigBody = `{
     "moduleResolution": "bundler", "lib": ["es2022", "dom"],
     "skipLibCheck": true
   },
-  "include": ["case.ts"]
+  "include": ["case.ts", "foo.ts"]
 }`
+
+// fixtureFooModule resolves `import * as Foo from './foo'` and
+// `declare module './foo'` to a real module symbol so module-
+// augmentation cases can be analyzed. The single `T` export is enough
+// for the upstream fixture's only such case.
+const fixtureFooModule = `export type T = number;
+`
 
 func TestNoUnnecessaryQualifier_TypescriptEslintCompatibility(t *testing.T) {
 	if testing.Short() {
@@ -65,6 +72,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	tsc := filepath.Join(dir, "tsconfig.json")
 	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
 	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
+	os.WriteFile(filepath.Join(dir, "foo.ts"), []byte(fixtureFooModule), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err

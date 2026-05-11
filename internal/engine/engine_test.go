@@ -8,7 +8,7 @@ import (
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 // panicRule is a test-only rule whose handler panics on every visit.
@@ -90,7 +90,7 @@ func TestEngine_PanicInRuleBecomesPerFileToolErrorAndDoesNotAbortLint(t *testing
 		}
 	}
 	if !hasPanic {
-		t.Errorf("expected a tsgolint/rule-panic diagnostic, got: %#v", diags)
+		t.Errorf("expected a jetlint/rule-panic diagnostic, got: %#v", diags)
 	}
 	if !hasQuiet {
 		t.Errorf("expected the non-panicking rule to still fire, got: %#v", diags)

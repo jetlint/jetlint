@@ -3,23 +3,48 @@ package switchexhaustivenesscheck_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/engine"
-	"github.com/tommymorgan/tsgolint/internal/rules/switchexhaustivenesscheck"
-	"github.com/tommymorgan/tsgolint/internal/tselintcompat"
+	"github.com/jetlint/jetlint/internal/engine"
+	"github.com/jetlint/jetlint/internal/rules/switchexhaustivenesscheck"
+	"github.com/jetlint/jetlint/internal/tselintcompat"
 )
 
-const fixtureTsconfigBody = `{
+// fixtureTsconfigTemplate renders the per-case tsconfig. Cases whose
+// `languageOptions.parserOptions.project` references the
+// `tsconfig.noUncheckedIndexedAccess.json` fixture toggle on
+// `noUncheckedIndexedAccess` so `x[0]` types include `undefined` —
+// upstream fixtures that depend on that narrowing assume this option.
+func fixtureTsconfigTemplate(noUnchecked bool) string {
+	extra := ""
+	if noUnchecked {
+		extra = `, "noUncheckedIndexedAccess": true`
+	}
+	return `{
   "compilerOptions": {
     "strict": true, "target": "es2022", "module": "esnext",
     "moduleResolution": "bundler", "lib": ["es2022", "dom"],
-    "skipLibCheck": true
+    "skipLibCheck": true` + extra + `
   },
-  "include": ["case.ts"]
+  "include": ["case.ts", "switch-exhaustiveness-check.ts"]
 }`
+}
+
+// fixtureNamespacedEnumModule mirrors upstream's
+// `tests/fixtures/switch-exhaustiveness-check.ts` so cases that
+// `import { A } from './switch-exhaustiveness-check'` and switch on
+// `A.B` can resolve `A.B.C` / `A.B.D` to enum-member literals — the
+// rule then has the union members it needs for missing-branch detection.
+const fixtureNamespacedEnumModule = `export namespace A {
+  export enum B {
+    C,
+    D,
+  }
+}
+`
 
 func TestSwitchExhaustivenessCheck_TypescriptEslintCompatibility(t *testing.T) {
 	if testing.Short() {
@@ -45,7 +70,8 @@ func TestSwitchExhaustivenessCheck_TypescriptEslintCompatibility(t *testing.T) {
 		if v, ok := c.Options["defaultCaseCommentPattern"].(string); ok {
 			opts.DefaultCaseCommentPattern = v
 		}
-		actual, runErr := runCase(t, c.Code, opts)
+		noUnchecked := strings.Contains(c.LanguageOptionsText, "noUncheckedIndexedAccess")
+		actual, runErr := runCase(t, c.Code, opts, noUnchecked)
 		if runErr != nil {
 			failed++
 			continue
@@ -71,13 +97,14 @@ func TestSwitchExhaustivenessCheck_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string, opts switchexhaustivenesscheck.Options) (int, error) {
+func runCase(t *testing.T, code string, opts switchexhaustivenesscheck.Options, noUnchecked bool) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
 	tsc := filepath.Join(dir, "tsconfig.json")
-	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
+	os.WriteFile(tsc, []byte(fixtureTsconfigTemplate(noUnchecked)), 0o644)
 	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
+	os.WriteFile(filepath.Join(dir, "switch-exhaustiveness-check.ts"), []byte(fixtureNamespacedEnumModule), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err

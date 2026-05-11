@@ -17,7 +17,7 @@ func (SARIF) Name() string { return "sarif" }
 
 const sarifSchemaURL = "https://json.schemastore.org/sarif-2.1.0.json"
 const sarifVersion = "2.1.0"
-const sarifInformationURI = "https://github.com/tommymorgan/tsgolint"
+const sarifInformationURI = "https://github.com/jetlint/jetlint"
 
 type sarifLog struct {
 	Schema  string     `json:"$schema"`
@@ -110,7 +110,7 @@ func (SARIF) Format(w io.Writer, diagnostics []Diagnostic) error {
 		Runs: []sarifRun{{
 			Tool: sarifTool{
 				Driver: sarifDriver{
-					Name:           "tsgolint",
+					Name:           "jetlint",
 					InformationURI: sarifInformationURI,
 					Rules:          rules,
 				},

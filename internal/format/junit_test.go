@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tommymorgan/tsgolint/internal/format"
+	"github.com/jetlint/jetlint/internal/format"
 )
 
 func TestJUnitFormatter_EmitsValidXMLWithTestsuitesRoot(t *testing.T) {

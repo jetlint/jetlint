@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 const id = "prefer-readonly-parameter-types"
@@ -30,12 +30,23 @@ type Options struct {
 	// declarations in a constructor (`constructor(private arg: T)`)
 	// are subject to the readonly check. Default true matches upstream.
 	CheckParameterProperties bool
-	// AllowNames lists type names whose mutability check should be
-	// suppressed. Matches upstream's `allow` option in its bare-string
-	// and `{ name }`-object forms; source qualifiers (file/package/lib)
-	// are matched by name only. Useful for built-in types like `RegExp`
-	// whose declared shape has mutable members (`lastIndex`).
-	AllowNames map[string]struct{}
+	// Allow lists type specifiers whose mutability check should be
+	// suppressed. Matches upstream's `allow` option, including the
+	// `{ from, name, package }` qualifier form: a `lib`-qualified entry
+	// matches only types declared in TypeScript's bundled lib files, a
+	// `package`-qualified entry matches only types from
+	// `node_modules/<package>`, and a `file`-qualified (or unqualified)
+	// entry matches user-source declarations. Useful for built-in types
+	// like `RegExp` whose declared shape has mutable members
+	// (`lastIndex`).
+	Allow []AllowSpec
+}
+
+// AllowSpec is a single entry in the `allow` option list.
+type AllowSpec struct {
+	Name string
+	From string // "" (any), "file", "lib", "package"
+	Pkg  string // package name, when From == "package"
 }
 
 func DefaultOptions() Options {
@@ -66,11 +77,11 @@ func OptionsFromJSON(raw json.RawMessage) (Options, error) {
 				return Options{}, fmt.Errorf("prefer-readonly-parameter-types option %q: %w", key, err)
 			}
 		case "allow":
-			names, err := parseAllowList(val)
+			specs, err := parseAllowList(val)
 			if err != nil {
 				return Options{}, fmt.Errorf("prefer-readonly-parameter-types option %q: %w", key, err)
 			}
-			out.AllowNames = names
+			out.Allow = specs
 		default:
 			return Options{}, fmt.Errorf("prefer-readonly-parameter-types has no option %q", key)
 		}
@@ -78,23 +89,37 @@ func OptionsFromJSON(raw json.RawMessage) (Options, error) {
 	return out, nil
 }
 
-func parseAllowList(raw json.RawMessage) (map[string]struct{}, error) {
+func parseAllowList(raw json.RawMessage) ([]AllowSpec, error) {
 	var entries []json.RawMessage
 	if err := json.Unmarshal(raw, &entries); err != nil {
 		return nil, fmt.Errorf("allow must be an array: %w", err)
 	}
-	out := make(map[string]struct{}, len(entries))
+	out := make([]AllowSpec, 0, len(entries))
 	for _, e := range entries {
 		var s string
 		if err := json.Unmarshal(e, &s); err == nil {
-			out[s] = struct{}{}
+			out = append(out, AllowSpec{Name: s})
 			continue
 		}
 		var obj struct {
-			Name string `json:"name"`
+			Name    json.RawMessage `json:"name"`
+			From    string          `json:"from"`
+			Package string          `json:"package"`
 		}
-		if err := json.Unmarshal(e, &obj); err == nil && obj.Name != "" {
-			out[obj.Name] = struct{}{}
+		if err := json.Unmarshal(e, &obj); err == nil && len(obj.Name) > 0 {
+			var names []string
+			var single string
+			if err := json.Unmarshal(obj.Name, &single); err == nil && single != "" {
+				names = []string{single}
+			} else if err := json.Unmarshal(obj.Name, &names); err != nil {
+				continue
+			}
+			for _, n := range names {
+				if n == "" {
+					continue
+				}
+				out = append(out, AllowSpec{Name: n, From: obj.From, Pkg: obj.Package})
+			}
 			continue
 		}
 	}
@@ -118,16 +143,19 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if !r.opts.CheckParameterProperties && isParameterProperty(n) {
 		return
 	}
+	var t *wrapperchecker.Type
 	annot := n.ParameterTypeAnnotation()
-	if annot == nil {
+	if annot != nil {
+		t = ctx.Checker().TypeFromTypeNode(annot)
+	} else {
 		if r.opts.IgnoreInferredTypes {
 			return
 		}
-		// Without an annotation there's no declared type to flag —
-		// the parameter's type is inferred at the call site.
-		return
+		// No annotation: rely on the inferred parameter type. Common
+		// for inline callbacks whose argument shape comes from a
+		// contextual signature (`arr.map(x => ...)`).
+		t = ctx.TypeOf(n)
 	}
-	t := ctx.Checker().TypeFromTypeNode(annot)
 	if t == nil {
 		return
 	}
@@ -167,7 +195,7 @@ func (r *rule) typeIsMutable(t *wrapperchecker.Type, depth int) bool {
 	// declared shape — useful for built-ins like `RegExp` whose
 	// runtime semantics are mostly immutable despite a mutable
 	// `lastIndex` slot.
-	if _, allowed := r.opts.AllowNames[t.SymbolName()]; allowed && len(r.opts.AllowNames) > 0 {
+	if r.isAllowed(t) {
 		return false
 	}
 	if t.IsUnion() {
@@ -210,11 +238,12 @@ func (r *rule) typeIsMutable(t *wrapperchecker.Type, depth int) bool {
 	if hasCall && !r.hasNonFunctionProperty(t) {
 		return false
 	}
-	// Type parameters: forward to the constraint when narrower.
+	// Type parameters are always readonly: upstream's check bails out
+	// at the "is object type" test before consulting the constraint.
+	// Concrete substitutions are evaluated separately when the parameter
+	// type is instantiated (`MyType<A>` resolves to a real object
+	// before reaching this function).
 	if t.IsTypeParameter() {
-		if c := t.BaseConstraint(); c != nil && c != t {
-			return r.typeIsMutable(c, depth-1)
-		}
 		return false
 	}
 	if t.SymbolName() == "Array" {
@@ -244,6 +273,18 @@ func (r *rule) typeIsMutable(t *wrapperchecker.Type, depth int) bool {
 	// parameter mutable.
 	if t.HasMutableIndexSignature() {
 		return true
+	}
+	// A type that has *only* readonly index signatures (no mutable
+	// ones) is a `Readonly<T>`-style mapped form: the mapping makes
+	// every keyed access readonly even though typescript-go's symbol
+	// flags for inherited members like `toString` don't always
+	// reflect that. Treat call-signature-bearing properties as
+	// readonly in that case — methods on a fully-readonly indexable
+	// type behave like the array prototype methods do under
+	// ReadonlyArray.
+	hasReadonlyIndex := t.HasIndexSignature("")
+	if hasReadonlyIndex {
+		// Already proven !HasMutableIndexSignature() above.
 	}
 	// Object/interface/anonymous type: any non-readonly property
 	// (including methods) makes the parameter mutable. For callable
@@ -280,6 +321,15 @@ func (r *rule) typeIsMutable(t *wrapperchecker.Type, depth int) bool {
 					continue
 				}
 			}
+			// `Readonly<T>`-style types: a type with only readonly
+			// index signatures should have every keyed property
+			// readonly too. typescript-go's symbol flags for inherited
+			// members (toString, toLocaleString, etc.) don't always
+			// reflect the mapping, so trust the index signature as the
+			// authoritative signal.
+			if hasReadonlyIndex {
+				continue
+			}
 			return true
 		}
 		// Even if the slot is readonly, the value at that slot might
@@ -291,6 +341,89 @@ func (r *rule) typeIsMutable(t *wrapperchecker.Type, depth int) bool {
 		}
 	}
 	return false
+}
+
+// isAllowed reports whether t matches any of the configured `allow`
+// specifiers. Names are matched against the type's symbol name and
+// (if any) its type-alias name; the `from` qualifier (file / lib /
+// package) further filters by where the type is declared.
+func (r *rule) isAllowed(t *wrapperchecker.Type) bool {
+	if len(r.opts.Allow) == 0 {
+		return false
+	}
+	symName := t.SymbolName()
+	aliasName := t.AliasSymbolName()
+	if symName == "" && aliasName == "" {
+		return false
+	}
+	var symDecls, aliasDecls []*wrapperchecker.Node
+	for _, spec := range r.opts.Allow {
+		matchSym := symName != "" && spec.Name == symName
+		matchAlias := aliasName != "" && spec.Name == aliasName
+		if !matchSym && !matchAlias {
+			continue
+		}
+		if spec.From == "" {
+			return true
+		}
+		if matchSym {
+			if symDecls == nil {
+				symDecls = t.SymbolDeclarations()
+			}
+			if anyMatchesSource(symDecls, spec) {
+				return true
+			}
+		}
+		if matchAlias {
+			if aliasDecls == nil {
+				aliasDecls = t.AliasSymbolDeclarations()
+			}
+			if anyMatchesSource(aliasDecls, spec) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func anyMatchesSource(decls []*wrapperchecker.Node, spec AllowSpec) bool {
+	for _, d := range decls {
+		file, _, _, _, _ := d.SourceRange()
+		if matchesSource(file, spec) {
+			return true
+		}
+	}
+	return false
+}
+
+// matchesSource reports whether file satisfies spec.From. A lib file
+// has a `lib.*.d.ts` basename; a package file lives under
+// `node_modules/<pkg>/`; a file-source file is anything else (user
+// project files).
+func matchesSource(file string, spec AllowSpec) bool {
+	switch spec.From {
+	case "lib":
+		return isLibFile(file)
+	case "package":
+		if spec.Pkg == "" {
+			return strings.Contains(file, "/node_modules/")
+		}
+		return strings.Contains(file, "/node_modules/"+spec.Pkg+"/")
+	case "file":
+		return !isLibFile(file) && !strings.Contains(file, "/node_modules/")
+	}
+	return true
+}
+
+// isLibFile reports whether path is a TypeScript bundled lib file
+// (`lib.*.d.ts`). Lib files never live under node_modules, so the
+// check is purely by basename pattern.
+func isLibFile(path string) bool {
+	base := path
+	if i := strings.LastIndex(path, "/"); i >= 0 {
+		base = path[i+1:]
+	}
+	return strings.HasPrefix(base, "lib.") && strings.HasSuffix(base, ".d.ts")
 }
 
 // hasNonFunctionProperty reports whether t carries any apparent

@@ -20,7 +20,7 @@ import (
 // CLI invocations from any working directory compute the same socket.
 //
 // The path lives under the platform-appropriate runtime directory plus a
-// "tsgolint" subdirectory; the directory is not created here. Callers that
+// "jetlint" subdirectory; the directory is not created here. Callers that
 // publish the socket are responsible for ensuring the parent directory
 // exists.
 func DaemonSocketPath(tsconfig string) (string, error) {
@@ -31,7 +31,7 @@ func DaemonSocketPath(tsconfig string) (string, error) {
 	abs = filepath.Clean(abs)
 	digest := sha256.Sum256([]byte(abs))
 	name := hex.EncodeToString(digest[:8]) + ".sock"
-	return filepath.Join(runtimeDir(), "tsgolint", name), nil
+	return filepath.Join(runtimeDir(), "jetlint", name), nil
 }
 
 // LogPath returns the absolute filesystem path of the per-tsconfig daemon
@@ -40,7 +40,7 @@ func DaemonSocketPath(tsconfig string) (string, error) {
 // with the daemon.
 //
 // The path lives under the platform-appropriate state directory plus a
-// "tsgolint" subdirectory; the directory is not created here. Callers
+// "jetlint" subdirectory; the directory is not created here. Callers
 // that open the log are responsible for ensuring the parent exists.
 func LogPath(tsconfig string) (string, error) {
 	abs, err := filepath.Abs(tsconfig)
@@ -50,7 +50,7 @@ func LogPath(tsconfig string) (string, error) {
 	abs = filepath.Clean(abs)
 	digest := sha256.Sum256([]byte(abs))
 	name := hex.EncodeToString(digest[:8]) + ".log"
-	return filepath.Join(stateDir(), "tsgolint", name), nil
+	return filepath.Join(stateDir(), "jetlint", name), nil
 }
 
 // runtimeDir returns the platform's runtime directory for ephemeral

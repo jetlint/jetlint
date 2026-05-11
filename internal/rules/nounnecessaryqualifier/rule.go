@@ -5,7 +5,7 @@ package nounnecessaryqualifier
 
 import (
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 const id = "no-unnecessary-qualifier"
@@ -42,16 +42,85 @@ func check(ctx *engine.Context, n, prefix *wrapperchecker.Node, propertyName str
 	if prefixName == "" || propertyName == "" {
 		return
 	}
-	if !enclosedByNamespace(n, prefixName) {
+	if enclosedByNamespace(n, prefixName) {
+		// If a closer-scoped declaration shadows the property name, the
+		// qualifier is needed to disambiguate. Walk from n outward and
+		// stop once we hit the declaring namespace.
+		if shadowedBeforeNamespace(n, prefixName, propertyName) {
+			return
+		}
+		ctx.Report(n, "qualifier is unnecessary inside the enclosing namespace")
 		return
 	}
-	// If a closer-scoped declaration shadows the property name, the
-	// qualifier is needed to disambiguate. Walk from n outward and
-	// stop once we hit the declaring namespace.
-	if shadowedBeforeNamespace(n, prefixName, propertyName) {
-		return
+	if enclosedByMatchingModuleAugmentation(ctx, n, prefix) {
+		ctx.Report(n, "qualifier is unnecessary inside the augmented module")
 	}
-	ctx.Report(n, "qualifier is unnecessary inside the enclosing namespace")
+}
+
+// enclosedByMatchingModuleAugmentation reports whether `n` sits inside
+// a `declare module 'X' { ... }` block whose target module is the same
+// thing the `prefix` identifier names. Used to catch the augmentation
+// pattern:
+//
+//	import * as Foo from './foo';
+//	declare module './foo' {
+//	  const x: Foo.T = 3;
+//	}
+//
+// where `Foo.` is redundant because the body is already in `./foo`'s
+// scope. Symbol equality after alias-walking is the load-bearing check —
+// the prefix's alias resolves to the module symbol, whose declarations
+// include the enclosing augmentation block.
+func enclosedByMatchingModuleAugmentation(ctx *engine.Context, n, prefix *wrapperchecker.Node) bool {
+	mod := enclosingStringNamedModule(n)
+	if mod == nil {
+		return false
+	}
+	modSym := ctx.Checker().SymbolOf(mod)
+	if modSym == nil {
+		return false
+	}
+	prefixSym := ctx.Checker().SymbolOf(prefix)
+	if prefixSym == nil {
+		return false
+	}
+	if prefixSym.Same(modSym) {
+		return true
+	}
+	for _, d := range prefixSym.AllDeclarationsFollowingAliases() {
+		if d == nil {
+			continue
+		}
+		ds := ctx.Checker().SymbolOf(d)
+		if ds != nil && ds.Same(modSym) {
+			return true
+		}
+	}
+	return false
+}
+
+// enclosingStringNamedModule returns the name node of the closest
+// ancestor ModuleDeclaration whose name is a string literal (the
+// `declare module 'X'` augmentation form). Nil when not inside one.
+func enclosingStringNamedModule(n *wrapperchecker.Node) *wrapperchecker.Node {
+	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
+		if cur.Kind() != wrapperchecker.KindModuleDeclaration {
+			continue
+		}
+		var nameNode *wrapperchecker.Node
+		cur.ForEachChild(func(c *wrapperchecker.Node) bool {
+			switch c.Kind() {
+			case wrapperchecker.KindStringLiteral, wrapperchecker.KindIdentifier:
+				nameNode = c
+				return true
+			}
+			return false
+		})
+		if nameNode != nil && nameNode.Kind() == wrapperchecker.KindStringLiteral {
+			return nameNode
+		}
+	}
+	return nil
 }
 
 // qualifiedRight returns the right-hand identifier of a QualifiedName,

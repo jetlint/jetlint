@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/config"
-	"github.com/tommymorgan/tsgolint/internal/toolerr"
+	"github.com/jetlint/jetlint/internal/config"
+	"github.com/jetlint/jetlint/internal/toolerr"
 )
 
 func writeFile(t *testing.T, path, contents string) {
@@ -36,7 +36,7 @@ func TestResolveCascade_DefaultMaxDiagnosticsMatchesBiome(t *testing.T) {
 
 func TestResolveCascade_RootConfigOverridesMaxDiagnostics(t *testing.T) {
 	dir := t.TempDir()
-	writeFile(t, filepath.Join(dir, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(dir, ".jetlintrc.json"),
 		`{"maxDiagnostics": 50}`)
 	got, err := config.ResolveCascade(dir)
 	if err != nil {
@@ -49,10 +49,10 @@ func TestResolveCascade_RootConfigOverridesMaxDiagnostics(t *testing.T) {
 
 func TestResolveCascade_ChildConfigOverridesParentMaxDiagnostics(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(root, ".jetlintrc.json"),
 		`{"maxDiagnostics": 50}`)
 	child := filepath.Join(root, "packages", "web")
-	writeFile(t, filepath.Join(child, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(child, ".jetlintrc.json"),
 		`{"maxDiagnostics": 5}`)
 	got, err := config.ResolveCascade(child)
 	if err != nil {
@@ -65,7 +65,7 @@ func TestResolveCascade_ChildConfigOverridesParentMaxDiagnostics(t *testing.T) {
 
 func TestResolveCascade_MaxDiagnosticsZeroDisablesTruncation(t *testing.T) {
 	dir := t.TempDir()
-	writeFile(t, filepath.Join(dir, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(dir, ".jetlintrc.json"),
 		`{"maxDiagnostics": 0}`)
 	got, err := config.ResolveCascade(dir)
 	if err != nil {
@@ -80,7 +80,7 @@ func TestResolveCascade_MaxDiagnosticsZeroDisablesTruncation(t *testing.T) {
 
 func TestResolveCascade_NegativeMaxDiagnosticsRejected(t *testing.T) {
 	dir := t.TempDir()
-	writeFile(t, filepath.Join(dir, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(dir, ".jetlintrc.json"),
 		`{"maxDiagnostics": -1}`)
 	_, err := config.ResolveCascade(dir)
 	if err == nil {
@@ -112,7 +112,7 @@ func TestResolveCascade_NoConfigUsesDefaults(t *testing.T) {
 
 func TestResolveCascade_RootConfigOverridesDefaults(t *testing.T) {
 	dir := t.TempDir()
-	writeFile(t, filepath.Join(dir, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(dir, ".jetlintrc.json"),
 		`{"rules": {"no-floating-promises": "warning"}}`)
 	got, err := config.ResolveCascade(dir)
 	if err != nil {
@@ -129,10 +129,10 @@ func TestResolveCascade_RootConfigOverridesDefaults(t *testing.T) {
 
 func TestResolveCascade_ChildConfigOverridesParent(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(root, ".jetlintrc.json"),
 		`{"rules": {"no-floating-promises": "warning"}}`)
 	child := filepath.Join(root, "packages", "web")
-	writeFile(t, filepath.Join(child, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(child, ".jetlintrc.json"),
 		`{"rules": {"no-floating-promises": "off"}}`)
 
 	got, err := config.ResolveCascade(child)
@@ -150,7 +150,7 @@ func TestResolveCascade_ChildConfigOverridesParent(t *testing.T) {
 
 func TestResolveCascade_InvalidJSONReturnsConfigInvalidError(t *testing.T) {
 	dir := t.TempDir()
-	writeFile(t, filepath.Join(dir, ".tsgolintrc.json"), `{not valid json`)
+	writeFile(t, filepath.Join(dir, ".jetlintrc.json"), `{not valid json`)
 	_, err := config.ResolveCascade(dir)
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -169,7 +169,7 @@ func TestResolveCascade_InvalidJSONReturnsConfigInvalidError(t *testing.T) {
 
 func TestResolveCascade_UnknownRuleReturnsConfigUnknownRuleError(t *testing.T) {
 	dir := t.TempDir()
-	writeFile(t, filepath.Join(dir, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(dir, ".jetlintrc.json"),
 		`{"rules": {"made-up-rule": "error"}}`)
 	_, err := config.ResolveCascade(dir)
 	if err == nil {
@@ -186,7 +186,7 @@ func TestResolveCascade_UnknownRuleReturnsConfigUnknownRuleError(t *testing.T) {
 
 func TestResolveCascade_InvalidSeverityReturnsConfigInvalidError(t *testing.T) {
 	dir := t.TempDir()
-	writeFile(t, filepath.Join(dir, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(dir, ".jetlintrc.json"),
 		`{"rules": {"no-floating-promises": "fatal"}}`)
 	_, err := config.ResolveCascade(dir)
 	if err == nil {
@@ -207,10 +207,10 @@ func TestResolveCascade_ChildLevelListReplacesParentLevelList(t *testing.T) {
 	// parent entries for that rule, with no concatenation. Disabling a
 	// rule in a child cleanly removes it; re-enabling at child re-asserts.
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(root, ".jetlintrc.json"),
 		`{"rules": {"no-floating-promises": "warning", "no-misused-promises": "off"}}`)
 	child := filepath.Join(root, "child")
-	writeFile(t, filepath.Join(child, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(child, ".jetlintrc.json"),
 		`{"rules": {"no-misused-promises": "warning"}}`)
 
 	got, err := config.ResolveCascade(child)
@@ -232,7 +232,7 @@ func TestResolveCascade_ChildLevelListReplacesParentLevelList(t *testing.T) {
 
 func TestResolveCascade_RuleEntryArrayCarriesOptions(t *testing.T) {
 	dir := t.TempDir()
-	writeFile(t, filepath.Join(dir, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(dir, ".jetlintrc.json"),
 		`{"rules": {"no-floating-promises": ["error", {"ignoreVoid": false}]}}`)
 	got, err := config.ResolveCascade(dir)
 	if err != nil {
@@ -252,10 +252,10 @@ func TestResolveCascade_RuleEntryArrayCarriesOptions(t *testing.T) {
 
 func TestResolveCascade_ChildArrayShapeReplacesParentScalar(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(root, ".jetlintrc.json"),
 		`{"rules": {"no-floating-promises": "warning"}}`)
 	child := filepath.Join(root, "child")
-	writeFile(t, filepath.Join(child, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(child, ".jetlintrc.json"),
 		`{"rules": {"no-floating-promises": ["error", {"checkThenables": true}]}}`)
 	got, err := config.ResolveCascade(child)
 	if err != nil {
@@ -271,10 +271,10 @@ func TestResolveCascade_ChildArrayShapeReplacesParentScalar(t *testing.T) {
 
 func TestResolveCascade_OffClearsParentOptions(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(root, ".jetlintrc.json"),
 		`{"rules": {"no-floating-promises": ["error", {"ignoreVoid": false}]}}`)
 	child := filepath.Join(root, "child")
-	writeFile(t, filepath.Join(child, ".tsgolintrc.json"),
+	writeFile(t, filepath.Join(child, ".jetlintrc.json"),
 		`{"rules": {"no-floating-promises": "off"}}`)
 	got, err := config.ResolveCascade(child)
 	if err != nil {
@@ -290,7 +290,7 @@ func TestResolveCascade_OffClearsParentOptions(t *testing.T) {
 
 func TestLoadFile_RejectsRuleEntryWithBadShape(t *testing.T) {
 	dir := t.TempDir()
-	path := filepath.Join(dir, ".tsgolintrc.json")
+	path := filepath.Join(dir, ".jetlintrc.json")
 	writeFile(t, path,
 		`{"rules": {"no-floating-promises": 42}}`)
 	_, err := config.LoadFile(path)

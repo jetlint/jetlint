@@ -7,7 +7,7 @@ package relatedgettersetterpairs
 
 import (
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 const id = "related-getter-setter-pairs"

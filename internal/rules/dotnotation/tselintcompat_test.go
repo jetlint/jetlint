@@ -1,25 +1,36 @@
 package dotnotation_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/engine"
-	"github.com/tommymorgan/tsgolint/internal/rules/dotnotation"
-	"github.com/tommymorgan/tsgolint/internal/tselintcompat"
+	"github.com/jetlint/jetlint/internal/engine"
+	"github.com/jetlint/jetlint/internal/rules/dotnotation"
+	"github.com/jetlint/jetlint/internal/tselintcompat"
 )
 
-const fixtureTsconfigBody = `{
+// fixtureTsconfigTemplate generates the per-case tsconfig. Cases that
+// opt into `noPropertyAccessFromIndexSignature` via their
+// `languageOptions` marker get the option flipped on.
+func fixtureTsconfigTemplate(noPropertyAccessFromIndexSignature bool) string {
+	extra := ""
+	if noPropertyAccessFromIndexSignature {
+		extra = `, "noPropertyAccessFromIndexSignature": true`
+	}
+	return fmt.Sprintf(`{
   "compilerOptions": {
     "strict": true, "target": "es2022", "module": "esnext",
     "moduleResolution": "bundler", "lib": ["es2022", "dom"],
-    "skipLibCheck": true
+    "skipLibCheck": true%s
   },
   "include": ["case.ts"]
-}`
+}`, extra)
+}
 
 func TestDotNotation_TypescriptEslintCompatibility(t *testing.T) {
 	if testing.Short() {
@@ -33,7 +44,7 @@ func TestDotNotation_TypescriptEslintCompatibility(t *testing.T) {
 	var passed, failed int
 	for _, c := range cases {
 		opts := optsFromCase(c)
-		actual, runErr := runCase(t, c.Code, opts)
+		actual, runErr := runCase(t, c, opts)
 		if runErr != nil {
 			failed++
 			continue
@@ -84,13 +95,14 @@ func optsFromCase(c tselintcompat.Case) dotnotation.Options {
 	return opts
 }
 
-func runCase(t *testing.T, code string, opts dotnotation.Options) (int, error) {
+func runCase(t *testing.T, c tselintcompat.Case, opts dotnotation.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
+	noPropAccess := strings.Contains(c.LanguageOptionsText, "noPropertyAccessFromIndexSignature")
 	tsc := filepath.Join(dir, "tsconfig.json")
-	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
-	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
+	os.WriteFile(tsc, []byte(fixtureTsconfigTemplate(noPropAccess)), 0o644)
+	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(c.Code), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err

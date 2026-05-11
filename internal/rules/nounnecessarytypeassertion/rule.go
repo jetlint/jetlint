@@ -5,7 +5,7 @@ package nounnecessarytypeassertion
 
 import (
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 const id = "no-unnecessary-type-assertion"
@@ -58,13 +58,24 @@ func (r *rule) visitAs(ctx *engine.Context, n *wrapperchecker.Node) {
 	// `as const` is meaningful in many positions. By default,
 	// typescript-eslint doesn't flag it; opting into
 	// `checkLiteralConstAssertions` flips on flagging for literal
-	// expressions in non-widening positions where the `const` keyword
-	// adds nothing the const-context wouldn't already give.
+	// expressions / values in non-widening positions where the `const`
+	// keyword adds nothing the const-context wouldn't already give.
 	if isAsConst(annot) {
 		if !r.opts.CheckLiteralConstAssertions {
 			return
 		}
-		if !isLiteralExpression(src) || isInWideningPosition(n) {
+		// Upstream flags `as const` when the cast-result type is itself
+		// already a literal AND the surrounding declaration would
+		// implicitly preserve that literal (const variable / readonly
+		// property). Cover both syntactic literals (`3 as const`) and
+		// already-literal-typed values (enum members, named literal
+		// types).
+		castT := ctx.TypeOf(n)
+		if castT == nil {
+			return
+		}
+		isLiteralValue := isLiteralExpression(src) || isLiteralLikeType(castT)
+		if !isLiteralValue || isInWideningPosition(n) {
 			return
 		}
 		ctx.Report(n, "type assertion is unnecessary — the literal already has this exact type")
@@ -110,6 +121,16 @@ func (r *rule) visitAs(ctx *engine.Context, n *wrapperchecker.Node) {
 		}
 		return
 	}
+	// Special case: `T as NonNullable<T>` where T extends a non-null
+	// type. TypeScript desugars `NonNullable<T>` to `T & {}`, so the
+	// cast target is an intersection of the same type parameter with
+	// an empty object — semantically a no-op when T's constraint is
+	// already non-null. Mirrors upstream's intersection-with-type-
+	// parameter-and-empty-object branch of `isTypeUnchanged`.
+	if isTypeParamIntersectedWithEmptyObject(effectiveSrcT, target) {
+		ctx.Report(n, "type assertion is unnecessary — `NonNullable<T>` collapses to `T` when T's constraint is non-null")
+		return
+	}
 	// Object-literal source with the same property names as the cast
 	// target and a widened-mutually-assignable shape: the implicit type
 	// of the literal already structurally matches the named target, so
@@ -141,15 +162,49 @@ func (r *rule) visitAs(ctx *engine.Context, n *wrapperchecker.Node) {
 	if isInsideCastChain(n) || shouldSkipContextualCheck(n, target) {
 		return
 	}
-	if containsAny(effectiveSrcT) {
-		// `any`-tainted source narrows usefully through any cast — the
-		// cast is the only thing surfacing a real shape to the reader.
-		// Use the unwrapped source so chained `as any as T` doesn't
-		// look any-tainted just because the intermediate hop is `any`.
+	if isInDestructuringDeclaration(n) {
 		return
 	}
-	// Property value in a problematic position: the property's contextual
-	// type may not pin the source enough to skip the cast.
+	// Argument to overloaded function whose overloads disagree on
+	// this argument's parameter type — the cast might be selecting an
+	// overload, so skip the contextual check. Mirrors upstream's
+	// `isArgumentToOverloadedFunction`.
+	if isArgumentToOverloadedFunction(ctx, n, effectiveSrcT) {
+		return
+	}
+	// In a generic call context, a non-literal cast's target shape is
+	// what TypeScript will infer the generic parameter from — removing
+	// the cast would change inference. Mirrors upstream's gating via
+	// `isInGenericContext`. Property values are still checked because
+	// upstream's gate explicitly preserves those.
+	// Use effectiveSrc (post-widening-unwrap) so chained
+	// `'literal' as unknown as T` patterns still see the literal at the
+	// bottom.
+	inGeneric := isInGenericCallContext(ctx, n)
+	if inGeneric && !isLiteralExpression(effectiveSrc) {
+		if p := n.Parent(); p == nil || p.Kind() != wrapperchecker.KindPropertyAssignment {
+			return
+		}
+	}
+	// `as any` in a generic call context — upstream gates the
+	// contextual check under `castIsAny && isInGenericContext`. The
+	// cast's any-widening is what's pinning inference, so leave it.
+	if inGeneric && target.IsAny() {
+		return
+	}
+	// In a generic call context, casting to a function type shapes the
+	// generic parameter's inferred call signature. Removing the cast
+	// would let TypeScript infer a different (often broader) shape
+	// from the source's static type — keep it.
+	if inGeneric {
+		targetT := ctx.Checker().TypeFromTypeNode(annot)
+		if targetT != nil && len(targetT.CallSignatures()) > 0 {
+			return
+		}
+	}
+	if containsAny(effectiveSrcT) {
+		return
+	}
 	if isPropertyInProblematicContext(ctx, n, effectiveSrcT) {
 		return
 	}
@@ -170,6 +225,13 @@ func (r *rule) visitAs(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	if !effectiveSrcT.IsAssignableTo(ctxT) {
+		return
+	}
+	// Generics mismatch: when the contextual type has a property whose
+	// call signatures are generic but the source's corresponding
+	// property's signatures aren't, the cast is selecting between
+	// generic and non-generic shapes — keep it.
+	if genericsMismatch(effectiveSrcT, ctxT) {
 		return
 	}
 	// `null as string | null` / `undefined as T | undefined` —
@@ -282,6 +344,305 @@ func shouldSkipContextualCheck(n *wrapperchecker.Node, target *wrapperchecker.Ty
 	return false
 }
 
+// isTypeParamIntersectedWithEmptyObject reports whether `cast` is
+// shaped as `T & {}` where uncast is the type parameter T whose
+// constraint is non-nullable. TypeScript represents `NonNullable<T>`
+// exactly this way.
+func isTypeParamIntersectedWithEmptyObject(uncast, cast *wrapperchecker.Type) bool {
+	if uncast == nil || cast == nil {
+		return false
+	}
+	if !uncast.IsTypeParameter() {
+		return false
+	}
+	if !cast.IsIntersection() {
+		return false
+	}
+	parts := cast.IntersectionMembers()
+	if len(parts) != 2 {
+		return false
+	}
+	hasUncast := false
+	var other *wrapperchecker.Type
+	for _, p := range parts {
+		if p.String() == uncast.String() {
+			hasUncast = true
+			continue
+		}
+		other = p
+	}
+	if !hasUncast || other == nil {
+		return false
+	}
+	// `{}` (the empty object type) has no property names and no call/
+	// construct signatures. Generic mapped types like `Record<K, V>`
+	// or `{ [P in K]: V }` would also expose no properties but they
+	// reference type variables — exclude them.
+	if len(other.PropertyNames()) != 0 ||
+		len(other.CallSignatures()) != 0 ||
+		len(other.ConstructSignatures()) != 0 ||
+		other.HasIndexSignature("") {
+		return false
+	}
+	if containsTypeVariable(other) {
+		return false
+	}
+	// Reject types that carry a user-visible alias name (`Record<K, V>`,
+	// `Foo<T>` etc.) — `{}` from `T & {}` (NonNullable<T>) is alias-
+	// less and anonymous. tsgo's symbol name for anonymous structural
+	// types is the internal "\xfetype" marker, not a user-facing name.
+	if other.AliasSymbolName() != "" {
+		return false
+	}
+	// Constraint of uncast must exist and be non-nullable.
+	c := uncast.BaseConstraint()
+	if c == nil {
+		return false
+	}
+	return !typeContainsNullable(c)
+}
+
+// containsTypeVariable reports whether t (or any nested member/
+// argument) is a type parameter. Mirrors upstream's check used to
+// distinguish concrete empty objects (`{}`) from generic mapped types
+// (`Record<K, V>`, `{ [P in K]: V }`).
+func containsTypeVariable(t *wrapperchecker.Type) (result bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			result = false
+		}
+	}()
+	return typeContains(t, func(t *wrapperchecker.Type) bool {
+		return t != nil && t.IsTypeParameter()
+	}, map[*wrapperchecker.Type]struct{}{})
+}
+
+// genericsMismatch reports whether the contextual type has at least
+// one property whose call signatures are generic (carry their own
+// type parameters) while the source's corresponding property either
+// is absent or has only non-generic signatures. The cast there is
+// load-bearing — the source can't substitute for a generic API.
+func genericsMismatch(uncast, contextual *wrapperchecker.Type) bool {
+	if uncast == nil || contextual == nil {
+		return false
+	}
+	defer func() {
+		_ = recover()
+	}()
+	for _, name := range contextual.PropertyNames() {
+		ctxPropT := contextual.PropertyType(name)
+		if ctxPropT == nil {
+			continue
+		}
+		ctxSigs := ctxPropT.CallSignatures()
+		anyCtxGeneric := false
+		for _, sig := range ctxSigs {
+			if decl := sig.SignatureDeclaration(); decl != nil && signatureHasTypeParameters(decl) {
+				anyCtxGeneric = true
+				break
+			}
+		}
+		if !anyCtxGeneric {
+			continue
+		}
+		uncastPropT := uncast.PropertyType(name)
+		if uncastPropT == nil {
+			return true
+		}
+		anyUncastGeneric := false
+		for _, sig := range uncastPropT.CallSignatures() {
+			if decl := sig.SignatureDeclaration(); decl != nil && signatureHasTypeParameters(decl) {
+				anyUncastGeneric = true
+				break
+			}
+		}
+		if !anyUncastGeneric {
+			return true
+		}
+	}
+	return false
+}
+
+// isArgumentToOverloadedFunction reports whether n is an argument to a
+// call whose callee has multiple call signatures and at least one
+// signature either lacks this argument position or types it
+// incompatibly with the uncasted value. Mirrors upstream.
+func isArgumentToOverloadedFunction(ctx *engine.Context, n *wrapperchecker.Node, srcT *wrapperchecker.Type) bool {
+	p := n.Parent()
+	if p == nil {
+		return false
+	}
+	if p.Kind() != wrapperchecker.KindCallExpression &&
+		p.Kind() != wrapperchecker.KindNewExpression {
+		return false
+	}
+	args := p.CallArguments()
+	argIdx := -1
+	for i, a := range args {
+		if sameNodeIdentity(a, n) {
+			argIdx = i
+			break
+		}
+	}
+	if argIdx < 0 {
+		return false
+	}
+	callee := p.CalleeExpression()
+	if callee == nil {
+		return false
+	}
+	calleeT := ctx.TypeOf(callee)
+	if calleeT == nil {
+		return false
+	}
+	sigs := calleeT.CallSignatures()
+	if len(sigs) <= 1 {
+		return false
+	}
+	// Collect this argument's parameter type for each overload. For
+	// rest parameters (`...items: T[]`), unwrap to the element type
+	// so the comparison reflects what the argument is checked against.
+	paramTypes := make([]*wrapperchecker.Type, 0, len(sigs))
+	for _, sig := range sigs {
+		params := sig.ParameterTypes()
+		if argIdx >= len(params) {
+			return true
+		}
+		pt := params[argIdx]
+		// If the signature has a rest parameter at the last position
+		// and we're at or past it, the actual checked type is the
+		// element type of the rest array.
+		if sig.HasRestParameter() && argIdx >= len(params)-1 && pt != nil {
+			if elem := pt.ArrayElementType(); elem != nil {
+				pt = elem
+			}
+		}
+		paramTypes = append(paramTypes, pt)
+	}
+	// All param types equal → not an overload-discriminating arg.
+	first := paramTypes[0]
+	allEqual := true
+	for _, pt := range paramTypes[1:] {
+		if pt == nil || first == nil || pt.String() != first.String() {
+			allEqual = false
+			break
+		}
+	}
+	if allEqual {
+		return false
+	}
+	if srcT == nil {
+		return true
+	}
+	// Overloads differ — if the uncasted source isn't assignable to
+	// every overload's param, the cast is selecting overloads.
+	for _, pt := range paramTypes {
+		if pt == nil || !srcT.IsAssignableTo(pt) {
+			return true
+		}
+	}
+	return false
+}
+
+// isInGenericCallContext reports whether n sits inside an
+// argument-passing position for a CallExpression/NewExpression whose
+// callee has at least one generic call signature. Mirrors upstream's
+// `isInGenericContext` heuristic without needing scope analysis: walk
+// ancestors, halt at function-with-block-body, and ask the checker
+// whether the call's callee is generic.
+func isInGenericCallContext(ctx *engine.Context, n *wrapperchecker.Node) bool {
+	seenFunction := false
+	cur := n.Parent()
+	for cur != nil {
+		switch cur.Kind() {
+		case wrapperchecker.KindFunctionDeclaration:
+			return false
+		case wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction:
+			if body := cur.FunctionBody(); body != nil && body.Kind() == wrapperchecker.KindBlock {
+				return false
+			}
+			if seenFunction {
+				return false
+			}
+			seenFunction = true
+		case wrapperchecker.KindCallExpression,
+			wrapperchecker.KindNewExpression:
+			callee := cur.CalleeExpression()
+			if callee == nil {
+				return false
+			}
+			calleeT := ctx.TypeOf(callee)
+			if calleeT != nil && hasGenericCallSignature(calleeT) {
+				return true
+			}
+		}
+		cur = cur.Parent()
+	}
+	return false
+}
+
+func hasGenericCallSignature(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	for _, sig := range t.CallSignatures() {
+		decl := sig.SignatureDeclaration()
+		if decl == nil {
+			continue
+		}
+		if signatureHasTypeParameters(decl) {
+			return true
+		}
+	}
+	return false
+}
+
+// signatureHasTypeParameters reports whether a function-like
+// declaration node carries one or more type parameter declarations
+// (e.g. `function f<T>()`). Detects them by walking the immediate
+// children for KindTypeParameter nodes.
+func signatureHasTypeParameters(decl *wrapperchecker.Node) bool {
+	found := false
+	decl.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() == wrapperchecker.KindTypeParameter {
+			found = true
+			return true
+		}
+		return false
+	})
+	return found
+}
+
+// isInDestructuringDeclaration reports whether n is the initializer
+// of a variable declaration that destructures: `const { x } = expr as T`
+// or `const [x] = expr as T`. typescript-eslint skips contextual
+// checks here because the destructuring pattern doesn't carry an
+// annotation that pins the source's full shape.
+func isInDestructuringDeclaration(n *wrapperchecker.Node) bool {
+	p := n.Parent()
+	for p != nil && p.Kind() == wrapperchecker.KindParenthesizedExpression {
+		p = p.Parent()
+	}
+	if p == nil || p.Kind() != wrapperchecker.KindVariableDeclaration {
+		return false
+	}
+	if init := p.VariableDeclarationInitializer(); init == nil ||
+		!sameNodeIdentity(init, n) {
+		return false
+	}
+	name := p.VariableDeclarationName()
+	if name == nil {
+		return false
+	}
+	switch name.Kind() {
+	case wrapperchecker.KindObjectBindingPattern,
+		wrapperchecker.KindArrayBindingPattern:
+		return true
+	}
+	return false
+}
+
 // isCallArgument reports whether n sits as a direct argument of a
 // call or new expression (parens transparent).
 func isCallArgument(n *wrapperchecker.Node) bool {
@@ -297,11 +658,12 @@ func isCallArgument(n *wrapperchecker.Node) bool {
 }
 
 // isPropertyInProblematicContext reports whether the cast at n is the
-// value of an object-literal property where the property's contextual
-// type is itself a union (or absent), or where the source isn't
-// assignable to the property's non-nullable contextual type. Mirrors
-// upstream's gating: in those positions the cast may be selecting a
-// union member's shape, so we skip the contextual check.
+// value of an object-literal property in a position where the cast is
+// load-bearing and the contextual check should be skipped. Mirrors
+// upstream's gating: union object context narrows the property
+// contextual (skip if the non-null contextual is itself a union or
+// the source isn't assignable); object literals supplied to a
+// `satisfies` operator always skip.
 func isPropertyInProblematicContext(ctx *engine.Context, n *wrapperchecker.Node, srcT *wrapperchecker.Type) bool {
 	p := n.Parent()
 	if p == nil || p.Kind() != wrapperchecker.KindPropertyAssignment {
@@ -312,20 +674,60 @@ func isPropertyInProblematicContext(ctx *engine.Context, n *wrapperchecker.Node,
 		return false
 	}
 	objCtx := ctx.Checker().ContextualTypeOf(obj)
-	if objCtx == nil || !objCtx.IsUnion() {
+	if objCtx != nil && objCtx.IsUnion() {
+		propCtx := ctx.Checker().ContextualTypeOf(n)
+		if propCtx == nil {
+			return true
+		}
+		// Approximate `getNonNullableType(propCtx)` by counting
+		// non-nullable union members. A propCtx whose non-null part is
+		// a true union (≥ 2 members) means the cast may be selecting a
+		// member.
+		if nonNullableUnionCount(propCtx) >= 2 {
+			return true
+		}
+		return srcT == nil || !srcT.IsAssignableTo(propCtx)
+	}
+	// Object literal supplied to `satisfies T` (directly or via a
+	// single call wrapper like `identity({...}) satisfies T`) — the
+	// cast inside the property is load-bearing for the satisfies
+	// shape check, so skip.
+	parent := obj.Parent()
+	if parent == nil {
 		return false
 	}
-	propCtx := ctx.Checker().ContextualTypeOf(n)
-	if propCtx == nil {
+	if parent.Kind() == wrapperchecker.KindSatisfiesExpression {
 		return true
 	}
-	if propCtx.IsUnion() {
-		// Union property type — the cast can be narrowing to a member.
-		return true
+	if parent.Kind() == wrapperchecker.KindCallExpression {
+		if gp := parent.Parent(); gp != nil &&
+			gp.Kind() == wrapperchecker.KindSatisfiesExpression {
+			return true
+		}
 	}
-	// Single-shape property contextual: only problematic when the
-	// source doesn't already fit, so the cast is doing real work.
-	return srcT == nil || !srcT.IsAssignableTo(propCtx)
+	return false
+}
+
+// nonNullableUnionCount returns the number of non-nullable members
+// of a (possibly union) type. Single non-null types count as 1.
+func nonNullableUnionCount(t *wrapperchecker.Type) int {
+	if t == nil {
+		return 0
+	}
+	if !t.IsUnion() {
+		if t.IsNullOrUndefined() || t.IsVoid() {
+			return 0
+		}
+		return 1
+	}
+	count := 0
+	for _, m := range t.UnionMembers() {
+		if m.IsNullOrUndefined() || m.IsVoid() {
+			continue
+		}
+		count++
+	}
+	return count
 }
 
 // castSource returns the source-expression of n if n is a cast.
@@ -342,7 +744,15 @@ func castSource(n *wrapperchecker.Node) *wrapperchecker.Node {
 // containsAny reports whether t (or any nested member/argument) is
 // the `any` type. Mirrors upstream's `containsAny` — `any` anywhere in
 // the source type means the cast is doing meaningful narrowing.
-func containsAny(t *wrapperchecker.Type) bool {
+// Defensively recovers from panics deep in the type-walk and returns
+// false; an over-conservative answer here only suppresses one branch
+// of the contextual check.
+func containsAny(t *wrapperchecker.Type) (result bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			result = false
+		}
+	}()
 	return typeContains(t, func(t *wrapperchecker.Type) bool {
 		return t != nil && t.IsAny()
 	}, map[*wrapperchecker.Type]struct{}{})
@@ -428,6 +838,35 @@ func (r *rule) targetIsIgnored(annot *wrapperchecker.Node) bool {
 		if text == ignored {
 			return true
 		}
+	}
+	return false
+}
+
+// isLiteralLikeType reports whether t is a literal type — boolean/
+// string/number/bigint literal, enum member, or tuple. Mirrors
+// upstream's `isTypeLiteral` which uses TypeScript's `type.isLiteral()`
+// (which includes enum-literal). Used by the `as const` check to fire
+// when the cast preserves an already-literal value.
+func isLiteralLikeType(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsTupleType() {
+		return true
+	}
+	if t.IsEnumLike() {
+		return true
+	}
+	s := t.String()
+	switch {
+	case t.IsBooleanLike() && (s == "true" || s == "false"):
+		return true
+	case t.IsStringLike() && s != "string":
+		return true
+	case t.IsNumberLike() && s != "number":
+		return true
+	case t.IsBigIntLike() && s != "bigint":
+		return true
 	}
 	return false
 }
@@ -673,6 +1112,17 @@ func visitNonNull(ctx *engine.Context, n *wrapperchecker.Node) {
 	if t == nil {
 		return
 	}
+	// `=`-assignment special case (mirrors upstream): on the LHS,
+	// always report ("contextuallyUnnecessary"). On the RHS, skip
+	// entirely — the assertion changes type-flow for code that runs
+	// after the assignment so it isn't strictly redundant.
+	if p := n.Parent(); p != nil && p.Kind() == wrapperchecker.KindBinaryExpression &&
+		p.BinaryOperatorKind() == wrapperchecker.KindEqualsToken {
+		if l := p.BinaryLeft(); l != nil && sameNodeIdentity(l, n) {
+			ctx.Report(n, "non-null assertion is unnecessary — the assignment target already accepts the value's nullable members")
+		}
+		return
+	}
 	// The non-null assertion is redundant when the surrounding context
 	// already accepts the source's full type (`let y: T | null = x!`
 	// where `x: T | null` discards the assertion's effect; `nonNull(x!)`
@@ -706,6 +1156,64 @@ func visitNonNull(ctx *engine.Context, n *wrapperchecker.Node) {
 	}
 }
 
+// isVarDeclaredInNestedBlock reports whether a `var` declaration node
+// sits inside a nested block (deeper than the enclosing function /
+// source file) that does NOT contain useSite. var-declarations hoist
+// to the containing function/global scope, so the binding is visible
+// outside the declaring block — but TypeScript treats the variable as
+// possibly-undefined at uses that don't lexically follow the
+// assignment. The `!` there suppresses a real "used before assigned"
+// diagnostic, so don't flag it.
+func isVarDeclaredInNestedBlock(decl, useSite *wrapperchecker.Node) bool {
+	if decl == nil || useSite == nil {
+		return false
+	}
+	list := decl.Parent()
+	if list == nil || list.Kind() != wrapperchecker.KindVariableDeclarationList {
+		return false
+	}
+	stmt := list.Parent()
+	if stmt == nil {
+		return false
+	}
+	// Walk up from the VariableStatement looking for a Block whose
+	// parent is NOT another Block / function-like / source-file. A
+	// nesting Block means the declaration is inside a scoped chunk.
+	for cur := stmt.Parent(); cur != nil; cur = cur.Parent() {
+		switch cur.Kind() {
+		case wrapperchecker.KindSourceFile,
+			wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindConstructor,
+			wrapperchecker.KindGetAccessor,
+			wrapperchecker.KindSetAccessor:
+			// Reached function-/file-scope without hitting a Block —
+			// the declaration is at the same scope as the use.
+			return false
+		case wrapperchecker.KindBlock:
+			// Nested block. Is useSite inside this block? If yes, the
+			// declaration is in scope at the use point. If no, the use
+			// is outside the declarator's block — flow analysis would
+			// treat the binding as possibly-undefined.
+			if !nodeIsDescendantOf(useSite, cur) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func nodeIsDescendantOf(n, anc *wrapperchecker.Node) bool {
+	for cur := n; cur != nil; cur = cur.Parent() {
+		if sameNodeIdentity(cur, anc) {
+			return true
+		}
+	}
+	return false
+}
+
 // isPossiblyUsedBeforeAssigned reports whether expr is a bare
 // identifier that references a `let`/`var` declared without an
 // initializer (and without `declare`). At a use site reached before
@@ -731,6 +1239,12 @@ func isPossiblyUsedBeforeAssigned(ctx *engine.Context, expr *wrapperchecker.Node
 		}
 		if decl.Kind() != wrapperchecker.KindVariableDeclaration {
 			return false
+		}
+		// `var x = 1` inside a block that doesn't contain the use site
+		// hoists the binding but not the assignment — the use is
+		// possibly-undefined and the `!` suppresses a real diagnostic.
+		if isVarDeclaredInNestedBlock(decl, expr) {
+			return true
 		}
 		if decl.VariableDeclarationInitializer() != nil {
 			return false
@@ -797,6 +1311,11 @@ func contextualNullableType(ctx *engine.Context, n *wrapperchecker.Node) *wrappe
 	p := n.Parent()
 	if p == nil {
 		return nil
+	}
+	// JsxExpression wrapper (`{expr}` inside JSX) — the contextual is
+	// the JSX attribute's declared type.
+	if p.Kind() == wrapperchecker.KindJsxExpression {
+		return ctx.Checker().ContextualTypeOf(p)
 	}
 	switch p.Kind() {
 	case wrapperchecker.KindVariableDeclaration:

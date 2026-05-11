@@ -8,7 +8,7 @@ import (
 	"regexp"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 const id = "dot-notation"
@@ -147,13 +147,10 @@ func (r *rule) shouldAllowByType(ctx *engine.Context, n *wrapperchecker.Node, ke
 	if r.opts.AllowIndexSignaturePropertyAccess && typeHasIndexSignature(rt) && !typeHasOwnProperty(rt, key) {
 		return true
 	}
-	// Pattern-keyed index signatures (`[key: \`prefix_${string}\`]:
-	// T`, `[key: Lowercase<string>]: T`) only match at runtime
-	// through bracket access — there's no way to phrase
-	// `foo.\`prefix_xyz\`` as a property name. Treat the bracket
-	// form as the only legal access for any key not declared as a
-	// concrete property.
-	if typeHasNonPlainStringIndexSignature(rt) && !typeHasOwnProperty(rt, key) {
+	// Under `noPropertyAccessFromIndexSignature: true`, dot access is a
+	// type-checking error for any property that only resolves via an
+	// index signature. Keep the bracket form in that case.
+	if ctx.Program().NoPropertyAccessFromIndexSignature() && typeHasIndexSignature(rt) && !typeHasOwnProperty(rt, key) {
 		return true
 	}
 	return false

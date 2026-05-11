@@ -7,7 +7,7 @@ import (
 )
 
 // GitHubActions emits diagnostics as GitHub Actions workflow commands
-// (the ::error / ::warning protocol). When tsgolint runs inside a
+// (the ::error / ::warning protocol). When jetlint runs inside a
 // GitHub Actions workflow, this produces inline annotations on the
 // PR/commit at the exact source location of each finding — the
 // highest-leverage CI integration with no extra setup.

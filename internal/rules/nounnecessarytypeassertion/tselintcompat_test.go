@@ -1,25 +1,153 @@
 package nounnecessarytypeassertion_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
-	"github.com/tommymorgan/tsgolint/internal/engine"
-	"github.com/tommymorgan/tsgolint/internal/rules/nounnecessarytypeassertion"
-	"github.com/tommymorgan/tsgolint/internal/tselintcompat"
+	"github.com/jetlint/jetlint/internal/engine"
+	"github.com/jetlint/jetlint/internal/rules/nounnecessarytypeassertion"
+	"github.com/jetlint/jetlint/internal/tselintcompat"
 )
 
-const fixtureTsconfigBody = `{
+// hasJsxTag reports whether the source contains an opening JSX tag
+// `<Tag ...>` or a self-closing JSX tag `<Tag ... />` where Tag is a
+// JSX-style identifier (`div`, `Component`). Excludes TypeScript type
+// assertions like `<number>(x)` which use the same `<` syntax.
+func hasJsxTag(s string) bool {
+	for i := 0; i+1 < len(s); i++ {
+		if s[i] != '<' {
+			continue
+		}
+		next := s[i+1]
+		if !isJsxNameStart(next) {
+			continue
+		}
+		// Scan the identifier portion; immediately after, expect either
+		// `>` (open tag, including `/>`), whitespace+attr (`<Foo attr=`)
+		// or `/>`. Type assertion `<number>(...)` has the form
+		// `<Identifier>(` — distinguish via lookbehind: type assertions
+		// follow an `=` or `(`/`,`, not text that ends a closing tag.
+		end := i + 2
+		for end < len(s) && (isJsxNameCont(s[end])) {
+			end++
+		}
+		if end >= len(s) {
+			continue
+		}
+		c := s[end]
+		// JSX: `<Foo />` or `<Foo>` followed by a child or another `<`.
+		if c == '/' && end+1 < len(s) && s[end+1] == '>' {
+			// `<Foo/>` — self-closing JSX. Could still be confused with
+			// `<Foo/>` in non-JSX? No, that's only JSX.
+			return true
+		}
+		if c == '>' {
+			// Could be `<number>(...)` type assertion. Look at the
+			// character before `<`: type assertions are typically
+			// preceded by `=`, `(`, `,`, `[`, `:`, or `return`.
+			j := i - 1
+			for j >= 0 && (s[j] == ' ' || s[j] == '\t' || s[j] == '\n') {
+				j--
+			}
+			if j >= 0 {
+				switch s[j] {
+				case '=', '(', ',', '[', ':', '?', '&', '|', '+', '-', '*', '!':
+					continue
+				}
+				// `return <T>x` would also be a type assertion. Detect
+				// by reading back the previous word.
+				if isJsxNameCont(s[j]) {
+					ws := j
+					for ws >= 0 && isJsxNameCont(s[ws]) {
+						ws--
+					}
+					word := s[ws+1 : j+1]
+					if word == "return" || word == "yield" || word == "throw" || word == "await" {
+						continue
+					}
+				}
+			}
+			return true
+		}
+		if c == ' ' || c == '\t' || c == '\n' {
+			// `<Foo attr={...}>` — attribute next. Skip a `/* ... */`
+			// comment if present, then accept identifier, `{`, or
+			// self-closing `/>`. Bare `/` followed by `*` is a comment,
+			// not a self-closing tag.
+			k := skipJsxWhitespaceAndComments(s, end)
+			if k >= len(s) {
+				continue
+			}
+			if isJsxNameStart(s[k]) || s[k] == '{' {
+				return true
+			}
+			if s[k] == '/' && k+1 < len(s) && s[k+1] == '>' {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// skipJsxWhitespaceAndComments advances past any combination of
+// whitespace and `/* ... */` block comments starting at i, returning
+// the index of the next significant character.
+func skipJsxWhitespaceAndComments(s string, i int) int {
+	for i < len(s) {
+		c := s[i]
+		if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
+			i++
+			continue
+		}
+		if c == '/' && i+1 < len(s) && s[i+1] == '*' {
+			j := i + 2
+			for j+1 < len(s) && !(s[j] == '*' && s[j+1] == '/') {
+				j++
+			}
+			i = j + 2
+			continue
+		}
+		break
+	}
+	return i
+}
+
+func isJsxNameStart(c byte) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
+}
+
+func isJsxNameCont(c byte) bool {
+	return isJsxNameStart(c) || (c >= '0' && c <= '9') || c == '-' || c == '.'
+}
+
+// fixtureTsconfigTemplate generates the per-case tsconfig. Variant
+// options (noUncheckedIndexedAccess, exactOptionalPropertyTypes, jsx)
+// flip on based on markers in the case source.
+func fixtureTsconfigTemplate(noUnchecked, exactOptional, jsx bool, fileExt string) string {
+	extraOpts := ""
+	if noUnchecked {
+		extraOpts += `, "noUncheckedIndexedAccess": true`
+	}
+	if exactOptional {
+		extraOpts += `, "exactOptionalPropertyTypes": true`
+	}
+	if jsx {
+		extraOpts += `, "jsx": "preserve"`
+	}
+	return fmt.Sprintf(`{
   "compilerOptions": {
     "strict": true, "target": "es2022", "module": "esnext",
     "moduleResolution": "bundler", "lib": ["es2022", "dom"],
-    "skipLibCheck": true
+    "skipLibCheck": true%s
   },
-  "include": ["case.ts"]
-}`
+  "include": ["case.%s", "var-declaration.ts"]
+}`, extraOpts, fileExt)
+}
 
 func TestNoUnnecessaryTypeAssertion_TypescriptEslintCompatibility(t *testing.T) {
 	if testing.Short() {
@@ -32,7 +160,7 @@ func TestNoUnnecessaryTypeAssertion_TypescriptEslintCompatibility(t *testing.T) 
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code, optsFromCase(c))
+		actual, runErr := runCase(t, c, optsFromCase(c))
 		if runErr != nil {
 			failed++
 			continue
@@ -78,13 +206,29 @@ func optsFromCase(c tselintcompat.Case) nounnecessarytypeassertion.Options {
 	return opts
 }
 
-func runCase(t *testing.T, code string, opts nounnecessarytypeassertion.Options) (int, error) {
+func runCase(t *testing.T, c tselintcompat.Case, opts nounnecessarytypeassertion.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
+	noUnchecked := strings.Contains(c.LanguageOptionsText, "noUncheckedIndexedAccess") ||
+		strings.Contains(c.LanguageOptionsText, "optionsWithOnUncheckedIndexedAccess")
+	exactOptional := strings.Contains(c.LanguageOptionsText, "exactOptionalPropertyTypes") ||
+		strings.Contains(c.LanguageOptionsText, "optionsWithExactOptionalPropertyTypes")
+	// JSX cases declare a custom `namespace JSX` or use `<Component/>` /
+	// `</Component>` self-closing patterns. `<number /* a */>(3+5)` and
+	// similar TypeScript type-assertion syntax happen to contain `/>`
+	// substrings — match more precisely on JSX-tag shapes (identifier
+	// or self-closing right after `<`).
+	useJsx := strings.Contains(c.Code, "JSX.IntrinsicElements") ||
+		hasJsxTag(c.Code)
+	fileExt := "ts"
+	if useJsx {
+		fileExt = "tsx"
+	}
 	tsc := filepath.Join(dir, "tsconfig.json")
-	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
-	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
+	os.WriteFile(tsc, []byte(fixtureTsconfigTemplate(noUnchecked, exactOptional, useJsx, fileExt)), 0o644)
+	os.WriteFile(filepath.Join(dir, "case."+fileExt), []byte(c.Code), 0o644)
+	os.WriteFile(filepath.Join(dir, "var-declaration.ts"), []byte("var varDeclarationFromFixture = 1;\n"), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err

@@ -4,8 +4,10 @@
 package nounnecessarycondition
 
 import (
+	"strings"
+
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	"github.com/tommymorgan/tsgolint/internal/engine"
+	"github.com/jetlint/jetlint/internal/engine"
 )
 
 const id = "no-unnecessary-condition"
@@ -36,6 +38,12 @@ type Options struct {
 	// function calls whose argument already matches the predicate's
 	// narrowed type (e.g. `assert(true)`, `isString(strVar)`).
 	CheckTypePredicates bool
+	// AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing
+	// suppresses the per-file `noStrictNullCheck` advisory when the
+	// program lacks `strictNullChecks`. The rule's nullability
+	// reasoning is still unreliable; the option signals the user has
+	// chosen to accept those false positives/negatives.
+	AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing bool
 }
 
 func DefaultOptions() Options { return Options{} }
@@ -49,6 +57,8 @@ func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindSourceFile:               r.visitSourceFile,
+		wrapperchecker.KindCaseClause:               visitCaseClause,
 		wrapperchecker.KindIfStatement:              visitIf,
 		wrapperchecker.KindWhileStatement:           r.visitWhile,
 		wrapperchecker.KindDoStatement:              r.visitWhile,
@@ -60,6 +70,22 @@ func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 		wrapperchecker.KindPropertyAccessExpression: visitOptionalChain,
 		wrapperchecker.KindElementAccessExpression:  visitOptionalChain,
 	}
+}
+
+// visitSourceFile emits a per-file `noStrictNullCheck` advisory when
+// the program lacks strictNullChecks. The rule's nullability reasoning
+// is unreliable without it, so we surface that limitation up-front.
+// The opt-in
+// `allowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing: true`
+// suppresses the advisory for callers who've accepted the trade-off.
+func (r *rule) visitSourceFile(ctx *engine.Context, n *wrapperchecker.Node) {
+	if r.opts.AllowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing {
+		return
+	}
+	if ctx.Program().HasStrictNullChecks() {
+		return
+	}
+	ctx.Report(n, "this rule requires `strictNullChecks` to be enabled; otherwise nullable types cannot be reliably distinguished")
 }
 
 // checkAssertionCall flags a call to a function whose signature has
@@ -152,12 +178,27 @@ func visitOptionalChain(ctx *engine.Context, n *wrapperchecker.Node) {
 		recvSrc := recv.ElementAccessReceiver()
 		idx := recv.ElementAccessIndex()
 		recvSrcT := ctx.TypeOf(recvSrc)
-		if recvSrcT == nil || !recvSrcT.IsTupleType() {
-			return
+		// With noUncheckedIndexedAccess, TypeScript already widens the
+		// element access to include `undefined` for out-of-bounds keys,
+		// so flow narrowing handles the defensiveness — we don't need
+		// to bail just because the receiver isn't a tuple.
+		if !ctx.Program().NoUncheckedIndexedAccess() &&
+			!elementAccessResolvesToDefiniteProperty(ctx, recvSrcT, idx) {
+			if recvSrcT == nil || !recvSrcT.IsTupleType() {
+				return
+			}
+			if idx == nil || idx.Kind() != wrapperchecker.KindNumericLiteral {
+				return
+			}
 		}
-		if idx == nil || idx.Kind() != wrapperchecker.KindNumericLiteral {
-			return
-		}
+	}
+	// An element-access earlier in the chain "infects" downstream
+	// links: `arr2[42]?.x?.y?.z` is defensive at every `?.` because the
+	// runtime could have shortcircuited at `arr2[42]`. Skip flagging
+	// whenever any preceding link is an element access on a non-tuple
+	// receiver.
+	if chainHasPriorElementAccess(ctx, recv) {
+		return
 	}
 	t := effectiveReceiverType(ctx, recv)
 	if t == nil {
@@ -170,6 +211,159 @@ func visitOptionalChain(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	ctx.Report(n, "optional chain is unnecessary — the receiver is already non-nullable")
+}
+
+// unionPropertyType resolves `srcT[idxT]` when idxT is a string
+// literal (or a union of string literals). For a single literal name
+// it returns srcT.PropertyType(name); for a union it returns the
+// union of each member's property type — provided every member
+// resolves. Returns nil otherwise so the caller can fall back to the
+// access expression's static type.
+func unionPropertyType(srcT, idxT *wrapperchecker.Type) *wrapperchecker.Type {
+	names := stringLiteralMembers(idxT)
+	if len(names) == 0 {
+		return nil
+	}
+	if len(names) == 1 {
+		return srcT.PropertyType(names[0])
+	}
+	// Multiple literal names: any missing property means we can't
+	// fully resolve. typescript-eslint widens to undefined in that
+	// case; we conservatively bail.
+	for _, n := range names {
+		if srcT.PropertyType(n) == nil {
+			return nil
+		}
+	}
+	// Pick the first as a representative — the rule only needs to
+	// know whether the type is nullable, not the exact union shape.
+	return srcT.PropertyType(names[0])
+}
+
+// elementAccessResolvesToDefiniteProperty reports whether the
+// indexed-access `recvSrcT[idx]` is guaranteed to land on a declared,
+// non-optional property of the (non-nullable) source. When that holds,
+// the access has the same nullability guarantees as a regular property
+// access — so a subsequent `?.` in the chain is doing no real work,
+// just like for `foo?.bar?.x`. Index signatures don't count: they
+// could hit any string key and TypeScript reports the value type even
+// when the runtime key is absent.
+func elementAccessResolvesToDefiniteProperty(ctx *engine.Context, recvSrcT *wrapperchecker.Type, idx *wrapperchecker.Node) bool {
+	if recvSrcT == nil || idx == nil {
+		return false
+	}
+	srcT := nonNullable(recvSrcT)
+	if srcT == nil {
+		return false
+	}
+	idxT := ctx.TypeOf(idx)
+	if idxT == nil {
+		return false
+	}
+	for _, name := range stringLiteralMembers(idxT) {
+		if !typeHasDefiniteOwnProperty(srcT, name) {
+			return false
+		}
+	}
+	// Require at least one literal — pure index-signature access stays
+	// defensive.
+	return len(stringLiteralMembers(idxT)) > 0
+}
+
+// stringLiteralMembers returns the literal string values present in
+// t, walking unions. Returns nil for types whose values aren't
+// statically known.
+func stringLiteralMembers(t *wrapperchecker.Type) []string {
+	if t == nil {
+		return nil
+	}
+	if v, ok := t.StringLiteralValue(); ok {
+		return []string{v}
+	}
+	if !t.IsUnion() {
+		return nil
+	}
+	var out []string
+	for _, m := range t.UnionMembers() {
+		v, ok := m.StringLiteralValue()
+		if !ok {
+			return nil
+		}
+		out = append(out, v)
+	}
+	return out
+}
+
+// typeHasDefiniteOwnProperty reports whether name resolves on t to a
+// declared, non-optional property whose static type carries no
+// `undefined` member. Walks union members so the check is conservative
+// for `A | B` — every branch must contribute the same guarantee.
+func typeHasDefiniteOwnProperty(t *wrapperchecker.Type, name string) bool {
+	if t == nil {
+		return false
+	}
+	members := []*wrapperchecker.Type{t}
+	if t.IsUnion() {
+		members = t.UnionMembers()
+	}
+	for _, m := range members {
+		sym := m.PropertySymbol(name)
+		if sym == nil {
+			return false
+		}
+		if sym.IsOptional() {
+			return false
+		}
+		pt := m.PropertyType(name)
+		if pt == nil {
+			return false
+		}
+		if typeIncludesUndefined(pt) {
+			return false
+		}
+	}
+	return true
+}
+
+// chainHasPriorElementAccess walks the chain from recv backwards
+// toward its root, returning true if any link is an element access on
+// a non-tuple receiver AND TypeScript's compile-time type for that
+// access is NOT nullable. Without `noUncheckedIndexedAccess`,
+// TypeScript reports the array element as fully-typed, but at
+// runtime the index could be out of range — so subsequent optional
+// links in the chain remain defensive. When the option is on, the
+// type already carries `| undefined` and TypeScript's flow narrowing
+// handles the rest; we don't need a special "infect" exception there.
+func chainHasPriorElementAccess(ctx *engine.Context, recv *wrapperchecker.Node) bool {
+	for cur := recv; cur != nil; {
+		if cur.Kind() == wrapperchecker.KindElementAccessExpression {
+			recvSrcT := ctx.TypeOf(cur.ElementAccessReceiver())
+			isUnchecked := false
+			if elemT := ctx.TypeOf(cur); elemT != nil {
+				isUnchecked = typeContainsNullableForOptionalChain(elemT)
+			}
+			if !isUnchecked && !ctx.Program().NoUncheckedIndexedAccess() {
+				// Element type is statically non-nullable but could
+				// still be out-of-bounds at runtime — defensive chain.
+				// With `noUncheckedIndexedAccess`, TypeScript widens
+				// out-of-bounds accesses to `| undefined`; control-flow
+				// narrowing strips that when the index is safe, so a
+				// non-nullable result here is genuinely safe.
+				if recvSrcT == nil || !recvSrcT.IsTupleType() {
+					return true
+				}
+				idx := cur.ElementAccessIndex()
+				if idx == nil || idx.Kind() != wrapperchecker.KindNumericLiteral {
+					return true
+				}
+			}
+		}
+		if !cur.IsOptionalChain() {
+			return false
+		}
+		cur = optionalChainReceiver(cur)
+	}
+	return false
 }
 
 // effectiveReceiverType returns the type the chain link sees AFTER any
@@ -200,20 +394,87 @@ func effectiveReceiverType(ctx *engine.Context, recv *wrapperchecker.Node) *wrap
 					}
 				}
 			}
-		case wrapperchecker.KindCallExpression:
-			// `foo?.bar()` — return type of the call signature on the
-			// non-nullable callee gives the value seen at the next link.
-			callee := recv.CalleeExpression()
-			if calleeT := nonNullable(ctx.TypeOf(callee)); calleeT != nil {
-				if sigs := calleeT.CallSignatures(); len(sigs) > 0 {
-					if rt := sigs[0].ReturnType(); rt != nil {
-						return rt
+			// Mapped-type access doesn't surface a concrete property
+			// symbol, so PropertyType returns nil even when the named
+			// access is well-typed. The chain-added `| undefined` is
+			// the only nullability on the receiver in that case —
+			// strip it so the outer link reads as unnecessary.
+			if propertyAccessHasNoIntrinsicUndefined(ctx, recv) {
+				if et := nonNullable(ctx.TypeOf(recv)); et != nil {
+					return et
+				}
+			}
+		case wrapperchecker.KindElementAccessExpression:
+			// `foo?.[key]` — at the point the next `?.` runs, foo was
+			// non-nullish. If `key`'s type is a string literal (or a
+			// union of them) naming definite properties of the
+			// non-nullable receiver, the access has a precise type
+			// that excludes the chain's `| undefined`. Otherwise,
+			// return the access type as-is: any `| undefined` it
+			// still carries (from the receiver's index signature or
+			// `noUncheckedIndexedAccess`) is real, not chain-induced.
+			src := recv.ElementAccessReceiver()
+			idx := recv.ElementAccessIndex()
+			if src != nil && idx != nil {
+				if st := nonNullable(ctx.TypeOf(src)); st != nil {
+					if it := ctx.TypeOf(idx); it != nil {
+						if pt := unionPropertyType(st, it); pt != nil {
+							return pt
+						}
 					}
 				}
+			}
+		case wrapperchecker.KindCallExpression:
+			// `foo?.bar()` — at the next chain link, foo wasn't nullish.
+			// Inspect call signatures from every non-nullish union member
+			// of the callee: if any returns nullable, the next `?.` is
+			// doing real work and we want the caller to see that.
+			callee := recv.CalleeExpression()
+			if rt := callReturnTypeForChain(ctx, callee); rt != nil {
+				return rt
 			}
 		}
 	}
 	return ctx.TypeOf(recv)
+}
+
+// callReturnTypeForChain reports the type that an optional-chained
+// call expression's value carries forward to the next chain link, taking
+// every callable union member of the callee into account. If any member
+// can return nullable, prefer that signature's return type so the
+// outer chain link reads as still doing work.
+func callReturnTypeForChain(ctx *engine.Context, callee *wrapperchecker.Node) *wrapperchecker.Type {
+	t := ctx.TypeOf(callee)
+	if t == nil {
+		return nil
+	}
+	members := []*wrapperchecker.Type{t}
+	if t.IsUnion() {
+		members = t.UnionMembers()
+	}
+	var firstNonNullable *wrapperchecker.Type
+	for _, m := range members {
+		if m == nil || m.IsNullOrUndefined() || m.IsVoid() {
+			continue
+		}
+		sigs := m.CallSignatures()
+		if len(sigs) == 0 {
+			continue
+		}
+		for _, sig := range sigs {
+			rt := sig.ReturnType()
+			if rt == nil {
+				continue
+			}
+			if typeContainsNullableForOptionalChain(rt) {
+				return rt
+			}
+			if firstNonNullable == nil {
+				firstNonNullable = rt
+			}
+		}
+	}
+	return firstNonNullable
 }
 
 // nonNullable returns t with the union members for `null`, `undefined`,
@@ -418,6 +679,69 @@ func isInsideBooleanTest(n *wrapperchecker.Node) bool {
 	return false
 }
 
+// inBooleanTestPosition reports whether n sits inside a position
+// already handled by checkRecursive — the test of an if/while/for/do
+// statement, the condition of a conditional expression, the operand
+// of `!`, or a left-hand operand of `&&`/`||` whose own context is
+// itself such a position.
+func inBooleanTestPosition(n *wrapperchecker.Node) bool {
+	cur := n.Parent()
+	for cur != nil {
+		switch cur.Kind() {
+		case wrapperchecker.KindIfStatement:
+			return sameNodeIdentity(n, cur.IfCondition()) || isInsideTest(n, cur.IfCondition())
+		case wrapperchecker.KindWhileStatement, wrapperchecker.KindDoStatement:
+			return sameNodeIdentity(n, cur.WhileCondition()) || isInsideTest(n, cur.WhileCondition())
+		case wrapperchecker.KindForStatement:
+			return sameNodeIdentity(n, cur.ForStatementCondition()) || isInsideTest(n, cur.ForStatementCondition())
+		case wrapperchecker.KindConditionalExpression:
+			return sameNodeIdentity(n, cur.ConditionalCondition()) || isInsideTest(n, cur.ConditionalCondition())
+		case wrapperchecker.KindPrefixUnaryExpression:
+			if cur.PrefixUnaryOperator() == "!" {
+				cur = cur.Parent()
+				continue
+			}
+			return false
+		case wrapperchecker.KindParenthesizedExpression:
+			cur = cur.Parent()
+			continue
+		case wrapperchecker.KindBinaryExpression:
+			switch cur.BinaryOperatorKind() {
+			case wrapperchecker.KindAmpersandAmpersandToken,
+				wrapperchecker.KindBarBarToken:
+				cur = cur.Parent()
+				continue
+			}
+			return false
+		}
+		return false
+	}
+	return false
+}
+
+// sameNodeIdentity reports whether two wrapper nodes refer to the
+// same underlying AST node (compared via source-range tuples).
+func sameNodeIdentity(a, b *wrapperchecker.Node) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	af, asl, asc, ael, aec := a.SourceRange()
+	bf, bsl, bsc, bel, bec := b.SourceRange()
+	return af == bf && asl == bsl && asc == bsc && ael == bel && aec == bec
+}
+
+func isInsideTest(n, test *wrapperchecker.Node) bool {
+	if test == nil {
+		return false
+	}
+	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
+		if sameNodeIdentity(cur, test) {
+			return true
+		}
+	}
+	return false
+}
+
 // visitBinary covers `a && b` and `a || b` outside an explicit test
 // position — the operator's branching depends on `a`'s truthiness,
 // so a constant `a` makes the whole expression redundant. `??` is
@@ -431,6 +755,13 @@ func visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
 		wrapperchecker.KindBarBarToken,
 		wrapperchecker.KindAmpersandAmpersandEqualsToken,
 		wrapperchecker.KindBarBarEqualsToken:
+		// Skip when this binary is itself a sub-expression of a
+		// conditional position (if/while/for/do/conditional/!) — the
+		// condition visitor's recursive walk already reports each
+		// constant operand; firing here too would double-report.
+		if inBooleanTestPosition(n) {
+			return
+		}
 		if l := n.BinaryLeft(); l != nil {
 			check(ctx, l)
 		}
@@ -471,10 +802,13 @@ func visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
 			return
 		}
 		if !typeIncludesNullOrUndefined(t) {
-			// Skip indexed/keyed access here — under
-			// noUncheckedIndexedAccess the runtime value can be
-			// undefined even though the static type is narrower.
-			if isIndexLikeAccess(l) {
+			// Skip indexed/keyed access here — without
+			// noUncheckedIndexedAccess the static type doesn't include
+			// the runtime "missing key" case, so the `??` is a
+			// reasonable safety net. With the option on, the static
+			// type already widens to include `undefined`, so a
+			// non-nullable narrowing means the `??` is genuinely dead.
+			if isIndexLikeAccess(l) && !ctx.Program().NoUncheckedIndexedAccess() {
 				return
 			}
 			ctx.Report(l, "left of `??` is never null or undefined")
@@ -495,6 +829,42 @@ func visitBinary(ctx *engine.Context, n *wrapperchecker.Node) {
 		wrapperchecker.KindExclamationEqualsToken:
 		checkEquality(ctx, n)
 	}
+}
+
+// visitCaseClause flags `case X:` when the discriminant's static
+// type and X's static type are both single literals that don't match
+// — the case can never run — or that do match, since case fall-
+// through over an always-matching value can hide bugs. Mirrors
+// upstream's SwitchCase handler, which models the clause as
+// `discriminant === test`.
+func visitCaseClause(ctx *engine.Context, n *wrapperchecker.Node) {
+	test := n.CaseExpression()
+	if test == nil {
+		return
+	}
+	parent := n.Parent()
+	for parent != nil && parent.Kind() != wrapperchecker.KindSwitchStatement {
+		parent = parent.Parent()
+	}
+	if parent == nil {
+		return
+	}
+	disc := parent.SwitchExpression()
+	if disc == nil {
+		return
+	}
+	lt, rt := ctx.TypeOf(disc), ctx.TypeOf(test)
+	if lt == nil || rt == nil {
+		return
+	}
+	if !isSingleLiteral(lt) || !isSingleLiteral(rt) {
+		return
+	}
+	ls, rs := lt.String(), rt.String()
+	if ls == "" || rs == "" {
+		return
+	}
+	ctx.Report(test, "case label comparison is statically determinable from the literal types ("+ls+" vs "+rs+")")
 }
 
 // checkEquality flags `a === b` (and the other equality operators)
@@ -756,7 +1126,22 @@ func isSingleLiteral(t *wrapperchecker.Type) bool {
 }
 
 func visitIf(ctx *engine.Context, n *wrapperchecker.Node) {
+	if hasEslintDisableNextLine(n) {
+		return
+	}
 	checkRecursive(ctx, n.IfCondition())
+}
+
+// hasEslintDisableNextLine reports whether the leading trivia of n
+// includes an `// eslint-disable-next-line` directive. typescript-
+// eslint suppresses diagnostics on the directly-following statement;
+// we mirror that for the if/while/for handlers so cases that gate the
+// rule on a disable comment exit cleanly.
+func hasEslintDisableNextLine(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	return strings.Contains(n.LeadingTriviaText(), "eslint-disable-next-line")
 }
 
 func (r *rule) visitWhile(ctx *engine.Context, n *wrapperchecker.Node) {
@@ -822,8 +1207,16 @@ func checkRecursive(ctx *engine.Context, expr *wrapperchecker.Node) {
 		switch expr.BinaryOperatorKind() {
 		case wrapperchecker.KindAmpersandAmpersandToken,
 			wrapperchecker.KindBarBarToken:
-			checkRecursive(ctx, expr.BinaryLeft())
-			checkRecursive(ctx, expr.BinaryRight())
+			l, r := expr.BinaryLeft(), expr.BinaryRight()
+			// `a && a` / `a || a` (or longer chains where the new
+			// operand duplicates the running result) — the operator
+			// has already decided based on the earlier occurrence, so
+			// the duplicate doesn't change the outcome.
+			if l != nil && r != nil && nodesTextEqual(l, r) {
+				ctx.Report(r, "duplicate operand in logical expression has no effect")
+			}
+			checkRecursive(ctx, l)
+			checkRecursive(ctx, r)
 			return
 		}
 	}
@@ -856,6 +1249,17 @@ func check(ctx *engine.Context, expr *wrapperchecker.Node) {
 		ctx.Report(expr, "condition is unreachable (type never)")
 		return
 	}
+	// Generic placeholders (type parameters, indexed access, etc.) are
+	// always "conditionally necessary" — the runtime value depends on
+	// the eventual substitution, so we can't say it's always truthy
+	// or falsy. When the constraint resolves to a concrete shape,
+	// substitute it so the downstream truthiness check can still fire.
+	if conditionInvolvesTypeVariable(t) {
+		return
+	}
+	if resolved := resolveTypeVariableConstraint(t); resolved != nil {
+		t = resolved
+	}
 	// Array index access (`arr[i]`) and non-literal tuple index access
 	// (`tuple[n]`) read as the element type without modeling the
 	// out-of-bounds-undefined possibility unless noUncheckedIndexedAccess
@@ -872,6 +1276,172 @@ func check(ctx *engine.Context, expr *wrapperchecker.Node) {
 	if isAlwaysFalsy(t) {
 		ctx.Report(expr, "condition is always falsy")
 	}
+}
+
+// propertyAccessHasNoIntrinsicUndefined reports whether a property
+// access `obj.prop` is guaranteed by the receiver's static shape to
+// produce a value of non-`undefined` type — independent of any
+// chain-induced `| undefined`. Holds when every union member of the
+// non-nullable receiver supplies the property either through:
+//   - a declared, non-optional, non-undefined property (regular
+//     interface/object types);
+//   - a string-index signature whose value type is non-undefined
+//     (mapped types without `?`, `Record<...>`).
+//
+// Used to decide whether a subsequent `?.` chain link is doing real
+// work when PropertyType returns nil (mapped types don't surface
+// concrete symbols on demand).
+func propertyAccessHasNoIntrinsicUndefined(ctx *engine.Context, recv *wrapperchecker.Node) bool {
+	if recv == nil || recv.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return false
+	}
+	src := recv.PropertyAccessReceiver()
+	name := recv.PropertyAccessName()
+	if src == nil || name == "" {
+		return false
+	}
+	srcT := nonNullable(ctx.TypeOf(src))
+	if srcT == nil {
+		return false
+	}
+	members := []*wrapperchecker.Type{srcT}
+	if srcT.IsUnion() {
+		members = srcT.UnionMembers()
+	}
+	unchecked := ctx.Program().NoUncheckedIndexedAccess()
+	for _, m := range members {
+		if !memberSuppliesDefiniteProperty(m, name, unchecked) {
+			return false
+		}
+	}
+	return true
+}
+
+// memberSuppliesDefiniteProperty reports whether type m's contribution
+// to a `.name` access is a definite, non-`undefined` value — either
+// via a declared non-optional property or a string-index signature
+// whose value type doesn't include `undefined`. Under
+// noUncheckedIndexedAccess, index-signature access widens to include
+// undefined, so the index-signature path can't supply a definite
+// value.
+func memberSuppliesDefiniteProperty(m *wrapperchecker.Type, name string, noUncheckedIndexedAccess bool) bool {
+	if m == nil {
+		return false
+	}
+	if sym := m.PropertySymbol(name); sym != nil {
+		if sym.IsOptional() {
+			return false
+		}
+		pt := m.PropertyType(name)
+		if pt == nil || typeIncludesUndefined(pt) {
+			return false
+		}
+		return true
+	}
+	if noUncheckedIndexedAccess {
+		return false
+	}
+	// Mapped types and `Record<...>`-style shapes don't surface a
+	// concrete property symbol for an arbitrary key. Ask the checker
+	// what `m[name]` resolves to — if the result is a real, non-
+	// nullable type, the access lands on a definite value.
+	if pt := m.IndexedAccessByLiteral(name); pt != nil &&
+		!pt.IsAny() && !pt.IsUnknown() && !pt.IsNever() &&
+		!typeIncludesNullOrUndefined(pt) {
+		return true
+	}
+	return false
+}
+
+// nodesTextEqual reports whether a and b share identical source
+// text after collapsing whitespace. Used to detect duplicate operands
+// in a logical expression — purely syntactic since two textually
+// identical expressions evaluated against the same scope produce the
+// same value modulo side effects, and any side effects mean the
+// duplicate is also a code-smell worth surfacing.
+func nodesTextEqual(a, b *wrapperchecker.Node) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	return collapseWS(a.SourceText()) == collapseWS(b.SourceText())
+}
+
+// collapseWS replaces every run of whitespace in s with a single
+// space and trims leading/trailing whitespace. Lets `arr [ 0 ]` match
+// `arr[0]`.
+func collapseWS(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	inWS := true
+	for _, r := range s {
+		if r == ' ' || r == '\t' || r == '\n' || r == '\r' {
+			if !inWS {
+				b.WriteByte(' ')
+				inWS = true
+			}
+			continue
+		}
+		b.WriteRune(r)
+		inWS = false
+	}
+	out := b.String()
+	if len(out) > 0 && out[len(out)-1] == ' ' {
+		out = out[:len(out)-1]
+	}
+	return out
+}
+
+// resolveTypeVariableConstraint walks t replacing type variables
+// (type parameters, indexed access) with their base constraint. Used
+// before the truthiness check so `Obj[Key]` where Obj/Key resolve to
+// concrete shapes (`Record<string, 1|2|3>['key']` → `1|2|3`) is still
+// reportable as "always truthy". Returns nil if t carries no type
+// variable and the caller can use the original value.
+func resolveTypeVariableConstraint(t *wrapperchecker.Type) *wrapperchecker.Type {
+	if t == nil {
+		return nil
+	}
+	if t.IsTypeVariable() {
+		c := t.BaseConstraint()
+		if c == nil || c == t {
+			return nil
+		}
+		if inner := resolveTypeVariableConstraint(c); inner != nil {
+			return inner
+		}
+		return c
+	}
+	return nil
+}
+
+// conditionInvolvesTypeVariable reports whether any constituent of t
+// (after walking through type-parameter and indexed-access
+// constraints) remains a generic placeholder whose runtime value is
+// unknown. Bare type parameters with a useful constraint (`T extends
+// object`, `T extends 'a' | 'b'`) are *not* opaque — their truthiness
+// follows the constraint, so the rule can still report them.
+// Similarly, an indexed access `Obj[Key]` whose constraint resolves
+// to a concrete shape is reportable. Mirrors upstream
+// `isConditionalAlwaysNecessary` working on the constrained type.
+func conditionInvolvesTypeVariable(t *wrapperchecker.Type) bool {
+	if t == nil {
+		return false
+	}
+	if t.IsTypeVariable() {
+		if c := t.BaseConstraint(); c != nil && c != t {
+			return conditionInvolvesTypeVariable(c)
+		}
+		// No narrower constraint — value is effectively `unknown`.
+		return true
+	}
+	if t.IsUnion() {
+		for _, m := range t.UnionMembers() {
+			if conditionInvolvesTypeVariable(m) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // conditionFromArrayIndexAccess reports whether expr derives its value

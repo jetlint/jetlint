@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tommymorgan/tsgolint/internal/format"
+	"github.com/jetlint/jetlint/internal/format"
 )
 
 func TestRDJSONFormatter_EmitsSourceAndDiagnosticsArray(t *testing.T) {
@@ -22,8 +22,8 @@ func TestRDJSONFormatter_EmitsSourceAndDiagnosticsArray(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected source object, got: %v", doc["source"])
 	}
-	if src["name"] != "tsgolint" {
-		t.Errorf("expected source.name 'tsgolint', got %v", src["name"])
+	if src["name"] != "jetlint" {
+		t.Errorf("expected source.name 'jetlint', got %v", src["name"])
 	}
 	if _, ok := doc["diagnostics"].([]any); !ok {
 		t.Errorf("expected diagnostics array, got: %v", doc["diagnostics"])

@@ -137,7 +137,7 @@ func TestBootstrap_BuildPhaseProducesAnExecutableThatReportsItsVersion(t *testin
 	if !strings.Contains(output, "Build complete") {
 		t.Errorf("expected 'Build complete' in output, got:\n%s", output)
 	}
-	bin := filepath.Join(binDir, "tsgolint")
+	bin := filepath.Join(binDir, "jetlint")
 	if info, err := os.Stat(bin); err != nil || info.Mode()&0o111 == 0 {
 		t.Fatalf("expected executable at %s: %v", bin, err)
 	}
