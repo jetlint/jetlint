@@ -85,7 +85,7 @@ func TestNoDeprecated_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		actual, runErr := runCase(t, c.Code, optsFromCase(c))
 		if runErr != nil {
 			failed++
 			continue
@@ -113,7 +113,30 @@ func TestNoDeprecated_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func optsFromCase(c tselintcompat.Case) nodeprecated.Options {
+	opts := nodeprecated.DefaultOptions()
+	if c.Options == nil {
+		return opts
+	}
+	raw, ok := c.Options["allow"].([]any)
+	if !ok {
+		return opts
+	}
+	opts.AllowNames = map[string]struct{}{}
+	for _, entry := range raw {
+		switch v := entry.(type) {
+		case string:
+			opts.AllowNames[v] = struct{}{}
+		case map[string]any:
+			if name, ok := v["name"].(string); ok {
+				opts.AllowNames[name] = struct{}{}
+			}
+		}
+	}
+	return opts
+}
+
+func runCase(t *testing.T, code string, opts nodeprecated.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
@@ -127,7 +150,7 @@ func runCase(t *testing.T, code string) (int, error) {
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{nodeprecated.New()},
+		[]engine.Rule{nodeprecated.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"no-deprecated": wrapperlint.SeverityError},
 	)
 	count := 0

@@ -7,6 +7,7 @@
 package nodeprecated
 
 import (
+	"encoding/json"
 	"fmt"
 
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
@@ -15,25 +16,96 @@ import (
 
 const id = "no-deprecated"
 
-func New() engine.Rule { return rule{} }
+// Options is the configurable surface of the rule. Mirrors
+// typescript-eslint's `no-deprecated` options.
+type Options struct {
+	// AllowNames lists identifier names whose deprecation warnings
+	// should be suppressed. Mirrors the upstream `allow` option in
+	// its bare-string and `{ name: "..." }`-object forms; we don't
+	// distinguish source qualifiers (file/package/lib) because the
+	// upstream tests we run through use the name alone.
+	AllowNames map[string]struct{}
+}
 
-type rule struct{}
+func DefaultOptions() Options { return Options{} }
+
+func OptionsFromJSON(raw json.RawMessage) (Options, error) {
+	out := DefaultOptions()
+	if len(raw) == 0 || string(raw) == "null" {
+		return out, nil
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return Options{}, fmt.Errorf("no-deprecated options must be a JSON object: %w", err)
+	}
+	for key, val := range fields {
+		switch key {
+		case "allow":
+			names, err := parseAllowList(val)
+			if err != nil {
+				return Options{}, fmt.Errorf("no-deprecated option %q: %w", key, err)
+			}
+			out.AllowNames = names
+		default:
+			return Options{}, fmt.Errorf("no-deprecated has no option %q", key)
+		}
+	}
+	return out, nil
+}
+
+func parseAllowList(raw json.RawMessage) (map[string]struct{}, error) {
+	var entries []json.RawMessage
+	if err := json.Unmarshal(raw, &entries); err != nil {
+		return nil, fmt.Errorf("allow must be an array: %w", err)
+	}
+	out := make(map[string]struct{}, len(entries))
+	for _, e := range entries {
+		var s string
+		if err := json.Unmarshal(e, &s); err == nil {
+			out[s] = struct{}{}
+			continue
+		}
+		var obj struct {
+			Name string `json:"name"`
+		}
+		if err := json.Unmarshal(e, &obj); err == nil && obj.Name != "" {
+			out[obj.Name] = struct{}{}
+			continue
+		}
+	}
+	return out, nil
+}
+
+func New() engine.Rule                        { return NewWithOptions(DefaultOptions()) }
+func NewWithOptions(opts Options) engine.Rule { return rule{opts: opts} }
+
+type rule struct{ opts Options }
 
 func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+func (r rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindIdentifier:              visitIdentifier,
-		wrapperchecker.KindPrivateIdentifier:       visitIdentifier,
-		wrapperchecker.KindElementAccessExpression: visitElementAccess,
-		wrapperchecker.KindSuperKeyword:            visitSuperKeyword,
+		wrapperchecker.KindIdentifier:              r.visitIdentifierMethod,
+		wrapperchecker.KindPrivateIdentifier:       r.visitIdentifierMethod,
+		wrapperchecker.KindElementAccessExpression: r.visitElementAccessMethod,
+		wrapperchecker.KindSuperKeyword:            r.visitSuperKeywordMethod,
 	}
+}
+
+func (r rule) visitIdentifierMethod(ctx *engine.Context, n *wrapperchecker.Node) {
+	visitIdentifier(ctx, n, r.opts)
+}
+func (r rule) visitElementAccessMethod(ctx *engine.Context, n *wrapperchecker.Node) {
+	visitElementAccess(ctx, n, r.opts)
+}
+func (r rule) visitSuperKeywordMethod(ctx *engine.Context, n *wrapperchecker.Node) {
+	visitSuperKeyword(ctx, n, r.opts)
 }
 
 // visitSuperKeyword handles `super(...)` constructor calls. The
 // resolved signature points at the base class's constructor; flag it
 // when that constructor carries `@deprecated`.
-func visitSuperKeyword(ctx *engine.Context, n *wrapperchecker.Node) {
+func visitSuperKeyword(ctx *engine.Context, n *wrapperchecker.Node, opts Options) {
 	parent := n.Parent()
 	if parent == nil || parent.Kind() != wrapperchecker.KindCallExpression {
 		return
@@ -45,10 +117,10 @@ func visitSuperKeyword(ctx *engine.Context, n *wrapperchecker.Node) {
 	if sig == nil || !sig.IsDeprecated() {
 		return
 	}
-	report(ctx, n, "super", sig.DeprecationReason())
+	report(ctx, n, "super", sig.DeprecationReason(), opts)
 }
 
-func visitIdentifier(ctx *engine.Context, n *wrapperchecker.Node) {
+func visitIdentifier(ctx *engine.Context, n *wrapperchecker.Node, opts Options) {
 	if isInsideImport(n) {
 		return
 	}
@@ -56,14 +128,14 @@ func visitIdentifier(ctx *engine.Context, n *wrapperchecker.Node) {
 	// local binding) but also conceptually a *use* of the source
 	// property. We flag the use here before treating the node as a
 	// declaration site.
-	if checkDestructuringPropertyUse(ctx, n) {
+	if checkDestructuringPropertyUse(ctx, n, opts) {
 		return
 	}
 	// JSX attribute names — `<A b={...} />` flags `b` if `A`'s prop
 	// type marks the property deprecated. Resolved through the
 	// contextual type of the opening element's name, not via the local
 	// identifier symbol.
-	if checkJsxAttributeUse(ctx, n) {
+	if checkJsxAttributeUse(ctx, n, opts) {
 		return
 	}
 	if isDeclarationSite(n) {
@@ -78,7 +150,7 @@ func visitIdentifier(ctx *engine.Context, n *wrapperchecker.Node) {
 			return
 		}
 	}
-	reportIfDeprecated(ctx, n)
+	reportIfDeprecated(ctx, n, opts)
 }
 
 // checkJsxAttributeUse handles `<Component prop={x} />`: the `prop`
@@ -86,7 +158,7 @@ func visitIdentifier(ctx *engine.Context, n *wrapperchecker.Node) {
 // the contextual type of the opening element to flag a deprecated
 // prop. Returns true when the visit was handled (reported, or
 // confirmed non-deprecated and no further handling needed).
-func checkJsxAttributeUse(ctx *engine.Context, n *wrapperchecker.Node) bool {
+func checkJsxAttributeUse(ctx *engine.Context, n *wrapperchecker.Node, opts Options) bool {
 	p := n.Parent()
 	if p == nil || p.Kind() != wrapperchecker.KindJsxAttribute {
 		return false
@@ -120,7 +192,7 @@ func checkJsxAttributeUse(ctx *engine.Context, n *wrapperchecker.Node) bool {
 	if prop == nil || !prop.IsDeprecated() {
 		return true
 	}
-	report(ctx, n, n.LiteralText(), prop.DeprecationReason())
+	report(ctx, n, n.LiteralText(), prop.DeprecationReason(), opts)
 	return true
 }
 
@@ -147,7 +219,7 @@ func jsxOpeningTagName(opening *wrapperchecker.Node) *wrapperchecker.Node {
 // Returns true to indicate the visit should stop (we've reported, or
 // confirmed the source property is non-deprecated and the identifier
 // otherwise carries no use semantics).
-func checkDestructuringPropertyUse(ctx *engine.Context, n *wrapperchecker.Node) bool {
+func checkDestructuringPropertyUse(ctx *engine.Context, n *wrapperchecker.Node, opts Options) bool {
 	p := n.Parent()
 	if p == nil || p.Kind() != wrapperchecker.KindBindingElement {
 		return false
@@ -188,7 +260,7 @@ func checkDestructuringPropertyUse(ctx *engine.Context, n *wrapperchecker.Node) 
 	if prop == nil || !prop.IsDeprecated() {
 		return true
 	}
-	report(ctx, n, key, prop.DeprecationReason())
+	report(ctx, n, key, prop.DeprecationReason(), opts)
 	return true
 }
 
@@ -256,7 +328,7 @@ func bindingElementKeyName(elem *wrapperchecker.Node) string {
 }
 
 
-func visitElementAccess(ctx *engine.Context, n *wrapperchecker.Node) {
+func visitElementAccess(ctx *engine.Context, n *wrapperchecker.Node, opts Options) {
 	idx := n.ElementAccessIndex()
 	recv := n.ElementAccessReceiver()
 	if idx == nil || recv == nil {
@@ -281,10 +353,10 @@ func visitElementAccess(ctx *engine.Context, n *wrapperchecker.Node) {
 	if prop == nil || !prop.IsDeprecated() {
 		return
 	}
-	report(ctx, idx, name, prop.DeprecationReason())
+	report(ctx, idx, name, prop.DeprecationReason(), opts)
 }
 
-func reportIfDeprecated(ctx *engine.Context, n *wrapperchecker.Node) {
+func reportIfDeprecated(ctx *engine.Context, n *wrapperchecker.Node, opts Options) {
 	sym := ctx.Checker().SymbolOf(n)
 	// Shorthand property `{ x }` resolves SymbolOf to the new object's
 	// property; the deprecation actually attaches to the value-binding
@@ -305,25 +377,28 @@ func reportIfDeprecated(ctx *engine.Context, n *wrapperchecker.Node) {
 	if callLike != nil {
 		if sig := ctx.Checker().ResolvedSignatureGeneral(callLike); sig != nil {
 			if sig.IsDeprecated() {
-				report(ctx, n, n.LiteralText(), sig.DeprecationReason())
+				report(ctx, n, n.LiteralText(), sig.DeprecationReason(), opts)
 				return
 			}
 			// If the signature isn't deprecated but the symbol's
 			// non-method declaration is, still flag.
 			if sym.IsDeprecated() && !symbolHasMethodOrFunctionDecl(sym) {
-				report(ctx, n, n.LiteralText(), sym.DeprecationReason())
+				report(ctx, n, n.LiteralText(), sym.DeprecationReason(), opts)
 			}
 			return
 		}
 	}
 	if sym.IsDeprecated() {
-		report(ctx, n, n.LiteralText(), sym.DeprecationReason())
+		report(ctx, n, n.LiteralText(), sym.DeprecationReason(), opts)
 	}
 }
 
-func report(ctx *engine.Context, at *wrapperchecker.Node, name, reason string) {
+func report(ctx *engine.Context, at *wrapperchecker.Node, name, reason string, opts Options) {
 	if name == "" {
 		name = at.LiteralText()
+	}
+	if _, allowed := opts.AllowNames[name]; allowed {
+		return
 	}
 	if reason == "" {
 		ctx.Report(at, fmt.Sprintf("`%s` is deprecated.", name))
