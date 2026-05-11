@@ -381,8 +381,11 @@ func reportIfDeprecated(ctx *engine.Context, n *wrapperchecker.Node, opts Option
 				return
 			}
 			// If the signature isn't deprecated but the symbol's
-			// non-method declaration is, still flag.
-			if sym.IsDeprecated() && !symbolHasMethodOrFunctionDecl(sym) {
+			// deprecation lives at the binding/specifier level (rather
+			// than just on one of the function's overloads), flag —
+			// the binding-level deprecation applies to every use,
+			// including this non-deprecated-overload call.
+			if symbolHasBindingLevelDeprecation(sym) {
 				report(ctx, n, n.LiteralText(), sym.DeprecationReason(), opts)
 			}
 			return
@@ -525,6 +528,30 @@ func getCallLikeNode(n *wrapperchecker.Node) *wrapperchecker.Node {
 		}
 		return nil
 	}
+}
+
+// symbolHasBindingLevelDeprecation reports whether the symbol's
+// deprecation is at the binding site (import/export specifier,
+// variable, class member, etc.) rather than at one specific
+// function/method overload. Overload-level deprecation is handled
+// by the resolved-signature check; surfacing the alias-chain's
+// any-overload result there would over-report when the selected
+// overload is fine.
+func symbolHasBindingLevelDeprecation(sym *wrapperchecker.Symbol) bool {
+	d := sym.FirstDeprecatedDeclaration()
+	if d == nil {
+		return false
+	}
+	switch d.Kind() {
+	case wrapperchecker.KindFunctionDeclaration,
+		wrapperchecker.KindMethodDeclaration,
+		wrapperchecker.KindMethodSignature,
+		wrapperchecker.KindConstructor,
+		wrapperchecker.KindCallSignature,
+		wrapperchecker.KindConstructSignature:
+		return false
+	}
+	return true
 }
 
 func symbolHasMethodOrFunctionDecl(sym *wrapperchecker.Symbol) bool {
