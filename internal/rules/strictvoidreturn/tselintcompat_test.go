@@ -16,9 +16,10 @@ const fixtureTsconfigBody = `{
   "compilerOptions": {
     "strict": true, "target": "es2022", "module": "esnext",
     "moduleResolution": "bundler", "lib": ["es2022", "dom"],
+    "jsx": "react-jsx",
     "skipLibCheck": true
   },
-  "include": ["case.ts"]
+  "include": ["case.tsx"]
 }`
 
 func TestStrictVoidReturn_TypescriptEslintCompatibility(t *testing.T) {
@@ -32,7 +33,7 @@ func TestStrictVoidReturn_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		actual, runErr := runCase(t, c.Code)
+		actual, runErr := runCase(t, c.Code, optsFromCase(c))
 		if runErr != nil {
 			failed++
 			continue
@@ -58,20 +59,32 @@ func TestStrictVoidReturn_TypescriptEslintCompatibility(t *testing.T) {
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
 }
 
-func runCase(t *testing.T, code string) (int, error) {
+func optsFromCase(c tselintcompat.Case) strictvoidreturn.Options {
+	opts := strictvoidreturn.DefaultOptions()
+	if len(c.AllOptions) > 0 {
+		if m, ok := c.AllOptions[0].(map[string]any); ok {
+			if v, ok := m["allowReturnAny"].(bool); ok {
+				opts.AllowReturnAny = v
+			}
+		}
+	}
+	return opts
+}
+
+func runCase(t *testing.T, code string, opts strictvoidreturn.Options) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
 	tsc := filepath.Join(dir, "tsconfig.json")
 	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
-	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
+	os.WriteFile(filepath.Join(dir, "case.tsx"), []byte(code), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {
 		return 0, err
 	}
 	defer prog.Close()
 	eng := engine.New(
-		[]engine.Rule{strictvoidreturn.New()},
+		[]engine.Rule{strictvoidreturn.NewWithOptions(opts)},
 		map[string]wrapperlint.Severity{"strict-void-return": wrapperlint.SeverityError},
 	)
 	count := 0
