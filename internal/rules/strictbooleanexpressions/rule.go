@@ -98,7 +98,90 @@ func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 		wrapperchecker.KindForStatement:          r.visitForStatement,
 		wrapperchecker.KindPrefixUnaryExpression: r.visitPrefixUnary,
 		wrapperchecker.KindBinaryExpression:      r.visitBinary,
+		wrapperchecker.KindCallExpression:        r.visitCall,
 	}
+}
+
+// visitCall checks call expressions for positions that semantically
+// coerce a value to boolean — assertion arguments, array-predicate
+// callback returns.
+func (r *rule) visitCall(ctx *engine.Context, n *wrapperchecker.Node) {
+	r.checkAssertionArgument(ctx, n)
+	r.checkArrayPredicateCallback(ctx, n)
+}
+
+func (r *rule) checkAssertionArgument(ctx *engine.Context, n *wrapperchecker.Node) {
+	sig := ctx.Checker().ResolvedSignature(n)
+	if sig == nil {
+		return
+	}
+	idx := sig.AssertsParameterIndex()
+	if idx < 0 {
+		return
+	}
+	// `asserts x is T` narrows to a specific type — that's a type-guard,
+	// not a truthiness test, so don't apply the boolean-shape check.
+	if sig.TypePredicateNarrowedType() != nil {
+		return
+	}
+	args := n.CallArguments()
+	if idx >= len(args) {
+		return
+	}
+	r.checkBoolean(ctx, args[idx])
+}
+
+// arrayPredicateMethods is the set of Array.prototype methods whose
+// callback is expected to return a boolean. The callback's return
+// position coerces, so the rule applies the same shape check it would
+// to an `if` test.
+var arrayPredicateMethods = map[string]bool{
+	"filter": true, "find": true, "findIndex": true,
+	"findLast": true, "findLastIndex": true,
+	"every": true, "some": true,
+}
+
+func (r *rule) checkArrayPredicateCallback(ctx *engine.Context, n *wrapperchecker.Node) {
+	callee := n.CalleeExpression()
+	if callee == nil || callee.Kind() != wrapperchecker.KindPropertyAccessExpression {
+		return
+	}
+	if !arrayPredicateMethods[callee.PropertyAccessName()] {
+		return
+	}
+	recv := callee.PropertyAccessReceiver()
+	if recv == nil {
+		return
+	}
+	rt := ctx.TypeOf(recv)
+	if rt == nil || (!rt.IsArrayLikeType() && !rt.IsTupleType()) {
+		return
+	}
+	args := n.CallArguments()
+	if len(args) == 0 {
+		return
+	}
+	cb := args[0]
+	cbT := ctx.TypeOf(cb)
+	if cbT == nil {
+		return
+	}
+	sigs := cbT.CallSignatures()
+	if len(sigs) == 0 {
+		return
+	}
+	retT := sigs[0].ReturnType()
+	if retT == nil {
+		return
+	}
+	if r.isAcceptable(retT) {
+		return
+	}
+	if retT.IsAny() || retT.IsUnknown() {
+		ctx.Report(cb, "predicate callback returns a value of type any or unknown; narrow before returning")
+		return
+	}
+	ctx.Report(cb, "predicate callback returns a value whose type is not strictly boolean; compare against the intended sentinel")
 }
 
 // visitBinary checks the left operand of `&&` and `||` — the
