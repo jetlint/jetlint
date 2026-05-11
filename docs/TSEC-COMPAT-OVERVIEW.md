@@ -5,7 +5,7 @@ fixtures. Each rule has a vendored fixture under
 `testdata/typescript-eslint/<rule>.test.ts` and a compatibility harness
 under `internal/rules/<pkg>/tselintcompat_test.go`.
 
-**Aggregate: 5830/6193 cases pass (94.1%).**
+**Aggregate: 5836/6193 cases pass (94.2%).**
 
 Run any single rule's harness with:
 
@@ -59,6 +59,7 @@ go -C ~/src/lint test -count=1 -run TypescriptEslintCompatibility -v ./internal/
 | no-unsafe-assignment | 91/91 |
 | prefer-promise-reject-errors | 161/161 |
 | prefer-readonly | 162/162 |
+| no-mixed-enums | 51/51 |
 
 ## ≥ 90%
 
@@ -67,13 +68,12 @@ go -C ~/src/lint test -count=1 -run TypescriptEslintCompatibility -v ./internal/
 | prefer-nullish-coalescing | 616/617 (99.8%) | full ternary + if-assign + options |
 | no-misused-spread | 127/128 (99.2%) | impl |
 | dot-notation | 60/61 (98.4%) | impl |
-| no-mixed-enums | 50/51 (98.0%) | impl |
 | no-unnecessary-boolean-literal-compare | 44/45 (97.8%) | 1 case needs `strictNullChecks: false` per-case |
 | no-unnecessary-qualifier | 16/17 (94.1%) | impl |
-| no-deprecated | 241/262 (92.0%) | cross-module re-exports |
+| no-deprecated | 245/262 (93.5%) | cross-module re-exports, JSX intrinsic attrs |
 | no-useless-default-assignment | 79/83 (95.2%) | noStrictNullCheck variant + complex callbacks |
 | switch-exhaustiveness-check | 100/104 (96.2%) | defaultCaseCommentPattern + bug fix |
-| prefer-readonly-parameter-types | 118/130 (90.8%) | allow option + Readonly<T> wrapper |
+| prefer-readonly-parameter-types | 119/130 (91.5%) | TypeOrValueSpecifier qualifiers + Readonly<T> wrapper |
 | consistent-type-exports | 43/47 (91.5%) | export-all + namespace |
 | no-unnecessary-type-assertion | 206/223 (92.4%) | structural object identity, flow analysis |
 | no-unnecessary-condition | 268/296 (90.5%) | assertion functions, complex chain narrowing |
