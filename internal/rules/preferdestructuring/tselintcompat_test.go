@@ -32,22 +32,7 @@ func TestPreferDestructuring_TypescriptEslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for _, c := range cases {
-		opts := preferdestructuring.DefaultOptions()
-		// Upstream's option shape is `[ <enforce config>, <general
-		// options> ]`. Walk every element so we don't miss flags that
-		// live in the second slot.
-		for _, raw := range c.AllOptions {
-			obj, ok := raw.(map[string]any)
-			if !ok {
-				continue
-			}
-			if v, ok := obj["enforceForDeclarationWithTypeAnnotation"].(bool); ok {
-				opts.EnforceForDeclarationWithTypeAnnotation = v
-			}
-			if v, ok := obj["enforceForRenamedProperties"].(bool); ok {
-				opts.EnforceForRenamedProperties = v
-			}
-		}
+		opts := optsFromCase(c)
 		actual, runErr := runCase(t, c.Code, opts)
 		if runErr != nil {
 			failed++
@@ -74,6 +59,62 @@ func TestPreferDestructuring_TypescriptEslintCompatibility(t *testing.T) {
 		pct = float64(passed) * 100.0 / float64(total)
 	}
 	t.Logf("typescript-eslint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
+}
+
+// optsFromCase parses typescript-eslint's two-slot option shape:
+// `[ <per-pattern config>, <general flags> ]`. The first slot is either
+// `{ array, object }` (applies to both contexts) or
+// `{ VariableDeclarator: {...}, AssignmentExpression: {...} }`. The
+// second slot is `{ enforceForRenamedProperties, enforceForDeclarationWithTypeAnnotation }`.
+func optsFromCase(c tselintcompat.Case) preferdestructuring.Options {
+	opts := preferdestructuring.DefaultOptions()
+	if len(c.AllOptions) > 0 {
+		if first, ok := c.AllOptions[0].(map[string]any); ok {
+			if hasShared(first, "array") || hasShared(first, "object") {
+				cfg := configFrom(first)
+				opts.AssignmentExpression = cfg
+				opts.VariableDeclarator = cfg
+			} else {
+				if v, ok := first["AssignmentExpression"].(map[string]any); ok {
+					opts.AssignmentExpression = configFrom(v)
+				}
+				if v, ok := first["VariableDeclarator"].(map[string]any); ok {
+					opts.VariableDeclarator = configFrom(v)
+				}
+			}
+		}
+	}
+	if len(c.AllOptions) > 1 {
+		if second, ok := c.AllOptions[1].(map[string]any); ok {
+			if v, ok := second["enforceForDeclarationWithTypeAnnotation"].(bool); ok {
+				opts.EnforceForDeclarationWithTypeAnnotation = v
+			}
+			if v, ok := second["enforceForRenamedProperties"].(bool); ok {
+				opts.EnforceForRenamedProperties = v
+			}
+		}
+	}
+	return opts
+}
+
+func hasShared(m map[string]any, key string) bool {
+	_, ok := m[key]
+	return ok
+}
+
+// configFrom mirrors upstream: a destructuring-config object opts in
+// explicitly. Keys absent from the option default to `false`, NOT to
+// `true`. So `{ array: true }` enables array destructuring and leaves
+// object destructuring disabled.
+func configFrom(m map[string]any) preferdestructuring.DestructuringConfig {
+	cfg := preferdestructuring.DestructuringConfig{}
+	if v, ok := m["array"].(bool); ok {
+		cfg.Array = v
+	}
+	if v, ok := m["object"].(bool); ok {
+		cfg.Object = v
+	}
+	return cfg
 }
 
 func runCase(t *testing.T, code string, opts preferdestructuring.Options) (int, error) {
