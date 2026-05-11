@@ -143,9 +143,21 @@ func visitOptionalChain(ctx *engine.Context, n *wrapperchecker.Node) {
 	// Element-access immediate receiver: TypeScript doesn't track
 	// index validity without `noUncheckedIndexedAccess`, so `arr[i]?.`
 	// is conventional guarding even when the element type is
-	// non-nullable. Only skip the *direct* element access.
+	// non-nullable. Tuples accessed with a numeric-literal index in
+	// range differ — that slot is statically required, so its type
+	// carries the same guarantees as a property access. Tuples
+	// accessed with a non-literal index can still be out of range,
+	// so the chain remains defensive.
 	if recv.Kind() == wrapperchecker.KindElementAccessExpression {
-		return
+		recvSrc := recv.ElementAccessReceiver()
+		idx := recv.ElementAccessIndex()
+		recvSrcT := ctx.TypeOf(recvSrc)
+		if recvSrcT == nil || !recvSrcT.IsTupleType() {
+			return
+		}
+		if idx == nil || idx.Kind() != wrapperchecker.KindNumericLiteral {
+			return
+		}
 	}
 	t := effectiveReceiverType(ctx, recv)
 	if t == nil {
@@ -599,15 +611,33 @@ func typeIncludesUndefined(t *wrapperchecker.Type) bool {
 // passes through — an element access (`a[x]`) expression. Under
 // noUncheckedIndexedAccess the runtime value can be undefined even
 // when TypeScript types it narrower, so checks for nullishness
-// against such expressions are deliberately allowed. The walk handles
-// `arr[42]?.foo`, `arr[42].foo`, `arr[42].foo.bar`, etc.
+// against direct index access are deliberately allowed. A property
+// access on top (e.g. `a[0].foo`) carries a real declared property
+// type that the index-signature concern doesn't reach — upstream
+// flags those `??` defaults. An optional-chain link anywhere in the
+// expression is also considered index-like because the wrapper's
+// TypeOf may not surface the chain-introduced undefined to callers.
 func isIndexLikeAccess(n *wrapperchecker.Node) bool {
+	root := n
 	for n != nil {
 		switch n.Kind() {
 		case wrapperchecker.KindElementAccessExpression:
-			return true
+			if n == root {
+				return true
+			}
+			if n.IsOptionalChain() {
+				return true
+			}
+			return false
 		case wrapperchecker.KindPropertyAccessExpression:
-			n = n.PropertyAccessReceiver()
+			if n.IsOptionalChain() {
+				return true
+			}
+			rcv := n.PropertyAccessReceiver()
+			if rcv == nil {
+				return false
+			}
+			n = rcv
 			continue
 		case wrapperchecker.KindParenthesizedExpression,
 			wrapperchecker.KindNonNullExpression:
