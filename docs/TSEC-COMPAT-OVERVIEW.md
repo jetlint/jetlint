@@ -5,7 +5,7 @@ fixtures. Each rule has a vendored fixture under
 `testdata/typescript-eslint/<rule>.test.ts` and a compatibility harness
 under `internal/rules/<pkg>/tselintcompat_test.go`.
 
-**Aggregate: 5929/6193 cases pass (95.7%).**
+**Aggregate: 5962/6193 cases pass (96.3%).**
 
 Run any single rule's harness with:
 
@@ -60,12 +60,13 @@ go -C ~/src/lint test -count=1 -run TypescriptEslintCompatibility -v ./internal/
 | prefer-promise-reject-errors | 161/161 |
 | prefer-readonly | 162/162 |
 | no-mixed-enums | 51/51 |
+| return-await | 95/95 |
+| prefer-nullish-coalescing | 617/617 |
 
 ## ≥ 90%
 
 | Rule | Score | Notes |
 |---|---:|---|
-| prefer-nullish-coalescing | 616/617 (99.8%) | full ternary + if-assign + options |
 | no-misused-spread | 127/128 (99.2%) | impl |
 | dot-notation | 60/61 (98.4%) | impl |
 | no-unnecessary-boolean-literal-compare | 44/45 (97.8%) | 1 case needs `strictNullChecks: false` per-case |
@@ -85,12 +86,6 @@ go -C ~/src/lint test -count=1 -run TypescriptEslintCompatibility -v ./internal/
 | Rule | Score | Status |
 |---|---:|---|
 | prefer-destructuring | 79/92 (85.9%) | impl |
-
-## 60 – 70%
-
-| Rule | Score | Status |
-|---|---:|---|
-| return-await | 63/95 (66.3%) | stub baseline |
 
 ## 40 – 60%
 

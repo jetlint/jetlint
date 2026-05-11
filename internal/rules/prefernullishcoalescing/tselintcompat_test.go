@@ -21,6 +21,20 @@ const fixtureTsconfigBody = `{
   "include": ["case.ts"]
 }`
 
+// unstrictFixtureTsconfigBody mirrors typescript-eslint's `unstrict`
+// fixture project — strict mode disabled with strictNullChecks
+// explicitly off. Used when a case opts in via
+// `languageOptions.parserOptions.tsconfigRootDir`.
+const unstrictFixtureTsconfigBody = `{
+  "compilerOptions": {
+    "strict": false, "strictNullChecks": false,
+    "target": "es2022", "module": "esnext",
+    "moduleResolution": "bundler", "lib": ["es2022", "dom"],
+    "skipLibCheck": true
+  },
+  "include": ["case.ts"]
+}`
+
 func TestPreferNullishCoalescing_TypescriptEslintCompatibility(t *testing.T) {
 	if testing.Short() {
 		t.Skip("compatibility harness skipped under -short")
@@ -33,7 +47,7 @@ func TestPreferNullishCoalescing_TypescriptEslintCompatibility(t *testing.T) {
 	var passed, failed int
 	for _, c := range cases {
 		opts := optsFromCase(c)
-		actual, runErr := runCase(t, c.Code, opts)
+		actual, runErr := runCase(t, c.Code, opts, c.Unstrict)
 		if runErr != nil {
 			failed++
 			continue
@@ -103,12 +117,16 @@ func optsFromCase(c tselintcompat.Case) prefernullishcoalescing.Options {
 	return opts
 }
 
-func runCase(t *testing.T, code string, opts prefernullishcoalescing.Options) (int, error) {
+func runCase(t *testing.T, code string, opts prefernullishcoalescing.Options, unstrict bool) (int, error) {
 	t.Helper()
 	dir, _ := os.MkdirTemp("/tmp", "tsg")
 	defer os.RemoveAll(dir)
 	tsc := filepath.Join(dir, "tsconfig.json")
-	os.WriteFile(tsc, []byte(fixtureTsconfigBody), 0o644)
+	body := fixtureTsconfigBody
+	if unstrict {
+		body = unstrictFixtureTsconfigBody
+	}
+	os.WriteFile(tsc, []byte(body), 0o644)
 	os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644)
 	prog, err := wrapperchecker.LoadProgram(tsc)
 	if err != nil {

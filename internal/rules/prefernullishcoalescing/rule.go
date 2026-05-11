@@ -45,10 +45,23 @@ func (r *rule) Meta() engine.Meta { return engine.Meta{ID: id} }
 
 func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
+		wrapperchecker.KindSourceFile:            r.visitSourceFile,
 		wrapperchecker.KindBinaryExpression:      r.visit,
 		wrapperchecker.KindConditionalExpression: r.visitTernary,
 		wrapperchecker.KindIfStatement:           r.visitIfAssignment,
 	}
+}
+
+// visitSourceFile emits a single advisory diagnostic per file when the
+// program was compiled without `strictNullChecks`. The rule's nullish
+// analysis is unsound under non-strict null checks, so upstream flags
+// the file once at line 0 col 0 instead of running the rest of the
+// rule meaningfully.
+func (r *rule) visitSourceFile(ctx *engine.Context, n *wrapperchecker.Node) {
+	if ctx.Program().HasStrictNullChecks() {
+		return
+	}
+	ctx.Report(n, "this rule requires the `strictNullChecks` compiler option to be turned on to function correctly")
 }
 
 // visitIfAssignment recognises lazy-initialization patterns equivalent

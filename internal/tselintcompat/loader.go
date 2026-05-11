@@ -45,6 +45,14 @@ type Case struct {
 	// SourceIndex is the 0-based position of the case within the
 	// containing array (valid or invalid). Useful for stable test names.
 	SourceIndex int
+	// Unstrict is true when the case opts into the upstream `unstrict`
+	// fixture tsconfig via
+	// `languageOptions.parserOptions.tsconfigRootDir: path.join(rootDir, 'unstrict')`.
+	// The harness uses this to compile the case with `strict: false` so
+	// rules whose behavior depends on `strictNullChecks` (e.g.
+	// prefer-nullish-coalescing's `noStrictNullCheck` diagnostic) can be
+	// exercised.
+	Unstrict bool
 }
 
 // Load parses the given typescript-eslint test file at path and returns
@@ -184,6 +192,10 @@ func caseFromElement(elem *wrapperchecker.Node, valid bool) (Case, bool) {
 						}
 					}
 				}
+			case "languageOptions":
+				if init := prop.PropertyInitializer(); init != nil {
+					c.Unstrict = referencesUnstrictFixture(init)
+				}
 			}
 		}
 		if !gotCode {
@@ -193,6 +205,33 @@ func caseFromElement(elem *wrapperchecker.Node, valid bool) (Case, bool) {
 	default:
 		return Case{}, false
 	}
+}
+
+// referencesUnstrictFixture reports whether n contains a string literal
+// `'unstrict'` anywhere in its subtree. Upstream fixtures opt into the
+// non-strict tsconfig via
+// `languageOptions: { parserOptions: { tsconfigRootDir: path.join(rootDir, 'unstrict') } }`,
+// so any `'unstrict'` reachable through the languageOptions object
+// identifies a case that needs the unstrict tsconfig in our harness.
+func referencesUnstrictFixture(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	if n.Kind() == wrapperchecker.KindStringLiteral ||
+		n.Kind() == wrapperchecker.KindNoSubstitutionTemplateLiteral {
+		if n.LiteralText() == "unstrict" {
+			return true
+		}
+	}
+	found := false
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if referencesUnstrictFixture(c) {
+			found = true
+			return true
+		}
+		return false
+	})
+	return found
 }
 
 // literalValue extracts a Go-typed representation of a JS literal AST
