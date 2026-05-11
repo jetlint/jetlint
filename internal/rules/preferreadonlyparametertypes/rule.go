@@ -30,6 +30,12 @@ type Options struct {
 	// declarations in a constructor (`constructor(private arg: T)`)
 	// are subject to the readonly check. Default true matches upstream.
 	CheckParameterProperties bool
+	// AllowNames lists type names whose mutability check should be
+	// suppressed. Matches upstream's `allow` option in its bare-string
+	// and `{ name }`-object forms; source qualifiers (file/package/lib)
+	// are matched by name only. Useful for built-in types like `RegExp`
+	// whose declared shape has mutable members (`lastIndex`).
+	AllowNames map[string]struct{}
 }
 
 func DefaultOptions() Options {
@@ -60,11 +66,36 @@ func OptionsFromJSON(raw json.RawMessage) (Options, error) {
 				return Options{}, fmt.Errorf("prefer-readonly-parameter-types option %q: %w", key, err)
 			}
 		case "allow":
-			// allow takes a list of TypeOrValueSpecifier objects; the
-			// upstream test fixtures we run through do not exercise
-			// this option, so accept and ignore for now.
+			names, err := parseAllowList(val)
+			if err != nil {
+				return Options{}, fmt.Errorf("prefer-readonly-parameter-types option %q: %w", key, err)
+			}
+			out.AllowNames = names
 		default:
 			return Options{}, fmt.Errorf("prefer-readonly-parameter-types has no option %q", key)
+		}
+	}
+	return out, nil
+}
+
+func parseAllowList(raw json.RawMessage) (map[string]struct{}, error) {
+	var entries []json.RawMessage
+	if err := json.Unmarshal(raw, &entries); err != nil {
+		return nil, fmt.Errorf("allow must be an array: %w", err)
+	}
+	out := make(map[string]struct{}, len(entries))
+	for _, e := range entries {
+		var s string
+		if err := json.Unmarshal(e, &s); err == nil {
+			out[s] = struct{}{}
+			continue
+		}
+		var obj struct {
+			Name string `json:"name"`
+		}
+		if err := json.Unmarshal(e, &obj); err == nil && obj.Name != "" {
+			out[obj.Name] = struct{}{}
+			continue
 		}
 	}
 	return out, nil
@@ -130,6 +161,13 @@ func (r *rule) typeIsMutable(t *wrapperchecker.Type, depth int) bool {
 		return false
 	}
 	if t.IsAny() || t.IsUnknown() {
+		return false
+	}
+	// `allow`-listed types are treated as readonly regardless of their
+	// declared shape — useful for built-ins like `RegExp` whose
+	// runtime semantics are mostly immutable despite a mutable
+	// `lastIndex` slot.
+	if _, allowed := r.opts.AllowNames[t.SymbolName()]; allowed && len(r.opts.AllowNames) > 0 {
 		return false
 	}
 	if t.IsUnion() {

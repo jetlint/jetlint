@@ -73,6 +73,19 @@ func optsFromCase(c tselintcompat.Case) preferreadonlyparametertypes.Options {
 	if v, ok := c.Options["checkParameterProperties"].(bool); ok {
 		opts.CheckParameterProperties = v
 	}
+	if raw, ok := c.Options["allow"].([]any); ok {
+		opts.AllowNames = map[string]struct{}{}
+		for _, e := range raw {
+			switch v := e.(type) {
+			case string:
+				opts.AllowNames[v] = struct{}{}
+			case map[string]any:
+				if name, ok := v["name"].(string); ok {
+					opts.AllowNames[name] = struct{}{}
+				}
+			}
+		}
+	}
 	return opts
 }
 
