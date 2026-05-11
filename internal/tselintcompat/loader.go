@@ -276,6 +276,36 @@ func literalValue(n *wrapperchecker.Node) any {
 			out[p.PropertyName()] = literalValue(p.PropertyInitializer())
 		}
 		return out
+	case wrapperchecker.KindRegularExpressionLiteral:
+		return regexSource(n.LiteralText())
+	case wrapperchecker.KindPropertyAccessExpression:
+		// Support `/regex/.source` — extract the regex literal's source.
+		if name := n.PropertyAccessName(); name == "source" {
+			recv := n.PropertyAccessReceiver()
+			if recv != nil && recv.Kind() == wrapperchecker.KindRegularExpressionLiteral {
+				return regexSource(recv.LiteralText())
+			}
+		}
 	}
 	return nil
+}
+
+// regexSource strips the surrounding `/` delimiters and trailing flags
+// from a regex literal's text, returning just the pattern source.
+func regexSource(lit string) string {
+	if len(lit) < 2 || lit[0] != '/' {
+		return lit
+	}
+	// Strip trailing flags by finding the last `/`.
+	last := -1
+	for i := len(lit) - 1; i > 0; i-- {
+		if lit[i] == '/' {
+			last = i
+			break
+		}
+	}
+	if last <= 0 {
+		return lit
+	}
+	return lit[1:last]
 }
