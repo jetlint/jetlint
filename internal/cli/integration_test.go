@@ -158,9 +158,32 @@ func TestCLI_SecondInvocationReusesTheRunningDaemon(t *testing.T) {
 	}
 }
 
+// assertNoAncestorTsconfig walks from dir up to "/" and fails the test if
+// any ancestor contains a tsconfig.json. The CLI resolves the project by
+// walking up the file tree, so a stray /tmp/tsconfig.json (left behind by
+// other harnesses or interrupted runs) silently makes the no-tsconfig
+// scenarios succeed instead of erroring. Catching this in test setup gives
+// a clear pointer at the polluter rather than an inscrutable
+// "expected exit 2, got 0".
+func assertNoAncestorTsconfig(t *testing.T, dir string) {
+	t.Helper()
+	cur := dir
+	for {
+		if _, err := os.Stat(filepath.Join(cur, "tsconfig.json")); err == nil {
+			t.Fatalf("ancestor %s has a stray tsconfig.json; the no-tsconfig scenario cannot run cleanly. Remove it and retry.", cur)
+		}
+		parent := filepath.Dir(cur)
+		if parent == cur {
+			return
+		}
+		cur = parent
+	}
+}
+
 func TestCLI_NoTsconfigExitsTwoWithGuidance(t *testing.T) {
 	bin := buildBinary(t)
 	dir := t.TempDir()
+	assertNoAncestorTsconfig(t, dir)
 	if err := os.WriteFile(filepath.Join(dir, "loose.ts"), []byte("export {};"), 0o644); err != nil {
 		t.Fatalf("write file: %v", err)
 	}
@@ -191,6 +214,7 @@ func TestCLI_NoTsconfigExitsTwoWithGuidance(t *testing.T) {
 func TestCLI_NoTsconfigInJSONModeEmitsStructuredError(t *testing.T) {
 	bin := buildBinary(t)
 	dir := t.TempDir()
+	assertNoAncestorTsconfig(t, dir)
 	if err := os.WriteFile(filepath.Join(dir, "loose.ts"), []byte("export {};"), 0o644); err != nil {
 		t.Fatalf("write file: %v", err)
 	}
