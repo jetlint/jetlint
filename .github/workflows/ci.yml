@@ -6,44 +6,23 @@ on:
   pull_request:
     branches: [main]
 
-# typescript-go ships the wrapper APIs jetlint depends on. The linter's
-# go.mod has `replace github.com/microsoft/typescript-go => ../typescript-go`,
-# so CI must place the fork as a sibling of the jetlint checkout. The
-# `path:` arguments below produce the required layout:
-#
-#   $GITHUB_WORKSPACE/
-#     jetlint/         (this repo)
-#     typescript-go/   (jetlint/typescript-go @ tsgolint-wrapper)
-
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out jetlint
-        uses: actions/checkout@v4
-        with:
-          path: jetlint
-
-      - name: Check out typescript-go fork
-        uses: actions/checkout@v4
-        with:
-          repository: jetlint/typescript-go
-          ref: tsgolint-wrapper
-          path: typescript-go
+      - uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.26'
-          cache-dependency-path: jetlint/go.sum
+          cache-dependency-path: go.sum
 
       - name: Build
-        working-directory: jetlint
         run: go build ./...
 
       # `-short` skips the typescript-eslint compatibility harness
       # (each rule package gates ~6193 fixtures behind testing.Short).
       # Unit and CLI integration tests still run in full.
       - name: Test
-        working-directory: jetlint
         run: go test -short ./...

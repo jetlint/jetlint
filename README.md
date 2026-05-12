@@ -36,24 +36,11 @@ go install github.com/jetlint/jetlint/cmd/jetlint@latest
 
 A pre-built binary distribution will land closer to the 1.0 release.
 
-### External-build caveat
-
-This pre-1.0 source tree currently uses a local sibling checkout of
-[jetlint/typescript-go][tsgo-fork] via a `replace` directive in
-`go.mod`. Building from a fresh `go install` outside the development
-worktree isn't supported yet &mdash; the wrapper APIs in
-`pkg/checker` haven't all landed in [microsoft/typescript-go][tsgo].
-Stabilizing the dependency path (either upstreaming the wrapper or
-tagging the fork) is a 1.0 prerequisite.
-
-To build locally:
-
-```bash
-git clone git@github.com:jetlint/jetlint.git
-git clone -b tsgolint-wrapper git@github.com:jetlint/typescript-go.git
-cd jetlint
-go build ./cmd/jetlint
-```
+`go.mod` pins [jetlint/typescript-go][tsgo-fork] via `replace` because
+the wrapper APIs jetlint depends on haven't landed in
+[microsoft/typescript-go][tsgo] yet. The pin is by tagged release, not
+by local checkout, so `go install` and fresh clones build without extra
+setup.
 
 ## Run
 
