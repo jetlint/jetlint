@@ -142,14 +142,28 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Upgrade npm to a version that supports OIDC trusted publishing
+      - name: Install npm >= 11.5.1 into a side directory
         # Node 22 currently bundles npm 10.x. Trusted publishing (OIDC token
         # exchange against the npm registry) requires npm >= 11.5.1.
+        #
+        # `npm install -g npm@latest` fails on the GitHub runner because npm
+        # 10.x can't reliably replace its own files in place — the upgrade
+        # races with the still-running CLI's module loader and errors with
+        # MODULE_NOT_FOUND mid-replace. Workaround: install the new npm into
+        # a temp prefix and put its bin on PATH so we don't touch the
+        # runner's bundled npm at all.
         shell: bash
+        env:
+          NPM_TARGET_VERSION: "11.5.1"
         run: |
           set -euo pipefail
-          npm install -g npm@latest
-          npm --version
+          NPM_DIR="$(mktemp -d)"
+          # Use the runner's bundled npm to install the new npm into NPM_DIR
+          # only — no global writes, no self-replace.
+          npm install --prefix "$NPM_DIR" "npm@${NPM_TARGET_VERSION}" --no-save --no-audit --no-fund
+          echo "$NPM_DIR/node_modules/.bin" >> "$GITHUB_PATH"
+          # Verify the side-installed npm is what subsequent steps will see.
+          "$NPM_DIR/node_modules/.bin/npm" --version
 
       - name: Download all artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
