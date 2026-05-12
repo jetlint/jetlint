@@ -62,12 +62,26 @@ The TanStack postmortem (2026-05-11) put the detection gap at 20 minutes from
 malicious publish to public disclosure by a third party. This monitor closes
 that gap from your side.
 
-### 4. Branch protection on `main`
+### 4. Branch protection on `main` — **DONE (2026-05-12)**
 
-- Required reviews.
-- No force-push.
-- No admin bypass.
-- Status check: `ci` must pass.
+Current configuration (`gh api /repos/jetlint/jetlint/branches/main/protection`):
+
+- PR required to merge to `main`. `required_approving_review_count = 0`
+  for solo-maintainer flow — direct pushes blocked, but no second human
+  needed to merge own PRs. Bump to `1` when a second maintainer joins.
+- Required status check: `build-and-test` (the only job in `ci.yml`).
+  `strict: true`, so PRs must be up to date with `main` before CI can
+  satisfy the check.
+- `enforce_admins: true` — even repo admins must go through PRs and
+  passing CI. No bypass for the owner.
+- `allow_force_pushes: false`, `allow_deletions: false`.
+- `dismiss_stale_reviews: true`, `required_conversation_resolution: true`.
+
+A repository ruleset additionally protects `v*` tags from deletion,
+non-fast-forward updates, and rewrites — so a malicious or accidental
+`git push --force origin v0.1.0` cannot rewrite a release tag after the
+fact, which would otherwise let an attacker swap published binaries on a
+re-publish without npm noticing.
 
 ## Per-release checklist
 
