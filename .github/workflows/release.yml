@@ -219,6 +219,18 @@ jobs:
         run: npm publish
 
       - name: Create GitHub release
+        # Notes are auto-generated from PR titles since the previous tag,
+        # filtered via .github/release.yml (e.g., excludes dependabot[bot]
+        # so dependency bumps don't dominate the changelog).
+        #
+        # --verify-tag fails the step if the tag is lightweight rather than
+        # annotated. `RELEASING.md` says release tags are signed (`git tag
+        # -s`), which produces annotated tags, so this just enforces the
+        # invariant.
+        #
+        # 0.x.y releases are marked --prerelease so GitHub's "Latest
+        # release" pointer doesn't fire until v1.0.0. npm dist-tags are
+        # unaffected; the wrapper still installs as `latest`.
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -239,6 +251,15 @@ jobs:
             cp -- "$f" "jetlint-${TAG}-${platform}${ext}"
             files+=("jetlint-${TAG}-${platform}${ext}")
           done
+
+          extra_flags=()
+          version="${TAG#v}"
+          if [[ "$version" =~ ^0\. ]]; then
+            extra_flags+=("--prerelease")
+          fi
+
           gh release create "${TAG}" "${files[@]}" \
             --title "${TAG}" \
-            --generate-notes
+            --generate-notes \
+            --verify-tag \
+            "${extra_flags[@]}"
