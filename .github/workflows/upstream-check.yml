@@ -1,0 +1,241 @@
+# Daily check for typescript-eslint upstream drift.
+#
+# Two stages, cheap-then-expensive:
+#
+#   1. Fingerprint — fetch upstream main HEAD, SHA-256 every fixture that
+#      jetlint has vendored, diff against testdata/upstream-baseline.json.
+#      Free. Runs every day.
+#
+#   2. Harness — only if (1) detected drift. Sync the changed upstream
+#      fixtures locally, run the full typescript-eslint compatibility
+#      harness (the per-rule Test*_TypescriptEslintCompatibility tests,
+#      gated by `testing.Short()` in CI but invoked here without -short),
+#      parse per-rule pass counts, diff against baseline.
+#
+# Output: opens or updates a GitHub issue labelled `upstream-drift` with
+# the fingerprint diff, harness deltas, and a ready-to-commit baseline
+# snippet. No automatic commits — the baseline only changes via a PR you
+# explicitly review.
+#
+# Hardening posture: identical to release.yml — no pull_request_target,
+# permissions: {} default, jobs opt in to the minimum, third-party actions
+# pinned by SHA, every `${{ github.* }}` flows through `env`. The only
+# upstream-controlled value (UPSTREAM_SHA from typescript-eslint's main
+# HEAD) is a 40-char hex SHA from the GitHub API and is double-quoted in
+# shell — but the same care applies regardless.
+
+name: upstream-check
+
+on:
+  schedule:
+    # 12:00 UTC daily. Pick a quiet hour to avoid GitHub Actions queue spikes.
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: upstream-check
+  cancel-in-progress: true
+
+jobs:
+  fingerprint:
+    name: fingerprint upstream
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.fp.outputs.changed }}
+      upstream_sha: ${{ steps.fp.outputs.upstream_sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+
+      - name: Compute fingerprint
+        id: fp
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FINGERPRINT_OUT: /tmp/upstream-fingerprint.json
+        run: |
+          set -euo pipefail
+          node scripts/upstream-check.mjs fingerprint > /dev/null
+          jq '{changed, upstream_main_commit}' /tmp/upstream-fingerprint.json
+          changed="$(jq -r '.changed' /tmp/upstream-fingerprint.json)"
+          sha="$(jq -r '.upstream_main_commit' /tmp/upstream-fingerprint.json)"
+          # Defensive sanity check on the upstream SHA. The GitHub API only
+          # ever returns 40-char hex, but `set -e` won't help us if someone
+          # forwards this value into a shell context elsewhere.
+          if ! [[ "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::unexpected upstream sha shape: $sha"
+            exit 1
+          fi
+          printf 'changed=%s\n' "$changed" >> "$GITHUB_OUTPUT"
+          printf 'upstream_sha=%s\n' "$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Upload fingerprint report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: upstream-fingerprint
+          path: /tmp/upstream-fingerprint.json
+          if-no-files-found: error
+          retention-days: 14
+
+  harness:
+    name: run compatibility harness
+    needs: fingerprint
+    if: needs.fingerprint.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: "1.26"
+          check-latest: false
+          cache: false
+
+      - name: Sync upstream fixtures into testdata/
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          UPSTREAM_SHA: ${{ needs.fingerprint.outputs.upstream_sha }}
+        run: node scripts/upstream-check.mjs sync "${UPSTREAM_SHA}"
+
+      - name: Run typescript-eslint compatibility harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/harness
+          # The harness lives behind testing.Short(), so CI runs (which use
+          # -short) skip it. We invoke without -short here.
+          set +e
+          go test -v -count=1 -timeout 30m ./internal/rules/... \
+            2>&1 | tee /tmp/harness/log.txt
+          status=$?
+          set -e
+          # Even if the harness reports failing cases, the test process
+          # exits 0 because the harness uses t.Logf not t.Fatalf — jetlint
+          # records mismatches as informational. A non-zero exit means
+          # something else (build failure, panic) and is worth surfacing
+          # but not fatal to the report.
+          if [[ "$status" -ne 0 ]]; then
+            echo "::warning::harness exited $status — surfacing in report"
+          fi
+
+      - name: Parse harness output
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/upstream-check.mjs parse-harness /tmp/harness/log.txt \
+            > /tmp/harness/report.json
+          jq '.per_rule | length' /tmp/harness/report.json
+
+      - name: Upload harness report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: harness-report
+          path: |
+            /tmp/harness/report.json
+            /tmp/harness/log.txt
+          if-no-files-found: error
+          retention-days: 14
+
+  report:
+    name: open or update drift issue
+    needs: [fingerprint, harness]
+    # Run report whenever fingerprint detected drift, even if harness was
+    # skipped (e.g., on the very first run with an empty baseline).
+    if: always() && needs.fingerprint.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+
+      - name: Download fingerprint report
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: upstream-fingerprint
+          path: /tmp
+
+      - name: Download harness report (if produced)
+        if: needs.harness.result == 'success'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: harness-report
+          path: /tmp/harness
+
+      - name: Compose issue body
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f /tmp/harness/report.json ]]; then
+            node scripts/upstream-check.mjs issue-body \
+              /tmp/upstream-fingerprint.json \
+              /tmp/harness/report.json > /tmp/issue-body.md
+          else
+            node scripts/upstream-check.mjs issue-body \
+              /tmp/upstream-fingerprint.json > /tmp/issue-body.md
+          fi
+          wc -l /tmp/issue-body.md
+
+      - name: Open or update the drift issue
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          SERVER_URL: ${{ github.server_url }}
+          UPSTREAM_SHA: ${{ needs.fingerprint.outputs.upstream_sha }}
+        run: |
+          set -euo pipefail
+          short="${UPSTREAM_SHA:0:12}"
+          title="typescript-eslint upstream drift (main @ ${short})"
+          existing="$(gh issue list \
+            --repo "${REPO}" \
+            --label upstream-drift \
+            --state open \
+            --json number --jq '.[0].number // empty')"
+          if [[ -n "$existing" ]]; then
+            gh issue edit "$existing" \
+              --repo "${REPO}" \
+              --title "$title" \
+              --body-file /tmp/issue-body.md
+            gh issue comment "$existing" \
+              --repo "${REPO}" \
+              --body "Drift report refreshed by upstream-check run [${RUN_ID}](${SERVER_URL}/${REPO}/actions/runs/${RUN_ID})."
+          else
+            gh issue create \
+              --repo "${REPO}" \
+              --title "$title" \
+              --label upstream-drift \
+              --body-file /tmp/issue-body.md
+          fi
