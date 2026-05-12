@@ -1,5 +1,5 @@
 {
-  "name": "jetlint",
+  "name": "@jetlint/cli",
   "version": "0.0.0",
   "description": "Fast, type-aware TypeScript 7 linter. Drop-in compatible with typescript-eslint.",
   "keywords": ["lint", "linter", "typescript", "typescript-eslint", "type-aware", "static-analysis"],

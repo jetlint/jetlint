@@ -142,6 +142,15 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
+      - name: Upgrade npm to a version that supports OIDC trusted publishing
+        # Node 22 currently bundles npm 10.x. Trusted publishing (OIDC token
+        # exchange against the npm registry) requires npm >= 11.5.1.
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install -g npm@latest
+          npm --version
+
       - name: Download all artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -175,10 +184,14 @@ jobs:
         run: node scripts/build-npm.mjs "${VERSION}"
 
       - name: Publish platform packages
+        # Authentication is via OIDC trusted publishing — no NODE_AUTH_TOKEN,
+        # no long-lived secret in the repo. npm CLI detects the GitHub Actions
+        # OIDC environment automatically and exchanges the workflow identity
+        # for a short-lived publish token bound to this exact ref. Each of
+        # the six target packages is configured on npmjs.com with a trusted
+        # publisher pointing at jetlint/jetlint .github/workflows/release.yml.
         shell: bash
         working-directory: npm-dist
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
           for dir in @jetlint-*/; do
@@ -189,8 +202,6 @@ jobs:
       - name: Publish wrapper
         shell: bash
         working-directory: npm-dist/jetlint
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish
 
       - name: Create GitHub release

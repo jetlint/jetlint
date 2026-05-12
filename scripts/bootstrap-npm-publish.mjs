@@ -16,8 +16,21 @@
 // then `npm deprecate` each one so nobody installs them by accident, then
 // configure trusted publishing on each settings page on npmjs.com.
 //
+// Wrapper name note: the unscoped `jetlint` name was rejected by npm's
+// similarity check (too close to `eslint`). All six packages live under
+// the `@jetlint` scope; the wrapper is `@jetlint/cli` and its `bin` field
+// still exposes the `jetlint` command.
+//
 // The stubs contain only a README pointing at the GitHub repo and the real
 // release plan. No binary, no shim, no JS. They are intentionally useless.
+//
+// The six names:
+//   @jetlint/cli            (the wrapper users install)
+//   @jetlint/linux-x64
+//   @jetlint/linux-arm64
+//   @jetlint/darwin-x64
+//   @jetlint/darwin-arm64
+//   @jetlint/win32-x64
 //
 // Usage:
 //   node scripts/bootstrap-npm-publish.mjs            # generate stubs into bootstrap-dist/
@@ -40,7 +53,7 @@ const DEPRECATION_MESSAGE =
   "bootstrap placeholder, do not install. See https://github.com/jetlint/jetlint for the first real release.";
 
 const PACKAGES = [
-  { name: "jetlint",                kind: "wrapper",  os: null,     cpu: null   },
+  { name: "@jetlint/cli",           kind: "wrapper",  os: null,     cpu: null   },
   { name: "@jetlint/linux-x64",     kind: "platform", os: "linux",  cpu: "x64"   },
   { name: "@jetlint/linux-arm64",   kind: "platform", os: "linux",  cpu: "arm64" },
   { name: "@jetlint/darwin-x64",    kind: "platform", os: "darwin", cpu: "x64"   },
@@ -113,6 +126,34 @@ function run(cmd, args, cwd) {
   }
 }
 
+function sleep(ms) {
+  return new Promise((res) => setTimeout(res, ms));
+}
+
+// `npm view <pkg>` exits 0 if the package exists on the registry, non-zero
+// if not. Captures output so a missing package doesn't spam stderr.
+function packageExists(pkgName) {
+  const r = spawnSync("npm", ["view", pkgName, "version"], {
+    stdio: ["ignore", "pipe", "pipe"],
+    encoding: "utf8",
+  });
+  return r.status === 0;
+}
+
+async function runWithRetry(cmd, args, cwd, { tries = 5, delayMs = 2000 } = {}) {
+  for (let attempt = 1; attempt <= tries; attempt++) {
+    console.log(`$ ${cmd} ${args.join(" ")}  (cwd=${cwd}, attempt ${attempt}/${tries})`);
+    const r = spawnSync(cmd, args, { stdio: "inherit", cwd });
+    if (r.status === 0) return;
+    if (attempt === tries) {
+      throw new Error(`${cmd} ${args.join(" ")} exited ${r.status} after ${tries} attempts`);
+    }
+    console.log(`  attempt ${attempt} failed; retrying in ${delayMs}ms (registry propagation lag is normal here)`);
+    await sleep(delayMs);
+    delayMs *= 2;
+  }
+}
+
 function ensureLoggedIn() {
   const r = spawnSync("npm", ["whoami"], { encoding: "utf8" });
   if (r.status !== 0) {
@@ -123,15 +164,22 @@ function ensureLoggedIn() {
   console.log(`logged in to npm as ${r.stdout.trim()}`);
 }
 
-function publishAndDeprecate(outDir) {
+async function publishAndDeprecate(outDir) {
   ensureLoggedIn();
   for (const pkg of PACKAGES) {
     const dirName = pkg.name.replace("@", "").replace("/", "-");
     const pkgDir = join(outDir, dirName);
-    run("npm", ["publish", "--access", "public"], pkgDir);
-    run(
+    const versioned = `${pkg.name}@${BOOTSTRAP_VERSION}`;
+    if (packageExists(versioned)) {
+      console.log(`skipping publish: ${versioned} already on registry`);
+    } else {
+      run("npm", ["publish", "--access", "public"], pkgDir);
+    }
+    // Deprecate may 404 immediately after a fresh publish because the
+    // registry read endpoint lags the write endpoint. Retry with backoff.
+    await runWithRetry(
       "npm",
-      ["deprecate", `${pkg.name}@${BOOTSTRAP_VERSION}`, DEPRECATION_MESSAGE],
+      ["deprecate", versioned, DEPRECATION_MESSAGE],
       pkgDir,
     );
   }
@@ -141,20 +189,18 @@ function publishAndDeprecate(outDir) {
   }
 }
 
-function main() {
+async function main() {
   const outDir = resolve(repoRoot, "bootstrap-dist");
   const args = new Set(process.argv.slice(2));
   buildStubs(outDir);
   if (args.has("--publish")) {
-    publishAndDeprecate(outDir);
+    await publishAndDeprecate(outDir);
   } else {
     console.log("\ndry run. Re-run with --publish to actually publish + deprecate.");
   }
 }
 
-try {
-  main();
-} catch (err) {
+main().catch((err) => {
   process.stderr.write(`bootstrap: ${err.message}\n`);
   process.exit(1);
-}
+});

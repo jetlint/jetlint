@@ -20,28 +20,31 @@ Under a publisher account with TOTP-based 2FA on `auth-and-writes`:
   additional maintainer is another credential-theft target with the same blast
   radius.
 
-### 2. Configure trusted publishing on npm
+### 2. Configure trusted publishing on npm — **DONE (2026-05-12)**
 
-For **each** of the six packages:
+The unscoped `jetlint` name was rejected by npm's similarity check (too
+close to `eslint`), so all six packages live under the `@jetlint` scope:
 
-- `jetlint`
+- `@jetlint/cli`           — the wrapper users install
 - `@jetlint/linux-x64`
 - `@jetlint/linux-arm64`
 - `@jetlint/darwin-x64`
 - `@jetlint/darwin-arm64`
 - `@jetlint/win32-x64`
 
-configure a trusted publisher binding on npmjs.com pointing to:
+Each one was bootstrap-published at `v0.0.0` (via
+`scripts/bootstrap-npm-publish.mjs`) so its settings page would exist, then
+deprecated, then bound to:
 
 - Repository: `jetlint/jetlint`
-- Workflow: `.github/workflows/release.yml`
+- Workflow filename: `release.yml`
 - Environment: _(none)_
-- Ref filter: `refs/tags/v*`
 
-Once every package is bound, delete the `NPM_TOKEN` secret from this repo and
-strip `NODE_AUTH_TOKEN` from `release.yml`. With trusted publishing in place,
-provenance is signed by the workflow's OIDC identity and no long-lived token
-needs to exist anywhere.
+Publishing access on each is set to **"Require two-factor authentication
+and disallow tokens"**, so the only paths to publish are OIDC trusted
+publishing from this workflow or interactive WebAuthn from a maintainer's
+shell. `NODE_AUTH_TOKEN`/`NPM_TOKEN` are not used and no `NPM_TOKEN` secret
+should exist in the repo.
 
 ### 3. Stand up publish-alert monitoring
 

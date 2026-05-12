@@ -1,9 +1,13 @@
-# jetlint
+# @jetlint/cli
 
 Fast, type-aware TypeScript 7 linter. Drop-in compatible with typescript-eslint.
 
 ```bash
-npm install --save-dev jetlint
+npm install --save-dev @jetlint/cli
+# or: pnpm add -D @jetlint/cli
+# or: yarn add --dev @jetlint/cli
+# or: bun add -d @jetlint/cli
+
 npx jetlint --project ./tsconfig.json
 ```
 
