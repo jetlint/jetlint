@@ -1,0 +1,36 @@
+{
+  "name": "@jetlint/cli",
+  "version": "0.0.0",
+  "description": "Fast, type-aware TypeScript 7 linter. Drop-in compatible with typescript-eslint.",
+  "keywords": ["lint", "linter", "typescript", "typescript-eslint", "type-aware", "static-analysis"],
+  "homepage": "https://jetlint.github.io",
+  "bugs": "https://github.com/jetlint/jetlint/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jetlint/jetlint.git",
+    "directory": "npm/jetlint"
+  },
+  "license": "MIT",
+  "bin": {
+    "jetlint": "bin/jetlint.js"
+  },
+  "files": [
+    "bin/jetlint.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "optionalDependencies": {
+    "@jetlint/linux-x64": "0.0.0",
+    "@jetlint/linux-arm64": "0.0.0",
+    "@jetlint/darwin-x64": "0.0.0",
+    "@jetlint/darwin-arm64": "0.0.0",
+    "@jetlint/win32-x64": "0.0.0"
+  }
+}

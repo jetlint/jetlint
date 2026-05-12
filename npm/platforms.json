@@ -1,0 +1,9 @@
+{
+  "platforms": [
+    { "name": "linux-x64",    "goos": "linux",   "goarch": "amd64", "binary": "jetlint",     "os": "linux",  "cpu": "x64",   "runner": "ubuntu-24.04" },
+    { "name": "linux-arm64",  "goos": "linux",   "goarch": "arm64", "binary": "jetlint",     "os": "linux",  "cpu": "arm64", "runner": "ubuntu-24.04" },
+    { "name": "darwin-x64",   "goos": "darwin",  "goarch": "amd64", "binary": "jetlint",     "os": "darwin", "cpu": "x64",   "runner": "macos-14"     },
+    { "name": "darwin-arm64", "goos": "darwin",  "goarch": "arm64", "binary": "jetlint",     "os": "darwin", "cpu": "arm64", "runner": "macos-14"     },
+    { "name": "win32-x64",    "goos": "windows", "goarch": "amd64", "binary": "jetlint.exe", "os": "win32",  "cpu": "x64",   "runner": "ubuntu-24.04" }
+  ]
+}

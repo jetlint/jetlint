@@ -1,0 +1,230 @@
+# Release workflow for jetlint.
+#
+# Triggered ONLY by tag pushes matching `v*`. Builds platform binaries in a
+# matrix, then publishes one scoped @jetlint/<platform>-<arch> package per
+# platform plus the unscoped `jetlint` wrapper to npm.
+#
+# Hardening posture (informed by the TanStack 2026-05-11 supply-chain
+# postmortem and the tj-actions/changed-files March 2025 incident):
+#
+#   * No `pull_request_target` triggers anywhere in this repo.
+#   * `permissions:` defaults to none; each job opts in to the minimum
+#     it needs. `id-token: write` is granted ONLY on the publish job, and
+#     that job does no third-party work beyond `npm publish`.
+#   * Every third-party action is pinned by full commit SHA. Floating tags
+#     (`@v4`, `@main`) are a standing supply-chain risk regardless of any
+#     specific incident.
+#   * No build/dependency cache is shared between this workflow and any
+#     PR-triggered workflow. `actions/setup-go` runs with `cache: false`
+#     and we do not call `actions/cache` here. The cache-poisoning step in
+#     the TanStack chain cannot reach this workflow's runtime.
+#   * Build and publish are separate jobs. Build outputs flow through
+#     `actions/upload-artifact` / `download-artifact` (scoped to this run
+#     id), not through the actions cache.
+#   * Publish runs `npm publish --provenance` (via `publishConfig` in each
+#     generated package) so every tarball is signed with the workflow's
+#     OIDC identity bound to this exact ref.
+#   * All `${{ github.* }}` values are passed via `env:` and quoted with
+#     double-quotes inside shell scripts. No template interpolation lands
+#     directly in a `run:` body. See
+#     https://github.blog/security/vulnerability-research/how-to-catch-github-actions-workflow-injections-before-attackers-do/
+#
+# PINNING NOTE: every `uses:` below is pinned to a full commit SHA with the
+# corresponding tag in a trailing comment. Dependabot (.github/dependabot.yml)
+# opens PRs that bump SHAs and keep the comment aligned. To resolve a new pin
+# manually: `gh api repos/<owner>/<repo>/commits/<tag> --jq .sha`.
+
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions: {}
+
+jobs:
+  build:
+    name: build (${{ matrix.target.name }})
+    runs-on: ${{ matrix.target.runner }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        target:
+          - { name: linux-x64,    goos: linux,   goarch: amd64, binary: jetlint,     runner: ubuntu-24.04 }
+          - { name: linux-arm64,  goos: linux,   goarch: arm64, binary: jetlint,     runner: ubuntu-24.04 }
+          - { name: darwin-x64,   goos: darwin,  goarch: amd64, binary: jetlint,     runner: macos-14     }
+          - { name: darwin-arm64, goos: darwin,  goarch: arm64, binary: jetlint,     runner: macos-14     }
+          - { name: win32-x64,    goos: windows, goarch: amd64, binary: jetlint.exe, runner: ubuntu-24.04 }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: "1.26"
+          check-latest: false
+          cache: false
+
+      - name: Derive version
+        id: ver
+        shell: bash
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${REF_NAME#v}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?$ ]]; then
+            echo "::error::tag '${REF_NAME}' is not a semver release tag"
+            exit 1
+          fi
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        shell: bash
+        env:
+          GOOS: ${{ matrix.target.goos }}
+          GOARCH: ${{ matrix.target.goarch }}
+          CGO_ENABLED: "0"
+          VERSION: ${{ steps.ver.outputs.version }}
+          BINARY: ${{ matrix.target.binary }}
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          go build \
+            -trimpath \
+            -ldflags "-s -w -X github.com/jetlint/jetlint/internal/cli.Version=${VERSION}" \
+            -o "out/${BINARY}" \
+            ./cmd/jetlint
+
+      - name: Compute checksum
+        shell: bash
+        working-directory: out
+        env:
+          BINARY: ${{ matrix.target.binary }}
+        run: |
+          set -euo pipefail
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "${BINARY}" > SHA256SUMS
+          else
+            shasum -a 256 "${BINARY}" > SHA256SUMS
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: binary-${{ matrix.target.name }}
+          path: out/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: publish to npm
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write   # for `gh release create`
+      id-token: write   # for npm provenance (OIDC)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Upgrade npm to a version that supports OIDC trusted publishing
+        # Node 22 currently bundles npm 10.x. Trusted publishing (OIDC token
+        # exchange against the npm registry) requires npm >= 11.5.1.
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install -g npm@latest
+          npm --version
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: artifacts
+
+      - name: Restore binary executable bits
+        shell: bash
+        run: |
+          set -euo pipefail
+          find artifacts -type f \( -name jetlint -o -name jetlint.exe \) -print0 \
+            | xargs -0 -r -I {} chmod +x {}
+
+      - name: Derive version
+        id: ver
+        shell: bash
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${REF_NAME#v}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?$ ]]; then
+            echo "::error::tag '${REF_NAME}' is not a semver release tag"
+            exit 1
+          fi
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
+      - name: Assemble npm packages
+        shell: bash
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: node scripts/build-npm.mjs "${VERSION}"
+
+      - name: Publish platform packages
+        # Authentication is via OIDC trusted publishing — no NODE_AUTH_TOKEN,
+        # no long-lived secret in the repo. npm CLI detects the GitHub Actions
+        # OIDC environment automatically and exchanges the workflow identity
+        # for a short-lived publish token bound to this exact ref. Each of
+        # the six target packages is configured on npmjs.com with a trusted
+        # publisher pointing at jetlint/jetlint .github/workflows/release.yml.
+        shell: bash
+        working-directory: npm-dist
+        run: |
+          set -euo pipefail
+          for dir in @jetlint-*/; do
+            echo "publishing ${dir%/}"
+            (cd "${dir}" && npm publish)
+          done
+
+      - name: Publish wrapper
+        shell: bash
+        working-directory: npm-dist/jetlint
+        run: npm publish
+
+      - name: Create GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          files=()
+          for f in artifacts/binary-*/jetlint artifacts/binary-*/jetlint.exe artifacts/binary-*/SHA256SUMS; do
+            [[ -f "$f" ]] || continue
+            platform="$(basename "$(dirname "$f")")"
+            platform="${platform#binary-}"
+            base="$(basename "$f")"
+            ext=""
+            case "$base" in
+              jetlint.exe) ext=".exe" ;;
+              SHA256SUMS)  ext=".sha256" ;;
+            esac
+            cp -- "$f" "jetlint-${TAG}-${platform}${ext}"
+            files+=("jetlint-${TAG}-${platform}${ext}")
+          done
+          gh release create "${TAG}" "${files[@]}" \
+            --title "${TAG}" \
+            --generate-notes
