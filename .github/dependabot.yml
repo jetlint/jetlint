@@ -2,15 +2,24 @@ version: 2
 updates:
   # Keep pinned-by-SHA `uses:` lines current. Dependabot opens PRs that
   # bump SHAs while keeping the human-readable version comment aligned.
+  #
+  # Group strategy: bundle non-major bumps so they land in one PR; surface
+  # major bumps individually so each can be reviewed for breaking changes
+  # in isolation. `release.yml` only runs on tag pushes, which means an
+  # untested major action bump would otherwise only surface during a real
+  # release — by which point the blast radius is the publish path.
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
-      actions:
+      actions-non-major:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Watch the Go module graph for upstream advisories.
   - package-ecosystem: gomod
