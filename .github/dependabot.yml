@@ -1,0 +1,20 @@
+version: 2
+updates:
+  # Keep pinned-by-SHA `uses:` lines current. Dependabot opens PRs that
+  # bump SHAs while keeping the human-readable version comment aligned.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  # Watch the Go module graph for upstream advisories.
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
