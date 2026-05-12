@@ -1,0 +1,7 @@
+{
+  "_doc": "Baseline used by .github/workflows/upstream-check.yml. The pinned_commit is the typescript-eslint upstream commit that the vendored fixtures in testdata/typescript-eslint/ correspond to. file_hashes is SHA-256 of each fixture file content; per_rule_pass_counts is the harness pass/total at that pin. The first upstream-check run will detect 'no baseline' and the issue it opens will include a PR-ready baseline to commit.",
+  "pinned_at": null,
+  "pinned_commit": null,
+  "file_hashes": {},
+  "per_rule_pass_counts": {}
+}
