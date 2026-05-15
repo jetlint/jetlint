@@ -69,7 +69,7 @@ type Metadata struct {
 var All = []Metadata{
 	// correctness — code that is wrong: runtime bugs, undefined behavior,
 	// type holes. No legitimate reason to write this.
-	{ID: "await-thenable", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+	{ID: "await-thenable", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "consistent-return", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-array-delete", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-base-to-string", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
@@ -108,7 +108,7 @@ var All = []Metadata{
 	{ID: "restrict-plus-operands", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "restrict-template-expressions", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "return-await", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
-	{ID: "strict-boolean-expressions", Category: CategorySuspicious, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+	{ID: "strict-boolean-expressions", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "unbound-method", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 
 	// security — injection, eval, prototype pollution, unsafe deserialization.
@@ -219,15 +219,17 @@ func RecommendedIDs() []string {
 }
 
 // mvpRuleIDsInOrder returns the recommended IDs in the order existing
-// callers used before the registry refactor (matches the original
-// MVPRuleIDs slice literal so error messages remain stable).
+// callers used before the registry refactor. The set tracks the
+// upstream consensus (typescript-eslint's recommendedTypeChecked
+// intersected with oxc's correctness category) plus the legacy
+// ordering callers depend on.
 func mvpRuleIDsInOrder() []string {
 	return []string{
+		"await-thenable",
+		"no-base-to-string",
 		"no-floating-promises",
 		"no-misused-promises",
-		"strict-boolean-expressions",
 		"no-unsafe-assignment",
-		"no-base-to-string",
 	}
 }
 
