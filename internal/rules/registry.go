@@ -88,6 +88,7 @@ var All = []Metadata{
 	{ID: "no-base-to-string", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-dupe-keys", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-duplicate-case", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-duplicate-imports", Category: CategoryStyle, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-empty-pattern", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-ex-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-func-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
