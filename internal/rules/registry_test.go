@@ -216,6 +216,7 @@ func additionalRulesSnapshot() []string {
 		"no-meaningless-void-operator",
 		"no-misused-spread",
 		"no-mixed-enums",
+		"no-new-native-nonconstructor",
 		"no-obj-calls",
 		"no-promise-executor-return",
 		"no-prototype-builtins",
