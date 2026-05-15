@@ -55,6 +55,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noexassign"
 	"github.com/jetlint/jetlint/internal/rules/nofuncassign"
 	"github.com/jetlint/jetlint/internal/rules/nosparsearrays"
+	"github.com/jetlint/jetlint/internal/rules/nopromiseexecutorreturn"
 	"github.com/jetlint/jetlint/internal/rules/noprototypebuiltins"
 	"github.com/jetlint/jetlint/internal/rules/notemplatecurlyinstring"
 	"github.com/jetlint/jetlint/internal/rules/nodupekeys"
@@ -551,6 +552,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noexassign.New(),
 		nofuncassign.New(),
 		nosparsearrays.New(),
+		nopromiseexecutorreturn.New(),
 		noprototypebuiltins.New(),
 		notemplatecurlyinstring.New(),
 		nodupekeys.New(),

@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 26
-- Remaining (AST-only): ~26
+- Shipped: 27
+- Remaining (AST-only): ~25
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -54,7 +54,7 @@ Update this file as rules land or assumptions change.
 | `no-misleading-character-class` | ⊘ | Regex AST. |
 | `no-new-native-nonconstructor` | | AST: `new Symbol(...)` / `new BigInt(...)`. |
 | `no-obj-calls` | | AST: `Math(...)` / `JSON(...)` / `Reflect(...)` etc. |
-| `no-promise-executor-return` | | AST: `return value` in a `new Promise()` executor body. |
+| `no-promise-executor-return` | ✓ | Shipped 2026-05-15 |
 | `no-prototype-builtins` | ✓ | Shipped 2026-05-15 |
 | `no-self-assign` | ✓ | Shipped 2026-05-15 |
 | `no-self-compare` | ✓ | Shipped 2026-05-15 |

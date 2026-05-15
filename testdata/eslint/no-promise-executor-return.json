@@ -1,0 +1,610 @@
+{
+  "ruleId": "no-promise-executor-return",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_promise_executor_return.rs",
+  "cases": [
+    {
+      "code": "function foo(resolve, reject) { return 1; }",
+      "valid": true
+    },
+    {
+      "code": "function Promise(resolve, reject) { return 1; }",
+      "valid": true
+    },
+    {
+      "code": "(function (resolve, reject) { return 1; })",
+      "valid": true
+    },
+    {
+      "code": "(function foo(resolve, reject) { return 1; })",
+      "valid": true
+    },
+    {
+      "code": "(function Promise(resolve, reject) { return 1; })",
+      "valid": true
+    },
+    {
+      "code": "var foo = function (resolve, reject) { return 1; }",
+      "valid": true
+    },
+    {
+      "code": "var foo = function Promise(resolve, reject) { return 1; }",
+      "valid": true
+    },
+    {
+      "code": "var Promise = function (resolve, reject) { return 1; }",
+      "valid": true
+    },
+    {
+      "code": "(resolve, reject) =\u003e { return 1; }",
+      "valid": true
+    },
+    {
+      "code": "(resolve, reject) =\u003e 1",
+      "valid": true
+    },
+    {
+      "code": "var foo = (resolve, reject) =\u003e { return 1; }",
+      "valid": true
+    },
+    {
+      "code": "var Promise = (resolve, reject) =\u003e { return 1; }",
+      "valid": true
+    },
+    {
+      "code": "var foo = (resolve, reject) =\u003e 1",
+      "valid": true
+    },
+    {
+      "code": "var Promise = (resolve, reject) =\u003e 1",
+      "valid": true
+    },
+    {
+      "code": "var foo = { bar(resolve, reject) { return 1; } }",
+      "valid": true
+    },
+    {
+      "code": "var foo = { Promise(resolve, reject) { return 1; } }",
+      "valid": true
+    },
+    {
+      "code": "new foo(function (resolve, reject) { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "new foo(function bar(resolve, reject) { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "new foo(function Promise(resolve, reject) { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "new foo((resolve, reject) =\u003e { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "new foo((resolve, reject) =\u003e 1);",
+      "valid": true
+    },
+    {
+      "code": "new promise(function foo(resolve, reject) { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "new Promise.foo(function foo(resolve, reject) { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "new foo.Promise(function foo(resolve, reject) { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "new Promise.Promise(function foo(resolve, reject) { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "new Promise()(function foo(resolve, reject) { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "Promise(function (resolve, reject) { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "Promise((resolve, reject) =\u003e { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "Promise((resolve, reject) =\u003e 1);",
+      "valid": true
+    },
+    {
+      "code": "new Promise(foo, function (resolve, reject) { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "new Promise(foo, (resolve, reject) =\u003e { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "new Promise(foo, (resolve, reject) =\u003e 1);",
+      "valid": true
+    },
+    {
+      "code": "let Promise; new Promise(function (resolve, reject) { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "function f() { new Promise((resolve, reject) =\u003e { return 1; }); var Promise; }",
+      "valid": true
+    },
+    {
+      "code": "function f(Promise) { new Promise((resolve, reject) =\u003e 1); }",
+      "valid": true
+    },
+    {
+      "code": "if (x) { const Promise = foo(); new Promise(function (resolve, reject) { return 1; }); }",
+      "valid": true
+    },
+    {
+      "code": "x = function Promise() { new Promise((resolve, reject) =\u003e { return 1; }); }",
+      "valid": true
+    },
+    {
+      "code": "new Promise(function (resolve, reject) { return; });",
+      "valid": true
+    },
+    {
+      "code": "new Promise(function (resolve, reject) { reject(new Error()); return; });",
+      "valid": true
+    },
+    {
+      "code": "new Promise(function (resolve, reject) { if (foo) { return; } });",
+      "valid": true
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e { return; });",
+      "valid": true
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e { if (foo) { resolve(1); return; } reject(new Error()); });",
+      "valid": true
+    },
+    {
+      "code": "new Promise(function (resolve, reject) { throw new Error(); });",
+      "valid": true
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e { throw new Error(); });",
+      "valid": true
+    },
+    {
+      "code": "new Promise(function (resolve, reject) { function foo() { return 1; } });",
+      "valid": true
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e { (function foo() { return 1; })(); });",
+      "valid": true
+    },
+    {
+      "code": "new Promise(function (resolve, reject) { () =\u003e { return 1; } });",
+      "valid": true
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e { () =\u003e 1 });",
+      "valid": true
+    },
+    {
+      "code": "function foo() { return new Promise(function (resolve, reject) { resolve(bar); }) };",
+      "valid": true
+    },
+    {
+      "code": "foo =\u003e new Promise((resolve, reject) =\u003e { bar(foo, (err, data) =\u003e { if (err) { reject(err); return; } resolve(data); })});",
+      "valid": true
+    },
+    {
+      "code": "new Promise(function (resolve, reject) {}); function foo() { return 1; }",
+      "valid": true
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e {}); (function () { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "new Promise(function (resolve, reject) {}); () =\u003e { return 1; };",
+      "valid": true
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e {}); () =\u003e 1;",
+      "valid": true
+    },
+    {
+      "code": "return 1;",
+      "valid": true
+    },
+    {
+      "code": "return 1;",
+      "valid": true
+    },
+    {
+      "code": "return 1; function foo(){ return 1; } return 1;",
+      "valid": true
+    },
+    {
+      "code": "function foo(){} return 1; var bar = function*(){ return 1; }; return 1; var baz = () =\u003e {}; return 1;",
+      "valid": true
+    },
+    {
+      "code": "new Promise(function (resolve, reject) {}); return 1;",
+      "valid": true
+    },
+    {
+      "code": "new Promise((r) =\u003e void cbf(r));",
+      "valid": true,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e void 0)",
+      "valid": true,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e { return void 0 })",
+      "valid": true,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e { if (foo) { return void 0 } return void 0 })",
+      "valid": true,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e {0})",
+      "valid": true
+    },
+    {
+      "code": "new Promise(function (resolve, reject) { return 1; })",
+      "valid": false
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e resolve(1))",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e { return 1 })",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e 1)",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e 1 ? 2 : 3)",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e (1 ? 2 : 3))",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e (1))",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e () =\u003e {})",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e null)",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e null)",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": false
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e /*hi*/ ~0)",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e /*hi*/ ~0)",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": false
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e { return 0 })",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e { return 0 })",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": false
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e { if (foo) { return void 0 } return 0 })",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(resolve =\u003e { return (foo = resolve(1)); })",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(resolve =\u003e r = resolve)",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e { return(1) })",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e1)",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(r =\u003e ((1)))",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true
+        }
+      ]
+    },
+    {
+      "code": "new Promise(function foo(resolve, reject) { return 1; })",
+      "valid": false
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e { return 1; })",
+      "valid": false
+    },
+    {
+      "code": "new Promise(function (resolve, reject) { return undefined; })",
+      "valid": false
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e { return null; })",
+      "valid": false
+    },
+    {
+      "code": "new Promise(function (resolve, reject) { return false; })",
+      "valid": false
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e resolve)",
+      "valid": false
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e null)",
+      "valid": false
+    },
+    {
+      "code": "new Promise(function (resolve, reject) { return resolve(foo); })",
+      "valid": false
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e { return reject(foo); })",
+      "valid": false
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e x + y)",
+      "valid": false
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e { return Promise.resolve(42); })",
+      "valid": false
+    },
+    {
+      "code": "new Promise(function (resolve, reject) { if (foo) { return 1; } })",
+      "valid": false
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e { try { return 1; } catch(e) {} })",
+      "valid": false
+    },
+    {
+      "code": "new Promise(function (resolve, reject) { while (foo){ if (bar) break; else return 1; } })",
+      "valid": false
+    },
+    {
+      "code": "new Promise(() =\u003e { return void 1; })",
+      "valid": false
+    },
+    {
+      "code": "new Promise(() =\u003e (1))",
+      "valid": false
+    },
+    {
+      "code": "() =\u003e new Promise(() =\u003e ({}));",
+      "valid": false
+    },
+    {
+      "code": "new Promise(function () { return 1; })",
+      "valid": false
+    },
+    {
+      "code": "new Promise(() =\u003e { return 1; })",
+      "valid": false
+    },
+    {
+      "code": "new Promise(() =\u003e 1)",
+      "valid": false
+    },
+    {
+      "code": "function foo() {} new Promise(function () { return 1; });",
+      "valid": false
+    },
+    {
+      "code": "function foo() { return; } new Promise(() =\u003e { return 1; });",
+      "valid": false
+    },
+    {
+      "code": "function foo() { return 1; } new Promise(() =\u003e { return 2; });",
+      "valid": false
+    },
+    {
+      "code": "function foo () { return new Promise(function () { return 1; }); }",
+      "valid": false
+    },
+    {
+      "code": "function foo() { return new Promise(() =\u003e { bar(() =\u003e { return 1; }); return false; }); }",
+      "valid": false
+    },
+    {
+      "code": "() =\u003e new Promise(() =\u003e { if (foo) { return 0; } else bar(() =\u003e { return 1; }); })",
+      "valid": false
+    },
+    {
+      "code": "function foo () { return 1; return new Promise(function () { return 2; }); return 3;}",
+      "valid": false
+    },
+    {
+      "code": "() =\u003e 1; new Promise(() =\u003e { return 1; })",
+      "valid": false
+    },
+    {
+      "code": "new Promise(function () { return 1; }); function foo() { return 1; } ",
+      "valid": false
+    },
+    {
+      "code": "() =\u003e new Promise(() =\u003e { return 1; });",
+      "valid": false
+    },
+    {
+      "code": "() =\u003e new Promise(() =\u003e 1);",
+      "valid": false
+    },
+    {
+      "code": "() =\u003e new Promise(() =\u003e () =\u003e 1);",
+      "valid": false
+    },
+    {
+      "code": "() =\u003e new Promise(() =\u003e async () =\u003e 1);",
+      "valid": false
+    },
+    {
+      "code": "() =\u003e new Promise(() =\u003e function () {});",
+      "valid": false
+    },
+    {
+      "code": "() =\u003e new Promise(() =\u003e function foo() {});",
+      "valid": false
+    },
+    {
+      "code": "() =\u003e new Promise(() =\u003e []);",
+      "valid": false
+    },
+    {
+      "code": "new Promise((Promise) =\u003e { return 1; })",
+      "valid": false
+    },
+    {
+      "code": "new Promise(function Promise(resolve, reject) { return 1; })",
+      "valid": false
+    }
+  ]
+}

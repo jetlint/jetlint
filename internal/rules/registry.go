@@ -91,6 +91,7 @@ var All = []Metadata{
 	{ID: "no-ex-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-func-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-sparse-arrays", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-promise-executor-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-prototype-builtins", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-setter-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-template-curly-in-string", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
