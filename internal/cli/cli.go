@@ -29,6 +29,7 @@ import (
 	"github.com/jetlint/jetlint/internal/format"
 	"github.com/jetlint/jetlint/internal/project"
 	"github.com/jetlint/jetlint/internal/rules"
+	"github.com/jetlint/jetlint/internal/rules/arraycallbackreturn"
 	"github.com/jetlint/jetlint/internal/rules/awaitthenable"
 	"github.com/jetlint/jetlint/internal/rules/consistentreturn"
 	"github.com/jetlint/jetlint/internal/rules/consistenttypeexports"
@@ -471,6 +472,10 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 	if err != nil {
 		return nil, toolerr.New(toolerr.CodeConfigInvalid, err.Error())
 	}
+	acrOpts, err := arraycallbackreturn.OptionsFromJSON(ruleOptions["array-callback-return"])
+	if err != nil {
+		return nil, toolerr.New(toolerr.CodeConfigInvalid, err.Error())
+	}
 	rejectIfOptionsPresent := func(ruleID string) *toolerr.Error {
 		if len(ruleOptions[ruleID]) == 0 {
 			return nil
@@ -480,10 +485,16 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 	}
 	// Rules without options support: reject any user-supplied options
 	// at config-load time so typos are visible.
+	rulesWithOptions := map[string]bool{
+		"array-callback-return": true,
+	}
 	for _, ruleID := range append([]string{
 		"strict-boolean-expressions",
 		"no-unsafe-assignment",
 	}, rules.AdditionalTypeAwareRuleIDs...) {
+		if rulesWithOptions[ruleID] {
+			continue
+		}
 		if e := rejectIfOptionsPresent(ruleID); e != nil {
 			return nil, e
 		}
@@ -496,6 +507,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nounsafeassignment.New(),
 		nobasetotostring.NewWithOptions(nbtsOpts),
 		// Additional type-aware rules — default-off, opt-in via config.
+		arraycallbackreturn.NewWithOptions(acrOpts),
 		awaitthenable.New(),
 		consistentreturn.New(),
 		consistenttypeexports.New(),

@@ -1,0 +1,1519 @@
+{
+  "ruleId": "array-callback-return",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/array_callback_return/mod.rs",
+  "cases": [
+    {
+      "code": "foo.every(function(){ return 1; })",
+      "valid": true
+    },
+    {
+      "code": "foo.every(function(){}())",
+      "valid": true
+    },
+    {
+      "code": "foo.every(function(){ return function() { return true; }; }())",
+      "valid": true
+    },
+    {
+      "code": "foo.every(function(){ return function() { return; }; })",
+      "valid": true
+    },
+    {
+      "code": "foo.forEach(bar || function(x) { var a=0; })",
+      "valid": true
+    },
+    {
+      "code": "foo.forEach(bar || function(x) { return a; })",
+      "valid": true
+    },
+    {
+      "code": "foo.forEach(function() {return function() { var a = 0;}}())",
+      "valid": true
+    },
+    {
+      "code": "foo.forEach(function(x) { var a=0; })",
+      "valid": true
+    },
+    {
+      "code": "foo.forEach(function(x) { return a;})",
+      "valid": true
+    },
+    {
+      "code": "foo.forEach(function(x) { return; })",
+      "valid": true
+    },
+    {
+      "code": "foo.forEach(function(x) { if (a === b) { return;} var a=0; })",
+      "valid": true
+    },
+    {
+      "code": "foo.forEach(function(x) { if (a === b) { return x;} var a=0; })",
+      "valid": true
+    },
+    {
+      "code": "foo.bar().forEach(function(x) { return; })",
+      "valid": true
+    },
+    {
+      "code": "[\"foo\",\"bar\",\"baz\"].forEach(function(x) { return x; })",
+      "valid": true
+    },
+    {
+      "code": "foo.forEach(x =\u003e { var a=0; })",
+      "valid": true
+    },
+    {
+      "code": "foo.forEach(x =\u003e { if (a === b) { return;} var a=0; })",
+      "valid": true
+    },
+    {
+      "code": "foo.forEach(x =\u003e x)",
+      "valid": true
+    },
+    {
+      "code": "foo.forEach(val =\u003e y += val)",
+      "valid": true
+    },
+    {
+      "code": "foo.map(async function(){})",
+      "valid": true
+    },
+    {
+      "code": "foo.map(async () =\u003e {})",
+      "valid": true
+    },
+    {
+      "code": "foo.map(function* () {})",
+      "valid": true
+    },
+    {
+      "code": "Array.from(x, function() { return true; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": false
+        }
+      ]
+    },
+    {
+      "code": "foo.every(function() { return true; })",
+      "valid": true
+    },
+    {
+      "code": "foo.filter(function() { return true; })",
+      "valid": true
+    },
+    {
+      "code": "foo.find(function() { return true; })",
+      "valid": true
+    },
+    {
+      "code": "foo.findIndex(function() { return true; })",
+      "valid": true
+    },
+    {
+      "code": "foo.findLast(function() { return true; })",
+      "valid": true
+    },
+    {
+      "code": "foo.findLastIndex(function() { return true; })",
+      "valid": true
+    },
+    {
+      "code": "foo.flatMap(function() { return true; })",
+      "valid": true
+    },
+    {
+      "code": "foo.forEach(function() { return; })",
+      "valid": true
+    },
+    {
+      "code": "foo.map(function() { return true; })",
+      "valid": true
+    },
+    {
+      "code": "foo.reduce(function() { return true; })",
+      "valid": true
+    },
+    {
+      "code": "foo.reduceRight(function() { return true; })",
+      "valid": true
+    },
+    {
+      "code": "foo.some(function() { return true; })",
+      "valid": true
+    },
+    {
+      "code": "foo.sort(function() { return 0; })",
+      "valid": true
+    },
+    {
+      "code": "foo.toSorted(function() { return 0; })",
+      "valid": true
+    },
+    {
+      "code": "foo.every(() =\u003e { return true; })",
+      "valid": true
+    },
+    {
+      "code": "foo.every(function() { if (a) return true; else return false; })",
+      "valid": true
+    },
+    {
+      "code": "foo.every(function() { switch (a) { case 0: bar(); default: return true; } })",
+      "valid": true
+    },
+    {
+      "code": "foo.every(function() { try { bar(); return true; } catch (err) { return false; } })",
+      "valid": true
+    },
+    {
+      "code": "foo.every(function() { try { bar(); } finally { return true; } })",
+      "valid": true
+    },
+    {
+      "code": "foo.every(function() { switch (a) { default: case0: return true; } })",
+      "valid": true
+    },
+    {
+      "code": "Array.from(x, function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.filter(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.find(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.findIndex(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.findLast(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.findLastIndex(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.flatMap(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.map(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.reduce(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.reduceRight(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.some(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.sort(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.toSorted(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(() =\u003e { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(function() { if (a) return; else return a; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(function() { switch (a) { case 0: bar(); default: return; } })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(function() { try { bar(); return; } catch (err) { return; } })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(function() { try { bar(); } finally { return; } })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(function(x) { return; })",
+      "valid": true,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(function(x) { var a=0; })",
+      "valid": true,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(function(x) { if (a === b) { return;} var a=0; })",
+      "valid": true,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(function() {return function() { if (a == b) { return; }}}())",
+      "valid": true,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e { var a=0; })",
+      "valid": true,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e { if (a === b) { return;} var a=0; })",
+      "valid": true,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e { x })",
+      "valid": true,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(bar || function(x) { return; })",
+      "valid": true,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "Array.from(x, function() { return true; })",
+      "valid": true,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(() =\u003e { return true; })",
+      "valid": true,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(function() { if (a) return 1; else return a; })",
+      "valid": true,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(function() { switch (a) { case 0: return bar(); default: return a; } })",
+      "valid": true,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(function() { try { bar(); return 1; } catch (err) { return err; } })",
+      "valid": true,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(function() { try { bar(); } finally { return 1; } })",
+      "valid": true,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e void x)",
+      "valid": true,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e void bar(x))",
+      "valid": true,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(function (x) { return void bar(x); })",
+      "valid": true,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e { return void bar(x); })",
+      "valid": true,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e { if (a === b) { return void a; } bar(x) })",
+      "valid": true,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "Arrow.from(x, function() {})",
+      "valid": true
+    },
+    {
+      "code": "foo.abc(function() {})",
+      "valid": true
+    },
+    {
+      "code": "every(function() {})",
+      "valid": true
+    },
+    {
+      "code": "foo[every](function() {})",
+      "valid": true
+    },
+    {
+      "code": "var every = function() {}",
+      "valid": true
+    },
+    {
+      "code": "foo[`${every}`](function() {})",
+      "valid": true
+    },
+    {
+      "code": "foo.every(() =\u003e true)",
+      "valid": true
+    },
+    {
+      "code": "return function() {}",
+      "valid": true
+    },
+    {
+      "code": "array.map((node) =\u003e { if (isTaskNode(node)) { return someObj; } else if (isOtherNode(node)) { return otherObj; } else { throw new Error('Unsupported'); } })",
+      "valid": true
+    },
+    {
+      "code": "Array.fromAsync(x, function() { return true; })",
+      "valid": true
+    },
+    {
+      "code": "Array.fromAsync(x, async function() { return true; })",
+      "valid": true
+    },
+    {
+      "code": "Array.fromAsync(x, function() { return; })",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Array.fromAsync(x, async () =\u003e true)",
+      "valid": true
+    },
+    {
+      "code": "Array.fromAsync(x, function * () {})",
+      "valid": true
+    },
+    {
+      "code": "Float64Array.fromAsync(x, function() {})",
+      "valid": true
+    },
+    {
+      "code": "Array.fromAsync(function() {})",
+      "valid": true
+    },
+    {
+      "code": "function filterNested(allItems, group) {\n  return Array.from(allItems).filter(item =\u003e {\n    let current = item.parentElement\n    while (current \u0026\u0026 current !== group) {\n      if (current.getAttribute('aria-hidden') === 'true') {\n        return false\n      }\n      current = current.parentElement\n    }\n    return true\n  })\n}",
+      "valid": true
+    },
+    {
+      "code": "Array.from(x, function() {})",
+      "valid": false
+    },
+    {
+      "code": "Array.from(x, function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.filter(function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.filter(function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.find(function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.find(function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.findLast(function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.findLast(function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.findIndex(function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.findIndex(function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.findLastIndex(function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.findLastIndex(function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.flatMap(function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.flatMap(function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.map(function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.map(function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "const fruits = [{ name: \"apple\" }, { name: \"banana\" }] as const;\n\nconst _test = fruits.map((fruit) =\u003e {\n  switch (fruit.name) {\n    case \"apple\": {\n      return \"a\"\n    }\n\n    case \"banana\": {\n      return \"b\"\n    }\n  }\n});",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce(function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce(function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight(function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight(function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.some(function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.some(function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.sort(function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.sort(function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.toSorted(function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.toSorted(function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.bar.baz.every(function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.bar.baz.every(function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo[\"every\"](function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo[\"every\"](function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo[`every`](function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo[`every`](function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.every(() =\u003e {})",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function() { if (a) return true; })",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function cb() { if (a) return true; })",
+      "valid": false
+    },
+    {
+      "code": "foo.map(() =\u003e { while (true) { if (a) break; return 1; } })",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function() { switch (a) { case 0: break; default: return true; } })",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function foo() { switch (a) { case 0: break; default: return true; } })",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function() { try { bar(); } catch (err) { return true; } })",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function foo() { try { bar(); } catch (err) { return true; } })",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function() { return; })",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function foo() { return; })",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function() { if (a) return; })",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function foo() { if (a) return; })",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function() { if (a) return; else return; })",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function foo() { if (a) return; else return; })",
+      "valid": false
+    },
+    {
+      "code": "foo.every(cb || function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.every(cb || function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.every(a ? function() {} : function() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.every(a ? function foo() {} : function bar() {})",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function(){ return function() {}; }())",
+      "valid": false
+    },
+    {
+      "code": "foo.every(function(){ return function foo() {}; }())",
+      "valid": false
+    },
+    {
+      "code": "foo.every(() =\u003e {})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": false
+        }
+      ]
+    },
+    {
+      "code": "foo.every(() =\u003e {})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Array.from(x, function() {})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(function() {})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.filter(function foo() {})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.find(function foo() {})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.map(function() {})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.reduce(function() {})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.reduceRight(function() {})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.bar.baz.every(function foo() {})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(cb || function() {})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "[\"foo\",\"bar\"].sort(function foo() {})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "[\"foo\",\"bar\"].toSorted(function foo() {})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e x)",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e !x)",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e (x))",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e { return x; })",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e { return !x; })",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e { return(x); })",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e { return (x + 1); })",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e { if (a === b) { return x; } })",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e { if (a === b) { return !x; } })",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e { if (a === b) { return (x + a); } })",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(function(x) { if (a == b) {return x;}})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(function bar(x) { return x;})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e x)",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(val =\u003e y += val)",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "[\"foo\",\"bar\"].forEach(x =\u003e ++x)",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.bar().forEach(x =\u003e x === y)",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(function() {return function() { if (a == b) { return a; }}}())",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(function(x) { if (a == b) {return x;}})",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(function(x) { if (a == b) {return undefined;}})",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(function bar(x) { return x;})",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.bar().forEach(function bar(x) { return x;})",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "[\"foo\",\"bar\"].forEach(function bar(x) { return x;})",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e { return x;})",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "Array.from(x, function() {})",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(function() {})",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.filter(function foo() {})",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.filter(function foo() { return; })",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.every(cb || function() {})",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.filter(bar =\u003e { baz(); } )",
+      "valid": false
+    },
+    {
+      "code": "foo.filter(\n() =\u003e {} )",
+      "valid": false
+    },
+    {
+      "code": "foo.filter(bar || ((baz) =\u003e {}) )",
+      "valid": false
+    },
+    {
+      "code": "foo.filter(bar =\u003e { return; })",
+      "valid": false
+    },
+    {
+      "code": "Array.from(foo, bar =\u003e { bar })",
+      "valid": false
+    },
+    {
+      "code": "foo.forEach(bar =\u003e bar)",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((function () { return (bar) =\u003e bar; })())",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((() =\u003e {\n return bar =\u003e bar; })())",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((bar) =\u003e { if (bar) { return; } else { return bar ; } })",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e (x))",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e void x)",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e void bar(x))",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e { return void bar(x); })",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach((x) =\u003e { if (a === b) { return void a; } bar(x) })",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.filter(function(){})",
+      "valid": false
+    },
+    {
+      "code": "foo.filter(function (){})",
+      "valid": false
+    },
+    {
+      "code": "foo.filter(function\n(){})",
+      "valid": false
+    },
+    {
+      "code": "foo.filter(function bar(){})",
+      "valid": false
+    },
+    {
+      "code": "foo.filter(function bar  (){})",
+      "valid": false
+    },
+    {
+      "code": "foo.filter(function\n bar() {})",
+      "valid": false
+    },
+    {
+      "code": "Array.from(foo, function bar(){})",
+      "valid": false
+    },
+    {
+      "code": "Array.from(foo, bar ? function (){} : baz)",
+      "valid": false
+    },
+    {
+      "code": "foo.filter(function bar() { return \n })",
+      "valid": false
+    },
+    {
+      "code": "foo.forEach(function () { \nif (baz) return bar\nelse return\n })",
+      "valid": false,
+      "options": [
+        {
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "Array.fromAsync(x,\n            async\tfunction \\\\u0066oo // bar\n               () {})",
+      "valid": false
+    },
+    {
+      "code": "foo?.filter(() =\u003e { console.log('hello') })",
+      "valid": false
+    },
+    {
+      "code": "(foo?.filter)(() =\u003e { console.log('hello') })",
+      "valid": false
+    },
+    {
+      "code": "Array?.from([], () =\u003e { console.log('hello') })",
+      "valid": false
+    },
+    {
+      "code": "(Array?.from)([], () =\u003e { console.log('hello') })",
+      "valid": false
+    },
+    {
+      "code": "foo?.filter((function() { return () =\u003e { console.log('hello') } })?.())",
+      "valid": false
+    },
+    {
+      "code": "Array.fromAsync(x, function() {})",
+      "valid": false
+    },
+    {
+      "code": "Array.fromAsync(x, function() {})",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Array.fromAsync(x, () =\u003e {})",
+      "valid": false
+    },
+    {
+      "code": "Array.fromAsync(x, function foo() {})",
+      "valid": false
+    },
+    {
+      "code": "Array.fromAsync(x, async function() {})",
+      "valid": false
+    },
+    {
+      "code": "Array.fromAsync(x, async () =\u003e {})",
+      "valid": false
+    },
+    {
+      "code": "foo.forEach(x =\u003e x);",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e !x);",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e (x));",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e { return x; });",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e { return !x; });",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e { return (x); });",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e { return x + 1; });",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e { if (a === b) { return x; } });",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e { if (a === b) { return !x; } });",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    },
+    {
+      "code": "foo.forEach(x =\u003e { if (a === b) { return (x + a); } });",
+      "valid": false,
+      "options": [
+        {
+          "allowVoid": true,
+          "checkForEach": true
+        }
+      ]
+    }
+  ]
+}
