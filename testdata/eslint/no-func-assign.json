@@ -1,0 +1,71 @@
+{
+  "ruleId": "no-func-assign",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_func_assign.rs",
+  "cases": [
+    {
+      "code": "function foo() { var foo = bar; }",
+      "valid": true
+    },
+    {
+      "code": "function foo(foo) { foo = bar; }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var foo; foo = bar; }",
+      "valid": true
+    },
+    {
+      "code": "var foo = () =\u003e {}; foo = bar;",
+      "valid": true
+    },
+    {
+      "code": "var foo = function() {}; foo = bar;",
+      "valid": true
+    },
+    {
+      "code": "var foo = function() { foo = bar; };",
+      "valid": true
+    },
+    {
+      "code": "import bar from 'bar'; function foo() { var foo = bar; }",
+      "valid": true
+    },
+    {
+      "code": "function foo() {}; foo = bar;",
+      "valid": false
+    },
+    {
+      "code": "function foo() { foo = bar; }",
+      "valid": false
+    },
+    {
+      "code": "foo = bar; function foo() { };",
+      "valid": false
+    },
+    {
+      "code": "[foo] = bar; function foo() { };",
+      "valid": false
+    },
+    {
+      "code": "({x: foo = 0} = bar); function foo() { };",
+      "valid": false
+    },
+    {
+      "code": "function foo() { [foo] = bar; }",
+      "valid": false
+    },
+    {
+      "code": "(function() { ({x: foo = 0} = bar); function foo() { }; })();",
+      "valid": false
+    },
+    {
+      "code": "var a = function foo() { foo = 123; };",
+      "valid": false
+    },
+    {
+      "code": "let a = function hello() { hello = 123;};",
+      "valid": false
+    }
+  ]
+}

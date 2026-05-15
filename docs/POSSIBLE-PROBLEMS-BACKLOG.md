@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 21
-- Remaining (AST-only): ~31
+- Shipped: 22
+- Remaining (AST-only): ~30
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -45,7 +45,7 @@ Update this file as rules land or assumptions change.
 | `no-empty-pattern` | ✓ | Shipped 2026-05-15 |
 | `no-ex-assign` | ✓ | Shipped 2026-05-15 |
 | `no-fallthrough` | | AST walk: does each case end in break/return/throw? |
-| `no-func-assign` | | Scope: assigning to a function declaration's name. |
+| `no-func-assign` | ✓ | Shipped 2026-05-15 |
 | `no-import-assign` | | Scope: assigning to an imported binding. |
 | `no-inner-declarations` | | AST: function/var declared inside a non-function block. |
 | `no-invalid-regexp` | ⊘ | Regex AST. |
