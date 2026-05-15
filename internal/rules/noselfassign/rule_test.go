@@ -93,15 +93,29 @@ func TestNoSelfAssign_DoesNotFlagDifferentTargetAndSource(t *testing.T) {
 	}
 }
 
-func TestNoSelfAssign_DoesNotFlagCompoundAssignments(t *testing.T) {
-	// Compound assignments (`+=`, `-=`, `||=`, etc.) have side effects
-	// even when the operands are identical, so `a += a` is not a no-op.
+func TestNoSelfAssign_DoesNotFlagArithmeticCompoundAssignments(t *testing.T) {
+	// `+=`, `-=`, `*=`, `&=`, `|=` etc. change the stored value even
+	// when both operands are the same (`a += a` is `a*2`), so the
+	// rule stays silent on those.
 	tsconfig := fixture(t, map[string]string{
-		"main.ts": "let a = 1; a += a; a -= a; a *= a; a ||= a; a ??= a;\n",
+		"main.ts": "let a = 1; a += a; a -= a; a *= a; a &= a; a |= a;\n",
 	})
 	diags := runRule(t, tsconfig)
 	if len(diags) != 0 {
-		t.Fatalf("compound assignments must not be flagged; got %d diagnostics: %#v", len(diags), diags)
+		t.Fatalf("arithmetic compound assignments must not be flagged; got %d diagnostics: %#v", len(diags), diags)
+	}
+}
+
+func TestNoSelfAssign_FlagsLogicalCompoundAssignments(t *testing.T) {
+	// `&&=`, `||=`, `??=` short-circuit, so `a ||= a`, `a &&= a`,
+	// `a ??= a` are all no-ops and the rule flags them — matching
+	// ESLint and oxlint.
+	tsconfig := fixture(t, map[string]string{
+		"main.ts": "let a: any = 1; a ||= a; a &&= a; a ??= a;\n",
+	})
+	diags := runRule(t, tsconfig)
+	if len(diags) != 3 {
+		t.Fatalf("expected 3 diagnostics for ||= &&= ??=; got %d: %#v", len(diags), diags)
 	}
 }
 
