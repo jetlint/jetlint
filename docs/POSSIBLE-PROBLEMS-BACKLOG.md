@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 16
-- Remaining (AST-only): ~36
+- Shipped: 17
+- Remaining (AST-only): ~35
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -34,7 +34,7 @@ Update this file as rules land or assumptions change.
 | `no-constant-condition` | | AST: literal boolean condition. |
 | `no-constructor-return` | ✓ | Shipped 2026-05-15 |
 | `no-control-regex` | ⊘ | Regex AST. |
-| `no-debugger` | | AST: `DebuggerStatement`. |
+| `no-debugger` | ✓ | Shipped 2026-05-15 |
 | `no-dupe-args` | | AST: duplicate parameter names. |
 | `no-dupe-class-members` | | AST: duplicate member names in a class body. |
 | `no-dupe-else-if` | | AST: structural equality across else-if conditions. |
