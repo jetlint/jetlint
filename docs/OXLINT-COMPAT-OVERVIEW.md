@@ -45,20 +45,24 @@ go test -count=1 -run EslintCompatibility -v ./internal/rules/<pkg>/
 Harnesses log mismatches and a final pass-rate line. They do not gate
 on 100%; the score is a baseline that improves as rules sharpen.
 
-## Current baselines (initial cut)
+## Current compatibility
 
 | Rule | Score |
 |---|---:|
-| valid-typeof | 53/60 (88.3%) |
-| no-self-compare | 20/24 (83.3%) |
-| no-duplicate-case | 23/30 (76.7%) |
-| use-isnan | 146/208 (70.2%) |
-| no-self-assign | 62/92 (67.4%) |
-| no-dupe-keys | 33/50 (66.0%) |
+| no-self-compare | 24/24 (100%) |
+| no-duplicate-case | 30/30 (100%) |
+| no-dupe-keys | 50/50 (100%) |
+| valid-typeof | 60/60 (100%) |
+| use-isnan | 208/208 (100%) |
+| no-self-assign | 92/92 (100%) |
 
-The gaps surface real coverage holes — parenthesized operands,
-computed property keys, getter/setter pairs that should be exempt,
-etc. — and become the work list for follow-up PRs.
+**Aggregate: 464/464 cases pass (100%)** across all option
+combinations the upstream fixtures exercise.
+
+The three rules with options (\`valid-typeof\`, \`use-isnan\`,
+\`no-self-assign\`) expose the standard \`Options\` /
+\`DefaultOptions\` / \`OptionsFromJSON\` / \`NewWithOptions\` surface
+so user-supplied config in \`.jetlintrc.json\` is plumbed through.
 
 ## Adding a new rule
 
