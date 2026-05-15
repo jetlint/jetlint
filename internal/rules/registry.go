@@ -111,6 +111,7 @@ var All = []Metadata{
 	{ID: "no-mixed-enums", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-import-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-inner-declarations", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-irregular-whitespace", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-loss-of-precision", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-self-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-self-compare", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

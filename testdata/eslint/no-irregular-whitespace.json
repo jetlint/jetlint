@@ -1,0 +1,922 @@
+{
+  "ruleId": "no-irregular-whitespace",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_irregular_whitespace.rs",
+  "cases": [
+    {
+      "code": "'\\u000B';",
+      "valid": true
+    },
+    {
+      "code": "'\\u000C';",
+      "valid": true
+    },
+    {
+      "code": "'\\u0085';",
+      "valid": true
+    },
+    {
+      "code": "'\\u00A0';",
+      "valid": true
+    },
+    {
+      "code": "'\\u180E';",
+      "valid": true
+    },
+    {
+      "code": "'\\ufeff';",
+      "valid": true
+    },
+    {
+      "code": "'\\u2000';",
+      "valid": true
+    },
+    {
+      "code": "'\\u2001';",
+      "valid": true
+    },
+    {
+      "code": "'\\u2002';",
+      "valid": true
+    },
+    {
+      "code": "'\\u2003';",
+      "valid": true
+    },
+    {
+      "code": "'\\u2004';",
+      "valid": true
+    },
+    {
+      "code": "'\\u2005';",
+      "valid": true
+    },
+    {
+      "code": "'\\u2006';",
+      "valid": true
+    },
+    {
+      "code": "'\\u2007';",
+      "valid": true
+    },
+    {
+      "code": "'\\u2008';",
+      "valid": true
+    },
+    {
+      "code": "'\\u2009';",
+      "valid": true
+    },
+    {
+      "code": "'\\u200A';",
+      "valid": true
+    },
+    {
+      "code": "'\\u200B';",
+      "valid": true
+    },
+    {
+      "code": "'\\u2028';",
+      "valid": true
+    },
+    {
+      "code": "'\\u2029';",
+      "valid": true
+    },
+    {
+      "code": "'\\u202F';",
+      "valid": true
+    },
+    {
+      "code": "'\\u205f';",
+      "valid": true
+    },
+    {
+      "code": "'\\u3000';",
+      "valid": true
+    },
+    {
+      "code": "'\u000b';",
+      "valid": true
+    },
+    {
+      "code": "'\f';",
+      "valid": true
+    },
+    {
+      "code": "'';",
+      "valid": true
+    },
+    {
+      "code": "' ';",
+      "valid": true
+    },
+    {
+      "code": "'᠎';",
+      "valid": true
+    },
+    {
+      "code": "'﻿';",
+      "valid": true
+    },
+    {
+      "code": "' ';",
+      "valid": true
+    },
+    {
+      "code": "' ';",
+      "valid": true
+    },
+    {
+      "code": "' ';",
+      "valid": true
+    },
+    {
+      "code": "' ';",
+      "valid": true
+    },
+    {
+      "code": "' ';",
+      "valid": true
+    },
+    {
+      "code": "' ';",
+      "valid": true
+    },
+    {
+      "code": "' ';",
+      "valid": true
+    },
+    {
+      "code": "' ';",
+      "valid": true
+    },
+    {
+      "code": "' ';",
+      "valid": true
+    },
+    {
+      "code": "' ';",
+      "valid": true
+    },
+    {
+      "code": "' ';",
+      "valid": true
+    },
+    {
+      "code": "'​';",
+      "valid": true
+    },
+    {
+      "code": "'\\\u2028';",
+      "valid": true
+    },
+    {
+      "code": "'\\\u2029';",
+      "valid": true
+    },
+    {
+      "code": "' ';",
+      "valid": true
+    },
+    {
+      "code": "' ';",
+      "valid": true
+    },
+    {
+      "code": "'　';",
+      "valid": true
+    },
+    {
+      "code": "// \u000b",
+      "valid": true
+    },
+    {
+      "code": "// \f",
+      "valid": true
+    },
+    {
+      "code": "// ",
+      "valid": true
+    },
+    {
+      "code": "//  ",
+      "valid": true
+    },
+    {
+      "code": "// ᠎",
+      "valid": true
+    },
+    {
+      "code": "// ﻿",
+      "valid": true
+    },
+    {
+      "code": "//  ",
+      "valid": true
+    },
+    {
+      "code": "//  ",
+      "valid": true
+    },
+    {
+      "code": "//  ",
+      "valid": true
+    },
+    {
+      "code": "//  ",
+      "valid": true
+    },
+    {
+      "code": "//  ",
+      "valid": true
+    },
+    {
+      "code": "//  ",
+      "valid": true
+    },
+    {
+      "code": "//  ",
+      "valid": true
+    },
+    {
+      "code": "//  ",
+      "valid": true
+    },
+    {
+      "code": "//  ",
+      "valid": true
+    },
+    {
+      "code": "//  ",
+      "valid": true
+    },
+    {
+      "code": "//  ",
+      "valid": true
+    },
+    {
+      "code": "// ​",
+      "valid": true
+    },
+    {
+      "code": "//  ",
+      "valid": true
+    },
+    {
+      "code": "//  ",
+      "valid": true
+    },
+    {
+      "code": "// 　",
+      "valid": true
+    },
+    {
+      "code": "/* \u000b */",
+      "valid": true
+    },
+    {
+      "code": "/* \f */",
+      "valid": true
+    },
+    {
+      "code": "/*  */",
+      "valid": true
+    },
+    {
+      "code": "/*   */",
+      "valid": true
+    },
+    {
+      "code": "/* ᠎ */",
+      "valid": true
+    },
+    {
+      "code": "/* ﻿ */",
+      "valid": true
+    },
+    {
+      "code": "/*   */",
+      "valid": true
+    },
+    {
+      "code": "/*   */",
+      "valid": true
+    },
+    {
+      "code": "/*   */",
+      "valid": true
+    },
+    {
+      "code": "/*   */",
+      "valid": true
+    },
+    {
+      "code": "/*   */",
+      "valid": true
+    },
+    {
+      "code": "/*   */",
+      "valid": true
+    },
+    {
+      "code": "/*   */",
+      "valid": true
+    },
+    {
+      "code": "/*   */",
+      "valid": true
+    },
+    {
+      "code": "/*   */",
+      "valid": true
+    },
+    {
+      "code": "/*   */",
+      "valid": true
+    },
+    {
+      "code": "/*   */",
+      "valid": true
+    },
+    {
+      "code": "/* ​ */",
+      "valid": true
+    },
+    {
+      "code": "/* \u2028 */",
+      "valid": true
+    },
+    {
+      "code": "/* \u2029 */",
+      "valid": true
+    },
+    {
+      "code": "/*   */",
+      "valid": true
+    },
+    {
+      "code": "/*   */",
+      "valid": true
+    },
+    {
+      "code": "/* 　 */",
+      "valid": true
+    },
+    {
+      "code": "/\u000b/",
+      "valid": true
+    },
+    {
+      "code": "/\f/",
+      "valid": true
+    },
+    {
+      "code": "//",
+      "valid": true
+    },
+    {
+      "code": "/ /",
+      "valid": true
+    },
+    {
+      "code": "/᠎/",
+      "valid": true
+    },
+    {
+      "code": "/﻿/",
+      "valid": true
+    },
+    {
+      "code": "/ /",
+      "valid": true
+    },
+    {
+      "code": "/ /",
+      "valid": true
+    },
+    {
+      "code": "/ /",
+      "valid": true
+    },
+    {
+      "code": "/ /",
+      "valid": true
+    },
+    {
+      "code": "/ /",
+      "valid": true
+    },
+    {
+      "code": "/ /",
+      "valid": true
+    },
+    {
+      "code": "/ /",
+      "valid": true
+    },
+    {
+      "code": "/ /",
+      "valid": true
+    },
+    {
+      "code": "/ /",
+      "valid": true
+    },
+    {
+      "code": "/ /",
+      "valid": true
+    },
+    {
+      "code": "/ /",
+      "valid": true
+    },
+    {
+      "code": "/​/",
+      "valid": true
+    },
+    {
+      "code": "/ /",
+      "valid": true
+    },
+    {
+      "code": "/ /",
+      "valid": true
+    },
+    {
+      "code": "/　/",
+      "valid": true
+    },
+    {
+      "code": "`\u000b`",
+      "valid": true
+    },
+    {
+      "code": "`\f`",
+      "valid": true
+    },
+    {
+      "code": "``",
+      "valid": true
+    },
+    {
+      "code": "` `",
+      "valid": true
+    },
+    {
+      "code": "`᠎`",
+      "valid": true
+    },
+    {
+      "code": "`﻿`",
+      "valid": true
+    },
+    {
+      "code": "` `",
+      "valid": true
+    },
+    {
+      "code": "` `",
+      "valid": true
+    },
+    {
+      "code": "` `",
+      "valid": true
+    },
+    {
+      "code": "` `",
+      "valid": true
+    },
+    {
+      "code": "` `",
+      "valid": true
+    },
+    {
+      "code": "` `",
+      "valid": true
+    },
+    {
+      "code": "` `",
+      "valid": true
+    },
+    {
+      "code": "` `",
+      "valid": true
+    },
+    {
+      "code": "` `",
+      "valid": true
+    },
+    {
+      "code": "` `",
+      "valid": true
+    },
+    {
+      "code": "` `",
+      "valid": true
+    },
+    {
+      "code": "`​`",
+      "valid": true
+    },
+    {
+      "code": "` `",
+      "valid": true
+    },
+    {
+      "code": "` `",
+      "valid": true
+    },
+    {
+      "code": "`　`",
+      "valid": true
+    },
+    {
+      "code": "`　${foo}　`",
+      "valid": true
+    },
+    {
+      "code": "const error = ` 　 `;",
+      "valid": true
+    },
+    {
+      "code": "const error = `\n            　`;",
+      "valid": true
+    },
+    {
+      "code": "const error = `　\n            `;",
+      "valid": true
+    },
+    {
+      "code": "const error = `\n            　\n            `;",
+      "valid": true
+    },
+    {
+      "code": "const error = `foo　bar\n            foo　bar`;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e\u000b\u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e\f\u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e\u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e \u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e᠎\u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e﻿\u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e \u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e \u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e \u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e \u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e \u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e \u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e \u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e \u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e \u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e \u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e \u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e​\u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e \u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e \u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cdiv\u003e　\u003c/div\u003e;",
+      "valid": true
+    },
+    {
+      "code": "﻿console.log('hello BOM');",
+      "valid": true
+    },
+    {
+      "code": "var any = /　/, other = /\u000b/;",
+      "valid": true
+    },
+    {
+      "code": "var any = `　`, other = `\u000b`;",
+      "valid": true
+    },
+    {
+      "code": "var any \u000b = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any \f = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any   = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any ﻿ = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any   = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any   = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any   = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any   = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any   = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any   = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any   = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any   = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any   = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any   = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any   = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any \u2028 = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any \u2029 = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any   = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any   = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any 　 = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var a = 'b',\u2028c = 'd',\n            e = 'f'\u2028",
+      "valid": false
+    },
+    {
+      "code": "var any 　 = 'thing', other 　 = 'thing';\n            var third 　 = 'thing';",
+      "valid": false
+    },
+    {
+      "code": "var any = '　', other = '\u000b';",
+      "valid": false,
+      "options": [
+        {
+          "skipStrings": false
+        }
+      ]
+    },
+    {
+      "code": "var any = `　`, other = `\u000b`;",
+      "valid": false,
+      "options": [
+        {
+          "skipTemplates": false
+        }
+      ]
+    },
+    {
+      "code": "`something ${　 10} another thing`",
+      "valid": false
+    },
+    {
+      "code": "`something ${10　} another thing`",
+      "valid": false
+    },
+    {
+      "code": "　\n            `　template`",
+      "valid": false
+    },
+    {
+      "code": "　\n            `　multiline\n            template`",
+      "valid": false
+    },
+    {
+      "code": "　`　template`",
+      "valid": false
+    },
+    {
+      "code": "　`　multiline\n            template`",
+      "valid": false
+    },
+    {
+      "code": "`　template`　",
+      "valid": false
+    },
+    {
+      "code": "`　multiline\n            template`　",
+      "valid": false
+    },
+    {
+      "code": "`　template`\n            　",
+      "valid": false
+    },
+    {
+      "code": "`　multiline\n            template`\n            　",
+      "valid": false
+    },
+    {
+      "code": "var foo = \u000b bar;",
+      "valid": false
+    },
+    {
+      "code": "var foo =\u000bbar;",
+      "valid": false
+    },
+    {
+      "code": "var foo = \u000b\u000b bar;",
+      "valid": false
+    },
+    {
+      "code": "var foo = \u000b\f bar;",
+      "valid": false
+    },
+    {
+      "code": "var foo = \u000b \u000b bar;",
+      "valid": false
+    },
+    {
+      "code": "var foo = \u000bbar\u000b;",
+      "valid": false
+    },
+    {
+      "code": "\u000b",
+      "valid": false
+    },
+    {
+      "code": "   ",
+      "valid": false
+    },
+    {
+      "code": "var foo = \u000b\n            bar;",
+      "valid": false
+    },
+    {
+      "code": "var foo =\u000b\n            \u000bbar;",
+      "valid": false
+    },
+    {
+      "code": "var foo = \f\u000b\n            \f\u000b\fbar\n            ;\u000b\f\n            ",
+      "valid": false
+    },
+    {
+      "code": "var foo = \u2028bar;",
+      "valid": false
+    },
+    {
+      "code": "var foo =\u2029 bar;",
+      "valid": false
+    },
+    {
+      "code": "var foo = bar;\u2028",
+      "valid": false
+    },
+    {
+      "code": "\u2029",
+      "valid": false
+    },
+    {
+      "code": "foo\u2028\u2028",
+      "valid": false
+    },
+    {
+      "code": "foo\u2029\u2028",
+      "valid": false
+    },
+    {
+      "code": "foo\u2028\n            \u2028",
+      "valid": false
+    },
+    {
+      "code": "foo\u000b\u2028\u000b",
+      "valid": false
+    },
+    {
+      "code": "// 　",
+      "valid": false,
+      "options": [
+        {
+          "skipComments": false
+        }
+      ]
+    },
+    {
+      "code": "/* 　 */",
+      "valid": false,
+      "options": [
+        {
+          "skipComments": false
+        }
+      ]
+    },
+    {
+      "code": "var any = /　/, other = /​/;",
+      "valid": false,
+      "options": [
+        {
+          "skipRegExps": false
+        }
+      ]
+    },
+    {
+      "code": "var any = `　`, other = `​`;",
+      "valid": false,
+      "options": [
+        {
+          "skipTemplates": false
+        }
+      ]
+    },
+    {
+      "code": "\u003cdiv\u003e　\u003c/div\u003e;",
+      "valid": false,
+      "options": [
+        {
+          "skipJSXText": false
+        }
+      ]
+    }
+  ]
+}
