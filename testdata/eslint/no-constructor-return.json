@@ -1,0 +1,87 @@
+{
+  "ruleId": "no-constructor-return",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_constructor_return.rs",
+  "cases": [
+    {
+      "code": "function fn() { return }",
+      "valid": true
+    },
+    {
+      "code": "function fn(kumiko) { if (kumiko) { return kumiko } }",
+      "valid": true
+    },
+    {
+      "code": "const fn = function () { return }",
+      "valid": true
+    },
+    {
+      "code": "const fn = function () { if (kumiko) { return kumiko } }",
+      "valid": true
+    },
+    {
+      "code": "const fn = () =\u003e { return }",
+      "valid": true
+    },
+    {
+      "code": "const fn = () =\u003e { if (kumiko) { return kumiko } }",
+      "valid": true
+    },
+    {
+      "code": "return 'Kumiko Oumae'",
+      "valid": true
+    },
+    {
+      "code": "class C {  }",
+      "valid": true
+    },
+    {
+      "code": "class C { constructor() {} }",
+      "valid": true
+    },
+    {
+      "code": "class C { constructor() { let v } }",
+      "valid": true
+    },
+    {
+      "code": "class C { method() { return '' } }",
+      "valid": true
+    },
+    {
+      "code": "class C { get value() { return '' } }",
+      "valid": true
+    },
+    {
+      "code": "class C { constructor(a) { if (!a) { return } else { a() } } }",
+      "valid": true
+    },
+    {
+      "code": "class C { constructor() { function fn() { return true } } }",
+      "valid": true
+    },
+    {
+      "code": "class C { constructor() { this.fn = function () { return true } } }",
+      "valid": true
+    },
+    {
+      "code": "class C { constructor() { this.fn = () =\u003e { return true } } }",
+      "valid": true
+    },
+    {
+      "code": "class C { constructor() { return } }",
+      "valid": true
+    },
+    {
+      "code": "class C { constructor() { { return } } }",
+      "valid": true
+    },
+    {
+      "code": "class C { constructor() { return '' } }",
+      "valid": false
+    },
+    {
+      "code": "class C { constructor(a) { if (!a) { return '' } else { a() } } }",
+      "valid": false
+    }
+  ]
+}
