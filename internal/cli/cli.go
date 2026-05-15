@@ -34,6 +34,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/constructorsuper"
 	"github.com/jetlint/jetlint/internal/rules/dotnotation"
 	"github.com/jetlint/jetlint/internal/rules/fordirection"
+	"github.com/jetlint/jetlint/internal/rules/getterreturn"
 	"github.com/jetlint/jetlint/internal/rules/namingconvention"
 	"github.com/jetlint/jetlint/internal/rules/noarraydelete"
 	"github.com/jetlint/jetlint/internal/rules/noasyncpromiseexecutor"
@@ -542,6 +543,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		constructorsuper.New(),
 		dotnotation.New(),
 		fordirection.New(),
+		getterreturn.New(),
 		namingconvention.New(),
 		noarraydelete.New(),
 		noasyncpromiseexecutor.New(),

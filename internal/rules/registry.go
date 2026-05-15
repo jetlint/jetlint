@@ -74,6 +74,7 @@ var All = []Metadata{
 	{ID: "consistent-return", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "constructor-super", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "for-direction", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "getter-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-array-delete", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-async-promise-executor", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-class-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
