@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 30
-- Remaining (AST-only): ~23
+- Shipped: 31
+- Remaining (AST-only): ~22
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -46,7 +46,7 @@ Update this file as rules land or assumptions change.
 | `no-ex-assign` | ✓ | Shipped 2026-05-15 |
 | `no-fallthrough` | | AST walk: does each case end in break/return/throw? |
 | `no-func-assign` | ✓ | Shipped 2026-05-15 |
-| `no-import-assign` | | Scope: assigning to an imported binding. |
+| `no-import-assign` | ✓ | Shipped 2026-05-15 |
 | `no-inner-declarations` | | AST: function/var declared inside a non-function block. |
 | `no-invalid-regexp` | ⊘ | Regex AST. |
 | `no-irregular-whitespace` | | AST: source-text scan for control-whitespace characters. |
