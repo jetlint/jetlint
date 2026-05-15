@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 22
-- Remaining (AST-only): ~30
+- Shipped: 23
+- Remaining (AST-only): ~29
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -59,7 +59,7 @@ Update this file as rules land or assumptions change.
 | `no-self-assign` | ✓ | Shipped 2026-05-15 |
 | `no-self-compare` | ✓ | Shipped 2026-05-15 |
 | `no-setter-return` | | AST walk: `return value` in a setter (no return value allowed). |
-| `no-sparse-arrays` | | AST: `[1, , 2]` — array literal with elisions. |
+| `no-sparse-arrays` | ✓ | Shipped 2026-05-15 |
 | `no-template-curly-in-string` | | AST: `"${x}"` literal-string containing template syntax. |
 | `no-this-before-super` | | AST walk: `this` reference before `super()` in derived constructor. |
 | `no-undef` | | Checker: undeclared identifier (TS catches; AST-only fallback). |
