@@ -1,0 +1,31 @@
+{
+  "ruleId": "no-async-promise-executor",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_async_promise_executor.rs",
+  "cases": [
+    {
+      "code": "new Promise((resolve, reject) =\u003e {})",
+      "valid": true
+    },
+    {
+      "code": "new Promise((resolve, reject) =\u003e {}, async function unrelated() {})",
+      "valid": true
+    },
+    {
+      "code": "new Foo(async (resolve, reject) =\u003e {})",
+      "valid": true
+    },
+    {
+      "code": "new Promise(async function foo(resolve, reject) {})",
+      "valid": false
+    },
+    {
+      "code": "new Promise(async (resolve, reject) =\u003e {})",
+      "valid": false
+    },
+    {
+      "code": "new Promise(((((async () =\u003e {})))))",
+      "valid": false
+    }
+  ]
+}
