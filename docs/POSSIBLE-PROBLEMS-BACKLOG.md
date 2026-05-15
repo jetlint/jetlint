@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 17
-- Remaining (AST-only): ~35
+- Shipped: 18
+- Remaining (AST-only): ~34
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -36,7 +36,7 @@ Update this file as rules land or assumptions change.
 | `no-control-regex` | ⊘ | Regex AST. |
 | `no-debugger` | ✓ | Shipped 2026-05-15 |
 | `no-dupe-args` | | AST: duplicate parameter names. |
-| `no-dupe-class-members` | | AST: duplicate member names in a class body. |
+| `no-dupe-class-members` | ✓ | Shipped 2026-05-15 |
 | `no-dupe-else-if` | | AST: structural equality across else-if conditions. |
 | `no-dupe-keys` | ✓ | Shipped 2026-05-15 |
 | `no-duplicate-case` | ✓ | Shipped 2026-05-15 |
