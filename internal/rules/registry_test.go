@@ -190,6 +190,7 @@ func additionalRulesSnapshot() []string {
 		"constructor-super",
 		"dot-notation",
 		"for-direction",
+		"getter-return",
 		"naming-convention",
 		"no-array-delete",
 		"no-confusing-void-expression",
