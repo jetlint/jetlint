@@ -119,6 +119,7 @@ var All = []Metadata{
 	{ID: "no-implied-eval", Category: CategorySecurity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 
 	// performance — known-slow patterns with a faster equivalent.
+	{ID: "no-await-in-loop", Category: CategoryPerformance, Fix: FixNone, Stability: StabilityStable},
 	{ID: "prefer-find", Category: CategoryPerformance, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "prefer-includes", Category: CategoryPerformance, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "prefer-regexp-exec", Category: CategoryPerformance, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},

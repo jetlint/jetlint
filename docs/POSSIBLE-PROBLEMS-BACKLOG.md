@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 10
-- Remaining (AST-only): ~42
+- Shipped: 11
+- Remaining (AST-only): ~41
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -25,7 +25,7 @@ Update this file as rules land or assumptions change.
 | `for-direction` | ✓ | Shipped 2026-05-15 |
 | `getter-return` | | AST walk: does the getter body always return? |
 | `no-async-promise-executor` | ✓ | Shipped 2026-05-15 |
-| `no-await-in-loop` | | AST: `await` inside a loop body (excluding nested async functions). |
+| `no-await-in-loop` | ✓ | Shipped 2026-05-15 |
 | `no-class-assign` | | Scope: assigning to a class declaration binding. |
 | `no-compare-neg-zero` | | AST: `x === -0` or similar. |
 | `no-cond-assign` | | AST: assignment expression in `if`/`while`/`for`/`do-while` condition. |
