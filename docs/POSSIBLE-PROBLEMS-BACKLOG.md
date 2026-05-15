@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 39
-- Remaining (AST-only): ~14
+- Shipped: 40
+- Remaining (AST-only): ~13
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -35,7 +35,7 @@ Update this file as rules land or assumptions change.
 | `no-constructor-return` | ✓ | Shipped 2026-05-15 |
 | `no-control-regex` | ⊘ | Regex AST. |
 | `no-debugger` | ✓ | Shipped 2026-05-15 |
-| `no-dupe-args` | | AST: duplicate parameter names. |
+| `no-dupe-args` | ✓ | Shipped 2026-05-15 (hand-written tests; no oxc source available) |
 | `no-dupe-class-members` | ✓ | Shipped 2026-05-15 |
 | `no-dupe-else-if` | ✓ | Shipped 2026-05-15 |
 | `no-dupe-keys` | ✓ | Shipped 2026-05-15 |
