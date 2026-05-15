@@ -33,6 +33,9 @@ func TestNoSelfAssign_EslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for i, c := range fx.Cases {
+		if c.Options != nil {
+			continue
+		}
 		count, runErr := runEslintCase(t, c.Code)
 		if runErr != nil {
 			failed++

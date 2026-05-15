@@ -13,6 +13,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"unicode"
@@ -435,10 +436,79 @@ func firstString(toks []tok) (string, bool) {
 	return "", false
 }
 
+// extractOptions returns the parsed options array for a tuple entry,
+// or nil when the entry has no options (a bare string or
+// `("code", None)`). oxc fixtures wrap the array as
+// `Some(serde_json::json!([...]))`; we slice the original source
+// between the `[` and matching `]` after `json!(` and parse it as
+// JSON, which works because the macro body is JSON-shaped.
+func extractOptions(src string, entry []tok) ([]any, error) {
+	depth := 0
+	sawFirstComma := false
+	var after []tok
+	for _, t := range entry {
+		if !sawFirstComma {
+			switch t.kind {
+			case tokOpenParen, tokOpenBracket, tokOpenBrace:
+				depth++
+			case tokCloseParen, tokCloseBracket, tokCloseBrace:
+				depth--
+			case tokComma:
+				if depth == 1 {
+					sawFirstComma = true
+					continue
+				}
+			}
+			continue
+		}
+		after = append(after, t)
+	}
+	for i := 0; i+3 < len(after); i++ {
+		if after[i].kind != tokOther || after[i].value != "json" {
+			continue
+		}
+		if after[i+1].kind != tokOther || after[i+1].value != "!" {
+			continue
+		}
+		if after[i+2].kind != tokOpenParen {
+			continue
+		}
+		if after[i+3].kind != tokOpenBracket {
+			continue
+		}
+		open := after[i+3]
+		d := 1
+		for j := i + 4; j < len(after); j++ {
+			switch after[j].kind {
+			case tokOpenBracket:
+				d++
+			case tokCloseBracket:
+				d--
+				if d == 0 {
+					raw := src[open.pos : after[j].pos+1]
+					var opts []any
+					if err := json.Unmarshal([]byte(raw), &opts); err != nil {
+						return nil, fmt.Errorf("decode options %q: %w", raw, err)
+					}
+					return opts, nil
+				}
+			}
+		}
+	}
+	return nil, nil
+}
+
+// ExtractedCase is one fixture entry — code plus the parsed options
+// array (nil when the upstream case had no options or used `None`).
+type ExtractedCase struct {
+	Code    string
+	Options []any
+}
+
 // Extract reads a single oxc rule source file and returns its pass
-// and fail code samples. Names map to the variable names in the
-// `fn test()` body: `pass` for valid cases, `fail` for invalid.
-func Extract(src string) (pass, fail []string, err error) {
+// and fail cases. Names map to the variable names in the `fn test()`
+// body: `pass` for valid cases, `fail` for invalid.
+func Extract(src string) (pass, fail []ExtractedCase, err error) {
 	toks, err := tokenize(src)
 	if err != nil {
 		return nil, nil, err
@@ -449,13 +519,20 @@ func Extract(src string) (pass, fail []string, err error) {
 			continue
 		}
 		entries := splitEntries(body)
-		out := make([]string, 0, len(entries))
+		out := make([]ExtractedCase, 0, len(entries))
 		for _, e := range entries {
 			code, ok := firstString(e)
 			if !ok {
 				continue
 			}
-			out = append(out, code)
+			opts, optErr := extractOptions(src, e)
+			if optErr != nil {
+				return nil, nil, fmt.Errorf("%s entry: %w", name, optErr)
+			}
+			out = append(out, ExtractedCase{
+				Code:    code,
+				Options: opts,
+			})
 		}
 		if name == "pass" {
 			pass = out

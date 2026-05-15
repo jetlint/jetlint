@@ -22,6 +22,23 @@ type Case struct {
 	Code string `json:"code"`
 	// Valid is true for entries from oxc's `pass` vec, false for `fail`.
 	Valid bool `json:"valid"`
+	// Options is the ESLint-style options array for the case
+	// (`[options0, options1, ...]`). Nil when the upstream case had no
+	// options or used `None`. Per-rule harnesses typically read
+	// FirstOption() and convert it to a typed Options struct for
+	// NewWithOptions(...).
+	Options []any `json:"options,omitempty"`
+}
+
+// FirstOption returns Options[0] as a map[string]any (the shape rules
+// almost always consume), or nil when no options are present or
+// Options[0] is not an object.
+func (c Case) FirstOption() map[string]any {
+	if len(c.Options) == 0 {
+		return nil
+	}
+	obj, _ := c.Options[0].(map[string]any)
+	return obj
 }
 
 // Fixture is the on-disk shape produced by cmd/oxlint-fixtures.

@@ -13,10 +13,10 @@ fn test() {
 	if err != nil {
 		t.Fatalf("Extract: %v", err)
 	}
-	if len(pass) != 2 || pass[0] != "x === y" || pass[1] != "1 === 2" {
+	if len(pass) != 2 || pass[0].Code != "x === y" || pass[1].Code != "1 === 2" {
 		t.Errorf("pass = %#v", pass)
 	}
-	if len(fail) != 2 || fail[0] != "x === x" || fail[1] != "x !== x" {
+	if len(fail) != 2 || fail[0].Code != "x === x" || fail[1].Code != "x !== x" {
 		t.Errorf("fail = %#v", fail)
 	}
 }
@@ -35,17 +35,28 @@ fn test() {
 	if err != nil {
 		t.Fatalf("Extract: %v", err)
 	}
-	if len(pass) != 2 || pass[0] != "foo.indexOf(NaN)" || pass[1] != "bareValid" {
+	if len(pass) != 2 || pass[0].Code != "foo.indexOf(NaN)" || pass[1].Code != "bareValid" {
 		t.Errorf("pass = %#v", pass)
 	}
-	if len(fail) != 2 || fail[0] != "x === x" || fail[1] != "y !== y" {
+	if len(pass[0].Options) != 1 {
+		t.Fatalf("pass[0].Options should have 1 element, got %#v", pass[0].Options)
+	}
+	obj, ok := pass[0].Options[0].(map[string]any)
+	if !ok || obj["enforceForIndexOf"] != true {
+		t.Errorf("pass[0].Options[0] = %#v; want {enforceForIndexOf:true}", pass[0].Options[0])
+	}
+	if pass[1].Options != nil {
+		t.Errorf("pass[1].Options should be nil (bare string), got %#v", pass[1].Options)
+	}
+	if len(fail) != 2 || fail[0].Code != "x === x" || fail[1].Code != "y !== y" {
 		t.Errorf("fail = %#v", fail)
+	}
+	if fail[0].Options != nil || fail[1].Options != nil {
+		t.Errorf("None-option tuples should produce nil Options")
 	}
 }
 
 func TestExtract_HandlesRawStrings(t *testing.T) {
-	// `r"..."` has no escape processing; backslashes are literal.
-	// To embed quotes, oxc uses `r#"..."#` (one or more `#`s).
 	src := `
 fn test() {
     let pass = vec![
@@ -63,14 +74,14 @@ fn test() {
 	if len(pass) != 3 {
 		t.Fatalf("expected 3 pass entries, got %d: %#v", len(pass), pass)
 	}
-	if pass[0] != `plain raw content` {
-		t.Errorf("raw string content wrong: %q", pass[0])
+	if pass[0].Code != `plain raw content` {
+		t.Errorf("raw string content wrong: %q", pass[0].Code)
 	}
-	if pass[1] != `content with "embedded quotes"` {
-		t.Errorf("hashed raw string content wrong: %q", pass[1])
+	if pass[1].Code != `content with "embedded quotes"` {
+		t.Errorf("hashed raw string content wrong: %q", pass[1].Code)
 	}
-	if pass[2] != `can embed "# inside if outer uses ##` {
-		t.Errorf("double-hashed raw string content wrong: %q", pass[2])
+	if pass[2].Code != `can embed "# inside if outer uses ##` {
+		t.Errorf("double-hashed raw string content wrong: %q", pass[2].Code)
 	}
 }
 
@@ -88,14 +99,14 @@ fn test() {
 	if len(pass) != 3 {
 		t.Fatalf("expected 3, got %d: %#v", len(pass), pass)
 	}
-	if pass[0] != "line1\nline2" {
-		t.Errorf("\\n decode: %q", pass[0])
+	if pass[0].Code != "line1\nline2" {
+		t.Errorf("\\n decode: %q", pass[0].Code)
 	}
-	if pass[1] != "tab\there" {
-		t.Errorf("\\t decode: %q", pass[1])
+	if pass[1].Code != "tab\there" {
+		t.Errorf("\\t decode: %q", pass[1].Code)
 	}
-	if pass[2] != `quote"end` {
-		t.Errorf("\\\" decode: %q", pass[2])
+	if pass[2].Code != `quote"end` {
+		t.Errorf("\\\" decode: %q", pass[2].Code)
 	}
 }
 
@@ -115,7 +126,7 @@ fn test() {
 	if err != nil {
 		t.Fatalf("Extract: %v", err)
 	}
-	if len(pass) != 2 || pass[0] != "real entry" || pass[1] != "real entry 2" {
+	if len(pass) != 2 || pass[0].Code != "real entry" || pass[1].Code != "real entry 2" {
 		t.Errorf("pass = %#v", pass)
 	}
 }
@@ -136,11 +147,11 @@ fn test() {
 	if len(fail) != 2 {
 		t.Fatalf("expected 2 fail, got %d: %#v", len(fail), fail)
 	}
-	if fail[0] != "foo[0] === foo[0]" {
-		t.Errorf("first: %q", fail[0])
+	if fail[0].Code != "foo[0] === foo[0]" {
+		t.Errorf("first: %q", fail[0].Code)
 	}
-	if fail[1] != "obj.bar([1, 2]) === obj.bar([1, 2])" {
-		t.Errorf("second: %q", fail[1])
+	if fail[1].Code != "obj.bar([1, 2]) === obj.bar([1, 2])" {
+		t.Errorf("second: %q", fail[1].Code)
 	}
 }
 
@@ -155,7 +166,7 @@ fn test() {
 	if err != nil {
 		t.Fatalf("Extract: %v", err)
 	}
-	if len(pass) != 1 || pass[0] != "only pass" {
+	if len(pass) != 1 || pass[0].Code != "only pass" {
 		t.Errorf("pass = %#v", pass)
 	}
 	if fail != nil {
