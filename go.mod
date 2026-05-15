@@ -2,7 +2,7 @@ module github.com/jetlint/jetlint
 
 go 1.26
 
-require github.com/microsoft/typescript-go v0.2.2
+require github.com/microsoft/typescript-go v0.2.3
 
 require (
 	github.com/go-json-experiment/json v0.0.0-20260214004413-d219187c3433 // indirect
@@ -17,4 +17,4 @@ require (
 // depends on hasn't landed in upstream microsoft/typescript-go yet.
 // When the fork's commits are upstreamed, this directive can be removed
 // and the require line can point at an upstream tag.
-replace github.com/microsoft/typescript-go => github.com/jetlint/typescript-go v0.2.2
+replace github.com/microsoft/typescript-go => github.com/jetlint/typescript-go v0.2.3
