@@ -90,6 +90,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarytypeassertion"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarytypeconversion"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarytypeparameters"
+	"github.com/jetlint/jetlint/internal/rules/nounreachable"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeargument"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeassignment"
 	"github.com/jetlint/jetlint/internal/rules/nounsafecall"
@@ -594,6 +595,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noselfcompare.New(),
 		nosetterreturn.New(),
 		nounexpectedmultiline.New(),
+		nounreachable.New(),
 		nounnecessarybooleanliteralcompare.New(),
 		nounnecessarycondition.New(),
 		nounnecessaryqualifier.New(),

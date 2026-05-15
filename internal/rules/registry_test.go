@@ -234,6 +234,7 @@ func additionalRulesSnapshot() []string {
 		"no-template-curly-in-string",
 		"no-this-before-super",
 		"no-unexpected-multiline",
+		"no-unreachable",
 		"no-unnecessary-boolean-literal-compare",
 		"no-unnecessary-condition",
 		"no-unnecessary-qualifier",

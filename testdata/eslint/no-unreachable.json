@@ -1,0 +1,267 @@
+{
+  "ruleId": "no-unreachable",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_unreachable.rs",
+  "cases": [
+    {
+      "code": "function foo() { function bar() { return 1; } return bar(); }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { return bar(); function bar() { return 1; } }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { return x; var x; }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var x = 1; var y = 2; }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var x = 1; var y = 2; return; }",
+      "valid": true
+    },
+    {
+      "code": "while (true) { switch (foo) { case 1: x = 1; x = 2;} }",
+      "valid": true
+    },
+    {
+      "code": "while (true) { break; var x; }",
+      "valid": true
+    },
+    {
+      "code": "while (true) { continue; var x, y; }",
+      "valid": true
+    },
+    {
+      "code": "while (true) { throw 'message'; var x; }",
+      "valid": true
+    },
+    {
+      "code": "while (true) { if (true) break; var x = 1; }",
+      "valid": true
+    },
+    {
+      "code": "while (true) continue;",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: break; var x; }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: break; var x; default: throw true; };",
+      "valid": true
+    },
+    {
+      "code": "const arrow_direction = arrow =\u003e {  switch (arrow) { default: throw new Error();  };}",
+      "valid": true
+    },
+    {
+      "code": "var x = 1; y = 2; throw 'uh oh'; var y;",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var x = 1; if (x) { return; } x = 2; }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var x = 1; if (x) { } else { return; } x = 2; }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var x = 1; switch (x) { case 0: break; default: return; } x = 2; }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var x = 1; while (x) { return; } x = 2; }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var x = 1; for (x in {}) { return; } x = 2; }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var x = 1; try { return; } finally { x = 2; } }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var x = 1; for (;;) { if (x) break; } x = 2; }",
+      "valid": true
+    },
+    {
+      "code": "A: { break A; } foo()",
+      "valid": true
+    },
+    {
+      "code": "function* foo() { try { yield 1; return; } catch (err) { return err; } }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { try { bar(); return; } catch (err) { return err; } }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { try { a.b.c = 1; return; } catch (err) { return err; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { foo = reachable; }",
+      "valid": true
+    },
+    {
+      "code": "class C { foo = reachable; constructor() {} }",
+      "valid": true
+    },
+    {
+      "code": "class C extends B { foo = reachable; }",
+      "valid": true
+    },
+    {
+      "code": "class C extends B { foo = reachable; constructor() { super(); } }",
+      "valid": true
+    },
+    {
+      "code": "class C extends B { static foo = reachable; constructor() {} }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var x = 1; for (;x == 1;) { if (x) continue; } x = 2; }",
+      "valid": true
+    },
+    {
+      "code": "\n        if (a) {\n            a();\n        } else {\n          for (let i = 1; i \u003c= 10; i++) {\n            b();\n          }\n\n          for (let i = 1; i \u003c= 10; i++) {\n            c();\n          }\n        }\n        ",
+      "valid": true
+    },
+    {
+      "code": "\n        try {\n            throw 'error';\n        } catch (err) {\n            b();\n        }\n        c();\n        ",
+      "valid": true
+    },
+    {
+      "code": "\n        export const getPagePreviewText = (page) =\u003e {\n            if (!a) {\n                return '';\n            }\n            while (a \u0026\u0026 b \u003e c \u0026\u0026 d-- \u003e 0) {\n            }\n        };\n        ",
+      "valid": true
+    },
+    {
+      "code": "\n        try {\n            for (const a of b) {\n                c();\n            }\n\n            while (true) {\n                d();\n            }\n        } finally {\n        }\n        ",
+      "valid": true
+    },
+    {
+      "code": "\n        switch (authType) {\n          case 1:\n            return a();\n          case 2:\n            return b();\n          case 3:\n            return c();\n        }\n        d();\n        ",
+      "valid": true
+    },
+    {
+      "code": "\n        try {\n          a();\n        } catch (e) {\n          b();\n        } finally {\n          c();\n        }\n        d();\n        ",
+      "valid": true
+    },
+    {
+      "code": "\n        try {\n            while (true) {\n                a();\n            }\n        } finally {\n            b();\n        }\n        ",
+      "valid": true
+    },
+    {
+      "code": "\n        try {\n            a();\n        } finally {\n            b();\n        }\n        c();\n        ",
+      "valid": true
+    },
+    {
+      "code": "\n        try {\n            while (true) {\n                a();\n            }\n        } catch {\n            b();\n        }\n        ",
+      "valid": true
+    },
+    {
+      "code": "function foo() { return x; var x = 1; }",
+      "valid": false
+    },
+    {
+      "code": "function foo() { return x; var x, y = 1; }",
+      "valid": false
+    },
+    {
+      "code": "while (true) { break; var x = 1; }",
+      "valid": false
+    },
+    {
+      "code": "while (true) { continue; var x = 1; }",
+      "valid": false
+    },
+    {
+      "code": "function foo() { return; x = 1; }",
+      "valid": false
+    },
+    {
+      "code": "function foo() { throw error; x = 1; }",
+      "valid": false
+    },
+    {
+      "code": "while (true) { break; x = 1; }",
+      "valid": false
+    },
+    {
+      "code": "while (true) { continue; x = 1; }",
+      "valid": false
+    },
+    {
+      "code": "function foo() { switch (foo) { case 1: return; x = 1; } }",
+      "valid": false
+    },
+    {
+      "code": "function foo() { switch (foo) { case 1: throw e; x = 1; } }",
+      "valid": false
+    },
+    {
+      "code": "while (true) { switch (foo) { case 1: break; x = 1; } }",
+      "valid": false
+    },
+    {
+      "code": "while (true) { switch (foo) { case 1: continue; x = 1; } }",
+      "valid": false
+    },
+    {
+      "code": "var x = 1; throw 'uh oh'; var y = 2;",
+      "valid": false
+    },
+    {
+      "code": "function foo() { var x = 1; if (x) { return; } else { throw e; } x = 2; }",
+      "valid": false
+    },
+    {
+      "code": "function foo() { var x = 1; if (x) return; else throw -1; x = 2; }",
+      "valid": false
+    },
+    {
+      "code": "function foo() { var x = 1; try { return; } finally {} x = 2; }",
+      "valid": false
+    },
+    {
+      "code": "function foo() { var x = 1; try { } finally { return; } x = 2; }",
+      "valid": false
+    },
+    {
+      "code": "function foo() { var x = 1; do { return; } while (x); x = 2; }",
+      "valid": false
+    },
+    {
+      "code": "function foo() { var x = 1; while (x) { if (x) break; else continue; x = 2; } }",
+      "valid": false
+    },
+    {
+      "code": "function foo() { var x = 1; for (;;) { if (x) continue; } x = 2; }",
+      "valid": false
+    },
+    {
+      "code": "function foo() { var x = 1; while (true) { } x = 2; }",
+      "valid": false
+    },
+    {
+      "code": "function foo() { var x = 1; do { } while (true); x = 2; }",
+      "valid": false
+    },
+    {
+      "code": "\n        function foo() {\n            return;\n\n            if (Math.random() \u003e 0.5) {\n                if (Math.random() \u003e 0.5) {\n                    console.log('test');\n                }\n            } else {\n                console.log('test');\n\n            }\n        }\n        ",
+      "valid": false
+    },
+    {
+      "code": "\n        function foo() {\n            return;\n\n            if (Math.random() \u003e 0.5) {\n                function bar() {\n                    return;\n                    console.log('inner');\n                }\n            }\n        }\n        ",
+      "valid": false
+    }
+  ]
+}
