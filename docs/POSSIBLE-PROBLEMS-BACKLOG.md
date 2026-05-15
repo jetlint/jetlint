@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 25
-- Remaining (AST-only): ~27
+- Shipped: 26
+- Remaining (AST-only): ~26
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -58,7 +58,7 @@ Update this file as rules land or assumptions change.
 | `no-prototype-builtins` | ✓ | Shipped 2026-05-15 |
 | `no-self-assign` | ✓ | Shipped 2026-05-15 |
 | `no-self-compare` | ✓ | Shipped 2026-05-15 |
-| `no-setter-return` | | AST walk: `return value` in a setter (no return value allowed). |
+| `no-setter-return` | ✓ | Shipped 2026-05-15 |
 | `no-sparse-arrays` | ✓ | Shipped 2026-05-15 |
 | `no-template-curly-in-string` | ✓ | Shipped 2026-05-15 |
 | `no-this-before-super` | | AST walk: `this` reference before `super()` in derived constructor. |
