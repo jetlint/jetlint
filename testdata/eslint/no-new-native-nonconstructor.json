@@ -1,0 +1,63 @@
+{
+  "ruleId": "no-new-native-nonconstructor",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_new_native_nonconstructor.rs",
+  "cases": [
+    {
+      "code": "var foo = Symbol('foo');",
+      "valid": true
+    },
+    {
+      "code": "function bar(Symbol) { var baz = new Symbol('baz');}",
+      "valid": true
+    },
+    {
+      "code": "function Symbol() {} new Symbol();",
+      "valid": true
+    },
+    {
+      "code": "new foo(Symbol);",
+      "valid": true
+    },
+    {
+      "code": "new foo(bar, Symbol);",
+      "valid": true
+    },
+    {
+      "code": "var foo = BigInt(9007199254740991);",
+      "valid": true
+    },
+    {
+      "code": "function bar(BigInt) { var baz = new BigInt(9007199254740991);}",
+      "valid": true
+    },
+    {
+      "code": "function BigInt() {} new BigInt();",
+      "valid": true
+    },
+    {
+      "code": "new foo(BigInt);",
+      "valid": true
+    },
+    {
+      "code": "new foo(bar, BigInt);",
+      "valid": true
+    },
+    {
+      "code": "var foo = new Symbol('foo');",
+      "valid": false
+    },
+    {
+      "code": "function bar() { return function Symbol() {}; } var baz = new Symbol('baz');",
+      "valid": false
+    },
+    {
+      "code": "var foo = new BigInt(9007199254740991);",
+      "valid": false
+    },
+    {
+      "code": "function bar() { return function BigInt() {}; } var baz = new BigInt(9007199254740991);",
+      "valid": false
+    }
+  ]
+}

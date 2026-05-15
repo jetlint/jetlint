@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 29
-- Remaining (AST-only): ~24
+- Shipped: 30
+- Remaining (AST-only): ~23
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -52,7 +52,7 @@ Update this file as rules land or assumptions change.
 | `no-irregular-whitespace` | | AST: source-text scan for control-whitespace characters. |
 | `no-loss-of-precision` | ✓ | Shipped 2026-05-15 |
 | `no-misleading-character-class` | ⊘ | Regex AST. |
-| `no-new-native-nonconstructor` | | AST: `new Symbol(...)` / `new BigInt(...)`. |
+| `no-new-native-nonconstructor` | ✓ | Shipped 2026-05-15 |
 | `no-obj-calls` | ✓ | Shipped 2026-05-15 |
 | `no-promise-executor-return` | ✓ | Shipped 2026-05-15 |
 | `no-prototype-builtins` | ✓ | Shipped 2026-05-15 |
