@@ -192,6 +192,7 @@ func additionalRulesSnapshot() []string {
 		"for-direction",
 		"naming-convention",
 		"no-array-delete",
+		"no-async-promise-executor",
 		"no-confusing-void-expression",
 		"no-deprecated",
 		"no-dupe-keys",
