@@ -47,6 +47,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noconfusingvoidexpression"
 	"github.com/jetlint/jetlint/internal/rules/noconstassign"
 	"github.com/jetlint/jetlint/internal/rules/noconstructorreturn"
+	"github.com/jetlint/jetlint/internal/rules/nodebugger"
 	"github.com/jetlint/jetlint/internal/rules/nodeprecated"
 	"github.com/jetlint/jetlint/internal/rules/nodupekeys"
 	"github.com/jetlint/jetlint/internal/rules/noduplicatecase"
@@ -533,6 +534,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noconfusingvoidexpression.New(),
 		noconstassign.New(),
 		noconstructorreturn.New(),
+		nodebugger.New(),
 		nodeprecated.New(),
 		nodupekeys.New(),
 		noduplicatecase.New(),
