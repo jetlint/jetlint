@@ -64,6 +64,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nofloatingpromises"
 	"github.com/jetlint/jetlint/internal/rules/noforinarray"
 	"github.com/jetlint/jetlint/internal/rules/noimpliedeval"
+	"github.com/jetlint/jetlint/internal/rules/nolossofprecision"
 	"github.com/jetlint/jetlint/internal/rules/nomeaninglessvoidoperator"
 	"github.com/jetlint/jetlint/internal/rules/nomisusedpromises"
 	"github.com/jetlint/jetlint/internal/rules/nomisusedspread"
@@ -561,6 +562,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noduplicatetypeconstituents.New(),
 		noforinarray.New(),
 		noimpliedeval.New(),
+		nolossofprecision.New(),
 		nomeaninglessvoidoperator.New(),
 		nomisusedspread.New(),
 		nomixedenums.New(),
