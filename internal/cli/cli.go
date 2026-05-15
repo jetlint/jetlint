@@ -39,6 +39,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/namingconvention"
 	"github.com/jetlint/jetlint/internal/rules/noarraydelete"
 	"github.com/jetlint/jetlint/internal/rules/noasyncpromiseexecutor"
+	"github.com/jetlint/jetlint/internal/rules/noawaitinloop"
 	"github.com/jetlint/jetlint/internal/rules/nobasetotostring"
 	"github.com/jetlint/jetlint/internal/rules/noconfusingvoidexpression"
 	"github.com/jetlint/jetlint/internal/rules/nodeprecated"
@@ -520,6 +521,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		namingconvention.New(),
 		noarraydelete.New(),
 		noasyncpromiseexecutor.New(),
+		noawaitinloop.New(),
 		noconfusingvoidexpression.New(),
 		nodeprecated.New(),
 		nodupekeys.New(),

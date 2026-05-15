@@ -1,0 +1,107 @@
+{
+  "ruleId": "no-class-assign",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_class_assign.rs",
+  "cases": [
+    {
+      "code": "class A { } foo(A);",
+      "valid": true
+    },
+    {
+      "code": "let A = class A { }; foo(A);",
+      "valid": true
+    },
+    {
+      "code": "class A { b(A) { A = 0; } }",
+      "valid": true
+    },
+    {
+      "code": "class A { b() { let A; A = 0; } }",
+      "valid": true
+    },
+    {
+      "code": "let A = class { b() { A = 0; } }",
+      "valid": true
+    },
+    {
+      "code": "let A = class B { foo() { A = 0; } }",
+      "valid": true
+    },
+    {
+      "code": "let A = class A {}; A = 1",
+      "valid": true
+    },
+    {
+      "code": "var x = 0; x = 1;",
+      "valid": true
+    },
+    {
+      "code": "let x = 0; x = 1;",
+      "valid": true
+    },
+    {
+      "code": "const x = 0; x = 1;",
+      "valid": true
+    },
+    {
+      "code": "function x() {} x = 1;",
+      "valid": true
+    },
+    {
+      "code": "function foo(x) { x = 1; }",
+      "valid": true
+    },
+    {
+      "code": "try {} catch (x) { x = 1; }",
+      "valid": true
+    },
+    {
+      "code": "if (foo) { class A {} } else { class A {} } A = 1;",
+      "valid": true
+    },
+    {
+      "code": "(class A {}, A = 1)",
+      "valid": true
+    },
+    {
+      "code": "let A = class { }; A = 1;",
+      "valid": true
+    },
+    {
+      "code": "let A = class B { }; A = 1;",
+      "valid": true
+    },
+    {
+      "code": "class A { } A = 0;",
+      "valid": false
+    },
+    {
+      "code": "class A { } ({A} = 0);",
+      "valid": false
+    },
+    {
+      "code": "class A { } ({b: A = 0} = {});",
+      "valid": false
+    },
+    {
+      "code": "A = 0; class A { }",
+      "valid": false
+    },
+    {
+      "code": "class A { b() { A = 0; } }",
+      "valid": false
+    },
+    {
+      "code": "let A = class A { b() { A = 0; } }",
+      "valid": false
+    },
+    {
+      "code": "class A { } A = 0; A = 1;",
+      "valid": false
+    },
+    {
+      "code": "if (foo) { class A {} A = 1; }",
+      "valid": false
+    }
+  ]
+}
