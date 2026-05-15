@@ -110,6 +110,7 @@ var All = []Metadata{
 	{ID: "no-unsafe-call", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-enum-comparison", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-member-access", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-unsafe-finally", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-return", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-unary-minus", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "only-throw-error", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},

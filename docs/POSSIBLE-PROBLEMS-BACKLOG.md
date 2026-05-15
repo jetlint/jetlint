@@ -67,7 +67,7 @@ Update this file as rules land or assumptions change.
 | `no-unmodified-loop-condition` | | AST + scope: loop test references unchanged variables. |
 | `no-unreachable` | | AST walk: statements after return/throw/break/continue. |
 | `no-unreachable-loop` | | AST walk: every path through the loop body exits. |
-| `no-unsafe-finally` | | AST walk: return/throw/break/continue inside finally. |
+| `no-unsafe-finally` | ✓ | Shipped 2026-05-15 |
 | `no-unsafe-negation` | | AST: `!a in b`, `!a instanceof b`. |
 | `no-unsafe-optional-chaining` | | AST: optional chain whose result must not be undefined. |
 | `no-unused-private-class-members` | | Scope: unused `#field`. |
