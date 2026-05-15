@@ -1,17 +1,14 @@
 // Package noselfcompare implements the no-self-compare rule: flag
-// comparisons where both operands are textually identical, e.g.
+// comparisons where both operands are structurally identical, e.g.
 // `a === a`. The pattern is almost always a typo or refactoring
 // leftover.
 //
-// This is jetlint's first non-type-aware rule. It uses [wrapperchecker.Node.SourceText]
-// to compare operands by their source span; equal source means same
-// expression. The comparison is conservative — `obj.x` and `obj .x`
-// differ in whitespace and will not be flagged, and a string literal
-// containing whitespace can produce a false positive (`"a" === "a "`
-// is not really a self-compare but the operands' source spans share a
-// non-trivial prefix). Both edges are uncommon enough to accept while
-// keeping the rule simple; structural AST equality is a future
-// refinement.
+// Structural equality ignores parentheses and whitespace and compares
+// AST shape: same node kinds in the same positions, with matching
+// literal text at the leaves. This matches oxlint's
+// `without_parentheses().content_eq()` approach, so `(x) == x` and
+// `foo.bar ().baz .qux >= foo.bar().baz.qux` are both flagged while
+// `"a" === "a "` (different string contents) is not.
 package noselfcompare
 
 import (
@@ -45,11 +42,68 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if left == nil || right == nil {
 		return
 	}
-	leftText := left.SourceText()
-	if leftText == "" || leftText != right.SourceText() {
+	if !structurallyEqual(unwrap(left), unwrap(right)) {
 		return
 	}
 	ctx.Report(n, "comparing to itself is potentially pointless")
+}
+
+// unwrap peels off parenthesized wrappers so `(x)` and `x` compare
+// equal. Returns nil only when n itself is nil.
+func unwrap(n *wrapperchecker.Node) *wrapperchecker.Node {
+	for n != nil && n.Kind() == wrapperchecker.KindParenthesizedExpression {
+		n = n.FirstChild()
+	}
+	return n
+}
+
+// structurallyEqual returns true when a and b are the same AST shape:
+// identical Kind at every level, with matching LiteralText at the
+// leaves. Parentheses inside the subtrees are skipped via unwrap on
+// recursive descent.
+func structurallyEqual(a, b *wrapperchecker.Node) bool {
+	a = unwrap(a)
+	b = unwrap(b)
+	if a == nil || b == nil {
+		return a == b
+	}
+	if a.Kind() != b.Kind() {
+		return false
+	}
+	if isTextLeaf(a.Kind()) && a.LiteralText() != b.LiteralText() {
+		return false
+	}
+	var aKids, bKids []*wrapperchecker.Node
+	a.ForEachChild(func(c *wrapperchecker.Node) bool { aKids = append(aKids, c); return false })
+	b.ForEachChild(func(c *wrapperchecker.Node) bool { bKids = append(bKids, c); return false })
+	if len(aKids) != len(bKids) {
+		return false
+	}
+	for i := range aKids {
+		if !structurallyEqual(aKids[i], bKids[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// isTextLeaf reports whether LiteralText() is safe to call on the
+// given Kind — TypeScript-Go's Node.Text panics on non-leaf nodes.
+func isTextLeaf(k wrapperchecker.Kind) bool {
+	switch k {
+	case wrapperchecker.KindIdentifier,
+		wrapperchecker.KindPrivateIdentifier,
+		wrapperchecker.KindStringLiteral,
+		wrapperchecker.KindNumericLiteral,
+		wrapperchecker.KindBigIntLiteral,
+		wrapperchecker.KindNoSubstitutionTemplateLiteral,
+		wrapperchecker.KindTemplateHead,
+		wrapperchecker.KindTemplateMiddle,
+		wrapperchecker.KindTemplateTail,
+		wrapperchecker.KindRegularExpressionLiteral:
+		return true
+	}
+	return false
 }
 
 func isComparisonOperator(k wrapperchecker.Kind) bool {
