@@ -64,10 +64,10 @@ for one release as a signal to early adopters.
 
 Of the 61 rules shipped today, the assignment is:
 
-### correctness (28)
+### correctness (29)
 
 `await-thenable`, `consistent-return`, `no-array-delete`, `no-base-to-string`,
-`no-duplicate-case`, `no-floating-promises`, `no-for-in-array`,
+`no-dupe-keys`, `no-duplicate-case`, `no-floating-promises`, `no-for-in-array`,
 `no-misused-promises`, `no-misused-spread`, `no-mixed-enums`, `no-self-compare`,
 `no-unsafe-argument`, `no-unsafe-assignment`, `no-unsafe-call`,
 `no-unsafe-enum-comparison`, `no-unsafe-member-access`, `no-unsafe-return`,
@@ -76,7 +76,7 @@ Of the 61 rules shipped today, the assignment is:
 `strict-void-return`, `switch-exhaustiveness-check`, `use-isnan`,
 `use-unknown-in-catch-callback-variable`, `valid-typeof`
 
-Non-type-aware rules in this category — `no-duplicate-case`,
+Non-type-aware rules in this category — `no-dupe-keys`, `no-duplicate-case`,
 `no-self-compare`, `use-isnan`, `valid-typeof` — carry
 `RequiresTypeChecking: false`. They walk the AST without ever calling the
 checker and rely on syntactic helpers like [Node.SourceText][srctext],
