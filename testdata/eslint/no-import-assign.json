@@ -1,0 +1,471 @@
+{
+  "ruleId": "no-import-assign",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_import_assign.rs",
+  "cases": [
+    {
+      "code": "import mod from 'mod'; mod.prop = 0",
+      "valid": true
+    },
+    {
+      "code": "import mod from 'mod'; mod.prop += 0",
+      "valid": true
+    },
+    {
+      "code": "import mod from 'mod'; mod.prop++",
+      "valid": true
+    },
+    {
+      "code": "import mod from 'mod'; delete mod.prop",
+      "valid": true
+    },
+    {
+      "code": "import mod from 'mod'; for (mod.prop in foo);",
+      "valid": true
+    },
+    {
+      "code": "import mod from 'mod'; for (mod.prop of foo);",
+      "valid": true
+    },
+    {
+      "code": "import mod from 'mod'; [mod.prop] = foo;",
+      "valid": true
+    },
+    {
+      "code": "import mod from 'mod'; [...mod.prop] = foo;",
+      "valid": true
+    },
+    {
+      "code": "import mod from 'mod'; ({ bar: mod.prop } = foo);",
+      "valid": true
+    },
+    {
+      "code": "import mod from 'mod'; ({ ...mod.prop } = foo);",
+      "valid": true
+    },
+    {
+      "code": "import {named} from 'mod'; named.prop = 0",
+      "valid": true
+    },
+    {
+      "code": "import {named} from 'mod'; named.prop += 0",
+      "valid": true
+    },
+    {
+      "code": "import {named} from 'mod'; named.prop++",
+      "valid": true
+    },
+    {
+      "code": "import {named} from 'mod'; delete named.prop",
+      "valid": true
+    },
+    {
+      "code": "import {named} from 'mod'; for (named.prop in foo);",
+      "valid": true
+    },
+    {
+      "code": "import {named} from 'mod'; for (named.prop of foo);",
+      "valid": true
+    },
+    {
+      "code": "import {named} from 'mod'; [named.prop] = foo;",
+      "valid": true
+    },
+    {
+      "code": "import {named} from 'mod'; [...named.prop] = foo;",
+      "valid": true
+    },
+    {
+      "code": "import {named} from 'mod'; ({ bar: named.prop } = foo);",
+      "valid": true
+    },
+    {
+      "code": "import {named} from 'mod'; ({ ...named.prop } = foo);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; mod.named.prop = 0",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; mod.named.prop += 0",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; mod.named.prop++",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; delete mod.named.prop",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; for (mod.named.prop in foo);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; for (mod.named.prop of foo);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; [mod.named.prop] = foo;",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; [...mod.named.prop] = foo;",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; ({ bar: mod.named.prop } = foo);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; ({ ...mod.named.prop } = foo);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; obj[mod] = 0",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; obj[mod.named] = 0",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; for (var foo in mod.named);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; for (var foo of mod.named);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; [bar = mod.named] = foo;",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; ({ bar = mod.named } = foo);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; ({ bar: baz = mod.named } = foo);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; ({ [mod.named]: bar } = foo);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; var obj = { ...mod.named };",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; var obj = { foo: mod.named };",
+      "valid": true
+    },
+    {
+      "code": "import mod from 'mod'; { let mod = 0; mod = 1 }",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; { let mod = 0; mod = 1 }",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; { let mod = 0; mod.named = 1 }",
+      "valid": true
+    },
+    {
+      "code": "import {} from 'mod'",
+      "valid": true
+    },
+    {
+      "code": "import 'mod'",
+      "valid": true
+    },
+    {
+      "code": "import mod from 'mod'; Object.assign(mod, obj);",
+      "valid": true
+    },
+    {
+      "code": "import {named} from 'mod'; Object.assign(named, obj);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; Object.assign(mod.prop, obj);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; Object.assign(obj, mod, other);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; Object[assign](mod, obj);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; Object.getPrototypeOf(mod);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; Reflect.set(obj, key, mod);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; { var Object; Object.assign(mod, obj); }",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; var Object; Object.assign(mod, obj);",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; Object.seal(mod, obj)",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; Object.preventExtensions(mod)",
+      "valid": true
+    },
+    {
+      "code": "import * as mod from 'mod'; Reflect.preventExtensions(mod)",
+      "valid": true
+    },
+    {
+      "code": "import mod1 from 'mod'; mod1 = 0",
+      "valid": false
+    },
+    {
+      "code": "import mod2 from 'mod'; mod2 += 0",
+      "valid": false
+    },
+    {
+      "code": "import mod3 from 'mod'; mod3++",
+      "valid": false
+    },
+    {
+      "code": "import mod4 from 'mod'; for (mod4 in foo);",
+      "valid": false
+    },
+    {
+      "code": "import mod5 from 'mod'; for (mod5 of foo);",
+      "valid": false
+    },
+    {
+      "code": "import mod6 from 'mod'; [mod6] = foo",
+      "valid": false
+    },
+    {
+      "code": "import mod7 from 'mod'; [mod7 = 0] = foo",
+      "valid": false
+    },
+    {
+      "code": "import mod8 from 'mod'; [...mod8] = foo",
+      "valid": false
+    },
+    {
+      "code": "import mod9 from 'mod'; ({ bar: mod9 } = foo)",
+      "valid": false
+    },
+    {
+      "code": "import mod10 from 'mod'; ({ bar: mod10 = 0 } = foo)",
+      "valid": false
+    },
+    {
+      "code": "import mod11 from 'mod'; ({ ...mod11 } = foo)",
+      "valid": false
+    },
+    {
+      "code": "import {named1} from 'mod'; named1 = 0",
+      "valid": false
+    },
+    {
+      "code": "import {named2} from 'mod'; named2 += 0",
+      "valid": false
+    },
+    {
+      "code": "import {named3} from 'mod'; named3++",
+      "valid": false
+    },
+    {
+      "code": "import {named4} from 'mod'; for (named4 in foo);",
+      "valid": false
+    },
+    {
+      "code": "import {named5} from 'mod'; for (named5 of foo);",
+      "valid": false
+    },
+    {
+      "code": "import {named6} from 'mod'; [named6] = foo",
+      "valid": false
+    },
+    {
+      "code": "import {named7} from 'mod'; [named7 = 0] = foo",
+      "valid": false
+    },
+    {
+      "code": "import {named8} from 'mod'; [...named8] = foo",
+      "valid": false
+    },
+    {
+      "code": "import {named9} from 'mod'; ({ bar: named9 } = foo)",
+      "valid": false
+    },
+    {
+      "code": "import {named10} from 'mod'; ({ bar: named10 = 0 } = foo)",
+      "valid": false
+    },
+    {
+      "code": "import {named11} from 'mod'; ({ ...named11 } = foo)",
+      "valid": false
+    },
+    {
+      "code": "import {named12 as foo} from 'mod'; foo = 0; named12 = 0",
+      "valid": false
+    },
+    {
+      "code": "import * as mod1 from 'mod'; mod1 = 0",
+      "valid": false
+    },
+    {
+      "code": "import * as mod2 from 'mod'; mod2 += 0",
+      "valid": false
+    },
+    {
+      "code": "import * as mod3 from 'mod'; mod3++",
+      "valid": false
+    },
+    {
+      "code": "import * as mod4 from 'mod'; for (mod4 in foo);",
+      "valid": false
+    },
+    {
+      "code": "import * as mod5 from 'mod'; for (mod5 of foo);",
+      "valid": false
+    },
+    {
+      "code": "import * as mod6 from 'mod'; [mod6] = foo",
+      "valid": false
+    },
+    {
+      "code": "import * as mod7 from 'mod'; [mod7 = 0] = foo",
+      "valid": false
+    },
+    {
+      "code": "import * as mod8 from 'mod'; [...mod8] = foo",
+      "valid": false
+    },
+    {
+      "code": "import * as mod9 from 'mod'; ({ bar: mod9 } = foo)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod10 from 'mod'; ({ bar: mod10 = 0 } = foo)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod11 from 'mod'; ({ ...mod11 } = foo)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod1 from 'mod'; mod1.named = 0",
+      "valid": false
+    },
+    {
+      "code": "import * as mod2 from 'mod'; mod2.named += 0",
+      "valid": false
+    },
+    {
+      "code": "import * as mod3 from 'mod'; mod3.named++",
+      "valid": false
+    },
+    {
+      "code": "import * as mod4 from 'mod'; for (mod4.named in foo);",
+      "valid": false
+    },
+    {
+      "code": "import * as mod5 from 'mod'; for (mod5.named of foo);",
+      "valid": false
+    },
+    {
+      "code": "import * as mod6 from 'mod'; [mod6.named] = foo",
+      "valid": false
+    },
+    {
+      "code": "import * as mod7 from 'mod'; [mod7.named = 0] = foo",
+      "valid": false
+    },
+    {
+      "code": "import * as mod8 from 'mod'; [...mod8.named] = foo",
+      "valid": false
+    },
+    {
+      "code": "import * as mod9 from 'mod'; ({ bar: mod9.named } = foo)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod10 from 'mod'; ({ bar: mod10.named = 0 } = foo)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod11 from 'mod'; ({ ...mod11.named } = foo)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod12 from 'mod'; delete mod12.named",
+      "valid": false
+    },
+    {
+      "code": "import * as mod from 'mod'; Object.assign(mod, obj)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod from 'mod'; Object.defineProperty(mod, key, d)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod from 'mod'; Object.defineProperties(mod, d)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod from 'mod'; Object.setPrototypeOf(mod, proto)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod from 'mod'; Object.freeze(mod)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod from 'mod'; Reflect.defineProperty(mod, key, d)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod from 'mod'; Reflect.deleteProperty(mod, key)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod from 'mod'; Reflect.set(mod, key, value)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod from 'mod'; Reflect.setPrototypeOf(mod, proto)",
+      "valid": false
+    },
+    {
+      "code": "import mod, * as mod_ns from 'mod'; mod.prop = 0; mod_ns.prop = 0",
+      "valid": false
+    },
+    {
+      "code": "import * as mod from 'mod'; Object?.defineProperty(mod, key, d)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod from 'mod'; (Object?.defineProperty)(mod, key, d)",
+      "valid": false
+    },
+    {
+      "code": "import * as mod from 'mod'; delete mod?.prop",
+      "valid": false
+    }
+  ]
+}
