@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 15
-- Remaining (AST-only): ~37
+- Shipped: 16
+- Remaining (AST-only): ~36
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -32,7 +32,7 @@ Update this file as rules land or assumptions change.
 | `no-const-assign` | ✓ | Shipped 2026-05-15 |
 | `no-constant-binary-expression` | | AST + light type inference. |
 | `no-constant-condition` | | AST: literal boolean condition. |
-| `no-constructor-return` | | AST: `return value` inside a class constructor body. |
+| `no-constructor-return` | ✓ | Shipped 2026-05-15 |
 | `no-control-regex` | ⊘ | Regex AST. |
 | `no-debugger` | | AST: `DebuggerStatement`. |
 | `no-dupe-args` | | AST: duplicate parameter names. |

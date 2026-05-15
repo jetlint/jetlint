@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-debugger",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_debugger.rs",
+  "cases": [
+    {
+      "code": "var test = { debugger: 1 }; test.debugger;",
+      "valid": true
+    },
+    {
+      "code": "if (foo) debugger",
+      "valid": false
+    }
+  ]
+}
