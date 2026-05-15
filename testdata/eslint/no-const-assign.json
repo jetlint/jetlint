@@ -1,0 +1,183 @@
+{
+  "ruleId": "no-const-assign",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_const_assign.rs",
+  "cases": [
+    {
+      "code": "const x = 0; { let x; x = 1; }",
+      "valid": true
+    },
+    {
+      "code": "const x = 0; function a(x) { x = 1; }",
+      "valid": true
+    },
+    {
+      "code": "const x = 0; foo(x);",
+      "valid": true
+    },
+    {
+      "code": "for (const x in [1,2,3]) { foo(x); }",
+      "valid": true
+    },
+    {
+      "code": "for (const x of [1,2,3]) { foo(x); }",
+      "valid": true
+    },
+    {
+      "code": "const x = {key: 0}; x.key = 1;",
+      "valid": true
+    },
+    {
+      "code": "var x = 0; x = 1;",
+      "valid": true
+    },
+    {
+      "code": "let x = 0; x = 1;",
+      "valid": true
+    },
+    {
+      "code": "function x() {} x = 1;",
+      "valid": true
+    },
+    {
+      "code": "function foo(x) { x = 1; }",
+      "valid": true
+    },
+    {
+      "code": "class X {} X = 1;",
+      "valid": true
+    },
+    {
+      "code": "try {} catch (x) { x = 1; }",
+      "valid": true
+    },
+    {
+      "code": "const a = 1; { let a = 2; { a += 1; } }",
+      "valid": true
+    },
+    {
+      "code": "const foo = 1;let bar;bar[foo ?? foo] = 42;",
+      "valid": true
+    },
+    {
+      "code": "const FOO = 1; ({ files = FOO } = arg1); ",
+      "valid": true
+    },
+    {
+      "code": "using x = foo();",
+      "valid": true
+    },
+    {
+      "code": "await using x = foo();",
+      "valid": true
+    },
+    {
+      "code": "using x = foo(); bar(x);",
+      "valid": true
+    },
+    {
+      "code": "await using x = foo(); bar(x);",
+      "valid": true
+    },
+    {
+      "code": "type t = (a, ...b) =\u003e void",
+      "valid": true
+    },
+    {
+      "code": "const x = 0; x = 1;",
+      "valid": false
+    },
+    {
+      "code": "const {a: x} = {a: 0}; x = 1;",
+      "valid": false
+    },
+    {
+      "code": "const x = 0; ({x} = {x: 1});",
+      "valid": false
+    },
+    {
+      "code": "const x = 0; ({a: x = 1} = {});",
+      "valid": false
+    },
+    {
+      "code": "const x = 0; x += 1;",
+      "valid": false
+    },
+    {
+      "code": "const x = 0; ++x;",
+      "valid": false
+    },
+    {
+      "code": "for (const i = 0; i \u003c 10; ++i) { foo(i); }",
+      "valid": false
+    },
+    {
+      "code": "const x = 0; x = 1; x = 2;",
+      "valid": false
+    },
+    {
+      "code": "const x = 0; function foo() { x = x + 1; }",
+      "valid": false
+    },
+    {
+      "code": "const x = 0; function foo(a) { x = a; }",
+      "valid": false
+    },
+    {
+      "code": "const x = 0; while (true) { x = x + 1; }",
+      "valid": false
+    },
+    {
+      "code": "const x = 0; function foo(a) { function bar(b) { x = b; } bar(123); }",
+      "valid": false
+    },
+    {
+      "code": "x = 123; const x = 1;",
+      "valid": false
+    },
+    {
+      "code": "const [a, b, ...[c, ...d]] = [1, 2, 3, 4, 5]; d = 123",
+      "valid": false
+    },
+    {
+      "code": "const d = 123; [a, b, ...[c, ...d]] = [1, 2, 3, 4, 5]",
+      "valid": false
+    },
+    {
+      "code": "const b = 0; ({a, ...b} = {a: 1, c: 2, d: 3})",
+      "valid": false
+    },
+    {
+      "code": "using x = foo(); x = 1;",
+      "valid": false
+    },
+    {
+      "code": "await using x = foo(); x = 1;",
+      "valid": false
+    },
+    {
+      "code": "using x = foo(); x ??= bar();",
+      "valid": false
+    },
+    {
+      "code": "await using x = foo(); x ||= bar();",
+      "valid": false
+    },
+    {
+      "code": "using x = foo(); [x, y] = bar();",
+      "valid": false
+    },
+    {
+      "code": "await using x = foo(); [x = baz, y] = bar();",
+      "valid": false
+    },
+    {
+      "code": "using x = foo(); ({a: x} = bar());",
+      "valid": false
+    },
+    {
+      "code": "await using x = foo(); ({a: x = baz} = bar());",
+      "valid": false
+    }
+  ]
+}
