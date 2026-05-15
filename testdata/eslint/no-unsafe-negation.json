@@ -1,0 +1,180 @@
+{
+  "ruleId": "no-unsafe-negation",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_unsafe_negation.rs",
+  "cases": [
+    {
+      "code": "a in b",
+      "valid": true
+    },
+    {
+      "code": "a in b === false",
+      "valid": true
+    },
+    {
+      "code": "!(a in b)",
+      "valid": true
+    },
+    {
+      "code": "(!a) in b",
+      "valid": true
+    },
+    {
+      "code": "a instanceof b",
+      "valid": true
+    },
+    {
+      "code": "a instanceof b === false",
+      "valid": true
+    },
+    {
+      "code": "!(a instanceof b)",
+      "valid": true
+    },
+    {
+      "code": "(!a) instanceof b",
+      "valid": true
+    },
+    {
+      "code": "if (! a \u003c b) {}",
+      "valid": true
+    },
+    {
+      "code": "while (! a \u003e b) {}",
+      "valid": true
+    },
+    {
+      "code": "foo = ! a \u003c= b;",
+      "valid": true
+    },
+    {
+      "code": "foo = ! a \u003e= b;",
+      "valid": true
+    },
+    {
+      "code": "! a \u003c= b",
+      "valid": true,
+      "options": [
+        {}
+      ]
+    },
+    {
+      "code": "foo = ! a \u003e= b;",
+      "valid": true,
+      "options": [
+        {
+          "enforceForOrderingRelations": false
+        }
+      ]
+    },
+    {
+      "code": "foo = (!a) \u003e= b;",
+      "valid": true,
+      "options": [
+        {
+          "enforceForOrderingRelations": true
+        }
+      ]
+    },
+    {
+      "code": "a \u003c= b",
+      "valid": true,
+      "options": [
+        {
+          "enforceForOrderingRelations": true
+        }
+      ]
+    },
+    {
+      "code": "!(a \u003c b)",
+      "valid": true,
+      "options": [
+        {
+          "enforceForOrderingRelations": true
+        }
+      ]
+    },
+    {
+      "code": "foo = a \u003e b;",
+      "valid": true,
+      "options": [
+        {
+          "enforceForOrderingRelations": true
+        }
+      ]
+    },
+    {
+      "code": "!a in b",
+      "valid": false
+    },
+    {
+      "code": "(!a in b)",
+      "valid": false
+    },
+    {
+      "code": "!(a) in b",
+      "valid": false
+    },
+    {
+      "code": "!a instanceof b",
+      "valid": false
+    },
+    {
+      "code": "(!a instanceof b)",
+      "valid": false
+    },
+    {
+      "code": "!(a) instanceof b",
+      "valid": false
+    },
+    {
+      "code": "(y=\u003e{if(!/s/ in(l)){}})",
+      "valid": false
+    },
+    {
+      "code": "if (! a \u003c b) {}",
+      "valid": false,
+      "options": [
+        {
+          "enforceForOrderingRelations": true
+        }
+      ]
+    },
+    {
+      "code": "while (! a \u003e b) {}",
+      "valid": false,
+      "options": [
+        {
+          "enforceForOrderingRelations": true
+        }
+      ]
+    },
+    {
+      "code": "foo = ! a \u003c= b;",
+      "valid": false,
+      "options": [
+        {
+          "enforceForOrderingRelations": true
+        }
+      ]
+    },
+    {
+      "code": "foo = ! a \u003e= b;",
+      "valid": false,
+      "options": [
+        {
+          "enforceForOrderingRelations": true
+        }
+      ]
+    },
+    {
+      "code": "! a \u003c= b",
+      "valid": false,
+      "options": [
+        {
+          "enforceForOrderingRelations": true
+        }
+      ]
+    }
+  ]
+}
