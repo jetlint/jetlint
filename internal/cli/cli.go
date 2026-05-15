@@ -49,6 +49,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noconstructorreturn"
 	"github.com/jetlint/jetlint/internal/rules/nodebugger"
 	"github.com/jetlint/jetlint/internal/rules/nodeprecated"
+	"github.com/jetlint/jetlint/internal/rules/nodupeargs"
 	"github.com/jetlint/jetlint/internal/rules/nodupeclassmembers"
 	"github.com/jetlint/jetlint/internal/rules/nodupeelseif"
 	"github.com/jetlint/jetlint/internal/rules/nodupekeys"
@@ -568,6 +569,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noconstructorreturn.New(),
 		nodebugger.New(),
 		nodeprecated.New(),
+		nodupeargs.New(),
 		nodupeclassmembers.New(),
 		nodupeelseif.New(),
 		noemptypattern.New(),

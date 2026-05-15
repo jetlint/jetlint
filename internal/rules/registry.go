@@ -84,6 +84,7 @@ var All = []Metadata{
 	{ID: "no-constant-condition", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-constructor-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-debugger", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-dupe-args", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-dupe-class-members", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-dupe-else-if", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-base-to-string", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},

@@ -204,6 +204,7 @@ func additionalRulesSnapshot() []string {
 		"no-constructor-return",
 		"no-debugger",
 		"no-deprecated",
+		"no-dupe-args",
 		"no-dupe-class-members",
 		"no-dupe-else-if",
 		"no-dupe-keys",
