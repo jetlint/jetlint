@@ -184,6 +184,7 @@ func TestAdditionalTypeAwareRuleIDsIsDerivedFromNonRecommended(t *testing.T) {
 // All is caught with a precise diff rather than just a length mismatch.
 func additionalRulesSnapshot() []string {
 	return []string{
+		"array-callback-return",
 		"consistent-return",
 		"consistent-type-exports",
 		"dot-notation",

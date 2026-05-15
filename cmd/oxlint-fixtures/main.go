@@ -88,18 +88,35 @@ type Case struct {
 
 func extractRule(oxcPath, outDir, ruleID string) error {
 	snake := strings.ReplaceAll(ruleID, "-", "_")
-	src := filepath.Join(oxcPath, "crates", "oxc_linter", "src", "rules", "eslint", snake+".rs")
-	raw, err := os.ReadFile(src)
-	if err != nil {
-		return fmt.Errorf("read %s: %w", src, err)
+	// oxc stores most rules as `<rule>.rs`, but rules with multi-file
+	// implementations live in `<rule>/mod.rs`. Check both.
+	candidates := []string{
+		filepath.Join(oxcPath, "crates", "oxc_linter", "src", "rules", "eslint", snake+".rs"),
+		filepath.Join(oxcPath, "crates", "oxc_linter", "src", "rules", "eslint", snake, "mod.rs"),
 	}
+	var (
+		src string
+		raw []byte
+		err error
+	)
+	for _, c := range candidates {
+		raw, err = os.ReadFile(c)
+		if err == nil {
+			src = c
+			break
+		}
+	}
+	if err != nil {
+		return fmt.Errorf("read %s (or mod.rs variant): %w", candidates[0], err)
+	}
+	oxcRelSrc, _ := filepath.Rel(oxcPath, src)
 	pass, fail, err := Extract(string(raw))
 	if err != nil {
 		return fmt.Errorf("extract: %w", err)
 	}
 	fx := Fixture{
 		RuleID:    ruleID,
-		OxcSource: filepath.Join("crates", "oxc_linter", "src", "rules", "eslint", snake+".rs"),
+		OxcSource: oxcRelSrc,
 		Cases:     make([]Case, 0, len(pass)+len(fail)),
 	}
 	for _, c := range pass {
