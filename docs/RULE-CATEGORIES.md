@@ -64,17 +64,23 @@ for one release as a signal to early adopters.
 
 Of the 61 rules shipped today, the assignment is:
 
-### correctness (24)
+### correctness (25)
 
 `await-thenable`, `consistent-return`, `no-array-delete`, `no-base-to-string`,
 `no-floating-promises`, `no-for-in-array`, `no-misused-promises`,
-`no-misused-spread`, `no-mixed-enums`, `no-unsafe-argument`,
+`no-misused-spread`, `no-mixed-enums`, `no-self-compare`, `no-unsafe-argument`,
 `no-unsafe-assignment`, `no-unsafe-call`, `no-unsafe-enum-comparison`,
 `no-unsafe-member-access`, `no-unsafe-return`, `no-unsafe-unary-minus`,
 `only-throw-error`, `prefer-promise-reject-errors`,
 `related-getter-setter-pairs`, `require-array-sort-compare`, `require-await`,
 `strict-void-return`, `switch-exhaustiveness-check`,
 `use-unknown-in-catch-callback-variable`
+
+`no-self-compare` is the first non-type-aware rule: `RequiresTypeChecking:
+false`. It uses [Node.SourceText][srctext] to compare operand source spans,
+no checker required.
+
+[srctext]: https://pkg.go.dev/github.com/microsoft/typescript-go/pkg/checker#Node.SourceText
 
 ### suspicious (9)
 

@@ -48,6 +48,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nomixedenums"
 	"github.com/jetlint/jetlint/internal/rules/nonnullabletypeassertionstyle"
 	"github.com/jetlint/jetlint/internal/rules/noredundanttypeconstituents"
+	"github.com/jetlint/jetlint/internal/rules/noselfcompare"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarybooleanliteralcompare"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarycondition"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessaryqualifier"
@@ -506,6 +507,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nomixedenums.New(),
 		nonnullabletypeassertionstyle.New(),
 		noredundanttypeconstituents.New(),
+		noselfcompare.New(),
 		nounnecessarybooleanliteralcompare.New(),
 		nounnecessarycondition.New(),
 		nounnecessaryqualifier.New(),
