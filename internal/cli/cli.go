@@ -38,6 +38,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nobasetotostring"
 	"github.com/jetlint/jetlint/internal/rules/noconfusingvoidexpression"
 	"github.com/jetlint/jetlint/internal/rules/nodeprecated"
+	"github.com/jetlint/jetlint/internal/rules/nodupekeys"
 	"github.com/jetlint/jetlint/internal/rules/noduplicatecase"
 	"github.com/jetlint/jetlint/internal/rules/noduplicatetypeconstituents"
 	"github.com/jetlint/jetlint/internal/rules/nofloatingpromises"
@@ -502,6 +503,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noarraydelete.New(),
 		noconfusingvoidexpression.New(),
 		nodeprecated.New(),
+		nodupekeys.New(),
 		noduplicatecase.New(),
 		noduplicatetypeconstituents.New(),
 		noforinarray.New(),

@@ -190,6 +190,7 @@ func additionalRulesSnapshot() []string {
 		"no-array-delete",
 		"no-confusing-void-expression",
 		"no-deprecated",
+		"no-dupe-keys",
 		"no-duplicate-case",
 		"no-duplicate-type-constituents",
 		"no-for-in-array",
