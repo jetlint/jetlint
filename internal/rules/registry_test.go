@@ -203,6 +203,7 @@ func additionalRulesSnapshot() []string {
 		"no-debugger",
 		"no-deprecated",
 		"no-dupe-class-members",
+		"no-dupe-else-if",
 		"no-dupe-keys",
 		"no-duplicate-case",
 		"no-duplicate-type-constituents",
