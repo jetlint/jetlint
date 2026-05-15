@@ -51,6 +51,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nodeprecated"
 	"github.com/jetlint/jetlint/internal/rules/nodupeclassmembers"
 	"github.com/jetlint/jetlint/internal/rules/nodupeelseif"
+	"github.com/jetlint/jetlint/internal/rules/noemptypattern"
 	"github.com/jetlint/jetlint/internal/rules/nodupekeys"
 	"github.com/jetlint/jetlint/internal/rules/noduplicatecase"
 	"github.com/jetlint/jetlint/internal/rules/noduplicatetypeconstituents"
@@ -540,6 +541,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nodeprecated.New(),
 		nodupeclassmembers.New(),
 		nodupeelseif.New(),
+		noemptypattern.New(),
 		nodupekeys.New(),
 		noduplicatecase.New(),
 		noduplicatetypeconstituents.New(),
