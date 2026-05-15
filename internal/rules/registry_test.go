@@ -186,9 +186,10 @@ func additionalRulesSnapshot() []string {
 	return []string{
 		"array-callback-return",
 		"consistent-return",
-		"constructor-super",
 		"consistent-type-exports",
+		"constructor-super",
 		"dot-notation",
+		"for-direction",
 		"naming-convention",
 		"no-array-delete",
 		"no-confusing-void-expression",
