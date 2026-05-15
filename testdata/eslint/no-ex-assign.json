@@ -1,0 +1,39 @@
+{
+  "ruleId": "no-ex-assign",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_ex_assign.rs",
+  "cases": [
+    {
+      "code": "try { } catch (e) { three = 2 + 1; }",
+      "valid": true
+    },
+    {
+      "code": "try { } catch ({e}) { this.something = 2; }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { try { } catch (e) { return false; } }",
+      "valid": true
+    },
+    {
+      "code": "try { } catch (e) { e = 10; }",
+      "valid": false
+    },
+    {
+      "code": "try { } catch (ex) { ex = 10; }",
+      "valid": false
+    },
+    {
+      "code": "try { } catch (ex) { [ex] = []; }",
+      "valid": false
+    },
+    {
+      "code": "try { } catch (ex) { ({x: ex = 0} = {}); }",
+      "valid": false
+    },
+    {
+      "code": "try { } catch ({message}) { message = 10; }",
+      "valid": false
+    }
+  ]
+}
