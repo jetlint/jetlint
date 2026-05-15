@@ -46,6 +46,12 @@ const (
 	// SomeMixed means paths exist for both explicit and implicit
 	// return, plus paths that don't return at all.
 	SomeMixed
+	// abruptBreak is used internally inside a switch clause analysis
+	// to mark "this path terminated via `break` — it exits the switch
+	// without contributing a return". From the switch's perspective
+	// the clause is "done" (no fallthrough into the next clause), but
+	// from the outer scope's perspective it counts as fall-off.
+	abruptBreak
 )
 
 // MustReturn reports whether every path through the body terminates
@@ -71,6 +77,13 @@ func (s ReturnStatus) MayReturnImplicit() bool {
 		return true
 	}
 	return false
+}
+
+// terminates reports whether a status reflects a path that always
+// terminates (return, throw, or break/continue). Used by the
+// statement-list walker to stop on a terminator.
+func (s ReturnStatus) terminates() bool {
+	return s.MustReturn() || s == abruptBreak
 }
 
 // FunctionBodyReturnStatus classifies the body of a function-like
@@ -161,6 +174,19 @@ func analyzeBlock(n *wrapperchecker.Node) ReturnStatus {
 		// Throw counts as "explicit exit" — a path that doesn't
 		// fall through to an implicit return.
 		return AlwaysExplicit
+	case wrapperchecker.KindBreakStatement,
+		wrapperchecker.KindContinueStatement:
+		// Inside the analysis, break/continue terminate the current
+		// path without returning. Switch-clause analysis recognizes
+		// abruptBreak separately; outside that context the helper
+		// `analyzeStatements` collapses it to NotReturn.
+		return abruptBreak
+	case wrapperchecker.KindLabeledStatement:
+		// A labeled statement is a wrapper for its inner body —
+		// label name is irrelevant to return-flow analysis (the
+		// analysis doesn't model labeled break/continue targets, so
+		// we just pass through to the labeled statement's body).
+		return analyzeBlock(labeledBody(n))
 	case wrapperchecker.KindForStatement,
 		wrapperchecker.KindForInStatement,
 		wrapperchecker.KindForOfStatement,
@@ -185,9 +211,21 @@ func analyzeBlock(n *wrapperchecker.Node) ReturnStatus {
 // statement does NOT count as an "implicit" observation — only
 // explicit bare `return;` does.
 func analyzeStatements(stmts []*wrapperchecker.Node) ReturnStatus {
+	s, _ := walkStatements(stmts)
+	return s
+}
+
+// walkStatements is analyzeStatements with an extra flag indicating
+// whether the walk terminated due to a top-level `break`/`continue`.
+// The caller (analyzeSwitch in particular) uses the flag to decide
+// whether the clause falls through to the next clause.
+func walkStatements(stmts []*wrapperchecker.Node) (status ReturnStatus, brokeOut bool) {
 	var mayExplicit, mayImplicit bool
 	for _, stmt := range stmts {
 		s := analyzeBlock(stmt)
+		if s == abruptBreak {
+			return makeStatus(false, mayExplicit, mayImplicit), true
+		}
 		if s.MayReturnExplicit() {
 			mayExplicit = true
 		}
@@ -195,10 +233,10 @@ func analyzeStatements(stmts []*wrapperchecker.Node) ReturnStatus {
 			mayImplicit = true
 		}
 		if s.MustReturn() {
-			return makeStatus(true, mayExplicit, mayImplicit)
+			return makeStatus(true, mayExplicit, mayImplicit), false
 		}
 	}
-	return makeStatus(false, mayExplicit, mayImplicit)
+	return makeStatus(false, mayExplicit, mayImplicit), false
 }
 
 // analyzeIf merges the then/else branches. Without an else, the
@@ -259,24 +297,39 @@ func analyzeSwitch(n *wrapperchecker.Node) ReturnStatus {
 	if len(clauses) == 0 {
 		return NotReturn
 	}
-	// Walk right-to-left. `next` is the status that falls out of the
-	// remaining clauses; each iteration computes the entry-point status
-	// for the current clause by composing its own body with `next` if
-	// it doesn't terminate.
-	statuses := make([]ReturnStatus, len(clauses))
-	next := NotReturn // off the end of the switch
-	for i := len(clauses) - 1; i >= 0; i-- {
-		body := analyzeStatements(clauseStatements(clauses[i]))
-		entry := body
-		if !body.MustReturn() {
-			entry = mergeFallthrough(body, next)
-		}
-		statuses[i] = entry
-		next = entry
+	// Walk right-to-left. nextStatus/nextBroke describe what falls out
+	// of the remaining clauses. Each iteration computes the
+	// entry-point effect for the current clause.
+	type clauseInfo struct {
+		// outer is the status this clause contributes when chosen as
+		// the switch's entry point — from the perspective of code
+		// after the switch. A clause that returns contributes its
+		// return observations; a clause that breaks out contributes
+		// NotReturn (fell off the switch); a clause that falls through
+		// composes with the next clause's outer effect.
+		outer ReturnStatus
 	}
-	result := statuses[0]
-	for i := 1; i < len(statuses); i++ {
-		result = mergeBranches(result, statuses[i])
+	infos := make([]clauseInfo, len(clauses))
+	nextOuter := NotReturn // off the end of the switch
+	for i := len(clauses) - 1; i >= 0; i-- {
+		body, broke := walkStatements(clauseStatements(clauses[i]))
+		var outer ReturnStatus
+		switch {
+		case broke:
+			// Break terminates this path at the switch boundary;
+			// observations carry but nothing from later clauses does.
+			outer = body
+		case body.MustReturn():
+			outer = body
+		default:
+			outer = mergeFallthrough(body, nextOuter)
+		}
+		infos[i] = clauseInfo{outer: outer}
+		nextOuter = outer
+	}
+	result := infos[0].outer
+	for i := 1; i < len(infos); i++ {
+		result = mergeBranches(result, infos[i].outer)
 	}
 	if !hasDefault {
 		// No matching case: control falls off the switch entirely.
@@ -442,6 +495,18 @@ func returnHasValue(ret *wrapperchecker.Node) bool {
 func loopBody(loop *wrapperchecker.Node) *wrapperchecker.Node {
 	var last *wrapperchecker.Node
 	loop.ForEachChild(func(c *wrapperchecker.Node) bool {
+		last = c
+		return false
+	})
+	return last
+}
+
+// labeledBody returns the statement wrapped by a LabeledStatement.
+// LabeledStatement has two children: the label identifier and the
+// labeled statement body; we return the latter.
+func labeledBody(n *wrapperchecker.Node) *wrapperchecker.Node {
+	var last *wrapperchecker.Node
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
 		last = c
 		return false
 	})

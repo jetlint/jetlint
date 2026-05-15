@@ -133,19 +133,22 @@ func (r *rule) visit(ctx *engine.Context, call *wrapperchecker.Node) {
 		return
 	}
 	for _, cb := range resolveCallbacks(args[cbIdx]) {
-		r.checkCallback(ctx, method, cb)
+		r.checkCallback(ctx, method, isStatic, cb)
 	}
 }
 
 // checkCallback runs the body-flow check against a single resolved
-// function-like callback node.
-func (r *rule) checkCallback(ctx *engine.Context, method string, cb *wrapperchecker.Node) {
-	// Async functions always return a Promise — treat as explicit.
-	if wrapperchecker.IsAsyncFunction(cb) {
+// function-like callback node. Generators return an iterator object
+// — a real value — so they're exempt everywhere. Async functions
+// wrap their result in a Promise, which is fine for instance methods
+// like `map`; but `Array.fromAsync` awaits each callback's resolved
+// value, so an empty async body still produces `undefined` items and
+// is not exempted there.
+func (r *rule) checkCallback(ctx *engine.Context, method string, isStatic bool, cb *wrapperchecker.Node) {
+	if cb.IsGeneratorFunction() {
 		return
 	}
-	// Generator functions return an iterator — also always explicit.
-	if cb.IsGeneratorFunction() {
+	if !isStatic && wrapperchecker.IsAsyncFunction(cb) {
 		return
 	}
 	status := astflow.FunctionBodyReturnStatus(cb)
@@ -183,10 +186,10 @@ func (r *rule) checkForEachCallback(ctx *engine.Context, call *wrapperchecker.No
 }
 
 // resolveCallbacks drills through parentheses, logical operators
-// (`||`, `&&`, `??`), and ternaries to find every function-like
-// expression that may end up as the callback at runtime. Each branch
-// is checked independently — flag if any branch has a problematic
-// callback.
+// (`||`, `&&`, `??`), ternaries, and IIFEs to find every
+// function-like expression that may end up as the callback at
+// runtime. Each branch is checked independently — flag if any branch
+// has a problematic callback.
 func resolveCallbacks(n *wrapperchecker.Node) []*wrapperchecker.Node {
 	n = stripParens(n)
 	if n == nil {
@@ -206,8 +209,76 @@ func resolveCallbacks(n *wrapperchecker.Node) []*wrapperchecker.Node {
 	case wrapperchecker.KindConditionalExpression:
 		whenTrue, whenFalse := n.ConditionalBranches()
 		return append(resolveCallbacks(whenTrue), resolveCallbacks(whenFalse)...)
+	case wrapperchecker.KindCallExpression:
+		// IIFE: when the argument is the result of immediately
+		// calling a function literal, the actual callback is whatever
+		// that function returns. Drill into the callee and use its
+		// return expressions as candidate callbacks.
+		callee := stripParens(n.CalleeExpression())
+		if callee != nil && isFunctionLike(callee) {
+			return iifeReturnedCallbacks(callee)
+		}
 	}
 	return nil
+}
+
+// iifeReturnedCallbacks finds every function-like expression returned
+// from the body of a function literal that's being immediately
+// called. Concise-body arrows (`() => fn`) return their body directly.
+func iifeReturnedCallbacks(fn *wrapperchecker.Node) []*wrapperchecker.Node {
+	if fn == nil {
+		return nil
+	}
+	// Concise-body arrow: the body is the returned expression.
+	if fn.Kind() == wrapperchecker.KindArrowFunction {
+		var last *wrapperchecker.Node
+		fn.ForEachChild(func(c *wrapperchecker.Node) bool {
+			last = c
+			return false
+		})
+		if last != nil && last.Kind() != wrapperchecker.KindBlock {
+			return resolveCallbacks(last)
+		}
+	}
+	// Block-bodied: collect every explicit `return <expr>` value.
+	var out []*wrapperchecker.Node
+	var visit func(*wrapperchecker.Node)
+	visit = func(p *wrapperchecker.Node) {
+		if p == nil {
+			return
+		}
+		switch p.Kind() {
+		case wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindMethodDeclaration:
+			// Don't recurse into nested function-likes — their
+			// returns belong to *their* body.
+			return
+		case wrapperchecker.KindReturnStatement:
+			var arg *wrapperchecker.Node
+			p.ForEachChild(func(c *wrapperchecker.Node) bool {
+				arg = c
+				return true
+			})
+			if arg != nil {
+				out = append(out, resolveCallbacks(arg)...)
+			}
+			return
+		}
+		p.ForEachChild(func(c *wrapperchecker.Node) bool {
+			visit(c)
+			return false
+		})
+	}
+	fn.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() == wrapperchecker.KindBlock {
+			visit(c)
+			return true
+		}
+		return false
+	})
+	return out
 }
 
 // onlyReturnsVoid reports whether every explicit return in n returns a
