@@ -240,5 +240,6 @@ func additionalRulesSnapshot() []string {
 		"unbound-method",
 		"use-isnan",
 		"use-unknown-in-catch-callback-variable",
+		"valid-typeof",
 	}
 }

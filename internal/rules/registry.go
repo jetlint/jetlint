@@ -95,6 +95,7 @@ var All = []Metadata{
 	{ID: "switch-exhaustiveness-check", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-isnan", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-unknown-in-catch-callback-variable", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+	{ID: "valid-typeof", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 
 	// suspicious — usually wrong, occasionally intentional.
 	{ID: "no-confusing-void-expression", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
