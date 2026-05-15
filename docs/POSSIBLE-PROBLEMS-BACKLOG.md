@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 37
-- Remaining (AST-only): ~16
+- Shipped: 38
+- Remaining (AST-only): ~15
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -72,7 +72,7 @@ Update this file as rules land or assumptions change.
 | `no-unsafe-optional-chaining` | ✓ | Shipped 2026-05-15 (80/82 fixtures; `with(...)` not detected because `KindWithStatement` is unexported by the wrapper) |
 | `no-unused-private-class-members` | ✓ | Shipped 2026-05-15 |
 | `no-unused-vars` | | Scope: unused declarations. TS catches under noUnusedLocals. |
-| `no-use-before-define` | | Scope: reference before declaration. |
+| `no-use-before-define` | ✓ | Shipped 2026-05-15 (239/354 fixtures; remaining cases need cross-scope analysis to honor the `variables: false` option fully) |
 | `no-useless-backreference` | ⊘ | Regex AST. |
 | `require-atomic-updates` | | Scope + async: `x = await … x …` pattern. |
 | `use-isnan` | ✓ | Shipped 2026-05-15 |
