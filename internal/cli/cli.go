@@ -82,6 +82,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nosparsearrays"
 	"github.com/jetlint/jetlint/internal/rules/notemplatecurlyinstring"
 	"github.com/jetlint/jetlint/internal/rules/nothisbeforesuper"
+	"github.com/jetlint/jetlint/internal/rules/noundef"
 	"github.com/jetlint/jetlint/internal/rules/nounexpectedmultiline"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarybooleanliteralcompare"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarycondition"
@@ -576,6 +577,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noprototypebuiltins.New(),
 		notemplatecurlyinstring.New(),
 		nothisbeforesuper.New(),
+		noundef.New(),
 		nodupekeys.New(),
 		noduplicatecase.New(),
 		noduplicateimports.New(),

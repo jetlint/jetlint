@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 36
-- Remaining (AST-only): ~17
+- Shipped: 37
+- Remaining (AST-only): ~16
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -62,7 +62,7 @@ Update this file as rules land or assumptions change.
 | `no-sparse-arrays` | ✓ | Shipped 2026-05-15 |
 | `no-template-curly-in-string` | ✓ | Shipped 2026-05-15 |
 | `no-this-before-super` | ✓ | Shipped 2026-05-15 (65/65 fixtures) |
-| `no-undef` | | Checker: undeclared identifier (TS catches; AST-only fallback). |
+| `no-undef` | ✓ | Shipped 2026-05-15 (87/97 fixtures; remaining cases need `globals`/`env` settings from oxc test sources, which the fixture extractor does not yet capture) |
 | `no-unexpected-multiline` | ✓ | Shipped 2026-05-15 |
 | `no-unmodified-loop-condition` | | AST + scope: loop test references unchanged variables. |
 | `no-unreachable` | ✓ | Shipped 2026-05-15 (65/65 fixtures) |
