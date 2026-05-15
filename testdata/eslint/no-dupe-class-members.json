@@ -1,0 +1,303 @@
+{
+  "ruleId": "no-dupe-class-members",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_dupe_class_members.rs",
+  "cases": [
+    {
+      "code": "class A { foo() {} bar() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { static foo() {} foo() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { get foo() {} set foo(value) {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { static foo() {} get foo() {} set foo(value) {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { foo() { } } class B { foo() { } }",
+      "valid": true
+    },
+    {
+      "code": "class A { [foo]() {} foo() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { 'foo'() {} 'bar'() {} baz() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { *'foo'() {} *'bar'() {} *baz() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { get 'foo'() {} get 'bar'() {} get baz() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { 1() {} 2() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { ['foo']() {} ['bar']() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { [`foo`]() {} [`bar`]() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { [12]() {} [123]() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { [1.0]() {} ['1.0']() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { [0x1]() {} [`0x1`]() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { [null]() {} ['']() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { get ['foo']() {} set ['foo'](value) {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { ['foo']() {} static ['foo']() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { ['constructor']() {} constructor() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { 'constructor'() {} [`constructor`]() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { constructor() {} get [`constructor`]() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { 'constructor'() {} set ['constructor'](value) {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { ['foo' + '']() {} ['foo']() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { [`foo${''}`]() {} [`foo`]() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { [-1]() {} ['-1']() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { [foo]() {} [foo]() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { foo; static foo; }",
+      "valid": true
+    },
+    {
+      "code": "class A { static foo() {}; foo() {}; }",
+      "valid": true
+    },
+    {
+      "code": "class A { foo; #foo; }",
+      "valid": true
+    },
+    {
+      "code": "class A { '#foo'; #foo; }",
+      "valid": true
+    },
+    {
+      "code": "class A { foo() {} } class B { foo() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { [foo]() {} foo() {} } ",
+      "valid": true
+    },
+    {
+      "code": "class A { foo() {} bar() {} baz() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { *foo() {} *bar() {} *baz() {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { get foo() {} get bar() {} get baz() {} }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { foo(a: string): string; foo(a: number): number; foo(a: any): any {} }",
+      "valid": true
+    },
+    {
+      "code": "class A { foo() {} foo() {} }",
+      "valid": false
+    },
+    {
+      "code": "!class A { foo() {} foo() {} };",
+      "valid": false
+    },
+    {
+      "code": "class A { 'foo'() {} 'foo'() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { 10() {} 1e1() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { ['foo']() {} ['foo']() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { static ['foo']() {} static foo() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { set 'foo'(value) {} set ['foo'](val) {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { ''() {} ['']() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { [`foo`]() {} [`foo`]() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { static get [`foo`]() {} static get ['foo']() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { foo() {} [`foo`]() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { get [`foo`]() {} 'foo'() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { static 'foo'() {} static [`foo`]() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { ['constructor']() {} ['constructor']() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { static [`constructor`]() {} static constructor() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { static constructor() {} static 'constructor'() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { [123]() {} [123]() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { [0x10]() {} 16() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { [100]() {} [1e2]() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { [123.00]() {} [`123`]() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { [123n]() {} 123() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { static '65'() {} static [0o101]() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { [null]() {} 'null'() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { foo() {} foo() {} foo() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { static foo() {} static foo() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { foo() {} get foo() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { set foo(value) {} foo() {} }",
+      "valid": false
+    },
+    {
+      "code": "class A { foo; foo; }",
+      "valid": false
+    },
+    {
+      "code": "class A { foo() {}  foo() {}}",
+      "valid": false
+    },
+    {
+      "code": "!class A { foo() {}  foo() {}};",
+      "valid": false
+    },
+    {
+      "code": "class A { 'foo'() {}  'foo'() {}}",
+      "valid": false
+    },
+    {
+      "code": "class A { 10() {}  1e1() {}}",
+      "valid": false
+    },
+    {
+      "code": "class A { foo() {}  foo() {}  foo() {}}",
+      "valid": false
+    },
+    {
+      "code": "class A { static foo() {}  static foo() {}}",
+      "valid": false
+    },
+    {
+      "code": "class A { foo() {}  get foo() {}}",
+      "valid": false
+    },
+    {
+      "code": "class A { set foo(value) {}  foo() {}}",
+      "valid": false
+    },
+    {
+      "code": "class A { foo;  foo = 42;}",
+      "valid": false
+    },
+    {
+      "code": "class A { foo;  foo() {}}",
+      "valid": false
+    }
+  ]
+}

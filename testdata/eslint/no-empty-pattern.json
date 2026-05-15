@@ -1,0 +1,199 @@
+{
+  "ruleId": "no-empty-pattern",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_empty_pattern.rs",
+  "cases": [
+    {
+      "code": "var {a = {}} = foo;",
+      "valid": true
+    },
+    {
+      "code": "var {a, b = {}} = foo;",
+      "valid": true
+    },
+    {
+      "code": "var {a = []} = foo;",
+      "valid": true
+    },
+    {
+      "code": "function foo({a = {}}) {}",
+      "valid": true
+    },
+    {
+      "code": "function foo({a = []}) {}",
+      "valid": true
+    },
+    {
+      "code": "var [a] = foo",
+      "valid": true
+    },
+    {
+      "code": "function foo({}) {}",
+      "valid": true,
+      "options": [
+        {
+          "allowObjectPatternsAsParameters": true
+        }
+      ]
+    },
+    {
+      "code": "var foo = function({}) {}",
+      "valid": true,
+      "options": [
+        {
+          "allowObjectPatternsAsParameters": true
+        }
+      ]
+    },
+    {
+      "code": "var foo = ({}) =\u003e {}",
+      "valid": true,
+      "options": [
+        {
+          "allowObjectPatternsAsParameters": true
+        }
+      ]
+    },
+    {
+      "code": "function foo({} = {}) {}",
+      "valid": true,
+      "options": [
+        {
+          "allowObjectPatternsAsParameters": true
+        }
+      ]
+    },
+    {
+      "code": "var foo = function({} = {}) {}",
+      "valid": true,
+      "options": [
+        {
+          "allowObjectPatternsAsParameters": true
+        }
+      ]
+    },
+    {
+      "code": "var foo = ({} = {}) =\u003e {}",
+      "valid": true,
+      "options": [
+        {
+          "allowObjectPatternsAsParameters": true
+        }
+      ]
+    },
+    {
+      "code": "var {} = foo",
+      "valid": false
+    },
+    {
+      "code": "var [] = foo",
+      "valid": false
+    },
+    {
+      "code": "var {a: {}} = foo",
+      "valid": false
+    },
+    {
+      "code": "var {a, b: {}} = foo",
+      "valid": false
+    },
+    {
+      "code": "var {a: []} = foo",
+      "valid": false
+    },
+    {
+      "code": "function foo({}) {}",
+      "valid": false
+    },
+    {
+      "code": "function foo([]) {}",
+      "valid": false
+    },
+    {
+      "code": "function foo({a: {}}) {}",
+      "valid": false
+    },
+    {
+      "code": "function foo({a: []}) {}",
+      "valid": false
+    },
+    {
+      "code": "function foo({}) {}",
+      "valid": false,
+      "options": [
+        {}
+      ]
+    },
+    {
+      "code": "var foo = function({}) {}",
+      "valid": false,
+      "options": [
+        {}
+      ]
+    },
+    {
+      "code": "var foo = ({}) =\u003e {}",
+      "valid": false,
+      "options": [
+        {}
+      ]
+    },
+    {
+      "code": "function foo({} = {}) {}",
+      "valid": false,
+      "options": [
+        {}
+      ]
+    },
+    {
+      "code": "var foo = function({} = {}) {}",
+      "valid": false,
+      "options": [
+        {}
+      ]
+    },
+    {
+      "code": "var foo = ({} = {}) =\u003e {}",
+      "valid": false,
+      "options": [
+        {}
+      ]
+    },
+    {
+      "code": "var foo = ({a: {}}) =\u003e {}",
+      "valid": false,
+      "options": [
+        {
+          "allowObjectPatternsAsParameters": true
+        }
+      ]
+    },
+    {
+      "code": "var foo = ({} = bar) =\u003e {}",
+      "valid": false,
+      "options": [
+        {
+          "allowObjectPatternsAsParameters": true
+        }
+      ]
+    },
+    {
+      "code": "var foo = ({} = { bar: 1 }) =\u003e {}",
+      "valid": false,
+      "options": [
+        {
+          "allowObjectPatternsAsParameters": true
+        }
+      ]
+    },
+    {
+      "code": "var foo = ([]) =\u003e {}",
+      "valid": false,
+      "options": [
+        {
+          "allowObjectPatternsAsParameters": true
+        }
+      ]
+    }
+  ]
+}
