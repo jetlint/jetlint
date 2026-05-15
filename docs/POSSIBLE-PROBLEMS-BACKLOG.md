@@ -47,7 +47,7 @@ Update this file as rules land or assumptions change.
 | `no-fallthrough` | | AST walk: does each case end in break/return/throw? |
 | `no-func-assign` | ✓ | Shipped 2026-05-15 |
 | `no-import-assign` | ✓ | Shipped 2026-05-15 |
-| `no-inner-declarations` | | AST: function/var declared inside a non-function block. |
+| `no-inner-declarations` | ✓ | Shipped 2026-05-15 (65/66 fixtures; one diverges on sourceType=module heuristics) |
 | `no-invalid-regexp` | ⊘ | Regex AST. |
 | `no-irregular-whitespace` | | AST: source-text scan for control-whitespace characters. |
 | `no-loss-of-precision` | ✓ | Shipped 2026-05-15 |

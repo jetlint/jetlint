@@ -1,0 +1,463 @@
+{
+  "ruleId": "no-inner-declarations",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_inner_declarations.rs",
+  "cases": [
+    {
+      "code": "function doSomething() { }",
+      "valid": true
+    },
+    {
+      "code": "function doSomething() { function somethingElse() { } }",
+      "valid": true
+    },
+    {
+      "code": "(function() { function doSomething() { } }());",
+      "valid": true
+    },
+    {
+      "code": "if (test) { var fn = function() { }; }",
+      "valid": true
+    },
+    {
+      "code": "if (test) { var fn = function expr() { }; }",
+      "valid": true
+    },
+    {
+      "code": "function decl() { var fn = function expr() { }; }",
+      "valid": true
+    },
+    {
+      "code": "function decl(arg) { var fn; if (arg) { fn = function() { }; } }",
+      "valid": true
+    },
+    {
+      "code": "var x = {doSomething() {function doSomethingElse() {}}}",
+      "valid": true
+    },
+    {
+      "code": "function decl(arg) { var fn; if (arg) { fn = function expr() { }; } }",
+      "valid": true
+    },
+    {
+      "code": "if (test) { var foo; }",
+      "valid": true
+    },
+    {
+      "code": "if (test) { let x = 1; }",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "if (test) { const x = 1; }",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "if (test) { using x = 1; }",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "if (test) { await using x = 1; }",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "function doSomething() { while (test) { var foo; } }",
+      "valid": true
+    },
+    {
+      "code": "var foo;",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "var foo = 42;",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "function doSomething() { var foo; }",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "(function() { var foo; }());",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "foo(() =\u003e { function bar() { } });",
+      "valid": true
+    },
+    {
+      "code": "var fn = () =\u003e {var foo;}",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "var x = {doSomething() {var foo;}}",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "export var foo;",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "export function bar() {}",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "export default function baz() {}",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "exports.foo = () =\u003e {}",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "exports.foo = function(){}",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "module.exports = function foo(){}",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "class C { method() { function foo() {} } }",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "class C { method() { var x; } }",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "class C { static { function foo() {} } }",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "class C { static { var x; } }",
+      "valid": true,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "'use strict'\n             if (test) { function doSomething() { } }",
+      "valid": true,
+      "options": [
+        "functions",
+        {
+          "blockScopedFunctions": "allow"
+        }
+      ]
+    },
+    {
+      "code": "'use strict'\n             if (test) { function doSomething() { } }",
+      "valid": true,
+      "options": [
+        "functions"
+      ]
+    },
+    {
+      "code": "function foo() {'use strict'\n             if (test) { function doSomething() { } } }",
+      "valid": true,
+      "options": [
+        "functions",
+        {
+          "blockScopedFunctions": "allow"
+        }
+      ]
+    },
+    {
+      "code": "function foo() { { function bar() { } } }",
+      "valid": true,
+      "options": [
+        "functions",
+        {
+          "blockScopedFunctions": "allow"
+        }
+      ]
+    },
+    {
+      "code": "class C { method() { if(test) { function somethingElse() { } } } }",
+      "valid": true,
+      "options": [
+        "functions",
+        {
+          "blockScopedFunctions": "allow"
+        }
+      ]
+    },
+    {
+      "code": "const C = class { method() { if(test) { function somethingElse() { } } } }",
+      "valid": true,
+      "options": [
+        "functions",
+        {
+          "blockScopedFunctions": "allow"
+        }
+      ]
+    },
+    {
+      "code": "if (test) { function doSomething() { } }",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "if (foo) var a; ",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "if (foo) /* some comments */ var a; ",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "if (foo){ function f(){ if(bar){ var a; } } }",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "if (foo) function f(){ if(bar) var a; }",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "if (foo) { var fn = function(){} } ",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "if (foo)  function f(){} ",
+      "valid": false
+    },
+    {
+      "code": "function bar() { if (foo) function f(){}; }",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "function bar() { if (foo) var a; }",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "if (foo) { var a; }",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "function doSomething() { do { function somethingElse() { } } while (test); }",
+      "valid": false
+    },
+    {
+      "code": "(function() { if (test) { function doSomething() { } } }());",
+      "valid": false
+    },
+    {
+      "code": "while (test) { var foo; }",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "function doSomething() { if (test) { var foo = 42; } }",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "(function() { if (test) { var foo; } }());",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "const doSomething = () =\u003e { if (test) { var foo = 42; } }",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "class C { method() { if(test) { var foo; } } }",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "class C { static { if (test) { var foo; } } }",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "class C { static { if (test) { function foo() {} } } }",
+      "valid": false,
+      "options": [
+        "both",
+        {
+          "blockScopedFunctions": "disallow"
+        }
+      ]
+    },
+    {
+      "code": "class C { static { if (test) { if (anotherTest) { var foo; } } } }",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    },
+    {
+      "code": "if (test) { function doSomething() { } }",
+      "valid": false,
+      "options": [
+        "both",
+        {
+          "blockScopedFunctions": "allow"
+        }
+      ]
+    },
+    {
+      "code": "if (test) { function doSomething() { } }",
+      "valid": false,
+      "options": [
+        "both",
+        {
+          "blockScopedFunctions": "disallow"
+        }
+      ]
+    },
+    {
+      "code": "'use strict'\n             if (test) { function doSomething() { } }",
+      "valid": false,
+      "options": [
+        "both",
+        {
+          "blockScopedFunctions": "disallow"
+        }
+      ]
+    },
+    {
+      "code": "'use strict'\n             if (test) { function doSomething() { } }",
+      "valid": false,
+      "options": [
+        "both",
+        {
+          "blockScopedFunctions": "allow"
+        }
+      ]
+    },
+    {
+      "code": "function foo() {'use strict'\n             { function bar() { } } }",
+      "valid": false,
+      "options": [
+        "both",
+        {
+          "blockScopedFunctions": "disallow"
+        }
+      ]
+    },
+    {
+      "code": "function foo() {'use strict'\n             { function bar() { } } }",
+      "valid": false,
+      "options": [
+        "both",
+        {
+          "blockScopedFunctions": "disallow"
+        }
+      ]
+    },
+    {
+      "code": "function doSomething() { 'use strict'\n             do { function somethingElse() { } } while (test); }",
+      "valid": false,
+      "options": [
+        "both",
+        {
+          "blockScopedFunctions": "disallow"
+        }
+      ]
+    },
+    {
+      "code": "{ function foo () {'use strict'\n             console.log('foo called'); } }",
+      "valid": false,
+      "options": [
+        "both"
+      ]
+    }
+  ]
+}
