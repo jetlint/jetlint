@@ -6,7 +6,7 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 27
+- Shipped: 28
 - Remaining (AST-only): ~25
 - Remaining (needs regex AST infra): 6
 
@@ -53,7 +53,7 @@ Update this file as rules land or assumptions change.
 | `no-loss-of-precision` | | AST: numeric literal whose precision is lost. |
 | `no-misleading-character-class` | ⊘ | Regex AST. |
 | `no-new-native-nonconstructor` | | AST: `new Symbol(...)` / `new BigInt(...)`. |
-| `no-obj-calls` | | AST: `Math(...)` / `JSON(...)` / `Reflect(...)` etc. |
+| `no-obj-calls` | ✓ | Shipped 2026-05-15 |
 | `no-promise-executor-return` | ✓ | Shipped 2026-05-15 |
 | `no-prototype-builtins` | ✓ | Shipped 2026-05-15 |
 | `no-self-assign` | ✓ | Shipped 2026-05-15 |
