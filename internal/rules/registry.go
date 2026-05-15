@@ -83,6 +83,7 @@ var All = []Metadata{
 	{ID: "no-constructor-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-debugger", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-dupe-class-members", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-dupe-else-if", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-base-to-string", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-dupe-keys", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-duplicate-case", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
