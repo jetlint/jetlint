@@ -42,6 +42,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noawaitinloop"
 	"github.com/jetlint/jetlint/internal/rules/nobasetotostring"
 	"github.com/jetlint/jetlint/internal/rules/noclassassign"
+	"github.com/jetlint/jetlint/internal/rules/nocomparenegzero"
 	"github.com/jetlint/jetlint/internal/rules/noconfusingvoidexpression"
 	"github.com/jetlint/jetlint/internal/rules/nodeprecated"
 	"github.com/jetlint/jetlint/internal/rules/nodupekeys"
@@ -524,6 +525,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noasyncpromiseexecutor.New(),
 		noawaitinloop.New(),
 		noclassassign.New(),
+		nocomparenegzero.New(),
 		noconfusingvoidexpression.New(),
 		nodeprecated.New(),
 		nodupekeys.New(),
