@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 19
-- Remaining (AST-only): ~33
+- Shipped: 20
+- Remaining (AST-only): ~32
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -42,7 +42,7 @@ Update this file as rules land or assumptions change.
 | `no-duplicate-case` | ✓ | Shipped 2026-05-15 |
 | `no-duplicate-imports` | | AST: duplicate `import` source strings. |
 | `no-empty-character-class` | ⊘ | Regex AST. |
-| `no-empty-pattern` | | AST: `{}` or `[]` destructuring with no bindings. |
+| `no-empty-pattern` | ✓ | Shipped 2026-05-15 |
 | `no-ex-assign` | | Scope: assigning to a `catch` clause's exception binding. |
 | `no-fallthrough` | | AST walk: does each case end in break/return/throw? |
 | `no-func-assign` | | Scope: assigning to a function declaration's name. |
