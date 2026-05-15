@@ -125,131 +125,291 @@
     },
     {
       "code": "switch(NaN) { case foo: break; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": false
+        }
+      ]
     },
     {
       "code": "switch(foo) { case NaN: break; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": false
+        }
+      ]
     },
     {
       "code": "switch(NaN) { case NaN: break; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": false
+        }
+      ]
     },
     {
       "code": "switch(foo) { case bar: break; case NaN: break; default: break; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": false
+        }
+      ]
     },
     {
       "code": "switch(foo) {}",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case bar: NaN; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { default: NaN; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(Nan) {}",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch('NaN') { default: break; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo(NaN)) {}",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo.NaN) {}",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case Nan: break }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case 'NaN': break }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case foo(NaN): break }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case foo.NaN: break }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case bar: break; case 1: break; default: break; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(Number.NaN) { case foo: break; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": false
+        }
+      ]
     },
     {
       "code": "switch(foo) { case Number.NaN: break; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": false
+        }
+      ]
     },
     {
       "code": "switch(NaN) { case Number.NaN: break; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": false
+        }
+      ]
     },
     {
       "code": "switch(foo) { case bar: break; case Number.NaN: break; default: break; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": false
+        }
+      ]
     },
     {
       "code": "switch(foo) { case bar: Number.NaN; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { default: Number.NaN; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(Number.Nan) {}",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch('Number.NaN') { default: break; }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo(Number.NaN)) {}",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo.Number.NaN) {}",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case Number.Nan: break }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case 'Number.NaN': break }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case foo(Number.NaN): break }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case foo.Number.NaN: break }",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch((NaN, doStuff(), 1)) {}",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch((Number.NaN, doStuff(), 1)) {}",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf(NaN)",
@@ -269,179 +429,391 @@
     },
     {
       "code": "foo.indexOf(NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {}
+      ]
     },
     {
       "code": "foo.lastIndexOf(NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {}
+      ]
     },
     {
       "code": "foo.indexOf(NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": false
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": false
+        }
+      ]
     },
     {
       "code": "indexOf(NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "lastIndexOf(NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "new foo.indexOf(NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.bar(NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.IndexOf(NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo[indexOf](NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo[lastIndexOf](NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "indexOf.foo(NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf()",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf()",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf(a)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(Nan)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf(a, NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(NaN, b, c)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf(a, b)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(NaN, NaN, b)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf(...NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(NaN())",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf(Number.NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {}
+      ]
     },
     {
       "code": "foo.lastIndexOf(Number.NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {}
+      ]
     },
     {
       "code": "foo.indexOf(Number.NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": false
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(Number.NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": false
+        }
+      ]
     },
     {
       "code": "indexOf(Number.NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "lastIndexOf(Number.NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "new foo.indexOf(Number.NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.bar(Number.NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.IndexOf(Number.NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo[indexOf](Number.NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo[lastIndexOf](Number.NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "indexOf.foo(Number.NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(Number.Nan)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf(a, Number.NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(Number.NaN, b, c)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(Number.NaN, NaN, b)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf(...Number.NaN)",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(Number.NaN())",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf((NaN, 1))",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf((NaN, 1))",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf((Number.NaN, 1))",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf((Number.NaN, 1))",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "123 == NaN;",
@@ -601,55 +973,116 @@
     },
     {
       "code": "switch(NaN) { case foo: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {}
+      ]
     },
     {
       "code": "switch(foo) { case NaN: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {}
+      ]
     },
     {
       "code": "switch(NaN) {}",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(NaN) { case foo: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(NaN) { default: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(NaN) { case foo: break; default: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case NaN: }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case NaN: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case (NaN): break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case bar: break; case NaN: break; default: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case bar: case NaN: default: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case bar: break; case NaN: break; case baz: break; case NaN: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(NaN) { case NaN: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(Number.NaN) { case foo: break; }",
@@ -661,179 +1094,395 @@
     },
     {
       "code": "switch(Number.NaN) { case foo: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {}
+      ]
     },
     {
       "code": "switch(foo) { case Number.NaN: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {}
+      ]
     },
     {
       "code": "switch(Number.NaN) {}",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(Number.NaN) { case foo: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(Number.NaN) { default: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(Number.NaN) { case foo: break; default: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case Number.NaN: }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case Number.NaN: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case (Number.NaN): break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case bar: break; case Number.NaN: break; default: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case bar: case Number.NaN: default: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(foo) { case bar: break; case NaN: break; case baz: break; case Number.NaN: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "switch(Number.NaN) { case Number.NaN: break; }",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForSwitchCase": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf(NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo['indexOf'](NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo[`indexOf`](NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo['lastIndexOf'](NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo().indexOf(NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.bar.lastIndexOf(NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf?.(NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo?.indexOf(NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "(foo?.indexOf)(NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf(Number.NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(Number.NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo['indexOf'](Number.NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo['lastIndexOf'](Number.NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo().indexOf(Number.NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.bar.lastIndexOf(Number.NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf?.(Number.NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo?.indexOf(Number.NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "(foo?.indexOf)(Number.NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf((1, NaN))",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf((1, Number.NaN))",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf((1, NaN))",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf((1, Number.NaN))",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf(NaN, 1)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(NaN, 1)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf(NaN, b)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(NaN, b)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf(Number.NaN, b)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(Number.NaN, b)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.lastIndexOf(NaN, NaN)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     },
     {
       "code": "foo.indexOf((1, NaN), 1)",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "enforceForIndexOf": true
+        }
+      ]
     }
   ]
 }

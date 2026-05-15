@@ -13,6 +13,9 @@
 package validtypeof
 
 import (
+	"encoding/json"
+	"fmt"
+
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 
 	"github.com/jetlint/jetlint/internal/engine"
@@ -20,17 +23,48 @@ import (
 
 const id = "valid-typeof"
 
-// New constructs a validtypeof rule instance ready for registration
-// with the engine.
-func New() engine.Rule { return rule{} }
+// Options is the configurable surface of valid-typeof.
+type Options struct {
+	// RequireStringLiterals tightens the rule: the non-typeof side
+	// must be a string literal (or template literal with no
+	// substitutions). With it off (the default), bare `undefined` is
+	// still flagged because comparing a `typeof` result to the
+	// undefined value never matches.
+	RequireStringLiterals bool
+}
 
-type rule struct{}
+func DefaultOptions() Options { return Options{} }
 
-func (rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+func OptionsFromJSON(raw json.RawMessage) (Options, error) {
+	out := DefaultOptions()
+	if len(raw) == 0 || string(raw) == "null" {
+		return out, nil
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return Options{}, fmt.Errorf("valid-typeof options must be a JSON object: %w", err)
+	}
+	if v, ok := fields["requireStringLiterals"]; ok {
+		if err := json.Unmarshal(v, &out.RequireStringLiterals); err != nil {
+			return Options{}, err
+		}
+	}
+	return out, nil
+}
 
-func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
+// New constructs a validtypeof rule instance with default options.
+func New() engine.Rule { return NewWithOptions(DefaultOptions()) }
+
+// NewWithOptions constructs a validtypeof rule with the given options.
+func NewWithOptions(opts Options) engine.Rule { return &rule{opts: opts} }
+
+type rule struct{ opts Options }
+
+func (*rule) Meta() engine.Meta { return engine.Meta{ID: id} }
+
+func (r *rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 	return map[wrapperchecker.Kind]engine.Handler{
-		wrapperchecker.KindBinaryExpression: visit,
+		wrapperchecker.KindBinaryExpression: r.visit,
 	}
 }
 
@@ -47,7 +81,7 @@ var validTypeofResults = map[string]bool{
 	"bigint":    true,
 }
 
-func visit(ctx *engine.Context, n *wrapperchecker.Node) {
+func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if !isEqualityOperator(n.BinaryOperatorKind()) {
 		return
 	}
@@ -56,30 +90,70 @@ func visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if left == nil || right == nil {
 		return
 	}
-	// Check both sides: a typeof X on one side and a string literal on
-	// the other. We emit independently for each side that matches —
-	// `"strnig" === typeof x` and `typeof x === "strnig"` are both bugs,
-	// and `"strnig" === typeof x === "boguss"` would be unusual but is
-	// not reachable since this is a single BinaryExpression.
-	checkSide(ctx, left, right)
-	checkSide(ctx, right, left)
+	r.checkSide(ctx, left, right)
+	r.checkSide(ctx, right, left)
 }
 
 // checkSide reports a diagnostic when typeofSide is `typeof X` and
-// literalSide is a string literal whose value is not a valid typeof
-// result.
-func checkSide(ctx *engine.Context, typeofSide, literalSide *wrapperchecker.Node) {
+// the other side is an invalid comparison value.
+func (r *rule) checkSide(ctx *engine.Context, typeofSide, otherSide *wrapperchecker.Node) {
 	if !isTypeofExpression(typeofSide) {
 		return
 	}
-	lit, ok := stringLiteralValue(literalSide)
-	if !ok {
+	if lit, ok := stringLiteralValue(otherSide); ok {
+		if !validTypeofResults[lit] {
+			ctx.Report(otherSide, "invalid typeof comparison value: "+lit+" is not a typeof result")
+		}
 		return
 	}
-	if validTypeofResults[lit] {
+	if isGlobalUndefined(ctx, otherSide) {
+		ctx.Report(otherSide, "use \"undefined\" instead of undefined")
 		return
 	}
-	ctx.Report(literalSide, "invalid typeof comparison value: "+lit+" is not a typeof result")
+	if r.opts.RequireStringLiterals && !isTypeofExpression(otherSide) {
+		ctx.Report(otherSide, "typeof comparisons should be against string literals")
+	}
+}
+
+// isGlobalUndefined reports whether n is the bare identifier
+// `undefined` that resolves to the global undefined value (not a
+// local parameter or variable named "undefined"). Comparing a typeof
+// result to the global undefined never matches, so it is flagged
+// even without requireStringLiterals; a shadowed `undefined`
+// parameter is just a misleadingly-named local and is left alone.
+func isGlobalUndefined(ctx *engine.Context, n *wrapperchecker.Node) bool {
+	if n == nil || n.Kind() != wrapperchecker.KindIdentifier {
+		return false
+	}
+	if n.LiteralText() != "undefined" {
+		return false
+	}
+	sym := ctx.Checker().SymbolOf(n)
+	if sym == nil {
+		return true
+	}
+	for _, decl := range sym.Declarations() {
+		if decl != nil && !isGlobalUndefinedDecl(decl) {
+			return false
+		}
+	}
+	return true
+}
+
+// isGlobalUndefinedDecl reports whether decl is part of TypeScript's
+// built-in declaration of the global `undefined` (lib.es5.d.ts etc).
+// User-supplied declarations (parameters, locals) make this false,
+// so the rule treats `undefined` as a local shadow.
+func isGlobalUndefinedDecl(decl *wrapperchecker.Node) bool {
+	switch decl.Kind() {
+	case wrapperchecker.KindParameter,
+		wrapperchecker.KindVariableDeclaration,
+		wrapperchecker.KindBindingElement,
+		wrapperchecker.KindFunctionDeclaration,
+		wrapperchecker.KindClassDeclaration:
+		return false
+	}
+	return true
 }
 
 func isEqualityOperator(k wrapperchecker.Kind) bool {

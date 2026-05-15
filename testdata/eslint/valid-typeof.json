@@ -109,27 +109,57 @@
     },
     {
       "code": "typeof foo === 'number'",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "requireStringLiterals": true
+        }
+      ]
     },
     {
       "code": "typeof foo === \"number\"",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "requireStringLiterals": true
+        }
+      ]
     },
     {
       "code": "var baz = typeof foo + 'thing'",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "requireStringLiterals": true
+        }
+      ]
     },
     {
       "code": "typeof foo === typeof bar",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "requireStringLiterals": true
+        }
+      ]
     },
     {
       "code": "typeof foo === `string`",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "requireStringLiterals": true
+        }
+      ]
     },
     {
       "code": "`object` === typeof foo",
-      "valid": true
+      "valid": true,
+      "options": [
+        {
+          "requireStringLiterals": true
+        }
+      ]
     },
     {
       "code": "typeof foo === `str${somethingElse}`",
@@ -189,7 +219,12 @@
     },
     {
       "code": "typeof foo == 'invalid string'",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "requireStringLiterals": true
+        }
+      ]
     },
     {
       "code": "if (typeof bar !== undefined) {}",
@@ -197,27 +232,57 @@
     },
     {
       "code": "typeof foo == Object",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "requireStringLiterals": true
+        }
+      ]
     },
     {
       "code": "typeof foo === undefined",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "requireStringLiterals": true
+        }
+      ]
     },
     {
       "code": "undefined === typeof foo",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "requireStringLiterals": true
+        }
+      ]
     },
     {
       "code": "undefined == typeof foo",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "requireStringLiterals": true
+        }
+      ]
     },
     {
       "code": "typeof foo === `undefined${foo}`",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "requireStringLiterals": true
+        }
+      ]
     },
     {
       "code": "typeof foo === `${string}`",
-      "valid": false
+      "valid": false,
+      "options": [
+        {
+          "requireStringLiterals": true
+        }
+      ]
     },
     {
       "code": "typeof foo === 'biigint'",
