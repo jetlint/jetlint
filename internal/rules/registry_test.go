@@ -186,6 +186,7 @@ func additionalRulesSnapshot() []string {
 	return []string{
 		"array-callback-return",
 		"consistent-return",
+		"constructor-super",
 		"consistent-type-exports",
 		"dot-notation",
 		"naming-convention",

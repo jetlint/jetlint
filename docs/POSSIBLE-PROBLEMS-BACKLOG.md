@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 6
-- Remaining (AST-only): ~46
+- Shipped: 8
+- Remaining (AST-only): ~44
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -20,8 +20,8 @@ Update this file as rules land or assumptions change.
 
 | Rule | Status | Notes |
 |---|:-:|---|
-| `array-callback-return` | … | AST walk: does the callback body always return? |
-| `constructor-super` | | AST walk: does every path call `super()`? |
+| `array-callback-return` | ✓ | Shipped 2026-05-15 |
+| `constructor-super` | ✓ | Shipped 2026-05-15 |
 | `for-direction` | | AST: detect `for (let i = 0; i < n; i--)` direction mismatch. |
 | `getter-return` | | AST walk: does the getter body always return? |
 | `no-async-promise-executor` | | AST: `new Promise(async (...) => {})`. |
