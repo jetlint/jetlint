@@ -15,9 +15,9 @@ typescript-eslint's published test fixtures (currently 6193/6193 cases,
 
 ## Highlights
 
-- **64 rules**: 61 type-aware ports of typescript-eslint plus 3
+- **65 rules**: 61 type-aware ports of typescript-eslint plus 4
   non-type-aware correctness rules ported from ESLint core
-  (`no-self-compare`, `use-isnan`, `valid-typeof`).
+  (`no-duplicate-case`, `no-self-compare`, `use-isnan`, `valid-typeof`).
 - **6193/6193 typescript-eslint fixtures pass** &mdash; same
   diagnostics as typescript-eslint, byte-for-byte.
 - **Native checker:** built on TypeScript 7 native (typescript-go), not
@@ -72,10 +72,10 @@ schema.
 
 Per-rule scores against typescript-eslint's published fixtures live in
 [`docs/TSEC-COMPAT-OVERVIEW.md`](docs/TSEC-COMPAT-OVERVIEW.md). All 61
-typescript-eslint ports currently sit at 100%. The three ESLint-core
-ports (`no-self-compare`, `use-isnan`, `valid-typeof`) ship with
-hand-rolled unit tests since ESLint core does not publish a
-machine-readable fixture format.
+typescript-eslint ports currently sit at 100%. The four ESLint-core
+ports (`no-duplicate-case`, `no-self-compare`, `use-isnan`,
+`valid-typeof`) ship with hand-rolled unit tests since ESLint core
+does not publish a machine-readable fixture format.
 
 Reproduce a single rule's score:
 
@@ -92,7 +92,7 @@ cmd/
   probe/           diagnostic helper
 internal/
   engine/          single AST walk, dispatches to rules
-  rules/           64 rule implementations (one package each)
+  rules/           65 rule implementations (one package each)
   daemon/          long-lived sidecar (JSON-RPC over stdio)
   transport/       JSON-RPC framing
   cli/             argv parsing, exit codes
