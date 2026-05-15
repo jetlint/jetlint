@@ -1,0 +1,575 @@
+{
+  "ruleId": "no-setter-return",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_setter_return.rs",
+  "cases": [
+    {
+      "code": "function foo() { return 1; }",
+      "valid": true
+    },
+    {
+      "code": "function set(val) { return 1; }",
+      "valid": true
+    },
+    {
+      "code": "var foo = function() { return 1; };",
+      "valid": true
+    },
+    {
+      "code": "var foo = function set() { return 1; };",
+      "valid": true
+    },
+    {
+      "code": "var set = function() { return 1; };",
+      "valid": true
+    },
+    {
+      "code": "var set = function set(val) { return 1; };",
+      "valid": true
+    },
+    {
+      "code": "var set = val =\u003e { return 1; };",
+      "valid": true
+    },
+    {
+      "code": "var set = val =\u003e 1;",
+      "valid": true
+    },
+    {
+      "code": "({ set a(val) { }}); function foo() { return 1; }",
+      "valid": true
+    },
+    {
+      "code": "({ set a(val) { }}); (function () { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "({ set a(val) { }}); (() =\u003e { return 1; });",
+      "valid": true
+    },
+    {
+      "code": "({ set a(val) { }}); (() =\u003e 1);",
+      "valid": true
+    },
+    {
+      "code": "return 1;",
+      "valid": true
+    },
+    {
+      "code": "return 1;",
+      "valid": true
+    },
+    {
+      "code": "return 1; function foo(){ return 1; } return 1;",
+      "valid": true
+    },
+    {
+      "code": "function foo(){} return 1; var bar = function*(){ return 1; }; return 1; var baz = () =\u003e {}; return 1;",
+      "valid": true
+    },
+    {
+      "code": "({ set foo(val) { return; } })",
+      "valid": true
+    },
+    {
+      "code": "({ set foo(val) { if (val) { return; } } })",
+      "valid": true
+    },
+    {
+      "code": "class A { set foo(val) { return; } }",
+      "valid": true
+    },
+    {
+      "code": "(class { set foo(val) { if (val) { return; } else { return; } return; } })",
+      "valid": true
+    },
+    {
+      "code": "class A { set foo(val) { try {} catch(e) { return; } } }",
+      "valid": true
+    },
+    {
+      "code": "({ get foo() { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "({ get set() { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "({ set(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "({ set: function(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "({ foo: function set(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "({ set: function set(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "({ set: (val) =\u003e { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "({ set: (val) =\u003e 1 })",
+      "valid": true
+    },
+    {
+      "code": "set = { foo(val) { return 1; } };",
+      "valid": true
+    },
+    {
+      "code": "class A { constructor(val) { return 1; } }",
+      "valid": true
+    },
+    {
+      "code": "class set { constructor(val) { return 1; } }",
+      "valid": true
+    },
+    {
+      "code": "class set { foo(val) { return 1; } }",
+      "valid": true
+    },
+    {
+      "code": "var set = class { foo(val) { return 1; } }",
+      "valid": true
+    },
+    {
+      "code": "(class set { foo(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "class A { get foo() { return val; } }",
+      "valid": true
+    },
+    {
+      "code": "class A { get set() { return val; } }",
+      "valid": true
+    },
+    {
+      "code": "class A { set(val) { return 1; } }",
+      "valid": true
+    },
+    {
+      "code": "class A { static set(val) { return 1; } }",
+      "valid": true
+    },
+    {
+      "code": "({ set: set = function set(val) { return 1; } } = {})",
+      "valid": true
+    },
+    {
+      "code": "({ set: set = (val) =\u003e 1 } = {})",
+      "valid": true
+    },
+    {
+      "code": "class C { set; foo() { return 1; } }",
+      "valid": true
+    },
+    {
+      "code": "({ set foo(val) { function foo(val) { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "({ set foo(val) { var foo = function(val) { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "({ set foo(val) { var foo = (val) =\u003e { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "({ set foo(val) { var foo = (val) =\u003e 1; } })",
+      "valid": true
+    },
+    {
+      "code": "({ set [function() { return 1; }](val) {} })",
+      "valid": true
+    },
+    {
+      "code": "({ set [() =\u003e { return 1; }](val) {} })",
+      "valid": true
+    },
+    {
+      "code": "({ set [() =\u003e 1](val) {} })",
+      "valid": true
+    },
+    {
+      "code": "({ set foo(val = function() { return 1; }) {} })",
+      "valid": true
+    },
+    {
+      "code": "({ set foo(val = v =\u003e 1) {} })",
+      "valid": true
+    },
+    {
+      "code": "(class { set foo(val) { function foo(val) { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "(class { set foo(val) { var foo = function(val) { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "(class { set foo(val) { var foo = (val) =\u003e { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "(class { set foo(val) { var foo = (val) =\u003e 1; } })",
+      "valid": true
+    },
+    {
+      "code": "(class { set [function() { return 1; }](val) {} })",
+      "valid": true
+    },
+    {
+      "code": "(class { set [() =\u003e { return 1; }](val) {} })",
+      "valid": true
+    },
+    {
+      "code": "(class { set [() =\u003e 1](val) {} })",
+      "valid": true
+    },
+    {
+      "code": "(class { set foo(val = function() { return 1; }) {} })",
+      "valid": true
+    },
+    {
+      "code": "(class { set foo(val = (v) =\u003e 1) {} })",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperty(foo, 'bar', { set(val) { return; } })",
+      "valid": true
+    },
+    {
+      "code": "Reflect.defineProperty(foo, 'bar', { set(val) { if (val) { return; } } })",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperties(foo, { bar: { set(val) { try { return; } catch(e){} } } })",
+      "valid": true
+    },
+    {
+      "code": "Object.create(foo, { bar: { set: function(val) { return; } } })",
+      "valid": true
+    },
+    {
+      "code": "x = { set(val) { return 1; } }",
+      "valid": true
+    },
+    {
+      "code": "x = { foo: { set(val) { return 1; } } }",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperty(foo, 'bar', { value(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "Reflect.defineProperty(foo, 'bar', { value: function set(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperties(foo, { bar: { [set](val) { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "Object.create(foo, { bar: { 'set ': function(val) { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperty(foo, 'bar', { [`set `]: (val) =\u003e { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "Reflect.defineProperty(foo, 'bar', { Set(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperties(foo, { bar: { value: (val) =\u003e 1 } })",
+      "valid": true
+    },
+    {
+      "code": "Object.create(foo, { set: { value: function(val) { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperty(foo, 'bar', { baz(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "Reflect.defineProperty(foo, 'bar', { get(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "Object.create(foo, { set: function(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperty(foo, { set: (val) =\u003e 1 })",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperty(foo, 'bar', { set(val) { function foo() { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "Reflect.defineProperty(foo, 'bar', { set(val) { var foo = function() { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperties(foo, { bar: { set(val) { () =\u003e { return 1 }; } } })",
+      "valid": true
+    },
+    {
+      "code": "Object.create(foo, { bar: { set: (val) =\u003e { (val) =\u003e 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperty(foo, 'bar', 'baz', { set(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperty(foo, { set(val) { return 1; } }, 'bar')",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperty({ set(val) { return 1; } }, foo, 'bar')",
+      "valid": true
+    },
+    {
+      "code": "Reflect.defineProperty(foo, 'bar', 'baz', { set(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "Reflect.defineProperty(foo, { set(val) { return 1; } }, 'bar')",
+      "valid": true
+    },
+    {
+      "code": "Reflect.defineProperty({ set(val) { return 1; } }, foo, 'bar')",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperties(foo, bar, { baz: { set(val) { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperties({ bar: { set(val) { return 1; } } }, foo)",
+      "valid": true
+    },
+    {
+      "code": "Object.create(foo, bar, { baz: { set(val) { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "Object.create({ bar: { set(val) { return 1; } } }, foo)",
+      "valid": true
+    },
+    {
+      "code": "Object.DefineProperty(foo, 'bar', { set(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "Reflect.DefineProperty(foo, 'bar', { set(val) { if (val) { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "Object.DefineProperties(foo, { bar: { set(val) { try { return 1; } catch(e){} } } })",
+      "valid": true
+    },
+    {
+      "code": "Object.Create(foo, { bar: { set: function(val) { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "object.defineProperty(foo, 'bar', { set(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "reflect.defineProperty(foo, 'bar', { set(val) { if (val) { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "Reflect.defineProperties(foo, { bar: { set(val) { try { return 1; } catch(e){} } } })",
+      "valid": true
+    },
+    {
+      "code": "object.create(foo, { bar: { set: function(val) { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "Reflect.defineProperty(foo, 'bar', { set(val) { if (val) { return 1; } } })",
+      "valid": true
+    },
+    {
+      "code": "/* globals Object:off */ Object.defineProperty(foo, 'bar', { set(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperties(foo, { bar: { set(val) { try { return 1; } catch(e){} } } })",
+      "valid": true
+    },
+    {
+      "code": "let Object; Object.defineProperty(foo, 'bar', { set(val) { return 1; } })",
+      "valid": true
+    },
+    {
+      "code": "function f() { Reflect.defineProperty(foo, 'bar', { set(val) { if (val) { return 1; } } }); var Reflect;}",
+      "valid": true
+    },
+    {
+      "code": "function f(Object) { Object.defineProperties(foo, { bar: { set(val) { try { return 1; } catch(e){} } } }) }",
+      "valid": true
+    },
+    {
+      "code": "if (x) { const Object = getObject(); Object.create(foo, { bar: { set: function(val) { return 1; } } }) }",
+      "valid": true
+    },
+    {
+      "code": "x = function Object() { Object.defineProperty(foo, 'bar', { set(val) { return 1; } }) }",
+      "valid": true
+    },
+    {
+      "code": "({ set a(val){ return val + 1; } })",
+      "valid": false
+    },
+    {
+      "code": "({ set a(val) { return 1; } })",
+      "valid": false
+    },
+    {
+      "code": "class A { set a(val) { return 1; } }",
+      "valid": false
+    },
+    {
+      "code": "class A { static set a(val) { return 1; } }",
+      "valid": false
+    },
+    {
+      "code": "(class { set a(val) { return 1; } })",
+      "valid": false
+    },
+    {
+      "code": "({ set a(val) { return val; } })",
+      "valid": false
+    },
+    {
+      "code": "class A { set a(val) { return undefined; } }",
+      "valid": false
+    },
+    {
+      "code": "(class { set a(val) { return null; } })",
+      "valid": false
+    },
+    {
+      "code": "({ set a(val) { return x + y; } })",
+      "valid": false
+    },
+    {
+      "code": "class A { set a(val) { return foo(); } }",
+      "valid": false
+    },
+    {
+      "code": "(class { set a(val) { return this._a; } })",
+      "valid": false
+    },
+    {
+      "code": "({ set a(val) { return this.a; } })",
+      "valid": false
+    },
+    {
+      "code": "({ set a(val) { if (foo) { return 1; }; } })",
+      "valid": false
+    },
+    {
+      "code": "class A { set a(val) { try { return 1; } catch(e) {} } }",
+      "valid": false
+    },
+    {
+      "code": "(class { set a(val) { while (foo){ if (bar) break; else return 1; } } })",
+      "valid": false
+    },
+    {
+      "code": "({ set a(val) { return 1; }, set b(val) { return 1; } })",
+      "valid": false
+    },
+    {
+      "code": "class A { set a(val) { return 1; } set b(val) { return 1; } }",
+      "valid": false
+    },
+    {
+      "code": "(class { set a(val) { return 1; } static set b(val) { return 1; } })",
+      "valid": false
+    },
+    {
+      "code": "({ set a(val) { if(val) { return 1; } else { return 2 }; } })",
+      "valid": false
+    },
+    {
+      "code": "class A { set a(val) { switch(val) { case 1: return x; case 2: return y; default: return z } } }",
+      "valid": false
+    },
+    {
+      "code": "(class { static set a(val) { if (val \u003e 0) { this._val = val; return val; } return false; } })",
+      "valid": false
+    },
+    {
+      "code": "({ set a(val) { if(val) { return 1; } else { return; }; } })",
+      "valid": false
+    },
+    {
+      "code": "class A { set a(val) { switch(val) { case 1: return x; case 2: return; default: return z } } }",
+      "valid": false
+    },
+    {
+      "code": "(class { static set a(val) { if (val \u003e 0) { this._val = val; return; } return false; } })",
+      "valid": false
+    },
+    {
+      "code": "({ set a(val) { function b(){} return b(); } })",
+      "valid": false
+    },
+    {
+      "code": "class A { set a(val) { return () =\u003e {}; } }",
+      "valid": false
+    },
+    {
+      "code": "(class { set a(val) { function b(){ return 1; } return 2; } })",
+      "valid": false
+    },
+    {
+      "code": "({ set a(val) { function b(){ return; } return 1; } })",
+      "valid": false
+    },
+    {
+      "code": "class A { set a(val) { var x = function() { return 1; }; return 2; } }",
+      "valid": false
+    },
+    {
+      "code": "(class { set a(val) { var x = () =\u003e { return; }; return 2; } })",
+      "valid": false
+    },
+    {
+      "code": "function f(){}; ({ set a(val) { return 1; } });",
+      "valid": false
+    },
+    {
+      "code": "x = function f(){}; class A { set a(val) { return 1; } };",
+      "valid": false
+    },
+    {
+      "code": "x = () =\u003e {}; A = class { set a(val) { return 1; } };",
+      "valid": false
+    },
+    {
+      "code": "return; ({ set a(val) { return 1; } }); return 2;",
+      "valid": false
+    }
+  ]
+}
