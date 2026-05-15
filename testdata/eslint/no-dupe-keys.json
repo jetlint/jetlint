@@ -1,0 +1,207 @@
+{
+  "ruleId": "no-dupe-keys",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_dupe_keys.rs",
+  "cases": [
+    {
+      "code": "var foo = { __proto__: 1, two: 2};",
+      "valid": true
+    },
+    {
+      "code": "var x = { foo: 1, bar: 2 };",
+      "valid": true
+    },
+    {
+      "code": "var x = { '': 1, bar: 2 };",
+      "valid": true
+    },
+    {
+      "code": "var x = { '': 1, ' ': 2 };",
+      "valid": true
+    },
+    {
+      "code": "var x = { '': 1, [null]: 2 };",
+      "valid": true
+    },
+    {
+      "code": "var x = { '': 1, [a]: 2 };",
+      "valid": true
+    },
+    {
+      "code": "var x = { [a]: 1, [a]: 2 };",
+      "valid": true
+    },
+    {
+      "code": "+{ get a() { }, set a(b) { } };",
+      "valid": true
+    },
+    {
+      "code": "var x = { a: b, [a]: b };",
+      "valid": true
+    },
+    {
+      "code": "var x = { a: b, ...c }",
+      "valid": true
+    },
+    {
+      "code": "var x = { get a() {}, set a (value) {} };",
+      "valid": true
+    },
+    {
+      "code": "var x = { a: 1, b: { a: 2 } };",
+      "valid": true
+    },
+    {
+      "code": "var x = ({ null: 1, [/(?\u003czero\u003e0)/]: 2 })",
+      "valid": true
+    },
+    {
+      "code": "var {a, a} = obj",
+      "valid": true
+    },
+    {
+      "code": "var x = { 012: 1, 12: 2 };",
+      "valid": true
+    },
+    {
+      "code": "var x = { 1_0: 1, 1: 2 };",
+      "valid": true
+    },
+    {
+      "code": "var x = { __proto__: null, ['__proto__']: null };",
+      "valid": true
+    },
+    {
+      "code": "var x = { ['__proto__']: null, __proto__: null };",
+      "valid": true
+    },
+    {
+      "code": "var x = { '__proto__': null, ['__proto__']: null };",
+      "valid": true
+    },
+    {
+      "code": "var x = { ['__proto__']: null, '__proto__': null };",
+      "valid": true
+    },
+    {
+      "code": "var x = { __proto__: null, __proto__ };",
+      "valid": true
+    },
+    {
+      "code": "var x = { __proto__, __proto__: null };",
+      "valid": true
+    },
+    {
+      "code": "var x = { __proto__: null, __proto__() {} };",
+      "valid": true
+    },
+    {
+      "code": "var x = { __proto__() {}, __proto__: null };",
+      "valid": true
+    },
+    {
+      "code": "var x = { __proto__: null, get __proto__() {} };",
+      "valid": true
+    },
+    {
+      "code": "var x = { get __proto__() {}, __proto__: null };",
+      "valid": true
+    },
+    {
+      "code": "var x = { __proto__: null, set __proto__(value) {} };",
+      "valid": true
+    },
+    {
+      "code": "var x = { set __proto__(value) {}, __proto__: null };",
+      "valid": true
+    },
+    {
+      "code": "var x = { a: b, ['a']: b };",
+      "valid": false
+    },
+    {
+      "code": "var x = { y: 1, y: 2 };",
+      "valid": false
+    },
+    {
+      "code": "var x = { '': 1, '': 2 };",
+      "valid": false
+    },
+    {
+      "code": "var x = { '': 1, [``]: 2 };",
+      "valid": false
+    },
+    {
+      "code": "var foo = { 0x1: 1, 1: 2};",
+      "valid": false
+    },
+    {
+      "code": "var x = { 012: 1, 10: 2 };",
+      "valid": false
+    },
+    {
+      "code": "var x = { 0b1: 1, 1: 2 };",
+      "valid": false
+    },
+    {
+      "code": "var x = { 0o1: 1, 1: 2 };",
+      "valid": false
+    },
+    {
+      "code": "var x = { 1n: 1, 1: 2 };",
+      "valid": false
+    },
+    {
+      "code": "var x = { 1_0: 1, 10: 2 };",
+      "valid": false
+    },
+    {
+      "code": "var x = { \"z\": 1, z: 2 };",
+      "valid": false
+    },
+    {
+      "code": "var foo = {\n              bar: 1,\n              bar: 1,\n            }",
+      "valid": false
+    },
+    {
+      "code": "var x = { a: 1, get a() {} };",
+      "valid": false
+    },
+    {
+      "code": "var x = { a: 1, set a(value) {} };",
+      "valid": false
+    },
+    {
+      "code": "var x = { a: 1, b: { a: 2 }, get b() {} };",
+      "valid": false
+    },
+    {
+      "code": "var x = ({ '/(?\u003czero\u003e0)/': 1, [/(?\u003czero\u003e0)/]: 2 })",
+      "valid": false
+    },
+    {
+      "code": "var x = { ['__proto__']: null, ['__proto__']: null };",
+      "valid": false
+    },
+    {
+      "code": "var x = { ['__proto__']: null, __proto__ };",
+      "valid": false
+    },
+    {
+      "code": "var x = { ['__proto__']: null, __proto__() {} };",
+      "valid": false
+    },
+    {
+      "code": "var x = { ['__proto__']: null, get __proto__() {} };",
+      "valid": false
+    },
+    {
+      "code": "var x = { ['__proto__']: null, set __proto__(value) {} };",
+      "valid": false
+    },
+    {
+      "code": "var x = { __proto__: null, a: 5, a: 6 };",
+      "valid": false
+    }
+  ]
+}

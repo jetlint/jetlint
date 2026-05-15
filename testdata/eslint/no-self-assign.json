@@ -1,0 +1,375 @@
+{
+  "ruleId": "no-self-assign",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_self_assign.rs",
+  "cases": [
+    {
+      "code": "var a = a",
+      "valid": true
+    },
+    {
+      "code": "a = b",
+      "valid": true
+    },
+    {
+      "code": "a += a",
+      "valid": true
+    },
+    {
+      "code": "a = +a",
+      "valid": true
+    },
+    {
+      "code": "a = [a]",
+      "valid": true
+    },
+    {
+      "code": "a \u0026= a",
+      "valid": true
+    },
+    {
+      "code": "a |= a",
+      "valid": true
+    },
+    {
+      "code": "let a = a",
+      "valid": true
+    },
+    {
+      "code": "const a = a",
+      "valid": true
+    },
+    {
+      "code": "[a] = a",
+      "valid": true
+    },
+    {
+      "code": "[a = 1] = [a]",
+      "valid": true
+    },
+    {
+      "code": "[a, b] = [b, a]",
+      "valid": true
+    },
+    {
+      "code": "[a,, b] = [, b, a]",
+      "valid": true
+    },
+    {
+      "code": "[x, a] = [...x, a]",
+      "valid": true
+    },
+    {
+      "code": "[...a] = [...a, 1]",
+      "valid": true
+    },
+    {
+      "code": "[a, ...b] = [0, ...b, 1]",
+      "valid": true
+    },
+    {
+      "code": "[a, b] = {a, b}",
+      "valid": true
+    },
+    {
+      "code": "({a} = a)",
+      "valid": true
+    },
+    {
+      "code": "[foo = 1] = [foo];",
+      "valid": true
+    },
+    {
+      "code": "({a = 1} = {a})",
+      "valid": true
+    },
+    {
+      "code": "({a: b} = {a})",
+      "valid": true
+    },
+    {
+      "code": "({a} = {a: b})",
+      "valid": true
+    },
+    {
+      "code": "({a} = {a() {}})",
+      "valid": true
+    },
+    {
+      "code": "({a} = {[a]: a})",
+      "valid": true
+    },
+    {
+      "code": "({[a]: b} = {[a]: b})",
+      "valid": true
+    },
+    {
+      "code": "({'foo': a, 1: a} = {'bar': a, 2: a})",
+      "valid": true
+    },
+    {
+      "code": "({a, ...b} = {a, ...b})",
+      "valid": true
+    },
+    {
+      "code": "a.b = a.c",
+      "valid": true
+    },
+    {
+      "code": "a.b = c.b",
+      "valid": true
+    },
+    {
+      "code": "a.b = a[b]",
+      "valid": true
+    },
+    {
+      "code": "a[b] = a.b",
+      "valid": true
+    },
+    {
+      "code": "a.b().c = a.b().c",
+      "valid": true
+    },
+    {
+      "code": "b().c = b().c",
+      "valid": true
+    },
+    {
+      "code": "a.null = a[/(?\u003czero\u003e0)/]",
+      "valid": true
+    },
+    {
+      "code": "a[b + 1] = a[b + 1]",
+      "valid": true
+    },
+    {
+      "code": "a.b = a.b",
+      "valid": true
+    },
+    {
+      "code": "a.b.c = a.b.c",
+      "valid": true
+    },
+    {
+      "code": "a[b] = a[b]",
+      "valid": true
+    },
+    {
+      "code": "a['b'] = a['b']",
+      "valid": true
+    },
+    {
+      "code": "obj[a] = obj[\"a\"];",
+      "valid": true
+    },
+    {
+      "code": "a[\n    'b'\n] = a[\n    'b'\n]",
+      "valid": true
+    },
+    {
+      "code": "this.x = this.y",
+      "valid": true
+    },
+    {
+      "code": "this.x = this.x",
+      "valid": true
+    },
+    {
+      "code": "class C { #field; foo() { this['#field'] = this.#field; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { #field; foo() { this.#field = this['#field']; } }",
+      "valid": true
+    },
+    {
+      "code": "obj[\"a\" + \"b\"] = obj[\"a\" + \"b\"];",
+      "valid": true
+    },
+    {
+      "code": "obj[a + b] = obj[a + b];",
+      "valid": true
+    },
+    {
+      "code": "foo |= foo;",
+      "valid": true
+    },
+    {
+      "code": "foo \u0026= foo;",
+      "valid": true
+    },
+    {
+      "code": "let foo = foo;",
+      "valid": true
+    },
+    {
+      "code": "a = a",
+      "valid": false
+    },
+    {
+      "code": "[a] = [a]",
+      "valid": false
+    },
+    {
+      "code": "[a, b] = [a, b]",
+      "valid": false
+    },
+    {
+      "code": "[a, b] = [a, c]",
+      "valid": false
+    },
+    {
+      "code": "[a, b] = [, b]",
+      "valid": false
+    },
+    {
+      "code": "[a, ...b] = [a, ...b]",
+      "valid": false
+    },
+    {
+      "code": "[[a], {b}] = [[a], {b}]",
+      "valid": false
+    },
+    {
+      "code": "({a} = {a})",
+      "valid": false
+    },
+    {
+      "code": "({a: b} = {a: b})",
+      "valid": false
+    },
+    {
+      "code": "({'a': b} = {'a': b})",
+      "valid": false
+    },
+    {
+      "code": "({a: b} = {'a': b})",
+      "valid": false
+    },
+    {
+      "code": "({'a': b} = {a: b})",
+      "valid": false
+    },
+    {
+      "code": "({1: b} = {1: b})",
+      "valid": false
+    },
+    {
+      "code": "({1: b} = {'1': b})",
+      "valid": false
+    },
+    {
+      "code": "({'1': b} = {1: b})",
+      "valid": false
+    },
+    {
+      "code": "({['a']: b} = {a: b})",
+      "valid": false
+    },
+    {
+      "code": "({'a': b} = {[`a`]: b})",
+      "valid": false
+    },
+    {
+      "code": "({1: b} = {[1]: b})",
+      "valid": false
+    },
+    {
+      "code": "({a, b} = {a, b})",
+      "valid": false
+    },
+    {
+      "code": "({a, b} = {b, a})",
+      "valid": false
+    },
+    {
+      "code": "({a, b} = {c, a})",
+      "valid": false
+    },
+    {
+      "code": "({a: {b}, c: [d]} = {a: {b}, c: [d]})",
+      "valid": false
+    },
+    {
+      "code": "({a, b} = {a, ...x, b})",
+      "valid": false
+    },
+    {
+      "code": "a.b = a.b",
+      "valid": false
+    },
+    {
+      "code": "a.b.c = a.b.c",
+      "valid": false
+    },
+    {
+      "code": "a[b] = a[b]",
+      "valid": false
+    },
+    {
+      "code": "a['b'] = a['b']",
+      "valid": false
+    },
+    {
+      "code": "a[\n    'b'\n] = a[\n    'b'\n]",
+      "valid": false
+    },
+    {
+      "code": "a.b = a.b",
+      "valid": false
+    },
+    {
+      "code": "a.b.c = a.b.c",
+      "valid": false
+    },
+    {
+      "code": "a[b] = a[b]",
+      "valid": false
+    },
+    {
+      "code": "a['b'] = a['b']",
+      "valid": false
+    },
+    {
+      "code": "a[\n    'b'\n] = a[\n    'b'\n]",
+      "valid": false
+    },
+    {
+      "code": "this.x = this.x",
+      "valid": false
+    },
+    {
+      "code": "a['/(?\u003czero\u003e0)/'] = a[/(?\u003czero\u003e0)/]",
+      "valid": false
+    },
+    {
+      "code": "(a?.b).c = (a?.b).c",
+      "valid": false
+    },
+    {
+      "code": "a.b = a?.b",
+      "valid": false
+    },
+    {
+      "code": "class C { #field; foo() { this.#field = this.#field; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { #field; foo() { [this.#field] = [this.#field]; } }",
+      "valid": false
+    },
+    {
+      "code": "a \u0026\u0026= a",
+      "valid": false
+    },
+    {
+      "code": "a ||= a",
+      "valid": false
+    },
+    {
+      "code": "a ??= a",
+      "valid": false
+    }
+  ]
+}

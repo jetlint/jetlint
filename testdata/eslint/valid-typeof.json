@@ -1,0 +1,247 @@
+{
+  "ruleId": "valid-typeof",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/valid_typeof.rs",
+  "cases": [
+    {
+      "code": "typeof foo === 'string'",
+      "valid": true
+    },
+    {
+      "code": "typeof foo === 'object'",
+      "valid": true
+    },
+    {
+      "code": "typeof foo === 'function'",
+      "valid": true
+    },
+    {
+      "code": "typeof foo === 'undefined'",
+      "valid": true
+    },
+    {
+      "code": "typeof foo === 'boolean'",
+      "valid": true
+    },
+    {
+      "code": "typeof foo === 'number'",
+      "valid": true
+    },
+    {
+      "code": "typeof foo === 'bigint'",
+      "valid": true
+    },
+    {
+      "code": "'string' === typeof foo",
+      "valid": true
+    },
+    {
+      "code": "'object' === typeof foo",
+      "valid": true
+    },
+    {
+      "code": "'function' === typeof foo",
+      "valid": true
+    },
+    {
+      "code": "'undefined' === typeof foo",
+      "valid": true
+    },
+    {
+      "code": "'boolean' === typeof foo",
+      "valid": true
+    },
+    {
+      "code": "'number' === typeof foo",
+      "valid": true
+    },
+    {
+      "code": "typeof foo === typeof bar",
+      "valid": true
+    },
+    {
+      "code": "typeof foo === baz",
+      "valid": true
+    },
+    {
+      "code": "typeof foo !== someType",
+      "valid": true
+    },
+    {
+      "code": "typeof bar != someType",
+      "valid": true
+    },
+    {
+      "code": "someType === typeof bar",
+      "valid": true
+    },
+    {
+      "code": "someType == typeof bar",
+      "valid": true
+    },
+    {
+      "code": "typeof foo == 'string'",
+      "valid": true
+    },
+    {
+      "code": "typeof(foo) === 'string'",
+      "valid": true
+    },
+    {
+      "code": "typeof(foo) !== 'string'",
+      "valid": true
+    },
+    {
+      "code": "typeof(foo) == 'string'",
+      "valid": true
+    },
+    {
+      "code": "typeof(foo) != 'string'",
+      "valid": true
+    },
+    {
+      "code": "var oddUse = typeof foo + 'thing'",
+      "valid": true
+    },
+    {
+      "code": "function f(undefined) { typeof x === undefined }",
+      "valid": true
+    },
+    {
+      "code": "typeof foo === 'number'",
+      "valid": true
+    },
+    {
+      "code": "typeof foo === \"number\"",
+      "valid": true
+    },
+    {
+      "code": "var baz = typeof foo + 'thing'",
+      "valid": true
+    },
+    {
+      "code": "typeof foo === typeof bar",
+      "valid": true
+    },
+    {
+      "code": "typeof foo === `string`",
+      "valid": true
+    },
+    {
+      "code": "`object` === typeof foo",
+      "valid": true
+    },
+    {
+      "code": "typeof foo === `str${somethingElse}`",
+      "valid": true
+    },
+    {
+      "code": "typeof foo === 'strnig'",
+      "valid": false
+    },
+    {
+      "code": "'strnig' === typeof foo",
+      "valid": false
+    },
+    {
+      "code": "if (typeof bar === 'umdefined') {}",
+      "valid": false
+    },
+    {
+      "code": "typeof foo !== 'strnig'",
+      "valid": false
+    },
+    {
+      "code": "'strnig' !== typeof foo",
+      "valid": false
+    },
+    {
+      "code": "if (typeof bar !== 'umdefined') {}",
+      "valid": false
+    },
+    {
+      "code": "typeof foo != 'strnig'",
+      "valid": false
+    },
+    {
+      "code": "'strnig' != typeof foo",
+      "valid": false
+    },
+    {
+      "code": "if (typeof bar != 'umdefined') {}",
+      "valid": false
+    },
+    {
+      "code": "typeof foo == 'strnig'",
+      "valid": false
+    },
+    {
+      "code": "'strnig' == typeof foo",
+      "valid": false
+    },
+    {
+      "code": "if (typeof bar == 'umdefined') {}",
+      "valid": false
+    },
+    {
+      "code": "if (typeof bar === `umdefined`) {}",
+      "valid": false
+    },
+    {
+      "code": "typeof foo == 'invalid string'",
+      "valid": false
+    },
+    {
+      "code": "if (typeof bar !== undefined) {}",
+      "valid": false
+    },
+    {
+      "code": "typeof foo == Object",
+      "valid": false
+    },
+    {
+      "code": "typeof foo === undefined",
+      "valid": false
+    },
+    {
+      "code": "undefined === typeof foo",
+      "valid": false
+    },
+    {
+      "code": "undefined == typeof foo",
+      "valid": false
+    },
+    {
+      "code": "typeof foo === `undefined${foo}`",
+      "valid": false
+    },
+    {
+      "code": "typeof foo === `${string}`",
+      "valid": false
+    },
+    {
+      "code": "typeof foo === 'biigint'",
+      "valid": false
+    },
+    {
+      "code": "typeof foo === 'bolean'",
+      "valid": false
+    },
+    {
+      "code": "typeof foo === 'fucntion'",
+      "valid": false
+    },
+    {
+      "code": "typeof foo === 'nunber'",
+      "valid": false
+    },
+    {
+      "code": "typeof foo === 'obejct'",
+      "valid": false
+    },
+    {
+      "code": "typeof foo === 'symol'",
+      "valid": false
+    }
+  ]
+}
