@@ -76,6 +76,7 @@ var All = []Metadata{
 	{ID: "for-direction", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-array-delete", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-async-promise-executor", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-class-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-base-to-string", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-dupe-keys", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-duplicate-case", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

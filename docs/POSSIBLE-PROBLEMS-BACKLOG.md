@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 11
-- Remaining (AST-only): ~41
+- Shipped: 12
+- Remaining (AST-only): ~40
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -26,7 +26,7 @@ Update this file as rules land or assumptions change.
 | `getter-return` | | AST walk: does the getter body always return? |
 | `no-async-promise-executor` | ✓ | Shipped 2026-05-15 |
 | `no-await-in-loop` | ✓ | Shipped 2026-05-15 |
-| `no-class-assign` | | Scope: assigning to a class declaration binding. |
+| `no-class-assign` | ✓ | Shipped 2026-05-15 |
 | `no-compare-neg-zero` | | AST: `x === -0` or similar. |
 | `no-cond-assign` | | AST: assignment expression in `if`/`while`/`for`/`do-while` condition. |
 | `no-const-assign` | | Scope: assigning to a `const` binding. |

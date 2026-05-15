@@ -1,0 +1,167 @@
+{
+  "ruleId": "no-compare-neg-zero",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_compare_neg_zero.rs",
+  "cases": [
+    {
+      "code": "x === 0",
+      "valid": true
+    },
+    {
+      "code": "0 === x",
+      "valid": true
+    },
+    {
+      "code": "x == 0",
+      "valid": true
+    },
+    {
+      "code": "0 == x",
+      "valid": true
+    },
+    {
+      "code": "x === '0'",
+      "valid": true
+    },
+    {
+      "code": "'0' === x",
+      "valid": true
+    },
+    {
+      "code": "x == '0'",
+      "valid": true
+    },
+    {
+      "code": "'0' == x",
+      "valid": true
+    },
+    {
+      "code": "x === '-0'",
+      "valid": true
+    },
+    {
+      "code": "'-0' === x",
+      "valid": true
+    },
+    {
+      "code": "x == '-0'",
+      "valid": true
+    },
+    {
+      "code": "'-0' == x",
+      "valid": true
+    },
+    {
+      "code": "x === -1",
+      "valid": true
+    },
+    {
+      "code": "-1 === x",
+      "valid": true
+    },
+    {
+      "code": "x \u003c 0",
+      "valid": true
+    },
+    {
+      "code": "0 \u003c x",
+      "valid": true
+    },
+    {
+      "code": "x \u003c= 0",
+      "valid": true
+    },
+    {
+      "code": "0 \u003c= x",
+      "valid": true
+    },
+    {
+      "code": "x \u003e 0",
+      "valid": true
+    },
+    {
+      "code": "0 \u003e x",
+      "valid": true
+    },
+    {
+      "code": "x \u003e= 0",
+      "valid": true
+    },
+    {
+      "code": "0 \u003e= x",
+      "valid": true
+    },
+    {
+      "code": "x != 0",
+      "valid": true
+    },
+    {
+      "code": "0 != x",
+      "valid": true
+    },
+    {
+      "code": "x !== 0",
+      "valid": true
+    },
+    {
+      "code": "0 !== x",
+      "valid": true
+    },
+    {
+      "code": "Object.is(x, -0)",
+      "valid": true
+    },
+    {
+      "code": "x === -0",
+      "valid": false
+    },
+    {
+      "code": "-0 === x",
+      "valid": false
+    },
+    {
+      "code": "x == -0",
+      "valid": false
+    },
+    {
+      "code": "-0 == x",
+      "valid": false
+    },
+    {
+      "code": "x \u003e -0",
+      "valid": false
+    },
+    {
+      "code": "-0 \u003e x",
+      "valid": false
+    },
+    {
+      "code": "x \u003e= -0",
+      "valid": false
+    },
+    {
+      "code": "-0 \u003e= x",
+      "valid": false
+    },
+    {
+      "code": "x \u003c -0",
+      "valid": false
+    },
+    {
+      "code": "-0 \u003c x",
+      "valid": false
+    },
+    {
+      "code": "x \u003c= -0",
+      "valid": false
+    },
+    {
+      "code": "-0 \u003c= x",
+      "valid": false
+    },
+    {
+      "code": "-0n \u003c= x",
+      "valid": false
+    }
+  ]
+}
