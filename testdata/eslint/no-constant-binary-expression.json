@@ -1,0 +1,1011 @@
+{
+  "ruleId": "no-constant-binary-expression",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_constant_binary_expression.rs",
+  "cases": [
+    {
+      "code": "\u003cp /\u003e \u0026\u0026 foo",
+      "valid": true
+    },
+    {
+      "code": "\u003c\u003e\u003c/\u003e \u0026\u0026 foo",
+      "valid": true
+    },
+    {
+      "code": "\u003cp /\u003e ?? foo",
+      "valid": true
+    },
+    {
+      "code": "\u003c\u003e\u003c/\u003e ?? foo",
+      "valid": true
+    },
+    {
+      "code": "arbitraryFunction(n) ?? foo",
+      "valid": true
+    },
+    {
+      "code": "foo.Boolean(n) ?? foo",
+      "valid": true
+    },
+    {
+      "code": "(x += 1) \u0026\u0026 foo",
+      "valid": true
+    },
+    {
+      "code": "`${bar}` \u0026\u0026 foo",
+      "valid": true
+    },
+    {
+      "code": "bar \u0026\u0026 foo",
+      "valid": true
+    },
+    {
+      "code": "delete bar.baz \u0026\u0026 foo",
+      "valid": true
+    },
+    {
+      "code": "true ? foo : bar",
+      "valid": true
+    },
+    {
+      "code": "new Foo() == true",
+      "valid": true
+    },
+    {
+      "code": "foo == true",
+      "valid": true
+    },
+    {
+      "code": "`${foo}` == true",
+      "valid": true
+    },
+    {
+      "code": "`${foo}${bar}` == true",
+      "valid": true
+    },
+    {
+      "code": "`0${foo}` == true",
+      "valid": true
+    },
+    {
+      "code": "`00000000${foo}` == true",
+      "valid": true
+    },
+    {
+      "code": "`0${foo}.000` == true",
+      "valid": true
+    },
+    {
+      "code": "[n] == true",
+      "valid": true
+    },
+    {
+      "code": "delete bar.baz === true",
+      "valid": true
+    },
+    {
+      "code": "foo.Boolean(true) \u0026\u0026 foo",
+      "valid": true
+    },
+    {
+      "code": "new Foo() === x",
+      "valid": true
+    },
+    {
+      "code": "x === new someObj.Promise()",
+      "valid": true
+    },
+    {
+      "code": "Boolean(foo) === true",
+      "valid": true
+    },
+    {
+      "code": "[...arr, 1] == true",
+      "valid": true
+    },
+    {
+      "code": "[,,,] == true",
+      "valid": true
+    },
+    {
+      "code": "(foo \u0026\u0026 true) ?? bar",
+      "valid": true
+    },
+    {
+      "code": "foo ?? null ?? bar",
+      "valid": true
+    },
+    {
+      "code": "a ?? (doSomething(), undefined) ?? b",
+      "valid": true
+    },
+    {
+      "code": "a ?? (something = null) ?? b",
+      "valid": true
+    },
+    {
+      "code": "[] \u0026\u0026 greeting",
+      "valid": false
+    },
+    {
+      "code": "[] || greeting",
+      "valid": false
+    },
+    {
+      "code": "[] ?? greeting",
+      "valid": false
+    },
+    {
+      "code": "[] == true",
+      "valid": false
+    },
+    {
+      "code": "true == []",
+      "valid": false
+    },
+    {
+      "code": "[] != true",
+      "valid": false
+    },
+    {
+      "code": "[] === true",
+      "valid": false
+    },
+    {
+      "code": "[] !== true",
+      "valid": false
+    },
+    {
+      "code": "!foo == null",
+      "valid": false
+    },
+    {
+      "code": "!foo ?? bar",
+      "valid": false
+    },
+    {
+      "code": "(a + b) / 2 ?? bar",
+      "valid": false
+    },
+    {
+      "code": "String(foo.bar) ?? baz",
+      "valid": false
+    },
+    {
+      "code": "'hello' + name ?? ''",
+      "valid": false
+    },
+    {
+      "code": "[foo?.bar ?? ''] ?? []",
+      "valid": false
+    },
+    {
+      "code": "true \u0026\u0026 hello",
+      "valid": false
+    },
+    {
+      "code": "true || hello",
+      "valid": false
+    },
+    {
+      "code": "true \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "'' \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "100 \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "+100 \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "-100 \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "~100 \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "/[a-z]/ \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "Boolean([]) \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "Boolean() \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "Boolean([], n) \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "({}) \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "[] \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "(() =\u003e {}) \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "(function() {}) \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "(class {}) \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "(class { valueOf() { return x; } }) \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "(class { [x]() { return x; } }) \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "new Foo() \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "new Boolean(unknown) \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "(bar = false) \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "(bar.baz = false) \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "(bar[0] = false) \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "`hello ${hello}` \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "void bar \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "!true \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "typeof bar \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "(bar, baz, true) \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "undefined \u0026\u0026 foo",
+      "valid": false
+    },
+    {
+      "code": "({}) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "([]) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(() =\u003e {}) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(function() {}) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(class {}) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "new Foo() ?? foo",
+      "valid": false
+    },
+    {
+      "code": "1 ?? foo",
+      "valid": false
+    },
+    {
+      "code": "/[a-z]/ ?? foo",
+      "valid": false
+    },
+    {
+      "code": "`${''}` ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(a = true) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(a += 1) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(a -= 1) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(a *= 1) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(a /= 1) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(a %= 1) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(a \u003c\u003c= 1) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(a \u003e\u003e= 1) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(a \u003e\u003e\u003e= 1) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(a |= 1) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(a ^= 1) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(a \u0026= 1) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "undefined ?? foo",
+      "valid": false
+    },
+    {
+      "code": "!bar ?? foo",
+      "valid": false
+    },
+    {
+      "code": "void bar ?? foo",
+      "valid": false
+    },
+    {
+      "code": "typeof bar ?? foo",
+      "valid": false
+    },
+    {
+      "code": "+bar ?? foo",
+      "valid": false
+    },
+    {
+      "code": "-bar ?? foo",
+      "valid": false
+    },
+    {
+      "code": "~bar ?? foo",
+      "valid": false
+    },
+    {
+      "code": "++bar ?? foo",
+      "valid": false
+    },
+    {
+      "code": "bar++ ?? foo",
+      "valid": false
+    },
+    {
+      "code": "--bar ?? foo",
+      "valid": false
+    },
+    {
+      "code": "bar-- ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(x == y) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(x + y) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(x / y) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(x instanceof String) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "(x in y) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "Boolean(x) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "String(x) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "Number(x) ?? foo",
+      "valid": false
+    },
+    {
+      "code": "({}) != null",
+      "valid": false
+    },
+    {
+      "code": "({}) == null",
+      "valid": false
+    },
+    {
+      "code": "null == ({})",
+      "valid": false
+    },
+    {
+      "code": "({}) == undefined",
+      "valid": false
+    },
+    {
+      "code": "undefined == ({})",
+      "valid": false
+    },
+    {
+      "code": "({}) != true",
+      "valid": false
+    },
+    {
+      "code": "({}) == true",
+      "valid": false
+    },
+    {
+      "code": "([]) == true",
+      "valid": false
+    },
+    {
+      "code": "([a, b]) == true",
+      "valid": false
+    },
+    {
+      "code": "(() =\u003e {}) == true",
+      "valid": false
+    },
+    {
+      "code": "(function() {}) == true",
+      "valid": false
+    },
+    {
+      "code": "void foo == true",
+      "valid": false
+    },
+    {
+      "code": "typeof foo == true",
+      "valid": false
+    },
+    {
+      "code": "![] == true",
+      "valid": false
+    },
+    {
+      "code": "true == class {}",
+      "valid": false
+    },
+    {
+      "code": "true == 1",
+      "valid": false
+    },
+    {
+      "code": "undefined == true",
+      "valid": false
+    },
+    {
+      "code": "true == undefined",
+      "valid": false
+    },
+    {
+      "code": "`hello` == true",
+      "valid": false
+    },
+    {
+      "code": "/[a-z]/ == true",
+      "valid": false
+    },
+    {
+      "code": "({}) == Boolean({})",
+      "valid": false
+    },
+    {
+      "code": "({}) == Boolean()",
+      "valid": false
+    },
+    {
+      "code": "({}) == Boolean(() =\u003e {}, foo)",
+      "valid": false
+    },
+    {
+      "code": "({}) !== true",
+      "valid": false
+    },
+    {
+      "code": "({}) == !({})",
+      "valid": false
+    },
+    {
+      "code": "({}) === true",
+      "valid": false
+    },
+    {
+      "code": "([]) === true",
+      "valid": false
+    },
+    {
+      "code": "(function() {}) === true",
+      "valid": false
+    },
+    {
+      "code": "(() =\u003e {}) === true",
+      "valid": false
+    },
+    {
+      "code": "!{} === true",
+      "valid": false
+    },
+    {
+      "code": "typeof n === true",
+      "valid": false
+    },
+    {
+      "code": "void n === true",
+      "valid": false
+    },
+    {
+      "code": "+n === true",
+      "valid": false
+    },
+    {
+      "code": "-n === true",
+      "valid": false
+    },
+    {
+      "code": "~n === true",
+      "valid": false
+    },
+    {
+      "code": "true === true",
+      "valid": false
+    },
+    {
+      "code": "1 === true",
+      "valid": false
+    },
+    {
+      "code": "'hello' === true",
+      "valid": false
+    },
+    {
+      "code": "/[a-z]/ === true",
+      "valid": false
+    },
+    {
+      "code": "undefined === true",
+      "valid": false
+    },
+    {
+      "code": "(a = {}) === true",
+      "valid": false
+    },
+    {
+      "code": "(a += 1) === true",
+      "valid": false
+    },
+    {
+      "code": "(a -= 1) === true",
+      "valid": false
+    },
+    {
+      "code": "(a *= 1) === true",
+      "valid": false
+    },
+    {
+      "code": "(a %= 1) === true",
+      "valid": false
+    },
+    {
+      "code": "(a ** b) === true",
+      "valid": false
+    },
+    {
+      "code": "(a \u003c\u003c b) === true",
+      "valid": false
+    },
+    {
+      "code": "(a \u003e\u003e b) === true",
+      "valid": false
+    },
+    {
+      "code": "(a \u003e\u003e\u003e b) === true",
+      "valid": false
+    },
+    {
+      "code": "--a === true",
+      "valid": false
+    },
+    {
+      "code": "a-- === true",
+      "valid": false
+    },
+    {
+      "code": "++a === true",
+      "valid": false
+    },
+    {
+      "code": "a++ === true",
+      "valid": false
+    },
+    {
+      "code": "(a + b) === true",
+      "valid": false
+    },
+    {
+      "code": "(a - b) === true",
+      "valid": false
+    },
+    {
+      "code": "(a * b) === true",
+      "valid": false
+    },
+    {
+      "code": "(a / b) === true",
+      "valid": false
+    },
+    {
+      "code": "(a % b) === true",
+      "valid": false
+    },
+    {
+      "code": "(a | b) === true",
+      "valid": false
+    },
+    {
+      "code": "(a ^ b) === true",
+      "valid": false
+    },
+    {
+      "code": "(a \u0026 b) === true",
+      "valid": false
+    },
+    {
+      "code": "Boolean(0) === Boolean(1)",
+      "valid": false
+    },
+    {
+      "code": "true === String(x)",
+      "valid": false
+    },
+    {
+      "code": "true === Number(x)",
+      "valid": false
+    },
+    {
+      "code": "Boolean(0) == !({})",
+      "valid": false
+    },
+    {
+      "code": "({}) !== null",
+      "valid": false
+    },
+    {
+      "code": "({}) === null",
+      "valid": false
+    },
+    {
+      "code": "([]) === null",
+      "valid": false
+    },
+    {
+      "code": "(() =\u003e {}) === null",
+      "valid": false
+    },
+    {
+      "code": "(function() {}) === null",
+      "valid": false
+    },
+    {
+      "code": "(class {}) === null",
+      "valid": false
+    },
+    {
+      "code": "new Foo() === null",
+      "valid": false
+    },
+    {
+      "code": "`` === null",
+      "valid": false
+    },
+    {
+      "code": "1 === null",
+      "valid": false
+    },
+    {
+      "code": "'hello' === null",
+      "valid": false
+    },
+    {
+      "code": "/[a-z]/ === null",
+      "valid": false
+    },
+    {
+      "code": "true === null",
+      "valid": false
+    },
+    {
+      "code": "null === null",
+      "valid": false
+    },
+    {
+      "code": "a++ === null",
+      "valid": false
+    },
+    {
+      "code": "++a === null",
+      "valid": false
+    },
+    {
+      "code": "--a === null",
+      "valid": false
+    },
+    {
+      "code": "a-- === null",
+      "valid": false
+    },
+    {
+      "code": "!a === null",
+      "valid": false
+    },
+    {
+      "code": "typeof a === null",
+      "valid": false
+    },
+    {
+      "code": "delete a === null",
+      "valid": false
+    },
+    {
+      "code": "void a === null",
+      "valid": false
+    },
+    {
+      "code": "undefined === null",
+      "valid": false
+    },
+    {
+      "code": "(x = {}) === null",
+      "valid": false
+    },
+    {
+      "code": "(x += y) === null",
+      "valid": false
+    },
+    {
+      "code": "(x -= y) === null",
+      "valid": false
+    },
+    {
+      "code": "(a, b, {}) === null",
+      "valid": false
+    },
+    {
+      "code": "({}) !== undefined",
+      "valid": false
+    },
+    {
+      "code": "({}) === undefined",
+      "valid": false
+    },
+    {
+      "code": "([]) === undefined",
+      "valid": false
+    },
+    {
+      "code": "(() =\u003e {}) === undefined",
+      "valid": false
+    },
+    {
+      "code": "(function() {}) === undefined",
+      "valid": false
+    },
+    {
+      "code": "(class {}) === undefined",
+      "valid": false
+    },
+    {
+      "code": "new Foo() === undefined",
+      "valid": false
+    },
+    {
+      "code": "`` === undefined",
+      "valid": false
+    },
+    {
+      "code": "1 === undefined",
+      "valid": false
+    },
+    {
+      "code": "'hello' === undefined",
+      "valid": false
+    },
+    {
+      "code": "/[a-z]/ === undefined",
+      "valid": false
+    },
+    {
+      "code": "true === undefined",
+      "valid": false
+    },
+    {
+      "code": "null === undefined",
+      "valid": false
+    },
+    {
+      "code": "a++ === undefined",
+      "valid": false
+    },
+    {
+      "code": "++a === undefined",
+      "valid": false
+    },
+    {
+      "code": "--a === undefined",
+      "valid": false
+    },
+    {
+      "code": "a-- === undefined",
+      "valid": false
+    },
+    {
+      "code": "!a === undefined",
+      "valid": false
+    },
+    {
+      "code": "typeof a === undefined",
+      "valid": false
+    },
+    {
+      "code": "delete a === undefined",
+      "valid": false
+    },
+    {
+      "code": "void a === undefined",
+      "valid": false
+    },
+    {
+      "code": "undefined === undefined",
+      "valid": false
+    },
+    {
+      "code": "(x = {}) === undefined",
+      "valid": false
+    },
+    {
+      "code": "(x += y) === undefined",
+      "valid": false
+    },
+    {
+      "code": "(x -= y) === undefined",
+      "valid": false
+    },
+    {
+      "code": "(a, b, {}) === undefined",
+      "valid": false
+    },
+    {
+      "code": "[a] == [a]",
+      "valid": false
+    },
+    {
+      "code": "[a] != [a]",
+      "valid": false
+    },
+    {
+      "code": "({}) == []",
+      "valid": false
+    },
+    {
+      "code": "x === {}",
+      "valid": false
+    },
+    {
+      "code": "x !== {}",
+      "valid": false
+    },
+    {
+      "code": "x === []",
+      "valid": false
+    },
+    {
+      "code": "x === (() =\u003e {})",
+      "valid": false
+    },
+    {
+      "code": "x === (function() {})",
+      "valid": false
+    },
+    {
+      "code": "x === (class {})",
+      "valid": false
+    },
+    {
+      "code": "x === new Boolean()",
+      "valid": false
+    },
+    {
+      "code": "x === new Promise()",
+      "valid": false
+    },
+    {
+      "code": "x === new WeakSet()",
+      "valid": false
+    },
+    {
+      "code": "x === (foo, {})",
+      "valid": false
+    },
+    {
+      "code": "x === (y = {})",
+      "valid": false
+    },
+    {
+      "code": "x === (y ? {} : [])",
+      "valid": false
+    },
+    {
+      "code": "x === /[a-z]/",
+      "valid": false
+    },
+    {
+      "code": "x === (x = {})",
+      "valid": false
+    },
+    {
+      "code": "window.abc \u0026\u0026 false \u0026\u0026 anything",
+      "valid": false
+    },
+    {
+      "code": "window.abc || true || anything",
+      "valid": false
+    },
+    {
+      "code": "window.abc ?? 'non-nullish' ?? anything",
+      "valid": false
+    }
+  ]
+}
