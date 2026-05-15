@@ -77,8 +77,13 @@ type Fixture struct {
 }
 
 type Case struct {
-	Code  string `json:"code"`
-	Valid bool   `json:"valid"`
+	Code string `json:"code"`
+	// Valid is true for entries from oxc's `pass` vec.
+	Valid bool `json:"valid"`
+	// HasOptions is true when the upstream case was paired with a
+	// non-None options blob. The harness skips these so the reported
+	// pass rate reflects default-option behavior only.
+	HasOptions bool `json:"hasOptions,omitempty"`
 }
 
 func extractRule(oxcPath, outDir, ruleID string) error {
@@ -97,11 +102,11 @@ func extractRule(oxcPath, outDir, ruleID string) error {
 		OxcSource: filepath.Join("crates", "oxc_linter", "src", "rules", "eslint", snake+".rs"),
 		Cases:     make([]Case, 0, len(pass)+len(fail)),
 	}
-	for _, code := range pass {
-		fx.Cases = append(fx.Cases, Case{Code: code, Valid: true})
+	for _, c := range pass {
+		fx.Cases = append(fx.Cases, Case{Code: c.Code, Valid: true, HasOptions: c.HasOptions})
 	}
-	for _, code := range fail {
-		fx.Cases = append(fx.Cases, Case{Code: code, Valid: false})
+	for _, c := range fail {
+		fx.Cases = append(fx.Cases, Case{Code: c.Code, Valid: false, HasOptions: c.HasOptions})
 	}
 	// Capture upstream SHA if the checkout is a git repo, so the
 	// fixture file records the exact source revision it was generated

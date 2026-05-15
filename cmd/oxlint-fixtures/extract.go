@@ -435,10 +435,54 @@ func firstString(toks []tok) (string, bool) {
 	return "", false
 }
 
+// hasNonNoneOptions reports whether a tuple entry carries non-None
+// options. oxc fixtures use one of:
+//   - bare string: `"code"` — no options, no tuple
+//   - tuple with None: `("code", None)` — no options
+//   - tuple with options: `("code", Some(serde_json::json!([...])))`
+//
+// Anything after the first top-level comma that isn't just `None` is
+// treated as options. The harness skips option-gated cases so the
+// reported pass rate reflects default-option behavior.
+func hasNonNoneOptions(entry []tok) bool {
+	depth := 0
+	sawFirstComma := false
+	for _, t := range entry {
+		switch t.kind {
+		case tokOpenParen, tokOpenBracket, tokOpenBrace:
+			depth++
+		case tokCloseParen, tokCloseBracket, tokCloseBrace:
+			depth--
+		case tokComma:
+			if depth == 1 && !sawFirstComma {
+				sawFirstComma = true
+				continue
+			}
+		}
+		if !sawFirstComma {
+			continue
+		}
+		if t.kind == tokOther && strings.TrimSpace(t.value) != "" && t.value != "None" {
+			return true
+		}
+		if t.kind == tokString {
+			return true
+		}
+	}
+	return false
+}
+
+// ExtractedCase is one fixture entry — code plus a HasOptions flag
+// for the harness to filter on.
+type ExtractedCase struct {
+	Code       string
+	HasOptions bool
+}
+
 // Extract reads a single oxc rule source file and returns its pass
-// and fail code samples. Names map to the variable names in the
-// `fn test()` body: `pass` for valid cases, `fail` for invalid.
-func Extract(src string) (pass, fail []string, err error) {
+// and fail cases. Names map to the variable names in the `fn test()`
+// body: `pass` for valid cases, `fail` for invalid.
+func Extract(src string) (pass, fail []ExtractedCase, err error) {
 	toks, err := tokenize(src)
 	if err != nil {
 		return nil, nil, err
@@ -449,13 +493,16 @@ func Extract(src string) (pass, fail []string, err error) {
 			continue
 		}
 		entries := splitEntries(body)
-		out := make([]string, 0, len(entries))
+		out := make([]ExtractedCase, 0, len(entries))
 		for _, e := range entries {
 			code, ok := firstString(e)
 			if !ok {
 				continue
 			}
-			out = append(out, code)
+			out = append(out, ExtractedCase{
+				Code:       code,
+				HasOptions: hasNonNoneOptions(e),
+			})
 		}
 		if name == "pass" {
 			pass = out

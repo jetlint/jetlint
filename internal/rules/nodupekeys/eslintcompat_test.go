@@ -33,6 +33,9 @@ func TestNoDupeKeys_EslintCompatibility(t *testing.T) {
 	}
 	var passed, failed int
 	for i, c := range fx.Cases {
+		if c.HasOptions {
+			continue
+		}
 		count, runErr := runEslintCase(t, c.Code)
 		if runErr != nil {
 			failed++

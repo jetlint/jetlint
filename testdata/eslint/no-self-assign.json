@@ -113,51 +113,63 @@
     },
     {
       "code": "a.b = a.c",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "a.b = c.b",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "a.b = a[b]",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "a[b] = a.b",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "a.b().c = a.b().c",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "b().c = b().c",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "a.null = a[/(?\u003czero\u003e0)/]",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "a[b + 1] = a[b + 1]",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "a.b = a.b",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "a.b.c = a.b.c",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "a[b] = a[b]",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "a['b'] = a['b']",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "obj[a] = obj[\"a\"];",
@@ -165,15 +177,18 @@
     },
     {
       "code": "a[\n    'b'\n] = a[\n    'b'\n]",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "this.x = this.y",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "this.x = this.x",
-      "valid": true
+      "valid": true,
+      "hasOptions": true
     },
     {
       "code": "class C { #field; foo() { this['#field'] = this.#field; } }",
@@ -317,31 +332,38 @@
     },
     {
       "code": "a.b = a.b",
-      "valid": false
+      "valid": false,
+      "hasOptions": true
     },
     {
       "code": "a.b.c = a.b.c",
-      "valid": false
+      "valid": false,
+      "hasOptions": true
     },
     {
       "code": "a[b] = a[b]",
-      "valid": false
+      "valid": false,
+      "hasOptions": true
     },
     {
       "code": "a['b'] = a['b']",
-      "valid": false
+      "valid": false,
+      "hasOptions": true
     },
     {
       "code": "a[\n    'b'\n] = a[\n    'b'\n]",
-      "valid": false
+      "valid": false,
+      "hasOptions": true
     },
     {
       "code": "this.x = this.x",
-      "valid": false
+      "valid": false,
+      "hasOptions": true
     },
     {
       "code": "a['/(?\u003czero\u003e0)/'] = a[/(?\u003czero\u003e0)/]",
-      "valid": false
+      "valid": false,
+      "hasOptions": true
     },
     {
       "code": "(a?.b).c = (a?.b).c",

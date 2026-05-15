@@ -22,6 +22,10 @@ type Case struct {
 	Code string `json:"code"`
 	// Valid is true for entries from oxc's `pass` vec, false for `fail`.
 	Valid bool `json:"valid"`
+	// HasOptions is true when the upstream oxc case was paired with a
+	// non-None options blob. Per-rule harnesses skip these so the
+	// reported pass rate reflects default-option behavior only.
+	HasOptions bool `json:"hasOptions,omitempty"`
 }
 
 // Fixture is the on-disk shape produced by cmd/oxlint-fixtures.
