@@ -1,0 +1,155 @@
+{
+  "ruleId": "no-await-in-loop",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_await_in_loop.rs",
+  "cases": [
+    {
+      "code": "async function foo() { await bar; }",
+      "valid": true
+    },
+    {
+      "code": "async function foo() { for (var bar in await baz) { } }",
+      "valid": true
+    },
+    {
+      "code": "async function foo() { for (var bar of await baz) { } }",
+      "valid": true
+    },
+    {
+      "code": "async function foo() { for await (var bar of await baz) { } }",
+      "valid": true
+    },
+    {
+      "code": "async function foo() { for (var bar = await baz in qux) {} }",
+      "valid": true
+    },
+    {
+      "code": "async function foo() { while (true) { async function foo() { await bar; } } }",
+      "valid": true
+    },
+    {
+      "code": "async function foo() { for (var i = await bar; i \u003c n; i++) {  } }",
+      "valid": true
+    },
+    {
+      "code": "async function foo() { do { } while (bar); }",
+      "valid": true
+    },
+    {
+      "code": "async function foo() { while (true) { var y = async function() { await bar; } } }",
+      "valid": true
+    },
+    {
+      "code": "async function foo() { while (true) { var y = async () =\u003e await foo; } }",
+      "valid": true
+    },
+    {
+      "code": "async function foo() { while (true) { var y = async () =\u003e { await foo; } } }",
+      "valid": true
+    },
+    {
+      "code": "async function foo() { while (true) { class Foo { async foo() { await bar; } } } }",
+      "valid": true
+    },
+    {
+      "code": "async function foo() { for await (var x of xs) { await f(x) } }",
+      "valid": true
+    },
+    {
+      "code": "while (true) { const value = 0; }",
+      "valid": true
+    },
+    {
+      "code": "while (true) { let value = 0; }",
+      "valid": true
+    },
+    {
+      "code": "while (true) { var value = 0; }",
+      "valid": true
+    },
+    {
+      "code": "await using resource = getResource();",
+      "valid": true
+    },
+    {
+      "code": "while (true) { using resource = getResource(); }",
+      "valid": true
+    },
+    {
+      "code": "async function foo() { while (true) { async function foo() { await using resource = getResource(); } } }",
+      "valid": true
+    },
+    {
+      "code": "for (await using resource = getResource(); ;) {}",
+      "valid": true
+    },
+    {
+      "code": "async function foo() { while (baz) { await bar; } }",
+      "valid": false
+    },
+    {
+      "code": "async function foo() { while (await foo()) {  } }",
+      "valid": false
+    },
+    {
+      "code": "async function foo() { while (baz) { for await (x of xs); } }",
+      "valid": false
+    },
+    {
+      "code": "async function foo() { for (var bar of baz) { await bar; } }",
+      "valid": false
+    },
+    {
+      "code": "async function foo() { for (var bar of baz) await bar; }",
+      "valid": false
+    },
+    {
+      "code": "async function foo() { for (var bar in baz) { await bar; } }",
+      "valid": false
+    },
+    {
+      "code": "async function foo() { for (var i; i \u003c n; i++) { await bar; } }",
+      "valid": false
+    },
+    {
+      "code": "async function foo() { for (var i; await foo(i); i++) {  } }",
+      "valid": false
+    },
+    {
+      "code": "async function foo() { for (var i; i \u003c n; i = await bar) {  } }",
+      "valid": false
+    },
+    {
+      "code": "async function foo() { do { await bar; } while (baz); }",
+      "valid": false
+    },
+    {
+      "code": "async function foo() { do { } while (await bar); }",
+      "valid": false
+    },
+    {
+      "code": "async function foo() { while (true) { if (bar) { foo(await bar); } } }",
+      "valid": false
+    },
+    {
+      "code": "async function foo() { while (xyz || 5 \u003e await x) {  } }",
+      "valid": false
+    },
+    {
+      "code": "async function foo() { for await (var x of xs) { while (1) await f(x) } }",
+      "valid": false
+    },
+    {
+      "code": "while (true) { await using resource = getResource(); }",
+      "valid": false
+    },
+    {
+      "code": "for (;;) { await using resource = getResource(); }",
+      "valid": false
+    },
+    {
+      "code": "for (await using resource of resources) {}",
+      "valid": false
+    }
+  ]
+}
