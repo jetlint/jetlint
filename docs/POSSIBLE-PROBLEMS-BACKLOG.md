@@ -69,7 +69,7 @@ Update this file as rules land or assumptions change.
 | `no-unreachable-loop` | | AST walk: every path through the loop body exits. |
 | `no-unsafe-finally` | ✓ | Shipped 2026-05-15 |
 | `no-unsafe-negation` | ✓ | Shipped 2026-05-15 |
-| `no-unsafe-optional-chaining` | | AST: optional chain whose result must not be undefined. |
+| `no-unsafe-optional-chaining` | ✓ | Shipped 2026-05-15 (80/82 fixtures; `with(...)` not detected because `KindWithStatement` is unexported by the wrapper) |
 | `no-unused-private-class-members` | ✓ | Shipped 2026-05-15 |
 | `no-unused-vars` | | Scope: unused declarations. TS catches under noUnusedLocals. |
 | `no-use-before-define` | | Scope: reference before declaration. |
