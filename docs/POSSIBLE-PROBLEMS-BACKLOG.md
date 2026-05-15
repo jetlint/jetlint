@@ -23,7 +23,7 @@ Update this file as rules land or assumptions change.
 | `array-callback-return` | ✓ | Shipped 2026-05-15 |
 | `constructor-super` | ✓ | Shipped 2026-05-15 |
 | `for-direction` | ✓ | Shipped 2026-05-15 |
-| `getter-return` | | AST walk: does the getter body always return? |
+| `getter-return` | ✓ | Shipped 2026-05-15 |
 | `no-async-promise-executor` | ✓ | Shipped 2026-05-15 |
 | `no-await-in-loop` | ✓ | Shipped 2026-05-15 |
 | `no-class-assign` | ✓ | Shipped 2026-05-15 |

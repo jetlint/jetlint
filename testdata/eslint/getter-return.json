@@ -1,0 +1,462 @@
+{
+  "ruleId": "getter-return",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/getter_return.rs",
+  "cases": [
+    {
+      "code": "var foo = { get bar(){return true;} };",
+      "valid": true
+    },
+    {
+      "code": "var foo = { get bar() {return;} };",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "var foo = { get bar(){return true;} };",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "var foo = { get bar(){if(bar) {return;} return true;} };",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "class foo { get bar(){return true;} }",
+      "valid": true
+    },
+    {
+      "code": "class foo { get bar(){if(baz){return true;} else {return false;} } }",
+      "valid": true
+    },
+    {
+      "code": "class foo { get(){return true;} }",
+      "valid": true
+    },
+    {
+      "code": "class foo { get bar(){return true;} }",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "class foo { get bar(){return;} }",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Object.defineProperty(foo, \"bar\", { get: function () {return true;}});",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperty(foo, \"bar\", { get: function () { ~function (){ return true; }();return true;}});",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperty(foo, \"bar\", { set: function () {}});",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperty(foo, \"bar\", { set: () =\u003e {}});",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperties(foo, { bar: { get: function () {return true;}} });",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperties(foo, { bar: { get: function () { ~function (){ return true; }(); return true;}} });",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperties(foo, { bar: { set: function () {}} });",
+      "valid": true
+    },
+    {
+      "code": "Reflect.defineProperty(foo, \"bar\", { get: function () {return true;}});",
+      "valid": true
+    },
+    {
+      "code": "Reflect.defineProperty(foo, \"bar\", { get: function () { ~function (){ return true; }();return true;}});",
+      "valid": true
+    },
+    {
+      "code": "Object.create(foo, { bar: { get() {return true;} } });",
+      "valid": true
+    },
+    {
+      "code": "Object.create(foo, { bar: { get: function () {return true;} } });",
+      "valid": true
+    },
+    {
+      "code": "Object.create(foo, { bar: { get: () =\u003e {return true;} } });",
+      "valid": true
+    },
+    {
+      "code": "Object.defineProperty(foo, \"bar\", { get: function () {return true;}});",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Object.defineProperty(foo, \"bar\", { get: function (){return;}});",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Object.defineProperties(foo, { bar: { get: function () {return true;}} });",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Object.defineProperties(foo, { bar: { get: function () {return;}} });",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Reflect.defineProperty(foo, \"bar\", { get: function () {return true;}});",
+      "valid": true,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "var get = function(){};",
+      "valid": true
+    },
+    {
+      "code": "var get = function(){ return true; };",
+      "valid": true
+    },
+    {
+      "code": "var foo = { bar(){} };",
+      "valid": true
+    },
+    {
+      "code": "var foo = { bar(){ return true; } };",
+      "valid": true
+    },
+    {
+      "code": "var foo = { bar: function(){} };",
+      "valid": true
+    },
+    {
+      "code": "var foo = { bar: function(){return;} };",
+      "valid": true
+    },
+    {
+      "code": "var foo = { bar: function(){return true;} };",
+      "valid": true
+    },
+    {
+      "code": "var foo = { get: function () {} }",
+      "valid": true
+    },
+    {
+      "code": "var foo = { get: () =\u003e {}};",
+      "valid": true
+    },
+    {
+      "code": "class C { get; foo() {} }",
+      "valid": true
+    },
+    {
+      "code": "foo.defineProperty(null, { get() {} });",
+      "valid": true
+    },
+    {
+      "code": "foo.defineProperties(null, { bar: { get() {} } });",
+      "valid": true
+    },
+    {
+      "code": "foo.create(null, { bar: { get() {} } });",
+      "valid": true
+    },
+    {
+      "code": "var foo = { get willThrowSoValid() { throw MyException() } };",
+      "valid": true
+    },
+    {
+      "code": "const originalClearTimeout = targetWindow.clearTimeout;\n        Object.defineProperty(targetWindow, 'vscodeOriginalClearTimeout', { get: () =\u003e originalClearTimeout });\n        ",
+      "valid": true
+    },
+    {
+      "code": "\n        var foo = {\n                get bar() {\n                        let name = ([] || [])[1];\n                        return name;\n                },\n        };\n        ",
+      "valid": true
+    },
+    {
+      "code": "var foo = { get bar() { try { return a(); } finally {  } } };",
+      "valid": true
+    },
+    {
+      "code": "\n        var foo = {\n            get bar() {\n                switch (baz) {\n                    case VS_LIGHT_THEME: return a;\n                    case VS_HC_THEME: return b;\n                    case VS_HC_LIGHT_THEME: return c;\n                    default: return d;\n                }\n            }\n        };\n        ",
+      "valid": true
+    },
+    {
+      "code": "\n        export default class ProgressBar extends Component {\n            get steps() {\n                const steps = [];\n\n                for (let i = 0; i \u003c this.maxStepsNumber; i++) {\n                    steps.push({\n                        stepnum: i + 1,\n                    });\n                }\n\n                return steps;\n            }\n        }",
+      "valid": true
+    },
+    {
+      "code": "\n        var foo = {\n            get bar() {\n                for (let i = 0; i\u003c10; i++) {\n                    if (i === 5) {\n                        return i;\n                    }\n                }\n                return 0;\n            }\n        }",
+      "valid": true
+    },
+    {
+      "code": "\n        var foo = {\n            get bar() {\n                let i = 0;\n                while (i \u003c 10) {\n                    if (i === 5) {\n                        return i;\n                    }\n                    i++;\n                }\n                return 0;\n            }\n        }",
+      "valid": true
+    },
+    {
+      "code": "var foo = { get bar() {} };",
+      "valid": false
+    },
+    {
+      "code": "var foo = { get\n bar () {} };",
+      "valid": false
+    },
+    {
+      "code": "var foo = { get bar(){if(baz) {return true;}} };",
+      "valid": false
+    },
+    {
+      "code": "var foo = { get bar() { ~function () {return true;}} };",
+      "valid": false
+    },
+    {
+      "code": "var foo = { get bar() { return; } };",
+      "valid": false
+    },
+    {
+      "code": "var foo = { get bar() {} };",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "var foo = { get bar() {if (baz) {return;}} };",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "class foo { get bar(){} }",
+      "valid": false
+    },
+    {
+      "code": "var foo = class {\n  static get\nbar(){} }",
+      "valid": false
+    },
+    {
+      "code": "class foo { get bar(){ if (baz) { return true; }}}",
+      "valid": false
+    },
+    {
+      "code": "class foo { get bar(){ ~function () { return true; }()}}",
+      "valid": false
+    },
+    {
+      "code": "class foo { get bar(){} }",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "class foo { get bar(){if (baz) {return true;} } }",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Object.defineProperty(foo, 'bar', { get: function (){}});",
+      "valid": false
+    },
+    {
+      "code": "Object.defineProperty(foo, 'bar', { get: function getfoo (){}});",
+      "valid": false
+    },
+    {
+      "code": "Object.defineProperty(foo, 'bar', { get(){} });",
+      "valid": false
+    },
+    {
+      "code": "Object.defineProperty(foo, 'bar', { get: () =\u003e {}});",
+      "valid": false
+    },
+    {
+      "code": "Object.defineProperty(foo, \"bar\", { get: function (){if(bar) {return true;}}});",
+      "valid": false
+    },
+    {
+      "code": "Object.defineProperty(foo, \"bar\", { get: function (){ ~function () { return true; }()}});",
+      "valid": false
+    },
+    {
+      "code": "Reflect.defineProperty(foo, 'bar', { get: function (){}});",
+      "valid": false
+    },
+    {
+      "code": "Object.create(foo, { bar: { get: function() {} } })",
+      "valid": false
+    },
+    {
+      "code": "Object.create(foo, { bar: { get() {} } })",
+      "valid": false
+    },
+    {
+      "code": "Object.create(foo, { bar: { get: () =\u003e {} } })",
+      "valid": false
+    },
+    {
+      "code": "Object.defineProperties(foo, { bar: { get: function () {}} });",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Object.defineProperties(foo, { bar: { get: function (){if(bar) {return true;}}}});",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Object.defineProperties(foo, { bar: { get: function () {~function () { return true; }()}} });",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Object.defineProperty(foo, \"bar\", { get: function (){}});",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Object.create(foo, { bar: { get: function (){} } });",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Reflect.defineProperty(foo, \"bar\", { get: function (){}});",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "Object?.defineProperty(foo, 'bar', { get: function (){} });",
+      "valid": false
+    },
+    {
+      "code": "(Object?.defineProperty)(foo, 'bar', { get: function (){} });",
+      "valid": false
+    },
+    {
+      "code": "Object?.defineProperty(foo, 'bar', { get: function (){} });",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "(Object?.defineProperty)(foo, 'bar', { get: function (){} });",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "(Object?.create)(foo, { bar: { get: function (){} } });",
+      "valid": false,
+      "options": [
+        {
+          "allowImplicit": true
+        }
+      ]
+    },
+    {
+      "code": "var foo = { get bar() { try { return a(); } catch {} } };",
+      "valid": false
+    },
+    {
+      "code": "var foo = { get bar() { try { return a(); } catch {  } finally {  } } };",
+      "valid": false
+    },
+    {
+      "code": "\n        var foo = {\n            get bar() {\n                for (let i = 0; i\u003c10; i++) {\n                    return i;\n                }\n            }\n        }",
+      "valid": false
+    },
+    {
+      "code": "\n        var foo = {\n            get bar() {\n                let i = 0;\n                while (i \u003c 10) {\n                    return i;\n                }\n            }\n        }",
+      "valid": false
+    }
+  ]
+}
