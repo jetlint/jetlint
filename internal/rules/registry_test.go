@@ -255,6 +255,7 @@ func additionalRulesSnapshot() []string {
 		"no-unsafe-negation",
 		"no-unsafe-optional-chaining",
 		"no-unsafe-unary-minus",
+		"no-unmodified-loop-condition",
 		"no-unused-private-class-members",
 		"no-use-before-define",
 		"no-useless-default-assignment",

@@ -84,6 +84,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nothisbeforesuper"
 	"github.com/jetlint/jetlint/internal/rules/noundef"
 	"github.com/jetlint/jetlint/internal/rules/nounexpectedmultiline"
+	"github.com/jetlint/jetlint/internal/rules/nounmodifiedloopcondition"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarybooleanliteralcompare"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarycondition"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessaryqualifier"
@@ -619,6 +620,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nounsafereturn.New(),
 		nounsafetypeassertion.New(),
 		nounsafeunaryminus.New(),
+		nounmodifiedloopcondition.New(),
 		nounusedprivateclassmembers.New(),
 		nousebeforedefine.New(),
 		nouselessdefaultassignment.New(),

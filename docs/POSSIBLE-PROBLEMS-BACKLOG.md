@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 38
-- Remaining (AST-only): ~15
+- Shipped: 39
+- Remaining (AST-only): ~14
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -64,7 +64,7 @@ Update this file as rules land or assumptions change.
 | `no-this-before-super` | ✓ | Shipped 2026-05-15 (65/65 fixtures) |
 | `no-undef` | ✓ | Shipped 2026-05-15 (87/97 fixtures; remaining cases need `globals`/`env` settings from oxc test sources, which the fixture extractor does not yet capture) |
 | `no-unexpected-multiline` | ✓ | Shipped 2026-05-15 |
-| `no-unmodified-loop-condition` | | AST + scope: loop test references unchanged variables. |
+| `no-unmodified-loop-condition` | ✓ | Shipped 2026-05-15 (37/39 fixtures; remaining 2 cases need intra-procedural analysis of called functions) |
 | `no-unreachable` | ✓ | Shipped 2026-05-15 (65/65 fixtures) |
 | `no-unreachable-loop` | | AST walk: every path through the loop body exits. |
 | `no-unsafe-finally` | ✓ | Shipped 2026-05-15 |
