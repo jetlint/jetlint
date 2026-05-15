@@ -1,0 +1,839 @@
+{
+  "ruleId": "use-isnan",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/use_isnan.rs",
+  "cases": [
+    {
+      "code": "var x = NaN;",
+      "valid": true
+    },
+    {
+      "code": "isNaN(NaN) === true;",
+      "valid": true
+    },
+    {
+      "code": "isNaN(123) !== true;",
+      "valid": true
+    },
+    {
+      "code": "Number.isNaN(NaN) === true;",
+      "valid": true
+    },
+    {
+      "code": "Number.isNaN(123) !== true;",
+      "valid": true
+    },
+    {
+      "code": "foo(NaN + 1);",
+      "valid": true
+    },
+    {
+      "code": "foo(1 + NaN);",
+      "valid": true
+    },
+    {
+      "code": "foo(NaN - 1)",
+      "valid": true
+    },
+    {
+      "code": "foo(1 - NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo(NaN * 2)",
+      "valid": true
+    },
+    {
+      "code": "foo(2 * NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo(NaN / 2)",
+      "valid": true
+    },
+    {
+      "code": "foo(2 / NaN)",
+      "valid": true
+    },
+    {
+      "code": "var x; if (x = NaN) { }",
+      "valid": true
+    },
+    {
+      "code": "var x = Number.NaN;",
+      "valid": true
+    },
+    {
+      "code": "isNaN(Number.NaN) === true;",
+      "valid": true
+    },
+    {
+      "code": "Number.isNaN(Number.NaN) === true;",
+      "valid": true
+    },
+    {
+      "code": "foo(Number.NaN + 1);",
+      "valid": true
+    },
+    {
+      "code": "foo(1 + Number.NaN);",
+      "valid": true
+    },
+    {
+      "code": "foo(Number.NaN - 1)",
+      "valid": true
+    },
+    {
+      "code": "foo(1 - Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo(Number.NaN * 2)",
+      "valid": true
+    },
+    {
+      "code": "foo(2 * Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo(Number.NaN / 2)",
+      "valid": true
+    },
+    {
+      "code": "foo(2 / Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "var x; if (x = Number.NaN) { }",
+      "valid": true
+    },
+    {
+      "code": "x === Number[NaN];",
+      "valid": true
+    },
+    {
+      "code": "x === (NaN, 1)",
+      "valid": true
+    },
+    {
+      "code": "x === (doStuff(), NaN, 1)",
+      "valid": true
+    },
+    {
+      "code": "x === (doStuff(), Number.NaN, 1)",
+      "valid": true
+    },
+    {
+      "code": "switch(NaN) { case foo: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case NaN: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch(NaN) { case NaN: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case bar: break; case NaN: break; default: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) {}",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case bar: NaN; }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { default: NaN; }",
+      "valid": true
+    },
+    {
+      "code": "switch(Nan) {}",
+      "valid": true
+    },
+    {
+      "code": "switch('NaN') { default: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo(NaN)) {}",
+      "valid": true
+    },
+    {
+      "code": "switch(foo.NaN) {}",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case Nan: break }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 'NaN': break }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case foo(NaN): break }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case foo.NaN: break }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case bar: break; case 1: break; default: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch(Number.NaN) { case foo: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case Number.NaN: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch(NaN) { case Number.NaN: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case bar: break; case Number.NaN: break; default: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case bar: Number.NaN; }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { default: Number.NaN; }",
+      "valid": true
+    },
+    {
+      "code": "switch(Number.Nan) {}",
+      "valid": true
+    },
+    {
+      "code": "switch('Number.NaN') { default: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo(Number.NaN)) {}",
+      "valid": true
+    },
+    {
+      "code": "switch(foo.Number.NaN) {}",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case Number.Nan: break }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 'Number.NaN': break }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case foo(Number.NaN): break }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case foo.Number.NaN: break }",
+      "valid": true
+    },
+    {
+      "code": "switch((NaN, doStuff(), 1)) {}",
+      "valid": true
+    },
+    {
+      "code": "switch((Number.NaN, doStuff(), 1)) {}",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf(NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf(NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf(Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf(Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf(NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf(NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf(NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf(NaN)",
+      "valid": true
+    },
+    {
+      "code": "indexOf(NaN)",
+      "valid": true
+    },
+    {
+      "code": "lastIndexOf(NaN)",
+      "valid": true
+    },
+    {
+      "code": "new foo.indexOf(NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.bar(NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.IndexOf(NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo[indexOf](NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo[lastIndexOf](NaN)",
+      "valid": true
+    },
+    {
+      "code": "indexOf.foo(NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf()",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf()",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf(a)",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf(Nan)",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf(a, NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf(NaN, b, c)",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf(a, b)",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf(NaN, NaN, b)",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf(...NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf(NaN())",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf(Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf(Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf(Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf(Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "indexOf(Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "lastIndexOf(Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "new foo.indexOf(Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.bar(Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.IndexOf(Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo[indexOf](Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo[lastIndexOf](Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "indexOf.foo(Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf(Number.Nan)",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf(a, Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf(Number.NaN, b, c)",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf(Number.NaN, NaN, b)",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf(...Number.NaN)",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf(Number.NaN())",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf((NaN, 1))",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf((NaN, 1))",
+      "valid": true
+    },
+    {
+      "code": "foo.indexOf((Number.NaN, 1))",
+      "valid": true
+    },
+    {
+      "code": "foo.lastIndexOf((Number.NaN, 1))",
+      "valid": true
+    },
+    {
+      "code": "123 == NaN;",
+      "valid": false
+    },
+    {
+      "code": "123 === NaN;",
+      "valid": false
+    },
+    {
+      "code": "NaN === \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "NaN == \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "123 != NaN;",
+      "valid": false
+    },
+    {
+      "code": "123 !== NaN;",
+      "valid": false
+    },
+    {
+      "code": "NaN !== \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "NaN != \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "NaN \u003c \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "\"abc\" \u003c NaN;",
+      "valid": false
+    },
+    {
+      "code": "NaN \u003e \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "\"abc\" \u003e NaN;",
+      "valid": false
+    },
+    {
+      "code": "NaN \u003c= \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "\"abc\" \u003c= NaN;",
+      "valid": false
+    },
+    {
+      "code": "NaN \u003e= \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "\"abc\" \u003e= NaN;",
+      "valid": false
+    },
+    {
+      "code": "123 == Number.NaN;",
+      "valid": false
+    },
+    {
+      "code": "123 === Number.NaN;",
+      "valid": false
+    },
+    {
+      "code": "Number.NaN === \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "Number.NaN == \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "123 != Number.NaN;",
+      "valid": false
+    },
+    {
+      "code": "123 !== Number.NaN;",
+      "valid": false
+    },
+    {
+      "code": "Number.NaN !== \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "Number.NaN != \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "Number.NaN \u003c \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "\"abc\" \u003c Number.NaN;",
+      "valid": false
+    },
+    {
+      "code": "Number.NaN \u003e \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "\"abc\" \u003e Number.NaN;",
+      "valid": false
+    },
+    {
+      "code": "Number.NaN \u003c= \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "\"abc\" \u003c= Number.NaN;",
+      "valid": false
+    },
+    {
+      "code": "Number.NaN \u003e= \"abc\";",
+      "valid": false
+    },
+    {
+      "code": "\"abc\" \u003e= Number.NaN;",
+      "valid": false
+    },
+    {
+      "code": "x === Number?.NaN;",
+      "valid": false
+    },
+    {
+      "code": "x !== Number?.NaN;",
+      "valid": false
+    },
+    {
+      "code": "x === Number['NaN'];",
+      "valid": false
+    },
+    {
+      "code": "/* just\n                adding */ x /* some */ === /* comments */ NaN; // here",
+      "valid": false
+    },
+    {
+      "code": "(1, 2) === NaN;",
+      "valid": false
+    },
+    {
+      "code": "switch(NaN) { case foo: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case NaN: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(NaN) { case foo: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case NaN: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(NaN) {}",
+      "valid": false
+    },
+    {
+      "code": "switch(NaN) { case foo: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(NaN) { default: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(NaN) { case foo: break; default: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case NaN: }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case NaN: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case (NaN): break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case bar: break; case NaN: break; default: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case bar: case NaN: default: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case bar: break; case NaN: break; case baz: break; case NaN: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(NaN) { case NaN: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(Number.NaN) { case foo: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case Number.NaN: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(Number.NaN) { case foo: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case Number.NaN: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(Number.NaN) {}",
+      "valid": false
+    },
+    {
+      "code": "switch(Number.NaN) { case foo: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(Number.NaN) { default: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(Number.NaN) { case foo: break; default: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case Number.NaN: }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case Number.NaN: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case (Number.NaN): break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case bar: break; case Number.NaN: break; default: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case bar: case Number.NaN: default: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case bar: break; case NaN: break; case baz: break; case Number.NaN: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch(Number.NaN) { case Number.NaN: break; }",
+      "valid": false
+    },
+    {
+      "code": "foo.indexOf(NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo.lastIndexOf(NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo['indexOf'](NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo[`indexOf`](NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo['lastIndexOf'](NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo().indexOf(NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo.bar.lastIndexOf(NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo.indexOf?.(NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo?.indexOf(NaN)",
+      "valid": false
+    },
+    {
+      "code": "(foo?.indexOf)(NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo.indexOf(Number.NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo.lastIndexOf(Number.NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo['indexOf'](Number.NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo['lastIndexOf'](Number.NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo().indexOf(Number.NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo.bar.lastIndexOf(Number.NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo.indexOf?.(Number.NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo?.indexOf(Number.NaN)",
+      "valid": false
+    },
+    {
+      "code": "(foo?.indexOf)(Number.NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo.indexOf((1, NaN))",
+      "valid": false
+    },
+    {
+      "code": "foo.indexOf((1, Number.NaN))",
+      "valid": false
+    },
+    {
+      "code": "foo.lastIndexOf((1, NaN))",
+      "valid": false
+    },
+    {
+      "code": "foo.lastIndexOf((1, Number.NaN))",
+      "valid": false
+    },
+    {
+      "code": "foo.indexOf(NaN, 1)",
+      "valid": false
+    },
+    {
+      "code": "foo.lastIndexOf(NaN, 1)",
+      "valid": false
+    },
+    {
+      "code": "foo.indexOf(NaN, b)",
+      "valid": false
+    },
+    {
+      "code": "foo.lastIndexOf(NaN, b)",
+      "valid": false
+    },
+    {
+      "code": "foo.indexOf(Number.NaN, b)",
+      "valid": false
+    },
+    {
+      "code": "foo.lastIndexOf(Number.NaN, b)",
+      "valid": false
+    },
+    {
+      "code": "foo.lastIndexOf(NaN, NaN)",
+      "valid": false
+    },
+    {
+      "code": "foo.indexOf((1, NaN), 1)",
+      "valid": false
+    }
+  ]
+}
