@@ -105,6 +105,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounsafetypeassertion"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeunaryminus"
 	"github.com/jetlint/jetlint/internal/rules/nounusedprivateclassmembers"
+	"github.com/jetlint/jetlint/internal/rules/nousebeforedefine"
 	"github.com/jetlint/jetlint/internal/rules/nouselessdefaultassignment"
 	"github.com/jetlint/jetlint/internal/rules/onlythrowerror"
 	"github.com/jetlint/jetlint/internal/rules/preferdestructuring"
@@ -619,6 +620,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nounsafetypeassertion.New(),
 		nounsafeunaryminus.New(),
 		nounusedprivateclassmembers.New(),
+		nousebeforedefine.New(),
 		nouselessdefaultassignment.New(),
 		onlythrowerror.New(),
 		preferdestructuring.New(),
