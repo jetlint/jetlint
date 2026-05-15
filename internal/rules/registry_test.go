@@ -199,6 +199,7 @@ func additionalRulesSnapshot() []string {
 		"no-cond-assign",
 		"no-confusing-void-expression",
 		"no-const-assign",
+		"no-constructor-return",
 		"no-deprecated",
 		"no-dupe-keys",
 		"no-duplicate-case",
