@@ -68,6 +68,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nomisusedpromises"
 	"github.com/jetlint/jetlint/internal/rules/nomisusedspread"
 	"github.com/jetlint/jetlint/internal/rules/nomixedenums"
+	"github.com/jetlint/jetlint/internal/rules/noobjcalls"
 	"github.com/jetlint/jetlint/internal/rules/nonnullabletypeassertionstyle"
 	"github.com/jetlint/jetlint/internal/rules/noredundanttypeconstituents"
 	"github.com/jetlint/jetlint/internal/rules/noselfassign"
@@ -563,6 +564,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nomeaninglessvoidoperator.New(),
 		nomisusedspread.New(),
 		nomixedenums.New(),
+		noobjcalls.New(),
 		nonnullabletypeassertionstyle.New(),
 		noredundanttypeconstituents.New(),
 		noselfassign.New(),

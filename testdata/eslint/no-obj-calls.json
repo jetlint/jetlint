@@ -1,0 +1,307 @@
+{
+  "ruleId": "no-obj-calls",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_obj_calls.rs",
+  "cases": [
+    {
+      "code": "var x = Math;",
+      "valid": true
+    },
+    {
+      "code": "var x = Math.random();",
+      "valid": true
+    },
+    {
+      "code": "var x = Math.PI;",
+      "valid": true
+    },
+    {
+      "code": "var x = foo.Math();",
+      "valid": true
+    },
+    {
+      "code": "var x = new foo.Math();",
+      "valid": true
+    },
+    {
+      "code": "var x = new Math.foo;",
+      "valid": true
+    },
+    {
+      "code": "var x = new Math.foo();",
+      "valid": true
+    },
+    {
+      "code": "JSON.parse(foo)",
+      "valid": true
+    },
+    {
+      "code": "new JSON.parse",
+      "valid": true
+    },
+    {
+      "code": "Reflect.get(foo, 'x')",
+      "valid": true
+    },
+    {
+      "code": "new Reflect.foo(a, b)",
+      "valid": true
+    },
+    {
+      "code": "Atomics.load(foo, 0)",
+      "valid": true
+    },
+    {
+      "code": "new Atomics.foo()",
+      "valid": true
+    },
+    {
+      "code": "new Intl.Segmenter()",
+      "valid": true
+    },
+    {
+      "code": "Intl.foo()",
+      "valid": true
+    },
+    {
+      "code": "var Math; Math();",
+      "valid": true
+    },
+    {
+      "code": "var Math; new Math();",
+      "valid": true
+    },
+    {
+      "code": "let JSON; JSON();",
+      "valid": true
+    },
+    {
+      "code": "let JSON; new JSON();",
+      "valid": true
+    },
+    {
+      "code": "if (foo) { const Reflect = 1; Reflect(); }",
+      "valid": true
+    },
+    {
+      "code": "if (foo) { const Reflect = 1; new Reflect(); }",
+      "valid": true
+    },
+    {
+      "code": "function foo(Math) { Math(); }",
+      "valid": true
+    },
+    {
+      "code": "function foo(JSON) { new JSON(); }",
+      "valid": true
+    },
+    {
+      "code": "function foo(Atomics) { Atomics(); }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { if (bar) { let Atomics; if (baz) { new Atomics(); } } }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var JSON; JSON(); }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var Atomics = bar(); var baz = Atomics(5); }",
+      "valid": true
+    },
+    {
+      "code": "var construct = typeof Reflect !== \"undefined\" ? Reflect.construct : undefined; construct();",
+      "valid": true
+    },
+    {
+      "code": "function foo(Intl) { Intl(); }",
+      "valid": true
+    },
+    {
+      "code": "if (foo) { const Intl = 1; Intl(); }",
+      "valid": true
+    },
+    {
+      "code": "if (foo) { const Intl = 1; new Intl(); }",
+      "valid": true
+    },
+    {
+      "code": "{const Math = () =\u003e {}; {let obj = new Math();}}",
+      "valid": true
+    },
+    {
+      "code": "{const {parse} = JSON;parse('{}')}",
+      "valid": true
+    },
+    {
+      "code": "export const getConfig = getConfig;\n        getConfig();",
+      "valid": true
+    },
+    {
+      "code": "let j = JSON;\n        function foo() {\n            let j = x =\u003e x;\n            return x();\n        }",
+      "valid": true
+    },
+    {
+      "code": "Math();",
+      "valid": false
+    },
+    {
+      "code": "var x = Math();",
+      "valid": false
+    },
+    {
+      "code": "f(Math());",
+      "valid": false
+    },
+    {
+      "code": "Math().foo;",
+      "valid": false
+    },
+    {
+      "code": "new Math;",
+      "valid": false
+    },
+    {
+      "code": "new Math();",
+      "valid": false
+    },
+    {
+      "code": "new Math(foo);",
+      "valid": false
+    },
+    {
+      "code": "new Math().foo;",
+      "valid": false
+    },
+    {
+      "code": "(new Math).foo();",
+      "valid": false
+    },
+    {
+      "code": "var x = JSON();",
+      "valid": false
+    },
+    {
+      "code": "x = JSON(str);",
+      "valid": false
+    },
+    {
+      "code": "var x = new JSON();",
+      "valid": false
+    },
+    {
+      "code": "Math( JSON() );",
+      "valid": false
+    },
+    {
+      "code": "var x = Reflect();",
+      "valid": false
+    },
+    {
+      "code": "var x = new Reflect();",
+      "valid": false
+    },
+    {
+      "code": "var x = Reflect();",
+      "valid": false
+    },
+    {
+      "code": "var x = Atomics();",
+      "valid": false
+    },
+    {
+      "code": "var x = new Atomics();",
+      "valid": false
+    },
+    {
+      "code": "var x = Atomics();",
+      "valid": false
+    },
+    {
+      "code": "var x = Atomics();",
+      "valid": false
+    },
+    {
+      "code": "var x = new Atomics();",
+      "valid": false
+    },
+    {
+      "code": "var x = Intl();",
+      "valid": false
+    },
+    {
+      "code": "var x = new Intl();",
+      "valid": false
+    },
+    {
+      "code": "var x = globalThis.Math();",
+      "valid": false
+    },
+    {
+      "code": "var x = new globalThis.Math();",
+      "valid": false
+    },
+    {
+      "code": "f(globalThis.Math());",
+      "valid": false
+    },
+    {
+      "code": "globalThis.Math().foo;",
+      "valid": false
+    },
+    {
+      "code": "new globalThis.Math().foo;",
+      "valid": false
+    },
+    {
+      "code": "var x = globalThis.JSON();",
+      "valid": false
+    },
+    {
+      "code": "x = globalThis.JSON(str);",
+      "valid": false
+    },
+    {
+      "code": "globalThis.Math( globalThis.JSON() );",
+      "valid": false
+    },
+    {
+      "code": "var x = globalThis.Reflect();",
+      "valid": false
+    },
+    {
+      "code": "var x = new globalThis.Reflect;",
+      "valid": false
+    },
+    {
+      "code": "var x = globalThis.Atomics();",
+      "valid": false
+    },
+    {
+      "code": "var x = globalThis.Intl();",
+      "valid": false
+    },
+    {
+      "code": "var x = new globalThis.Intl;",
+      "valid": false
+    },
+    {
+      "code": "var x = globalThis?.Reflect();",
+      "valid": false
+    },
+    {
+      "code": "let j = JSON; j();",
+      "valid": false
+    },
+    {
+      "code": "let a = JSON; let b = a; let c = b; b();",
+      "valid": false
+    },
+    {
+      "code": "let m = globalThis.Math; new m();",
+      "valid": false
+    }
+  ]
+}
