@@ -212,6 +212,7 @@ func additionalRulesSnapshot() []string {
 		"no-duplicate-type-constituents",
 		"no-empty-pattern",
 		"no-ex-assign",
+		"no-fallthrough",
 		"no-func-assign",
 		"no-for-in-array",
 		"no-implied-eval",

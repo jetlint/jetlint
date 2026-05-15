@@ -57,6 +57,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noduplicatetypeconstituents"
 	"github.com/jetlint/jetlint/internal/rules/noemptypattern"
 	"github.com/jetlint/jetlint/internal/rules/noexassign"
+	"github.com/jetlint/jetlint/internal/rules/nofallthrough"
 	"github.com/jetlint/jetlint/internal/rules/nofloatingpromises"
 	"github.com/jetlint/jetlint/internal/rules/noforinarray"
 	"github.com/jetlint/jetlint/internal/rules/nofuncassign"
@@ -568,6 +569,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nodupeelseif.New(),
 		noemptypattern.New(),
 		noexassign.New(),
+		nofallthrough.New(),
 		nofuncassign.New(),
 		nosparsearrays.New(),
 		nopromiseexecutorreturn.New(),

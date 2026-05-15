@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 35
-- Remaining (AST-only): ~18
+- Shipped: 36
+- Remaining (AST-only): ~17
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -44,7 +44,7 @@ Update this file as rules land or assumptions change.
 | `no-empty-character-class` | ⊘ | Regex AST. |
 | `no-empty-pattern` | ✓ | Shipped 2026-05-15 |
 | `no-ex-assign` | ✓ | Shipped 2026-05-15 |
-| `no-fallthrough` | | AST walk: does each case end in break/return/throw? |
+| `no-fallthrough` | ✓ | Shipped 2026-05-15 (86/86 fixtures) |
 | `no-func-assign` | ✓ | Shipped 2026-05-15 |
 | `no-import-assign` | ✓ | Shipped 2026-05-15 |
 | `no-inner-declarations` | ✓ | Shipped 2026-05-15 (65/66 fixtures; one diverges on sourceType=module heuristics) |

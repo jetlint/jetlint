@@ -92,6 +92,7 @@ var All = []Metadata{
 	{ID: "no-duplicate-imports", Category: CategoryStyle, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-empty-pattern", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-ex-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-fallthrough", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-func-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-sparse-arrays", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-new-native-nonconstructor", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
