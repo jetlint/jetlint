@@ -1,0 +1,195 @@
+{
+  "ruleId": "no-prototype-builtins",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_prototype_builtins.rs",
+  "cases": [
+    {
+      "code": "Object.prototype.hasOwnProperty.call(foo, 'bar')",
+      "valid": true
+    },
+    {
+      "code": "Object.prototype.isPrototypeOf.call(foo, 'bar')",
+      "valid": true
+    },
+    {
+      "code": "Object.prototype.propertyIsEnumerable.call(foo, 'bar')",
+      "valid": true
+    },
+    {
+      "code": "Object.prototype.hasOwnProperty.apply(foo, ['bar'])",
+      "valid": true
+    },
+    {
+      "code": "Object.prototype.isPrototypeOf.apply(foo, ['bar'])",
+      "valid": true
+    },
+    {
+      "code": "Object.prototype.propertyIsEnumerable.apply(foo, ['bar'])",
+      "valid": true
+    },
+    {
+      "code": "foo.hasOwnProperty",
+      "valid": true
+    },
+    {
+      "code": "foo.hasOwnProperty.bar()",
+      "valid": true
+    },
+    {
+      "code": "foo(hasOwnProperty)",
+      "valid": true
+    },
+    {
+      "code": "hasOwnProperty(foo, 'bar')",
+      "valid": true
+    },
+    {
+      "code": "isPrototypeOf(foo, 'bar')",
+      "valid": true
+    },
+    {
+      "code": "propertyIsEnumerable(foo, 'bar')",
+      "valid": true
+    },
+    {
+      "code": "({}.hasOwnProperty.call(foo, 'bar'))",
+      "valid": true
+    },
+    {
+      "code": "({}.isPrototypeOf.call(foo, 'bar'))",
+      "valid": true
+    },
+    {
+      "code": "({}.propertyIsEnumerable.call(foo, 'bar'))",
+      "valid": true
+    },
+    {
+      "code": "({}.hasOwnProperty.apply(foo, ['bar']))",
+      "valid": true
+    },
+    {
+      "code": "({}.isPrototypeOf.apply(foo, ['bar']))",
+      "valid": true
+    },
+    {
+      "code": "({}.propertyIsEnumerable.apply(foo, ['bar']))",
+      "valid": true
+    },
+    {
+      "code": "foo[hasOwnProperty]('bar')",
+      "valid": true
+    },
+    {
+      "code": "foo['HasOwnProperty']('bar')",
+      "valid": true
+    },
+    {
+      "code": "foo[`isPrototypeOff`]('bar')",
+      "valid": true
+    },
+    {
+      "code": "foo?.['propertyIsEnumerabl']('bar')",
+      "valid": true
+    },
+    {
+      "code": "foo[1]('bar')",
+      "valid": true
+    },
+    {
+      "code": "foo[null]('bar')",
+      "valid": true
+    },
+    {
+      "code": "class C { #hasOwnProperty; foo() { obj.#hasOwnProperty('bar'); } }",
+      "valid": true
+    },
+    {
+      "code": "foo['hasOwn' + 'Property']('bar')",
+      "valid": true
+    },
+    {
+      "code": "foo[`hasOwnProperty${''}`]('bar')",
+      "valid": true
+    },
+    {
+      "code": "foo.hasOwnProperty('bar')",
+      "valid": false
+    },
+    {
+      "code": "foo.isPrototypeOf('bar')",
+      "valid": false
+    },
+    {
+      "code": "foo.propertyIsEnumerable('bar')",
+      "valid": false
+    },
+    {
+      "code": "foo.bar.hasOwnProperty('bar')",
+      "valid": false
+    },
+    {
+      "code": "foo.bar.baz.isPrototypeOf('bar')",
+      "valid": false
+    },
+    {
+      "code": "foo['hasOwnProperty']('bar')",
+      "valid": false
+    },
+    {
+      "code": "foo[`isPrototypeOf`]('bar').baz",
+      "valid": false
+    },
+    {
+      "code": "foo.bar[\"propertyIsEnumerable\"]('baz')",
+      "valid": false
+    },
+    {
+      "code": "(function(Object) {return foo.hasOwnProperty('bar');})",
+      "valid": false
+    },
+    {
+      "code": "foo.hasOwnProperty('bar')",
+      "valid": false
+    },
+    {
+      "code": "foo?.hasOwnProperty('bar')",
+      "valid": false
+    },
+    {
+      "code": "foo?.bar.hasOwnProperty('baz')",
+      "valid": false
+    },
+    {
+      "code": "foo.hasOwnProperty?.('bar')",
+      "valid": false
+    },
+    {
+      "code": "foo?.hasOwnProperty('bar').baz",
+      "valid": false
+    },
+    {
+      "code": "foo.hasOwnProperty('bar')?.baz",
+      "valid": false
+    },
+    {
+      "code": "(a,b).hasOwnProperty('bar')",
+      "valid": false
+    },
+    {
+      "code": "(foo?.hasOwnProperty)('bar')",
+      "valid": false
+    },
+    {
+      "code": "(foo?.hasOwnProperty)?.('bar')",
+      "valid": false
+    },
+    {
+      "code": "foo?.['hasOwnProperty']('bar')",
+      "valid": false
+    },
+    {
+      "code": "(foo?.[`hasOwnProperty`])('bar')",
+      "valid": false
+    }
+  ]
+}
