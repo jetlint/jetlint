@@ -31,7 +31,7 @@ Update this file as rules land or assumptions change.
 | `no-cond-assign` | ✓ | Shipped 2026-05-15 |
 | `no-const-assign` | ✓ | Shipped 2026-05-15 |
 | `no-constant-binary-expression` | | AST + light type inference. |
-| `no-constant-condition` | | AST: literal boolean condition. |
+| `no-constant-condition` | ✓ | Shipped 2026-05-15 (conservative port, 206/306 fixtures; full constant-folding deferred to a shared utility) |
 | `no-constructor-return` | ✓ | Shipped 2026-05-15 |
 | `no-control-regex` | ⊘ | Regex AST. |
 | `no-debugger` | ✓ | Shipped 2026-05-15 |

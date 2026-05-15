@@ -1,0 +1,1361 @@
+{
+  "ruleId": "no-constant-condition",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_constant_condition.rs",
+  "cases": [
+    {
+      "code": "if(a);",
+      "valid": true
+    },
+    {
+      "code": "if(a == 0);",
+      "valid": true
+    },
+    {
+      "code": "if(a = f());",
+      "valid": true
+    },
+    {
+      "code": "if(a += 1);",
+      "valid": true
+    },
+    {
+      "code": "if(a |= 1);",
+      "valid": true
+    },
+    {
+      "code": "if(a |= true);",
+      "valid": true
+    },
+    {
+      "code": "if(a |= false);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u0026= 1);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u0026= true);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u0026= false);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u003e\u003e= 1);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u003e\u003e= true);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u003e\u003e= false);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u003e\u003e\u003e= 1);",
+      "valid": true
+    },
+    {
+      "code": "if(a ??= 1);",
+      "valid": true
+    },
+    {
+      "code": "if(a ??= true);",
+      "valid": true
+    },
+    {
+      "code": "if(a ??= false);",
+      "valid": true
+    },
+    {
+      "code": "if(a ||= b);",
+      "valid": true
+    },
+    {
+      "code": "if(a ||= false);",
+      "valid": true
+    },
+    {
+      "code": "if(a ||= 0);",
+      "valid": true
+    },
+    {
+      "code": "if(a ||= void 0);",
+      "valid": true
+    },
+    {
+      "code": "if(+(a ||= 1));",
+      "valid": true
+    },
+    {
+      "code": "if(f(a ||= true));",
+      "valid": true
+    },
+    {
+      "code": "if((a ||= 1) + 2);",
+      "valid": true
+    },
+    {
+      "code": "if(1 + (a ||= true));",
+      "valid": true
+    },
+    {
+      "code": "if(a ||= '' || false);",
+      "valid": true
+    },
+    {
+      "code": "if(a ||= void 0 || null);",
+      "valid": true
+    },
+    {
+      "code": "if((a ||= false) || b);",
+      "valid": true
+    },
+    {
+      "code": "if(a || (b ||= false));",
+      "valid": true
+    },
+    {
+      "code": "if((a ||= true) \u0026\u0026 b);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u0026\u0026 (b ||= true));",
+      "valid": true
+    },
+    {
+      "code": "if(a \u0026\u0026= b);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u0026\u0026= true);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u0026\u0026= 1);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u0026\u0026= 'foo');",
+      "valid": true
+    },
+    {
+      "code": "if((a \u0026\u0026= '') + false);",
+      "valid": true
+    },
+    {
+      "code": "if('' + (a \u0026\u0026= null));",
+      "valid": true
+    },
+    {
+      "code": "if(a \u0026\u0026= 1 \u0026\u0026 2);",
+      "valid": true
+    },
+    {
+      "code": "if((a \u0026\u0026= true) \u0026\u0026 b);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u0026\u0026 (b \u0026\u0026= true));",
+      "valid": true
+    },
+    {
+      "code": "if((a \u0026\u0026= false) || b);",
+      "valid": true
+    },
+    {
+      "code": "if(a || (b \u0026\u0026= false));",
+      "valid": true
+    },
+    {
+      "code": "if(a ||= b ||= false);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u0026\u0026= b \u0026\u0026= true);",
+      "valid": true
+    },
+    {
+      "code": "if(a ||= b \u0026\u0026= false);",
+      "valid": true
+    },
+    {
+      "code": "if(a ||= b \u0026\u0026= true);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u0026\u0026= b ||= false);",
+      "valid": true
+    },
+    {
+      "code": "if(a \u0026\u0026= b ||= true);",
+      "valid": true
+    },
+    {
+      "code": "if(1, a);",
+      "valid": true
+    },
+    {
+      "code": "if ('every' in []);",
+      "valid": true
+    },
+    {
+      "code": "if (`\\\n${a}`) {}",
+      "valid": true
+    },
+    {
+      "code": "if (`${a}`);",
+      "valid": true
+    },
+    {
+      "code": "if (`${foo()}`);",
+      "valid": true
+    },
+    {
+      "code": "if (`${a === 'b' \u0026\u0026 b==='a'}`);",
+      "valid": true
+    },
+    {
+      "code": "if (`foo${a}` === 'fooa');",
+      "valid": true
+    },
+    {
+      "code": "if (tag`a`);",
+      "valid": true
+    },
+    {
+      "code": "if (tag`${a}`);",
+      "valid": true
+    },
+    {
+      "code": "if (+(a || true));",
+      "valid": true
+    },
+    {
+      "code": "if (-(a || true));",
+      "valid": true
+    },
+    {
+      "code": "if (~(a || 1));",
+      "valid": true
+    },
+    {
+      "code": "if (+(a \u0026\u0026 0) === +(b \u0026\u0026 0));",
+      "valid": true
+    },
+    {
+      "code": "if(typeof x === 'undefined'){}",
+      "valid": true
+    },
+    {
+      "code": "if(`${typeof x}` === 'undefined'){}",
+      "valid": true
+    },
+    {
+      "code": "if(a === 'str' \u0026\u0026 typeof b){}",
+      "valid": true
+    },
+    {
+      "code": "typeof a == typeof b",
+      "valid": true
+    },
+    {
+      "code": "typeof 'a' === 'string'|| typeof b === 'string'",
+      "valid": true
+    },
+    {
+      "code": "`${typeof 'a'}` === 'string'|| `${typeof b}` === 'string'",
+      "valid": true
+    },
+    {
+      "code": "if (void a || a);",
+      "valid": true
+    },
+    {
+      "code": "if (a || void a);",
+      "valid": true
+    },
+    {
+      "code": "if(xyz === 'str1' \u0026\u0026 abc==='str2'){}",
+      "valid": true
+    },
+    {
+      "code": "if(xyz === 'str1' || abc==='str2'){}",
+      "valid": true
+    },
+    {
+      "code": "if(xyz === 'str1' || abc==='str2' \u0026\u0026 pqr === 5){}",
+      "valid": true
+    },
+    {
+      "code": "if(typeof abc === 'string' \u0026\u0026 abc==='str2'){}",
+      "valid": true
+    },
+    {
+      "code": "if(false || abc==='str'){}",
+      "valid": true
+    },
+    {
+      "code": "if(true \u0026\u0026 abc==='str'){}",
+      "valid": true
+    },
+    {
+      "code": "if(typeof 'str' \u0026\u0026 abc==='str'){}",
+      "valid": true
+    },
+    {
+      "code": "if(abc==='str' || false || def ==='str'){}",
+      "valid": true
+    },
+    {
+      "code": "if(true \u0026\u0026 abc==='str' || def ==='str'){}",
+      "valid": true
+    },
+    {
+      "code": "if(true \u0026\u0026 typeof abc==='string'){}",
+      "valid": true
+    },
+    {
+      "code": "if('str1' \u0026\u0026 a){}",
+      "valid": true
+    },
+    {
+      "code": "if(a \u0026\u0026 'str'){}",
+      "valid": true
+    },
+    {
+      "code": "if ((foo || true) === 'baz') {}",
+      "valid": true
+    },
+    {
+      "code": "if ((foo || 'bar') === 'baz') {}",
+      "valid": true
+    },
+    {
+      "code": "if ((foo || 'bar') !== 'baz') {}",
+      "valid": true
+    },
+    {
+      "code": "if ((foo || 'bar') == 'baz') {}",
+      "valid": true
+    },
+    {
+      "code": "if ((foo || 'bar') != 'baz') {}",
+      "valid": true
+    },
+    {
+      "code": "if ((foo || 233) \u003e 666) {}",
+      "valid": true
+    },
+    {
+      "code": "if ((foo || 233) \u003c 666) {}",
+      "valid": true
+    },
+    {
+      "code": "if ((foo || 233) \u003e= 666) {}",
+      "valid": true
+    },
+    {
+      "code": "if ((foo || 233) \u003c= 666) {}",
+      "valid": true
+    },
+    {
+      "code": "if ((key || 'k') in obj) {}",
+      "valid": true
+    },
+    {
+      "code": "if ((foo || {}) instanceof obj) {}",
+      "valid": true
+    },
+    {
+      "code": "if ((foo || 'bar' || 'bar') === 'bar');",
+      "valid": true
+    },
+    {
+      "code": "if ((foo || 1n) === 'baz') {}",
+      "valid": true
+    },
+    {
+      "code": "if (a \u0026\u0026 0n || b);",
+      "valid": true
+    },
+    {
+      "code": "if(1n \u0026\u0026 a){};",
+      "valid": true
+    },
+    {
+      "code": "if ('' + [y] === '' + [ty]) {}",
+      "valid": true
+    },
+    {
+      "code": "if ('a' === '' + [ty]) {}",
+      "valid": true
+    },
+    {
+      "code": "if ('' + [y, m, d] === 'a') {}",
+      "valid": true
+    },
+    {
+      "code": "if ('' + [y, 'm'] === '' + [ty, 'tm']) {}",
+      "valid": true
+    },
+    {
+      "code": "if ('' + [y, 'm'] === '' + ['ty']) {}",
+      "valid": true
+    },
+    {
+      "code": "if ([,] in\n\n($2))\n ;\nelse\n ;",
+      "valid": true
+    },
+    {
+      "code": "if ([...x]+'' === 'y'){}",
+      "valid": true
+    },
+    {
+      "code": "if (new Number(x) + 1 === 2) {}",
+      "valid": true
+    },
+    {
+      "code": "if([a]==[b]) {}",
+      "valid": true
+    },
+    {
+      "code": "if (+[...a]) {}",
+      "valid": true
+    },
+    {
+      "code": "if (+[...[...a]]) {}",
+      "valid": true
+    },
+    {
+      "code": "if (`${[...a]}`) {}",
+      "valid": true
+    },
+    {
+      "code": "if (`${[a]}`) {}",
+      "valid": true
+    },
+    {
+      "code": "if (+[a]) {}",
+      "valid": true
+    },
+    {
+      "code": "if (0 - [a]) {}",
+      "valid": true
+    },
+    {
+      "code": "if (1 * [a]) {}",
+      "valid": true
+    },
+    {
+      "code": "if (Boolean(a)) {}",
+      "valid": true
+    },
+    {
+      "code": "if (Boolean(...args)) {}",
+      "valid": true
+    },
+    {
+      "code": "if (foo.Boolean(1)) {}",
+      "valid": true
+    },
+    {
+      "code": "const undefined = 'lol'; if (undefined) {}",
+      "valid": true
+    },
+    {
+      "code": "function foo(Boolean) { if (Boolean(1)) {} }",
+      "valid": true
+    },
+    {
+      "code": "const Boolean = () =\u003e {}; if (Boolean(1)) {}",
+      "valid": true
+    },
+    {
+      "code": "q \u003e 0 ? 1 : 2;",
+      "valid": true
+    },
+    {
+      "code": "`${a}` === a ? 1 : 2",
+      "valid": true
+    },
+    {
+      "code": "`foo${a}` === a ? 1 : 2",
+      "valid": true
+    },
+    {
+      "code": "tag`a` === a ? 1 : 2",
+      "valid": true
+    },
+    {
+      "code": "tag`${a}` === a ? 1 : 2",
+      "valid": true
+    },
+    {
+      "code": "while(~!a);",
+      "valid": true
+    },
+    {
+      "code": "while(a = b);",
+      "valid": true
+    },
+    {
+      "code": "while(`${a}`);",
+      "valid": true
+    },
+    {
+      "code": "for(;x \u003c 10;);",
+      "valid": true
+    },
+    {
+      "code": "for(;;);",
+      "valid": true
+    },
+    {
+      "code": "for(;`${a}`;);",
+      "valid": true
+    },
+    {
+      "code": "do{ }while(x)",
+      "valid": true
+    },
+    {
+      "code": "while(x += 3) {}",
+      "valid": true
+    },
+    {
+      "code": "while(tag`a`) {}",
+      "valid": true
+    },
+    {
+      "code": "while(tag`${a}`) {}",
+      "valid": true
+    },
+    {
+      "code": "while(`\\\n${a}`) {}",
+      "valid": true
+    },
+    {
+      "code": "while(true);",
+      "valid": true,
+      "options": [
+        {
+          "checkLoops": false
+        }
+      ]
+    },
+    {
+      "code": "for(;true;);",
+      "valid": true,
+      "options": [
+        {
+          "checkLoops": false
+        }
+      ]
+    },
+    {
+      "code": "do{}while(true)",
+      "valid": true,
+      "options": [
+        {
+          "checkLoops": "none"
+        }
+      ]
+    },
+    {
+      "code": "while(true);",
+      "valid": true,
+      "options": [
+        {
+          "checkLoops": "none"
+        }
+      ]
+    },
+    {
+      "code": "for(;true;);",
+      "valid": true,
+      "options": [
+        {
+          "checkLoops": "none"
+        }
+      ]
+    },
+    {
+      "code": "do{ }while(x);",
+      "valid": true,
+      "options": [
+        {
+          "checkLoops": "all"
+        }
+      ]
+    },
+    {
+      "code": "while(true);",
+      "valid": true,
+      "options": [
+        {
+          "checkLoops": "allExceptWhileTrue"
+        }
+      ]
+    },
+    {
+      "code": "while(true);",
+      "valid": true
+    },
+    {
+      "code": "while(a == b);",
+      "valid": true,
+      "options": [
+        {
+          "checkLoops": "all"
+        }
+      ]
+    },
+    {
+      "code": "for (let x = 0; x \u003c= 10; x++) {};",
+      "valid": true,
+      "options": [
+        {
+          "checkLoops": "all"
+        }
+      ]
+    },
+    {
+      "code": "do{}while(true)",
+      "valid": true,
+      "options": [
+        {
+          "checkLoops": false
+        }
+      ]
+    },
+    {
+      "code": "function* foo(){while(true){yield 'foo';}}",
+      "valid": true
+    },
+    {
+      "code": "function* foo(){for(;true;){yield 'foo';}}",
+      "valid": true
+    },
+    {
+      "code": "function* foo(){do{yield 'foo';}while(true)}",
+      "valid": true
+    },
+    {
+      "code": "function* foo(){while (true) { while(true) {yield;}}}",
+      "valid": true
+    },
+    {
+      "code": "function* foo() {for (; yield; ) {}}",
+      "valid": true
+    },
+    {
+      "code": "function* foo() {for (; ; yield) {}}",
+      "valid": true
+    },
+    {
+      "code": "function* foo() {for (; true; yield) {}}",
+      "valid": true
+    },
+    {
+      "code": "function* foo() {while (true) {function* foo() {yield;}yield;}}",
+      "valid": true
+    },
+    {
+      "code": "function* foo() { for (let x = yield; x \u003c 10; x++) {yield;}yield;}",
+      "valid": true
+    },
+    {
+      "code": "function* foo() { for (let x = yield; ; x++) { yield; }}",
+      "valid": true
+    },
+    {
+      "code": "if(-2);",
+      "valid": false
+    },
+    {
+      "code": "if(true);",
+      "valid": false
+    },
+    {
+      "code": "if(1);",
+      "valid": false
+    },
+    {
+      "code": "if({});",
+      "valid": false
+    },
+    {
+      "code": "if(0 \u003c 1);",
+      "valid": false
+    },
+    {
+      "code": "if(0 || 1);",
+      "valid": false
+    },
+    {
+      "code": "if(a, 1);",
+      "valid": false
+    },
+    {
+      "code": "if(`foo`);",
+      "valid": false
+    },
+    {
+      "code": "if(``);",
+      "valid": false
+    },
+    {
+      "code": "if(`\\\n`);",
+      "valid": false
+    },
+    {
+      "code": "if(`${'bar'}`);",
+      "valid": false
+    },
+    {
+      "code": "if(`${'bar' + `foo`}`);",
+      "valid": false
+    },
+    {
+      "code": "if(`foo${false || true}`);",
+      "valid": false
+    },
+    {
+      "code": "if(`foo${0 || 1}`);",
+      "valid": false
+    },
+    {
+      "code": "if(`foo${bar}`);",
+      "valid": false
+    },
+    {
+      "code": "if(`${bar}foo`);",
+      "valid": false
+    },
+    {
+      "code": "if(!(true || a));",
+      "valid": false
+    },
+    {
+      "code": "if(!(a \u0026\u0026 void b \u0026\u0026 c));",
+      "valid": false
+    },
+    {
+      "code": "if(0 || !(a \u0026\u0026 null));",
+      "valid": false
+    },
+    {
+      "code": "if(1 + !(a || true));",
+      "valid": false
+    },
+    {
+      "code": "if(!(null \u0026\u0026 a) \u003e 1);",
+      "valid": false
+    },
+    {
+      "code": "if(+(!(a \u0026\u0026 0)));",
+      "valid": false
+    },
+    {
+      "code": "if(!typeof a === 'string');",
+      "valid": false
+    },
+    {
+      "code": "if(-('foo' || a));",
+      "valid": false
+    },
+    {
+      "code": "if(+(void a \u0026\u0026 b) === ~(1 || c));",
+      "valid": false
+    },
+    {
+      "code": "if(a ||= true);",
+      "valid": false
+    },
+    {
+      "code": "if(a ||= 5);",
+      "valid": false
+    },
+    {
+      "code": "if(a ||= 'foo' || b);",
+      "valid": false
+    },
+    {
+      "code": "if(a ||= b || /regex/);",
+      "valid": false
+    },
+    {
+      "code": "if(a ||= b ||= true);",
+      "valid": false
+    },
+    {
+      "code": "if(a ||= b ||= c || 1);",
+      "valid": false
+    },
+    {
+      "code": "if(!(a ||= true));",
+      "valid": false
+    },
+    {
+      "code": "if(!(a ||= 'foo') === true);",
+      "valid": false
+    },
+    {
+      "code": "if(!(a ||= 'foo') === false);",
+      "valid": false
+    },
+    {
+      "code": "if(a || (b ||= true));",
+      "valid": false
+    },
+    {
+      "code": "if((a ||= 1) || b);",
+      "valid": false
+    },
+    {
+      "code": "if((a ||= true) \u0026\u0026 true);",
+      "valid": false
+    },
+    {
+      "code": "if(true \u0026\u0026 (a ||= true));",
+      "valid": false
+    },
+    {
+      "code": "if(a \u0026\u0026= false);",
+      "valid": false
+    },
+    {
+      "code": "if(a \u0026\u0026= null);",
+      "valid": false
+    },
+    {
+      "code": "if(a \u0026\u0026= void b);",
+      "valid": false
+    },
+    {
+      "code": "if(a \u0026\u0026= 0 \u0026\u0026 b);",
+      "valid": false
+    },
+    {
+      "code": "if(a \u0026\u0026= b \u0026\u0026 '');",
+      "valid": false
+    },
+    {
+      "code": "if(a \u0026\u0026= b \u0026\u0026= false);",
+      "valid": false
+    },
+    {
+      "code": "if(a \u0026\u0026= b \u0026\u0026= c \u0026\u0026 false);",
+      "valid": false
+    },
+    {
+      "code": "if(!(a \u0026\u0026= false));",
+      "valid": false
+    },
+    {
+      "code": "if(!(a \u0026\u0026= 0) + 1);",
+      "valid": false
+    },
+    {
+      "code": "if(a \u0026\u0026 (b \u0026\u0026= false));",
+      "valid": false
+    },
+    {
+      "code": "if((a \u0026\u0026= null) \u0026\u0026 b);",
+      "valid": false
+    },
+    {
+      "code": "if(false || (a \u0026\u0026= false));",
+      "valid": false
+    },
+    {
+      "code": "if((a \u0026\u0026= false) || false);",
+      "valid": false
+    },
+    {
+      "code": "while(x = 1);",
+      "valid": false
+    },
+    {
+      "code": "if(typeof x){}",
+      "valid": false
+    },
+    {
+      "code": "if(typeof 'abc' === 'string'){}",
+      "valid": false
+    },
+    {
+      "code": "if(a = typeof b){}",
+      "valid": false
+    },
+    {
+      "code": "if(a, typeof b){}",
+      "valid": false
+    },
+    {
+      "code": "if(typeof 'a' == 'string' || typeof 'b' == 'string'){}",
+      "valid": false
+    },
+    {
+      "code": "while(typeof x){}",
+      "valid": false
+    },
+    {
+      "code": "if(1 || void x);",
+      "valid": false
+    },
+    {
+      "code": "if(void x);",
+      "valid": false
+    },
+    {
+      "code": "if(y = void x);",
+      "valid": false
+    },
+    {
+      "code": "if(x, void x);",
+      "valid": false
+    },
+    {
+      "code": "if(void x === void y);",
+      "valid": false
+    },
+    {
+      "code": "if(void x \u0026\u0026 a);",
+      "valid": false
+    },
+    {
+      "code": "if(a \u0026\u0026 void x);",
+      "valid": false
+    },
+    {
+      "code": "if(false \u0026\u0026 abc==='str'){}",
+      "valid": false
+    },
+    {
+      "code": "if(true || abc==='str'){}",
+      "valid": false
+    },
+    {
+      "code": "if(1 || abc==='str'){}",
+      "valid": false
+    },
+    {
+      "code": "if(abc==='str' || true){}",
+      "valid": false
+    },
+    {
+      "code": "if(abc==='str' || true || def ==='str'){}",
+      "valid": false
+    },
+    {
+      "code": "if(false || true){}",
+      "valid": false
+    },
+    {
+      "code": "if(typeof abc==='str' || true){}",
+      "valid": false
+    },
+    {
+      "code": "if('str' || a){}",
+      "valid": false
+    },
+    {
+      "code": "if('str' || abc==='str'){}",
+      "valid": false
+    },
+    {
+      "code": "if('str1' || 'str2'){}",
+      "valid": false
+    },
+    {
+      "code": "if('str1' \u0026\u0026 'str2'){}",
+      "valid": false
+    },
+    {
+      "code": "if(abc==='str' || 'str'){}",
+      "valid": false
+    },
+    {
+      "code": "if(a || 'str'){}",
+      "valid": false
+    },
+    {
+      "code": "if([a]) {}",
+      "valid": false
+    },
+    {
+      "code": "if([]) {}",
+      "valid": false
+    },
+    {
+      "code": "if(''+['a']) {}",
+      "valid": false
+    },
+    {
+      "code": "if(''+[]) {}",
+      "valid": false
+    },
+    {
+      "code": "if(+1) {}",
+      "valid": false
+    },
+    {
+      "code": "if ([,] + ''){}",
+      "valid": false
+    },
+    {
+      "code": "if(/foo/ui);",
+      "valid": false
+    },
+    {
+      "code": "if(0n);",
+      "valid": false
+    },
+    {
+      "code": "if(0b0n);",
+      "valid": false
+    },
+    {
+      "code": "if(0o0n);",
+      "valid": false
+    },
+    {
+      "code": "if(0x0n);",
+      "valid": false
+    },
+    {
+      "code": "if(0b1n);",
+      "valid": false
+    },
+    {
+      "code": "if(0o1n);",
+      "valid": false
+    },
+    {
+      "code": "if(0x1n);",
+      "valid": false
+    },
+    {
+      "code": "if(0x1n || foo);",
+      "valid": false
+    },
+    {
+      "code": "if(class {}) {}",
+      "valid": false
+    },
+    {
+      "code": "if(new Foo()) {}",
+      "valid": false
+    },
+    {
+      "code": "if(new Boolean(foo)) {}",
+      "valid": false
+    },
+    {
+      "code": "if(new String(foo)) {}",
+      "valid": false
+    },
+    {
+      "code": "if(new Number(foo)) {}",
+      "valid": false
+    },
+    {
+      "code": "if(`${[...['a']]}`) {}",
+      "valid": false
+    },
+    {
+      "code": "if (undefined) {}",
+      "valid": false
+    },
+    {
+      "code": "if (Boolean(1)) {}",
+      "valid": false
+    },
+    {
+      "code": "if (Boolean()) {}",
+      "valid": false
+    },
+    {
+      "code": "if (Boolean([a])) {}",
+      "valid": false
+    },
+    {
+      "code": "if (Boolean(1)) { function Boolean() {}}",
+      "valid": false
+    },
+    {
+      "code": "true ? 1 : 2;",
+      "valid": false
+    },
+    {
+      "code": "1 ? 1 : 2;",
+      "valid": false
+    },
+    {
+      "code": "q = 0 ? 1 : 2;",
+      "valid": false
+    },
+    {
+      "code": "(q = 0) ? 1 : 2;",
+      "valid": false
+    },
+    {
+      "code": "`` ? 1 : 2;",
+      "valid": false
+    },
+    {
+      "code": "`foo` ? 1 : 2;",
+      "valid": false
+    },
+    {
+      "code": "`foo${bar}` ? 1 : 2;",
+      "valid": false
+    },
+    {
+      "code": "for(;true;);",
+      "valid": false
+    },
+    {
+      "code": "for(;``;);",
+      "valid": false
+    },
+    {
+      "code": "for(;`foo`;);",
+      "valid": false
+    },
+    {
+      "code": "for(;`foo${bar}`;);",
+      "valid": false
+    },
+    {
+      "code": "do{}while(true)",
+      "valid": false
+    },
+    {
+      "code": "do{}while('1')",
+      "valid": false
+    },
+    {
+      "code": "do{}while(0)",
+      "valid": false
+    },
+    {
+      "code": "do{}while(t = -2)",
+      "valid": false
+    },
+    {
+      "code": "do{}while(``)",
+      "valid": false
+    },
+    {
+      "code": "do{}while(`foo`)",
+      "valid": false
+    },
+    {
+      "code": "do{}while(`foo${bar}`)",
+      "valid": false
+    },
+    {
+      "code": "while([]);",
+      "valid": false
+    },
+    {
+      "code": "while(~!0);",
+      "valid": false
+    },
+    {
+      "code": "while(x = 1);",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": "all"
+        }
+      ]
+    },
+    {
+      "code": "while(function(){});",
+      "valid": false
+    },
+    {
+      "code": "while(true);",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": "all"
+        }
+      ]
+    },
+    {
+      "code": "while(1);",
+      "valid": false
+    },
+    {
+      "code": "while(() =\u003e {});",
+      "valid": false
+    },
+    {
+      "code": "while(`foo`);",
+      "valid": false
+    },
+    {
+      "code": "while(``);",
+      "valid": false
+    },
+    {
+      "code": "while(`${'foo'}`);",
+      "valid": false
+    },
+    {
+      "code": "while(`${'foo' + 'bar'}`);",
+      "valid": false
+    },
+    {
+      "code": "do{ }while(x = 1)",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": "all"
+        }
+      ]
+    },
+    {
+      "code": "for (;true;) {};",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": "all"
+        }
+      ]
+    },
+    {
+      "code": "function* foo(){while(true){} yield 'foo';}",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": "all"
+        }
+      ]
+    },
+    {
+      "code": "function* foo(){while(true){} yield 'foo';}",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": true
+        }
+      ]
+    },
+    {
+      "code": "function* foo(){while(true){if (true) {yield 'foo';}}}",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": "all"
+        }
+      ]
+    },
+    {
+      "code": "function* foo(){while(true){if (true) {yield 'foo';}}}",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": true
+        }
+      ]
+    },
+    {
+      "code": "function* foo(){while(true){yield 'foo';} while(true) {}}",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": "all"
+        }
+      ]
+    },
+    {
+      "code": "function* foo(){while(true){yield 'foo';} while(true) {}}",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": true
+        }
+      ]
+    },
+    {
+      "code": "var a = function* foo(){while(true){} yield 'foo';}",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": "all"
+        }
+      ]
+    },
+    {
+      "code": "var a = function* foo(){while(true){} yield 'foo';}",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": true
+        }
+      ]
+    },
+    {
+      "code": "while (true) { function* foo() {yield;}}",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": "all"
+        }
+      ]
+    },
+    {
+      "code": "while (true) { function* foo() {yield;}}",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": true
+        }
+      ]
+    },
+    {
+      "code": "function* foo(){if (true) {yield 'foo';}}",
+      "valid": false
+    },
+    {
+      "code": "function* foo() {for (let foo = yield; true;) {}}",
+      "valid": false
+    },
+    {
+      "code": "function* foo() {for (foo = yield; true;) {}}",
+      "valid": false
+    },
+    {
+      "code": "function foo() {while (true) {function* bar() {while (true) {yield;}}}}",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": "all"
+        }
+      ]
+    },
+    {
+      "code": "function foo() {while (true) {const bar = function*() {while (true) {yield;}}}}",
+      "valid": false,
+      "options": [
+        {
+          "checkLoops": "all"
+        }
+      ]
+    },
+    {
+      "code": "function* foo() { for (let foo = 1 + 2 + 3 + (yield); true; baz) {}}",
+      "valid": false
+    }
+  ]
+}
