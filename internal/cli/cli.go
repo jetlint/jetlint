@@ -33,6 +33,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/awaitthenable"
 	"github.com/jetlint/jetlint/internal/rules/consistentreturn"
 	"github.com/jetlint/jetlint/internal/rules/consistenttypeexports"
+	"github.com/jetlint/jetlint/internal/rules/constructorsuper"
 	"github.com/jetlint/jetlint/internal/rules/dotnotation"
 	"github.com/jetlint/jetlint/internal/rules/namingconvention"
 	"github.com/jetlint/jetlint/internal/rules/noarraydelete"
@@ -511,6 +512,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		awaitthenable.New(),
 		consistentreturn.New(),
 		consistenttypeexports.New(),
+		constructorsuper.New(),
 		dotnotation.New(),
 		namingconvention.New(),
 		noarraydelete.New(),
