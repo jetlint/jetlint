@@ -1,0 +1,99 @@
+{
+  "ruleId": "no-template-curly-in-string",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_template_curly_in_string.rs",
+  "cases": [
+    {
+      "code": "`Hello, ${name}`;",
+      "valid": true
+    },
+    {
+      "code": "templateFunction`Hello, ${name}`;",
+      "valid": true
+    },
+    {
+      "code": "`Hello, name`;",
+      "valid": true
+    },
+    {
+      "code": "'Hello, name';",
+      "valid": true
+    },
+    {
+      "code": "'Hello, ' + name;",
+      "valid": true
+    },
+    {
+      "code": "`Hello, ${index + 1}`",
+      "valid": true
+    },
+    {
+      "code": "`Hello, ${name + \" foo\"}`",
+      "valid": true
+    },
+    {
+      "code": "`Hello, ${name || \"foo\"}`",
+      "valid": true
+    },
+    {
+      "code": "`Hello, ${{foo: \"bar\"}.foo}`",
+      "valid": true
+    },
+    {
+      "code": "'$2'",
+      "valid": true
+    },
+    {
+      "code": "'${'",
+      "valid": true
+    },
+    {
+      "code": "'$}'",
+      "valid": true
+    },
+    {
+      "code": "'{foo}'",
+      "valid": true
+    },
+    {
+      "code": "'{foo: \"bar\"}'",
+      "valid": true
+    },
+    {
+      "code": "const number = 3",
+      "valid": true
+    },
+    {
+      "code": "'Hello, ${name}'",
+      "valid": false
+    },
+    {
+      "code": "'Hello, ${{name}'",
+      "valid": false
+    },
+    {
+      "code": "\"Hello, ${name}\"",
+      "valid": false
+    },
+    {
+      "code": "'${greeting}, ${name}'",
+      "valid": false
+    },
+    {
+      "code": "'Hello, ${index + 1}'",
+      "valid": false
+    },
+    {
+      "code": "'Hello, ${name + \" foo\"}'",
+      "valid": false
+    },
+    {
+      "code": "'Hello, ${name || \"foo\"}'",
+      "valid": false
+    },
+    {
+      "code": "'Hello, ${{foo: \"bar\"}.foo}'",
+      "valid": false
+    }
+  ]
+}
