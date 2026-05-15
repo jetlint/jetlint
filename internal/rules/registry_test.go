@@ -7,15 +7,17 @@ import (
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
 )
 
-// recommendedRules is the MVP set jetlint ships at error severity. Tests
+// recommendedRules is the set jetlint ships at error severity. Tests
 // assert this list is what RecommendedIDs returns and what MVPRuleIDs
 // preserves, so changes to the default-on set are visible in diffs.
+// Chosen to match both typescript-eslint's `recommendedTypeChecked`
+// and oxc's `correctness` category where they agree.
 var recommendedRules = []string{
+	"await-thenable",
+	"no-base-to-string",
 	"no-floating-promises",
 	"no-misused-promises",
-	"strict-boolean-expressions",
 	"no-unsafe-assignment",
-	"no-base-to-string",
 }
 
 func TestAllReturnsEveryShippedRule(t *testing.T) {
@@ -182,7 +184,6 @@ func TestAdditionalTypeAwareRuleIDsIsDerivedFromNonRecommended(t *testing.T) {
 // All is caught with a precise diff rather than just a length mismatch.
 func additionalRulesSnapshot() []string {
 	return []string{
-		"await-thenable",
 		"consistent-return",
 		"consistent-type-exports",
 		"dot-notation",
@@ -238,6 +239,7 @@ func additionalRulesSnapshot() []string {
 		"restrict-plus-operands",
 		"restrict-template-expressions",
 		"return-await",
+		"strict-boolean-expressions",
 		"strict-void-return",
 		"switch-exhaustiveness-check",
 		"unbound-method",
