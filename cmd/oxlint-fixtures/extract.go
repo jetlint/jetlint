@@ -486,9 +486,13 @@ func extractOptions(src string, entry []tok) ([]any, error) {
 				d--
 				if d == 0 {
 					raw := src[open.pos : after[j].pos+1]
+					// Rust's serde_json::json! macro accepts trailing
+					// commas before `]` or `}`; Go's encoding/json does
+					// not. Strip them so the macro body round-trips.
+					cleaned := stripTrailingCommas(raw)
 					var opts []any
-					if err := json.Unmarshal([]byte(raw), &opts); err != nil {
-						return nil, fmt.Errorf("decode options %q: %w", raw, err)
+					if err := json.Unmarshal([]byte(cleaned), &opts); err != nil {
+						return nil, fmt.Errorf("decode options %q: %w", cleaned, err)
 					}
 					return opts, nil
 				}
@@ -496,6 +500,34 @@ func extractOptions(src string, entry []tok) ([]any, error) {
 		}
 	}
 	return nil, nil
+}
+
+// stripTrailingCommas removes commas that appear immediately before
+// a closing `]` or `}` (with any whitespace in between). Rust's
+// serde_json::json! macro accepts these; Go's encoding/json does not.
+// Strings inside the JSON aren't touched because we track quote state.
+func stripTrailingCommas(s string) string {
+	out := make([]byte, 0, len(s))
+	inStr := false
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c == '"' && (i == 0 || s[i-1] != '\\') {
+			inStr = !inStr
+			out = append(out, c)
+			continue
+		}
+		if !inStr && c == ',' {
+			j := i + 1
+			for j < len(s) && (s[j] == ' ' || s[j] == '\t' || s[j] == '\n' || s[j] == '\r') {
+				j++
+			}
+			if j < len(s) && (s[j] == ']' || s[j] == '}') {
+				continue
+			}
+		}
+		out = append(out, c)
+	}
+	return string(out)
 }
 
 // ExtractedCase is one fixture entry — code plus the parsed options
