@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 33
-- Remaining (AST-only): ~20
+- Shipped: 34
+- Remaining (AST-only): ~19
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -61,7 +61,7 @@ Update this file as rules land or assumptions change.
 | `no-setter-return` | ✓ | Shipped 2026-05-15 |
 | `no-sparse-arrays` | ✓ | Shipped 2026-05-15 |
 | `no-template-curly-in-string` | ✓ | Shipped 2026-05-15 |
-| `no-this-before-super` | | AST walk: `this` reference before `super()` in derived constructor. |
+| `no-this-before-super` | ✓ | Shipped 2026-05-15 (65/65 fixtures) |
 | `no-undef` | | Checker: undeclared identifier (TS catches; AST-only fallback). |
 | `no-unexpected-multiline` | ✓ | Shipped 2026-05-15 |
 | `no-unmodified-loop-condition` | | AST + scope: loop test references unchanged variables. |

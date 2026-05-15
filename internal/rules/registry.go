@@ -100,6 +100,7 @@ var All = []Metadata{
 	{ID: "no-prototype-builtins", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-setter-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-template-curly-in-string", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-this-before-super", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unexpected-multiline", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-negation", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-optional-chaining", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
