@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 13
-- Remaining (AST-only): ~39
+- Shipped: 14
+- Remaining (AST-only): ~38
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -28,7 +28,7 @@ Update this file as rules land or assumptions change.
 | `no-await-in-loop` | ✓ | Shipped 2026-05-15 |
 | `no-class-assign` | ✓ | Shipped 2026-05-15 |
 | `no-compare-neg-zero` | ✓ | Shipped 2026-05-15 |
-| `no-cond-assign` | | AST: assignment expression in `if`/`while`/`for`/`do-while` condition. |
+| `no-cond-assign` | ✓ | Shipped 2026-05-15 |
 | `no-const-assign` | | Scope: assigning to a `const` binding. |
 | `no-constant-binary-expression` | | AST + light type inference. |
 | `no-constant-condition` | | AST: literal boolean condition. |
