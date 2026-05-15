@@ -1,0 +1,355 @@
+{
+  "ruleId": "no-unused-private-class-members",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_unused_private_class_members.rs",
+  "cases": [
+    {
+      "code": "\n            class Foo { #privateMember = {}; a() { return { ...this.#privateMember }; } }\n        ",
+      "valid": true
+    },
+    {
+      "code": "\n            class Test {\n                #prop = undefined\n\n                getProp() {\n                    return this.#prop ??= 0\n                }\n            }\n        ",
+      "valid": true
+    },
+    {
+      "code": "\n            class Test {\n                #prop = undefined\n\n                getProp() {\n                    return this.#prop ||= 0\n                }\n            }\n        ",
+      "valid": true
+    },
+    {
+      "code": "\n            class Test {\n                #prop = undefined\n\n                getProp() {\n                    return this.#prop += 0\n                }\n            }\n        ",
+      "valid": true
+    },
+    {
+      "code": "class Foo {}",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n                publicMember = 42;\n            }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n                #usedMember = 42;\n                method() {\n                    return this.#usedMember;\n                }\n            }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n                #usedMember = 42;\n                anotherMember = this.#usedMember;\n            }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n                #usedMember = 42;\n                foo() {\n                    anotherMember = this.#usedMember;\n                }\n            }",
+      "valid": true
+    },
+    {
+      "code": "class C {\n                #usedMember;\n\n                foo() {\n                    bar(this.#usedMember += 1);\n                }\n            }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n                #usedMember = 42;\n                method() {\n                    return someGlobalMethod(this.#usedMember);\n                }\n            }",
+      "valid": true
+    },
+    {
+      "code": "class C {\n                #usedInOuterClass;\n\n                foo() {\n                    return class {};\n                }\n\n                bar() {\n                    return this.#usedInOuterClass;\n                }\n            }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n                #usedInForInLoop;\n                method() {\n                    for (const bar in this.#usedInForInLoop) {\n\n                    }\n                }\n            }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n                #usedInForOfLoop;\n                method() {\n                    for (const bar of this.#usedInForOfLoop) {\n\n                    }\n                }\n            }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n                #usedInAssignmentPattern;\n                method() {\n                    [bar = 1] = this.#usedInAssignmentPattern;\n                }\n            }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n                #usedInArrayPattern;\n                method() {\n                    [bar] = this.#usedInArrayPattern;\n                }\n            }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n                #usedInAssignmentPattern;\n                method() {\n                    [bar] = this.#usedInAssignmentPattern;\n                }\n            }",
+      "valid": true
+    },
+    {
+      "code": "class C {\n                #usedInObjectAssignment;\n\n                method() {\n                    ({ [this.#usedInObjectAssignment]: a } = foo);\n                }\n            }",
+      "valid": true
+    },
+    {
+      "code": "class C {\n            set #accessorWithSetterFirst(value) {\n                doSomething(value);\n            }\n            get #accessorWithSetterFirst() {\n                return something();\n            }\n            method() {\n                this.#accessorWithSetterFirst += 1;\n            }\n        }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n            set #accessorUsedInMemberAccess(value) {}\n\n            method(a) {\n                [this.#accessorUsedInMemberAccess] = a;\n            }\n        }",
+      "valid": true
+    },
+    {
+      "code": "class C {\n            get #accessorWithGetterFirst() {\n                return something();\n            }\n            set #accessorWithGetterFirst(value) {\n                doSomething(value);\n            }\n            method() {\n                this.#accessorWithGetterFirst += 1;\n            }\n        }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n                #usedMethod() {\n                    return 42;\n                }\n                anotherMethod() {\n                    return this.#usedMethod();\n                }\n            }",
+      "valid": true
+    },
+    {
+      "code": "class C {\n            set #x(value) {\n                doSomething(value);\n            }\n\n            foo() {\n                this.#x = 1;\n            }\n        }",
+      "valid": true
+    },
+    {
+      "code": "type Callback\u003cT\u003e = () =\u003e Promise\u003cT\u003e | T;\n\n         export class Issue_11039\u003cT\u003e {\n            load: () =\u003e Promise\u003cT\u003e;\n\n            constructor(callback: Callback\u003cT\u003e) {\n                this.load = () =\u003e this.#load(callback);\n            }\n\n            async #load(callback: Callback\u003cT\u003e) {\n                callback;\n            }\n         }",
+      "valid": true
+    },
+    {
+      "code": "class ChildProcess extends EventEmitter { #stdioObject; #createStdioObject() {} get stdio() { return (this.#stdioObject ??= this.#createStdioObject()); } }",
+      "valid": true
+    },
+    {
+      "code": "export class Foo { readonly #select = 123; override render() { return html`foo=${this.#select}`; } }",
+      "valid": true
+    },
+    {
+      "code": "export class Foo { #listened = false; bar() { if (!this.#listened) return; this.#listened = false; } } ",
+      "valid": true
+    },
+    {
+      "code": "export class RichText { #verticalScrollContainer; init() { const verticalScrollContainer = this.#verticalScrollContainer || (this.#verticalScrollContainer = this.verticalScrollContainerGetter?.() || null); } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #a = false; on(data) { return this.#a ? [data] : data; } set setA(value) { this.#a = value; } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #a = false; on(data) { return this.#a ? [data] : data; } }",
+      "valid": true
+    },
+    {
+      "code": "class WeakReference { #i = 0; inc() { return ++this.#i; }; dec() { return --this.#i; } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #d; constructor(d) { this.#d = d || kDefaultD; } get getD(): string { return this.#d!; } }",
+      "valid": true
+    },
+    {
+      "code": "class F { #o; initialize(output) { this.#o = output; } text(e) { return this.#o!.text(e); } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #a; constructor(a) { this.#a = a; }; b(b?: string): this { this.#a!.setB(b); return this; } resetA() { this.#a = undefined; } }",
+      "valid": true
+    },
+    {
+      "code": "let getPrivate; class C { #private; constructor(v) { this.#private = v; } static { getPrivate = klass =\u003e klass.#private; } }",
+      "valid": true
+    },
+    {
+      "code": "let getPrivate; class C { #private; constructor(v) { this.#private = v; } static { getPrivate = klass =\u003e { return klass.#private; } } }",
+      "valid": true
+    },
+    {
+      "code": "class C { #field = 1; static { const obj = new C(); console.log(obj.#field); } }",
+      "valid": true
+    },
+    {
+      "code": "class C { #method() { return 42; } static { const obj = new C(); obj.#method(); } }",
+      "valid": true
+    },
+    {
+      "code": "class C { #field = 1; static { const getField = obj =\u003e { return obj.#field; }; } }",
+      "valid": true
+    },
+    {
+      "code": "export class Database\u003cconst S extends idb.DBSchema\u003e { readonly #db: Promise\u003cidb.IDBPDatabase\u003cS\u003e\u003e; constructor(name: string, version: number, hooks: idb.OpenDBCallbacks\u003cS\u003e) { this.#db = idb.openDB\u003cS\u003e(name, version, hooks); }  async read() { let db = await this.#db; } }",
+      "valid": true
+    },
+    {
+      "code": "export class A { #x; constructor(x: number) { this.#x = x; } get(y = this.#x) { return y; } }",
+      "valid": true
+    },
+    {
+      "code": "class B { #value = 42; method(param = this.#value) { return param * 2; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { #arr = [1, 2, 3]; process(items = this.#arr) { return items.map(x =\u003e x * 2); } }",
+      "valid": true
+    },
+    {
+      "code": "export class BugClass { readonly #BUG: readonly [] = []; method() { return Math.random() \u003e 0.5 ? this.#BUG : []; } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #x; #y; method(a, b, c) { return a ? (b ? this.#x : c) : this.#y; } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #x; method() { return () =\u003e a ? this.#x : b; } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #x; method() { return a \u0026\u0026 (b ? this.#x : c); } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #x; method() { fn(a ? this.#x : b); } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #x; method() { return `${a ? this.#x : b}`; } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #x; method() { return [a ? this.#x : b]; } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #x; method() { return { key: a ? this.#x : b }; } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #x; method(val) { switch(val) { case (a ? this.#x : b): break; } } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #x; method() { throw a ? this.#x : new Error(); } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #x; method() { while (a ? this.#x : b) {} } }",
+      "valid": true
+    },
+    {
+      "code": "class Bug { #flag = false; foo() { this.#flag \u0026\u0026 console.log('spam'); } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #a; #b; #c; method() { return this.#a ? this.#b : this.#c; } }",
+      "valid": true
+    },
+    {
+      "code": "class ExampleFoo { #foo = 0; foo(foo) { foo = foo ?? this.#foo; return foo; } }",
+      "valid": true
+    },
+    {
+      "code": "class ExampleBar { #bar = 0; bar(bar) { bar = ++this.#bar; return bar; } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo { #awaitedMember; async method() { await this.#awaitedMember; } }",
+      "valid": true
+    },
+    {
+      "code": "class Test { #url: string; constructor(url: string) { this.#url = url; } open() { return new WebSocket(this.#url); } }",
+      "valid": true
+    },
+    {
+      "code": "export class Foo { #fetch: typeof fetch; constructor() { this.#fetch = fetch; } async bar() { return (0, this.#fetch)('https://example.com'); } }",
+      "valid": true
+    },
+    {
+      "code": "export class StateMachine { #state = 'idle'; step() { switch (this.#state) { case 'idle': { this.#state = 'running'; break; } case 'running': { this.#state = 'done'; break; } } } }",
+      "valid": true
+    },
+    {
+      "code": "class Stopper { #promise; async stop() { this.#promise ??= this.makePromise(); await this.#promise; } makePromise() { return Promise.resolve(); } }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n                #unusedMember = 5;\n            }",
+      "valid": false
+    },
+    {
+      "code": "class First {}\n            class Second {\n                #unusedMemberInSecondClass = 5;\n            }",
+      "valid": false
+    },
+    {
+      "code": "class First {\n                #unusedMemberInFirstClass = 5;\n            }\n            class Second {}",
+      "valid": false
+    },
+    {
+      "code": "class First {\n                #firstUnusedMemberInSameClass = 5;\n                #secondUnusedMemberInSameClass = 5;\n            }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n                #usedOnlyInWrite = 5;\n                method() {\n                    this.#usedOnlyInWrite = 42;\n                }\n            }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n                #usedOnlyInWriteStatement = 5;\n                method() {\n                    this.#usedOnlyInWriteStatement += 42;\n                }\n            }",
+      "valid": false
+    },
+    {
+      "code": "class C {\n                #usedOnlyInIncrement;\n\n                foo() {\n                    this.#usedOnlyInIncrement++;\n                }\n            }",
+      "valid": false
+    },
+    {
+      "code": "class C {\n                #unusedInOuterClass;\n\n                foo() {\n                    return class {\n                        #unusedInOuterClass;\n\n                        bar() {\n                            return this.#unusedInOuterClass;\n                        }\n                    };\n                }\n            }",
+      "valid": false
+    },
+    {
+      "code": "class C {\n                #unusedOnlyInSecondNestedClass;\n\n                foo() {\n                    return class {\n                        #unusedOnlyInSecondNestedClass;\n\n                        bar() {\n                            return this.#unusedOnlyInSecondNestedClass;\n                        }\n                    };\n                }\n\n                baz() {\n                    return this.#unusedOnlyInSecondNestedClass;\n                }\n\n                bar() {\n                    return class {\n                        #unusedOnlyInSecondNestedClass;\n                    }\n                }\n            }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n                #unusedMethod() {}\n            }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n                #unusedMethod() {}\n                #usedMethod() {\n                    return 42;\n                }\n                publicMethod() {\n                    return this.#usedMethod();\n                }\n            }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n                set #unusedSetter(value) {}\n            }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n                #unusedForInLoop;\n                method() {\n                    for (this.#unusedForInLoop in bar) {\n\n                    }\n                }\n            }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n                #unusedForOfLoop;\n                method() {\n                    for (this.#unusedForOfLoop of bar) {\n\n                    }\n                }\n            }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n                #unusedInDestructuring;\n                method() {\n                    ({ x: this.#unusedInDestructuring } = bar);\n                }\n            }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n                #unusedInRestPattern;\n                method() {\n                    [...this.#unusedInRestPattern] = bar;\n                }\n            }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n                #unusedInAssignmentPattern;\n                method() {\n                    [this.#unusedInAssignmentPattern = 1] = bar;\n                }\n            }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n                #unusedInAssignmentPattern;\n                method() {\n                    [this.#unusedInAssignmentPattern] = bar;\n                }\n            }",
+      "valid": false
+    },
+    {
+      "code": "class C {\n                #usedOnlyInTheSecondInnerClass;\n\n                method(a) {\n                    return class {\n                        #usedOnlyInTheSecondInnerClass;\n\n                        method2(b) {\n                            foo = b.#usedOnlyInTheSecondInnerClass;\n                        }\n\n                        method3(b) {\n                            foo = b.#usedOnlyInTheSecondInnerClass;\n                        }\n                    }\n                }\n            }",
+      "valid": false
+    },
+    {
+      "code": "class StatementLogicalAssignment { #prop; method() { this.#prop ??= 1; } }",
+      "valid": false
+    },
+    {
+      "code": "class Foo { #unused; method() { Math.random() \u003e 0.5 ? this.#unused : []; } }",
+      "valid": false
+    },
+    {
+      "code": "class Foo { #x; #y; method(a, b, c) { a ? (b ? this.#x : c) : this.#y; } }",
+      "valid": false
+    },
+    {
+      "code": "class Foo { #x; method() { a \u0026\u0026 (b ? this.#x : c); } }",
+      "valid": false
+    },
+    {
+      "code": "class Foo { #a; #b; #c; method() { this.#a ? this.#b : this.#c; } }",
+      "valid": false
+    }
+  ]
+}

@@ -21,8 +21,6 @@ import (
 	// (not in main) so the architecture test sees rule-package-shaped imports.
 	_ "github.com/microsoft/typescript-go/pkg/lint"
 
-	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
-	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
 	"github.com/jetlint/jetlint/internal/config"
 	"github.com/jetlint/jetlint/internal/daemon"
 	"github.com/jetlint/jetlint/internal/engine"
@@ -51,18 +49,14 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nodeprecated"
 	"github.com/jetlint/jetlint/internal/rules/nodupeclassmembers"
 	"github.com/jetlint/jetlint/internal/rules/nodupeelseif"
-	"github.com/jetlint/jetlint/internal/rules/noemptypattern"
-	"github.com/jetlint/jetlint/internal/rules/noexassign"
-	"github.com/jetlint/jetlint/internal/rules/nofuncassign"
-	"github.com/jetlint/jetlint/internal/rules/nosparsearrays"
-	"github.com/jetlint/jetlint/internal/rules/nopromiseexecutorreturn"
-	"github.com/jetlint/jetlint/internal/rules/noprototypebuiltins"
-	"github.com/jetlint/jetlint/internal/rules/notemplatecurlyinstring"
 	"github.com/jetlint/jetlint/internal/rules/nodupekeys"
 	"github.com/jetlint/jetlint/internal/rules/noduplicatecase"
 	"github.com/jetlint/jetlint/internal/rules/noduplicatetypeconstituents"
+	"github.com/jetlint/jetlint/internal/rules/noemptypattern"
+	"github.com/jetlint/jetlint/internal/rules/noexassign"
 	"github.com/jetlint/jetlint/internal/rules/nofloatingpromises"
 	"github.com/jetlint/jetlint/internal/rules/noforinarray"
+	"github.com/jetlint/jetlint/internal/rules/nofuncassign"
 	"github.com/jetlint/jetlint/internal/rules/noimpliedeval"
 	"github.com/jetlint/jetlint/internal/rules/noimportassign"
 	"github.com/jetlint/jetlint/internal/rules/nolossofprecision"
@@ -71,12 +65,16 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nomisusedspread"
 	"github.com/jetlint/jetlint/internal/rules/nomixedenums"
 	"github.com/jetlint/jetlint/internal/rules/nonewnativenonconstructor"
-	"github.com/jetlint/jetlint/internal/rules/noobjcalls"
 	"github.com/jetlint/jetlint/internal/rules/nonnullabletypeassertionstyle"
+	"github.com/jetlint/jetlint/internal/rules/noobjcalls"
+	"github.com/jetlint/jetlint/internal/rules/nopromiseexecutorreturn"
+	"github.com/jetlint/jetlint/internal/rules/noprototypebuiltins"
 	"github.com/jetlint/jetlint/internal/rules/noredundanttypeconstituents"
 	"github.com/jetlint/jetlint/internal/rules/noselfassign"
 	"github.com/jetlint/jetlint/internal/rules/noselfcompare"
 	"github.com/jetlint/jetlint/internal/rules/nosetterreturn"
+	"github.com/jetlint/jetlint/internal/rules/nosparsearrays"
+	"github.com/jetlint/jetlint/internal/rules/notemplatecurlyinstring"
 	"github.com/jetlint/jetlint/internal/rules/nounexpectedmultiline"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarybooleanliteralcompare"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarycondition"
@@ -90,11 +88,12 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounsafeassignment"
 	"github.com/jetlint/jetlint/internal/rules/nounsafecall"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeenumcomparison"
-	"github.com/jetlint/jetlint/internal/rules/nounsafememberaccess"
 	"github.com/jetlint/jetlint/internal/rules/nounsafefinally"
+	"github.com/jetlint/jetlint/internal/rules/nounsafememberaccess"
 	"github.com/jetlint/jetlint/internal/rules/nounsafereturn"
 	"github.com/jetlint/jetlint/internal/rules/nounsafetypeassertion"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeunaryminus"
+	"github.com/jetlint/jetlint/internal/rules/nounusedprivateclassmembers"
 	"github.com/jetlint/jetlint/internal/rules/nouselessdefaultassignment"
 	"github.com/jetlint/jetlint/internal/rules/onlythrowerror"
 	"github.com/jetlint/jetlint/internal/rules/preferdestructuring"
@@ -125,6 +124,8 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/validtypeof"
 	"github.com/jetlint/jetlint/internal/toolerr"
 	"github.com/jetlint/jetlint/internal/transport"
+	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
+	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
 )
 
 // Version is the linter's reported version. Build pipelines can override
@@ -595,6 +596,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nounsafereturn.New(),
 		nounsafetypeassertion.New(),
 		nounsafeunaryminus.New(),
+		nounusedprivateclassmembers.New(),
 		nouselessdefaultassignment.New(),
 		onlythrowerror.New(),
 		preferdestructuring.New(),

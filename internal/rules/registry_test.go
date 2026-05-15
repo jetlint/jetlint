@@ -244,6 +244,7 @@ func additionalRulesSnapshot() []string {
 		"no-unsafe-return",
 		"no-unsafe-type-assertion",
 		"no-unsafe-unary-minus",
+		"no-unused-private-class-members",
 		"no-useless-default-assignment",
 		"non-nullable-type-assertion-style",
 		"only-throw-error",

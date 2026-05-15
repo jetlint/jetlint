@@ -70,7 +70,7 @@ Update this file as rules land or assumptions change.
 | `no-unsafe-finally` | ✓ | Shipped 2026-05-15 |
 | `no-unsafe-negation` | | AST: `!a in b`, `!a instanceof b`. |
 | `no-unsafe-optional-chaining` | | AST: optional chain whose result must not be undefined. |
-| `no-unused-private-class-members` | | Scope: unused `#field`. |
+| `no-unused-private-class-members` | ✓ | Shipped 2026-05-15 |
 | `no-unused-vars` | | Scope: unused declarations. TS catches under noUnusedLocals. |
 | `no-use-before-define` | | Scope: reference before declaration. |
 | `no-useless-backreference` | ⊘ | Regex AST. |
