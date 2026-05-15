@@ -93,6 +93,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounsafefinally"
 	"github.com/jetlint/jetlint/internal/rules/nounsafememberaccess"
 	"github.com/jetlint/jetlint/internal/rules/nounsafenegation"
+	"github.com/jetlint/jetlint/internal/rules/nounsafeoptionalchaining"
 	"github.com/jetlint/jetlint/internal/rules/nounsafereturn"
 	"github.com/jetlint/jetlint/internal/rules/nounsafetypeassertion"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeunaryminus"
@@ -598,6 +599,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nounsafeenumcomparison.New(),
 		nounsafememberaccess.New(),
 		nounsafenegation.New(),
+		nounsafeoptionalchaining.New(),
 		nounsafefinally.New(),
 		nounsafereturn.New(),
 		nounsafetypeassertion.New(),

@@ -1,0 +1,348 @@
+{
+  "ruleId": "no-unsafe-optional-chaining",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_unsafe_optional_chaining.rs",
+  "cases": [
+    {
+      "code": "var foo;",
+      "valid": true
+    },
+    {
+      "code": "class Foo {}",
+      "valid": true
+    },
+    {
+      "code": "!!obj?.foo",
+      "valid": true
+    },
+    {
+      "code": "obj?.foo();",
+      "valid": true
+    },
+    {
+      "code": "obj?.foo?.();",
+      "valid": true
+    },
+    {
+      "code": "(obj?.foo ?? bar)();",
+      "valid": true
+    },
+    {
+      "code": "(obj?.foo)?.()",
+      "valid": true
+    },
+    {
+      "code": "(obj?.foo ?? bar?.baz)?.()",
+      "valid": true
+    },
+    {
+      "code": "(obj.foo)?.();",
+      "valid": true
+    },
+    {
+      "code": "obj?.foo.bar;",
+      "valid": true
+    },
+    {
+      "code": "obj?.foo?.bar;",
+      "valid": true
+    },
+    {
+      "code": "(obj?.foo)?.bar;",
+      "valid": true
+    },
+    {
+      "code": "(obj?.foo)?.bar.baz;",
+      "valid": true
+    },
+    {
+      "code": "(obj?.foo)?.().bar",
+      "valid": true
+    },
+    {
+      "code": "(obj?.foo ?? bar).baz;",
+      "valid": true
+    },
+    {
+      "code": "(obj?.foo ?? val)`template`",
+      "valid": true
+    },
+    {
+      "code": "new (obj?.foo ?? val)()",
+      "valid": true
+    },
+    {
+      "code": "new bar();",
+      "valid": true
+    },
+    {
+      "code": "obj?.foo?.()();",
+      "valid": true
+    },
+    {
+      "code": "const {foo} = obj?.baz || {};",
+      "valid": true
+    },
+    {
+      "code": "const foo = obj?.bar",
+      "valid": true
+    },
+    {
+      "code": "foo = obj?.bar",
+      "valid": true
+    },
+    {
+      "code": "foo.bar = obj?.bar",
+      "valid": true
+    },
+    {
+      "code": "bar(...obj?.foo ?? []);",
+      "valid": true
+    },
+    {
+      "code": "var bar = {...foo?.bar};",
+      "valid": true
+    },
+    {
+      "code": "foo?.bar in {};",
+      "valid": true
+    },
+    {
+      "code": "foo?.bar \u003c foo?.baz;",
+      "valid": true
+    },
+    {
+      "code": "foo?.bar \u003c= foo?.baz;",
+      "valid": true
+    },
+    {
+      "code": "foo?.bar \u003e foo?.baz;",
+      "valid": true
+    },
+    {
+      "code": "foo?.bar \u003e= foo?.baz;",
+      "valid": true
+    },
+    {
+      "code": "[foo = obj?.bar] = [];",
+      "valid": true
+    },
+    {
+      "code": "[foo.bar = obj?.bar] = [];",
+      "valid": true
+    },
+    {
+      "code": "({foo = obj?.bar} = obj);",
+      "valid": true
+    },
+    {
+      "code": "({foo: obj.bar = obj?.baz} = obj);",
+      "valid": true
+    },
+    {
+      "code": "(foo?.bar, bar)();",
+      "valid": true
+    },
+    {
+      "code": "(obj?.foo || bar).baz;",
+      "valid": true
+    },
+    {
+      "code": "(foo?.bar ? baz : qux)();",
+      "valid": true
+    },
+    {
+      "code": "\n        async function func() {\n          await obj?.foo();\n          await obj?.foo?.();\n          (await obj?.foo)?.();\n          (await obj?.foo)?.bar;\n          await bar?.baz;\n          await (foo ?? obj?.foo.baz);\n          (await bar?.baz ?? bar).baz;\n          (await bar?.baz ?? await bar).baz;\n          await (foo?.bar ? baz : qux);\n        }\n        ",
+      "valid": true
+    },
+    {
+      "code": "(obj?.foo ?? bar?.baz ?? qux)();",
+      "valid": true
+    },
+    {
+      "code": "((obj?.foo ?? bar?.baz) || qux)();",
+      "valid": true
+    },
+    {
+      "code": "((obj?.foo || bar?.baz) || qux)();",
+      "valid": true
+    },
+    {
+      "code": "((obj?.foo \u0026\u0026 bar?.baz) || qux)();",
+      "valid": true
+    },
+    {
+      "code": "obj?.foo - bar;",
+      "valid": true
+    },
+    {
+      "code": "obj?.foo + bar;",
+      "valid": true
+    },
+    {
+      "code": "obj?.foo * bar;",
+      "valid": true
+    },
+    {
+      "code": "obj?.foo / bar;",
+      "valid": true
+    },
+    {
+      "code": "obj?.foo % bar;",
+      "valid": true
+    },
+    {
+      "code": "obj?.foo ** bar;",
+      "valid": true
+    },
+    {
+      "code": "+obj?.foo;",
+      "valid": true
+    },
+    {
+      "code": "-obj?.foo;",
+      "valid": true
+    },
+    {
+      "code": "bar += obj?.foo;",
+      "valid": true
+    },
+    {
+      "code": "bar -= obj?.foo;",
+      "valid": true
+    },
+    {
+      "code": "bar %= obj?.foo;",
+      "valid": true
+    },
+    {
+      "code": "bar **= obj?.foo;",
+      "valid": true
+    },
+    {
+      "code": "bar *= obj?.boo",
+      "valid": true
+    },
+    {
+      "code": "bar /= obj?.boo",
+      "valid": true
+    },
+    {
+      "code": "async function func() {\n            await obj?.foo + await obj?.bar;\n            await obj?.foo - await obj?.bar;\n            await obj?.foo * await obj?.bar;\n            +await obj?.foo;\n            -await obj?.foo;\n            bar += await obj?.foo;\n            bar -= await obj?.foo;\n            bar %= await obj?.foo;\n            bar **= await obj?.foo;\n            bar *= await obj?.boo;\n            bar /= await obj?.boo;\n        }\n        ",
+      "valid": true
+    },
+    {
+      "code": "obj?.foo - bar;",
+      "valid": true,
+      "options": [
+        {}
+      ]
+    },
+    {
+      "code": "obj?.foo - bar;",
+      "valid": true,
+      "options": [
+        {
+          "disallowArithmeticOperators": false
+        }
+      ]
+    },
+    {
+      "code": "x?.f\u003cT\u003e();",
+      "valid": true
+    },
+    {
+      "code": "x?.f?.\u003cT\u003e();",
+      "valid": true
+    },
+    {
+      "code": "f?.\u003cQ\u003e();",
+      "valid": true
+    },
+    {
+      "code": "a?.c?.b\u003cc\u003e",
+      "valid": true
+    },
+    {
+      "code": "const baz = {...obj?.foo };",
+      "valid": true
+    },
+    {
+      "code": "(obj?.foo).bar",
+      "valid": false
+    },
+    {
+      "code": "(obj?.foo)();",
+      "valid": false
+    },
+    {
+      "code": "new (obj?.foo)();",
+      "valid": false
+    },
+    {
+      "code": "(obj?.foo)`template`",
+      "valid": false
+    },
+    {
+      "code": "class A extends obj?.foo {}",
+      "valid": false
+    },
+    {
+      "code": "const {foo} = obj?.bar;",
+      "valid": false
+    },
+    {
+      "code": "({foo} = obj?.bar);",
+      "valid": false
+    },
+    {
+      "code": "foo in obj?.bar;",
+      "valid": false
+    },
+    {
+      "code": "for (foo of obj?.bar) {}",
+      "valid": false
+    },
+    {
+      "code": "(obj?.foo \u0026\u0026 obj?.baz).bar",
+      "valid": false
+    },
+    {
+      "code": "with (obj?.foo) {};",
+      "valid": false
+    },
+    {
+      "code": "async function foo() { with ( await obj?.foo) {}; }",
+      "valid": false
+    },
+    {
+      "code": "(foo ? obj?.foo : obj?.bar).bar",
+      "valid": false
+    },
+    {
+      "code": "const a = [...obj?.foo];",
+      "valid": false
+    },
+    {
+      "code": "const b = [...c, ...obj?.foo];",
+      "valid": false
+    },
+    {
+      "code": "const s = [], t = [...obj?.foo];",
+      "valid": false
+    },
+    {
+      "code": "const c = () =\u003e ([...(obj?.foo)]);",
+      "valid": false
+    },
+    {
+      "code": "bar + obj?.foo;",
+      "valid": false,
+      "options": [
+        {
+          "disallowArithmeticOperators": true
+        }
+      ]
+    }
+  ]
+}
