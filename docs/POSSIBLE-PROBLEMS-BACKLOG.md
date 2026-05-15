@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 28
-- Remaining (AST-only): ~25
+- Shipped: 29
+- Remaining (AST-only): ~24
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -50,7 +50,7 @@ Update this file as rules land or assumptions change.
 | `no-inner-declarations` | | AST: function/var declared inside a non-function block. |
 | `no-invalid-regexp` | ⊘ | Regex AST. |
 | `no-irregular-whitespace` | | AST: source-text scan for control-whitespace characters. |
-| `no-loss-of-precision` | | AST: numeric literal whose precision is lost. |
+| `no-loss-of-precision` | ✓ | Shipped 2026-05-15 |
 | `no-misleading-character-class` | ⊘ | Regex AST. |
 | `no-new-native-nonconstructor` | | AST: `new Symbol(...)` / `new BigInt(...)`. |
 | `no-obj-calls` | ✓ | Shipped 2026-05-15 |
