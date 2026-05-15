@@ -35,6 +35,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/consistenttypeexports"
 	"github.com/jetlint/jetlint/internal/rules/constructorsuper"
 	"github.com/jetlint/jetlint/internal/rules/dotnotation"
+	"github.com/jetlint/jetlint/internal/rules/fordirection"
 	"github.com/jetlint/jetlint/internal/rules/namingconvention"
 	"github.com/jetlint/jetlint/internal/rules/noarraydelete"
 	"github.com/jetlint/jetlint/internal/rules/nobasetotostring"
@@ -514,6 +515,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		consistenttypeexports.New(),
 		constructorsuper.New(),
 		dotnotation.New(),
+		fordirection.New(),
 		namingconvention.New(),
 		noarraydelete.New(),
 		noconfusingvoidexpression.New(),
