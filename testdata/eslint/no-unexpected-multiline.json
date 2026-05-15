@@ -1,0 +1,239 @@
+{
+  "ruleId": "no-unexpected-multiline",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_unexpected_multiline.rs",
+  "cases": [
+    {
+      "code": "(x || y).aFunction()",
+      "valid": true
+    },
+    {
+      "code": "[a, b, c].forEach(doSomething)",
+      "valid": true
+    },
+    {
+      "code": "var a = b;\n(x || y).doSomething()",
+      "valid": true
+    },
+    {
+      "code": "var a = b\n;(x || y).doSomething()",
+      "valid": true
+    },
+    {
+      "code": "var a = b\nvoid (x || y).doSomething()",
+      "valid": true
+    },
+    {
+      "code": "var a = b;\n[1, 2, 3].forEach(console.log)",
+      "valid": true
+    },
+    {
+      "code": "var a = b\nvoid [1, 2, 3].forEach(console.log)",
+      "valid": true
+    },
+    {
+      "code": "\"abc\\\n(123)\"",
+      "valid": true
+    },
+    {
+      "code": "var a = (\n(123)\n)",
+      "valid": true
+    },
+    {
+      "code": "f(\n(x)\n)",
+      "valid": true
+    },
+    {
+      "code": "(\nfunction () {}\n)[1]",
+      "valid": true
+    },
+    {
+      "code": "let x = function() {};\n   `hello`",
+      "valid": true
+    },
+    {
+      "code": "let x = function() {}\nx `hello`",
+      "valid": true
+    },
+    {
+      "code": "String.raw `Hi\n${2+3}!`;",
+      "valid": true
+    },
+    {
+      "code": "x\n.y\nz `Valid Test Case`",
+      "valid": true
+    },
+    {
+      "code": "f(x\n)`Valid Test Case`",
+      "valid": true
+    },
+    {
+      "code": "x.\ny `Valid Test Case`",
+      "valid": true
+    },
+    {
+      "code": "(x\n)`Valid Test Case`",
+      "valid": true
+    },
+    {
+      "code": "\n\t\t\tfoo\n\t\t\t/ bar /2\n\t\t",
+      "valid": true
+    },
+    {
+      "code": "\n\t\t\tfoo\n\t\t\t/ bar / mgy\n\t\t",
+      "valid": true
+    },
+    {
+      "code": "\n\t\t\tfoo\n\t\t\t/ bar /\n\t\t\tgym\n\t\t",
+      "valid": true
+    },
+    {
+      "code": "\n\t\t\tfoo\n\t\t\t/ bar\n\t\t\t/ ygm\n\t\t",
+      "valid": true
+    },
+    {
+      "code": "\n\t\t\tfoo\n\t\t\t/ bar /GYM\n\t\t",
+      "valid": true
+    },
+    {
+      "code": "\n\t\t\tfoo\n\t\t\t/ bar / baz\n\t\t",
+      "valid": true
+    },
+    {
+      "code": "foo /bar/g",
+      "valid": true
+    },
+    {
+      "code": "\n\t\t\tfoo\n\t\t\t/denominator/\n\t\t\t2\n\t\t",
+      "valid": true
+    },
+    {
+      "code": "\n\t\t\tfoo\n\t\t\t/ /abc/\n\t\t",
+      "valid": true
+    },
+    {
+      "code": "\n\t\t\t5 / (5\n\t\t\t/ 5)\n\t\t",
+      "valid": true
+    },
+    {
+      "code": "\n\t\t\ttag\u003cgeneric\u003e`\n\t\t\t\tmultiline\n\t\t\t`;\n\t\t",
+      "valid": true
+    },
+    {
+      "code": "\n\t\t\ttag\u003c\n\t\t\t\tgeneric\n\t\t\t\u003e`\n\t\t\t\tmultiline\n\t\t\t`;\n\t\t",
+      "valid": true
+    },
+    {
+      "code": "\n\t\t\ttag\u003c\n\t\t\t\tgeneric\n\t\t\t\u003e`multiline`;\n\t\t",
+      "valid": true
+    },
+    {
+      "code": "var a = b\n  ?.(x || y).doSomething()",
+      "valid": true
+    },
+    {
+      "code": "var a = b\n  ?.[a, b, c].forEach(doSomething)",
+      "valid": true
+    },
+    {
+      "code": "var a = b?.\n  (x || y).doSomething()",
+      "valid": true
+    },
+    {
+      "code": "var a = b?.\n  [a, b, c].forEach(doSomething)",
+      "valid": true
+    },
+    {
+      "code": "class C { field1\n[field2]; }",
+      "valid": true
+    },
+    {
+      "code": "class C { field1\n*gen() {} }",
+      "valid": true
+    },
+    {
+      "code": "class C { field1 = () =\u003e {}\n[field2]; }",
+      "valid": true
+    },
+    {
+      "code": "class C { field1 = () =\u003e {}\n*gen() {} }",
+      "valid": true
+    },
+    {
+      "code": "const foo = bar\u003c{\n            a: string\n            b: number\n        }\u003e();",
+      "valid": true
+    },
+    {
+      "code": "const foo = bar\u003c{\n            [key: string | number]: string\n        }\u003e();",
+      "valid": true
+    },
+    {
+      "code": "var a = b\n(x || y).doSomething()",
+      "valid": false
+    },
+    {
+      "code": "var a = (a || b)\n(x || y).doSomething()",
+      "valid": false
+    },
+    {
+      "code": "var a = (a || b)\n(x).doSomething()",
+      "valid": false
+    },
+    {
+      "code": "var a = b\n[a, b, c].forEach(doSomething)",
+      "valid": false
+    },
+    {
+      "code": "var a = b\n    (x || y).doSomething()",
+      "valid": false
+    },
+    {
+      "code": "var a = b\n  [a, b, c].forEach(doSomething)",
+      "valid": false
+    },
+    {
+      "code": "let x = function() {}\n `hello`",
+      "valid": false
+    },
+    {
+      "code": "let x = function() {}\nx\n`hello`",
+      "valid": false
+    },
+    {
+      "code": "x\n.y\nz\n`Invalid Test Case`",
+      "valid": false
+    },
+    {
+      "code": "\n\t\t\tfoo\n\t\t\t/ bar /gym\n\t\t",
+      "valid": false
+    },
+    {
+      "code": "\n\t\t\tfoo\n\t\t\t/ bar /g\n\t\t",
+      "valid": false
+    },
+    {
+      "code": "\n\t\t\tfoo\n\t\t\t/ bar /g.test(baz)\n\t\t",
+      "valid": false
+    },
+    {
+      "code": "\n\t\t\tfoo\n\t\t\t/bar/gimuygimuygimuy.test(baz)\n\t\t",
+      "valid": false
+    },
+    {
+      "code": "\n\t\t\tfoo\n\t\t\t/bar/s.test(baz)\n\t\t",
+      "valid": false
+    },
+    {
+      "code": "const x = aaaa\u003c\n  test\n\u003e/*\ntest\n*/`foo`",
+      "valid": false
+    },
+    {
+      "code": "class C { field1 = obj\n[field2]; }",
+      "valid": false
+    },
+    {
+      "code": "class C { field1 = function() {}\n[field2]; }",
+      "valid": false
+    }
+  ]
+}
