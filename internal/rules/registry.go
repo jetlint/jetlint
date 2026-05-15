@@ -78,6 +78,7 @@ var All = []Metadata{
 	{ID: "no-misused-promises", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-misused-spread", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-mixed-enums", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-self-compare", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-argument", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-assignment", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-call", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
