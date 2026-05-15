@@ -107,6 +107,7 @@ var All = []Metadata{
 	{ID: "no-unreachable", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-negation", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-optional-chaining", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-unmodified-loop-condition", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unused-private-class-members", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-use-before-define", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-floating-promises", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
