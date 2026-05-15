@@ -238,6 +238,7 @@ func additionalRulesSnapshot() []string {
 		"strict-void-return",
 		"switch-exhaustiveness-check",
 		"unbound-method",
+		"use-isnan",
 		"use-unknown-in-catch-callback-variable",
 	}
 }
