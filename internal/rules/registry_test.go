@@ -199,6 +199,7 @@ func additionalRulesSnapshot() []string {
 		"no-misused-spread",
 		"no-mixed-enums",
 		"no-redundant-type-constituents",
+		"no-self-assign",
 		"no-self-compare",
 		"no-unnecessary-boolean-literal-compare",
 		"no-unnecessary-condition",

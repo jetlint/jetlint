@@ -64,20 +64,21 @@ for one release as a signal to early adopters.
 
 Of the 61 rules shipped today, the assignment is:
 
-### correctness (29)
+### correctness (30)
 
 `await-thenable`, `consistent-return`, `no-array-delete`, `no-base-to-string`,
 `no-dupe-keys`, `no-duplicate-case`, `no-floating-promises`, `no-for-in-array`,
-`no-misused-promises`, `no-misused-spread`, `no-mixed-enums`, `no-self-compare`,
-`no-unsafe-argument`, `no-unsafe-assignment`, `no-unsafe-call`,
-`no-unsafe-enum-comparison`, `no-unsafe-member-access`, `no-unsafe-return`,
-`no-unsafe-unary-minus`, `only-throw-error`, `prefer-promise-reject-errors`,
-`related-getter-setter-pairs`, `require-array-sort-compare`, `require-await`,
-`strict-void-return`, `switch-exhaustiveness-check`, `use-isnan`,
+`no-misused-promises`, `no-misused-spread`, `no-mixed-enums`, `no-self-assign`,
+`no-self-compare`, `no-unsafe-argument`, `no-unsafe-assignment`,
+`no-unsafe-call`, `no-unsafe-enum-comparison`, `no-unsafe-member-access`,
+`no-unsafe-return`, `no-unsafe-unary-minus`, `only-throw-error`,
+`prefer-promise-reject-errors`, `related-getter-setter-pairs`,
+`require-array-sort-compare`, `require-await`, `strict-void-return`,
+`switch-exhaustiveness-check`, `use-isnan`,
 `use-unknown-in-catch-callback-variable`, `valid-typeof`
 
 Non-type-aware rules in this category — `no-dupe-keys`, `no-duplicate-case`,
-`no-self-compare`, `use-isnan`, `valid-typeof` — carry
+`no-self-assign`, `no-self-compare`, `use-isnan`, `valid-typeof` — carry
 `RequiresTypeChecking: false`. They walk the AST without ever calling the
 checker and rely on syntactic helpers like [Node.SourceText][srctext],
 [Node.PropertyAccessName][pan], and [Node.LiteralText][lit].
