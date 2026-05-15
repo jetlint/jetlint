@@ -40,7 +40,7 @@ Update this file as rules land or assumptions change.
 | `no-dupe-else-if` | ✓ | Shipped 2026-05-15 |
 | `no-dupe-keys` | ✓ | Shipped 2026-05-15 |
 | `no-duplicate-case` | ✓ | Shipped 2026-05-15 |
-| `no-duplicate-imports` | | AST: duplicate `import` source strings. |
+| `no-duplicate-imports` | ✓ | Shipped 2026-05-15 (76/86 fixtures; type-only import combinations and the finer points of `includeExports` are still pending) |
 | `no-empty-character-class` | ⊘ | Regex AST. |
 | `no-empty-pattern` | ✓ | Shipped 2026-05-15 |
 | `no-ex-assign` | ✓ | Shipped 2026-05-15 |

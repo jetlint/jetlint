@@ -1,0 +1,640 @@
+{
+  "ruleId": "no-duplicate-imports",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_duplicate_imports.rs",
+  "cases": [
+    {
+      "code": "import os from \"os\";\n            import fs from \"fs\";",
+      "valid": true
+    },
+    {
+      "code": "import { merge } from \"lodash-es\";",
+      "valid": true
+    },
+    {
+      "code": "import _, { merge } from \"lodash-es\";",
+      "valid": true
+    },
+    {
+      "code": "import * as Foobar from \"async\";",
+      "valid": true
+    },
+    {
+      "code": "import \"foo\"",
+      "valid": true
+    },
+    {
+      "code": "import os from \"os\";\n            export { something } from \"os\";",
+      "valid": true
+    },
+    {
+      "code": "import * as bar from \"os\";\n            import { baz } from \"os\";",
+      "valid": true
+    },
+    {
+      "code": "import foo, * as bar from \"os\";\n            import { baz } from \"os\";",
+      "valid": true
+    },
+    {
+      "code": "import foo, { bar } from \"os\";\n            import * as baz from \"os\";",
+      "valid": true
+    },
+    {
+      "code": "import os from \"os\";\n            export { hello } from \"hello\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import os from \"os\";\n            export * from \"hello\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import os from \"os\";\n            export { hello as hi } from \"hello\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import os from \"os\";\n            export default function(){};",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import { merge } from \"lodash-es\";\n            export { merge as lodashMerge }",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "export { something } from \"os\";\n            export * as os from \"os\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import { something } from \"os\";\n            export * as os from \"os\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import * as os from \"os\";\n            export { something } from \"os\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import os from \"os\";\n            export * from \"os\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "export { something } from \"os\";\n            export * from \"os\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import type { Os } from \"os\";\n            import type { Fs } from \"fs\";",
+      "valid": true
+    },
+    {
+      "code": "import { type Os } from \"os\";\n            import type { Fs } from \"fs\";",
+      "valid": true
+    },
+    {
+      "code": "import type { Merge } from \"lodash-es\";",
+      "valid": true
+    },
+    {
+      "code": "import _, { type Merge } from \"lodash-es\";",
+      "valid": true
+    },
+    {
+      "code": "import type * as Foobar from \"async\";",
+      "valid": true
+    },
+    {
+      "code": "import type Os from \"os\";\n            export type { Something } from \"os\";",
+      "valid": true
+    },
+    {
+      "code": "import type Os from \"os\";\n            export { type Something } from \"os\";",
+      "valid": true
+    },
+    {
+      "code": "import type * as Bar from \"os\";\n            import { type Baz } from \"os\";",
+      "valid": true
+    },
+    {
+      "code": "import foo, * as bar from \"os\";\n            import { type Baz } from \"os\";",
+      "valid": true
+    },
+    {
+      "code": "import foo, { type bar } from \"os\";\n            import type * as Baz from \"os\";",
+      "valid": true
+    },
+    {
+      "code": "import type { Merge } from \"lodash-es\";\n            import type _ from \"lodash-es\";",
+      "valid": true
+    },
+    {
+      "code": "import type Os from \"os\";\n            export { type Hello } from \"hello\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import type Os from \"os\";\n            export type * from \"hello\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import type Os from \"os\";\n            export { type Hello as Hi } from \"hello\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import type Os from \"os\";\n            export default function(){};",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import { type Merge } from \"lodash-es\";\n            export { Merge as lodashMerge }",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "export type { Something } from \"os\";\n            export * as os from \"os\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import { type Something } from \"os\";\n            export * as os from \"os\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import type * as Os from \"os\";\n            export { something } from \"os\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import type Os from \"os\";\n            export * from \"os\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import type Os from \"os\";\n            export type { Something } from \"os\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import { M, MC } from \"./types.ts\";\n            export { M, MC };",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import type { M, MC } from \"./types.ts\";\n            export type { M, MC };",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "export type { Something } from \"os\";\n            export * from \"os\";",
+      "valid": true,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import { foo, type Bar } from \"module\";",
+      "valid": true,
+      "options": [
+        {
+          "allowSeparateTypeImports": true
+        }
+      ]
+    },
+    {
+      "code": "import { foo } from \"module\";\n            import type { Bar } from \"module\";",
+      "valid": true,
+      "options": [
+        {
+          "allowSeparateTypeImports": true
+        }
+      ]
+    },
+    {
+      "code": "import { type Foo } from \"module\";\n            import type { Bar } from \"module\";",
+      "valid": true,
+      "options": [
+        {
+          "allowSeparateTypeImports": true
+        }
+      ]
+    },
+    {
+      "code": "import { foo, type Bar } from \"module\";\n            export { type Baz } from \"module2\";",
+      "valid": true,
+      "options": [
+        {
+          "allowSeparateTypeImports": true,
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import type { Foo } from \"module\";\n            export { bar, type Baz } from \"module\";",
+      "valid": true,
+      "options": [
+        {
+          "allowSeparateTypeImports": true,
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import { type Foo } from \"module\";\n            export type { Bar } from \"module\";",
+      "valid": true,
+      "options": [
+        {
+          "allowSeparateTypeImports": true,
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import type * as Foo from \"module\";\n            export { type Bar } from \"module\";",
+      "valid": true,
+      "options": [
+        {
+          "allowSeparateTypeImports": true,
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import { type Foo } from \"module\";\n            export type * as Bar from \"module\";",
+      "valid": true,
+      "options": [
+        {
+          "allowSeparateTypeImports": true,
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import \"fs\";\n            import \"fs\"",
+      "valid": false
+    },
+    {
+      "code": "import { merge } from \"lodash-es\";\n            import { find } from \"lodash-es\";",
+      "valid": false
+    },
+    {
+      "code": "import { merge } from \"lodash-es\";\n            import _ from \"lodash-es\";",
+      "valid": false
+    },
+    {
+      "code": "import os from \"os\";\n            import { something } from \"os\";\n            import * as foobar from \"os\";",
+      "valid": false
+    },
+    {
+      "code": "import * as modns from \"lodash-es\";\n            import { merge } from \"lodash-es\";\n            import { baz } from \"lodash-es\";",
+      "valid": false
+    },
+    {
+      "code": "export { os } from \"os\";\n            export { something } from \"os\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import os from \"os\";\n            export { os as foobar } from \"os\";\n            export { something } from \"os\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import os from \"os\";\n            export { something } from \"os\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import os from \"os\";\n            export * as os from \"os\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "export * as os from \"os\";\n            import os from \"os\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import * as modns from \"mod\";\n            export * as  modns from \"mod\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "export * from \"os\";\n            export * from \"os\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import \"os\";\n            export * from \"os\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import { type Merge } from \"lodash-es\";\n            import { type Find } from \"lodash-es\";",
+      "valid": false
+    },
+    {
+      "code": "import { type Merge } from \"lodash-es\";\n            import type { Find } from \"lodash-es\";",
+      "valid": false
+    },
+    {
+      "code": "import type { Merge } from \"lodash-es\";\n            import type { Find } from \"lodash-es\";",
+      "valid": false
+    },
+    {
+      "code": "import type Os from \"os\";\n            import type { Something } from \"os\";\n            import type * as Foobar from \"os\";",
+      "valid": false
+    },
+    {
+      "code": "import type * as Modns from \"lodash-es\";\n            import type { Merge } from \"lodash-es\";\n            import type { Baz } from \"lodash-es\";",
+      "valid": false
+    },
+    {
+      "code": "import { type Foo } from \"module\";\n            export type { Bar } from \"module\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "export { os } from \"os\";\n            export type { Something } from \"os\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "export type { Os } from \"os\";\n            export type { Something } from \"os\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import type { Os } from \"os\";\n            export type { Os as Foobar } from \"os\";\n            export type { Something } from \"os\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import type { Os } from \"os\";\n            export type { Something } from \"os\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import type Os from \"os\";\n            export type * as Os from \"os\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import type * as Modns from \"mod\";\n            export type * as Modns from \"mod\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "export type * from \"os\";\n            export type * from \"os\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import \"os\";\n            export type { Os } from \"os\";",
+      "valid": false,
+      "options": [
+        {
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import { someValue } from 'module';\n            import { anotherValue } from 'module';",
+      "valid": false,
+      "options": [
+        {
+          "allowSeparateTypeImports": true
+        }
+      ]
+    },
+    {
+      "code": "import type { Merge } from \"lodash-es\";\n            import type { Find } from \"lodash-es\";",
+      "valid": false,
+      "options": [
+        {
+          "allowSeparateTypeImports": true
+        }
+      ]
+    },
+    {
+      "code": "import { someValue, type Foo } from 'module';\n            import type { SomeType } from 'module';\n            import type { AnotherType } from 'module';",
+      "valid": false,
+      "options": [
+        {
+          "allowSeparateTypeImports": true
+        }
+      ]
+    },
+    {
+      "code": "import { type Foo } from 'module';\n            import { type Bar } from 'module';",
+      "valid": false,
+      "options": [
+        {
+          "allowSeparateTypeImports": true
+        }
+      ]
+    },
+    {
+      "code": "export type { Foo } from \"module\";\n            export type { Bar } from \"module\";",
+      "valid": false,
+      "options": [
+        {
+          "allowSeparateTypeImports": true,
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import { type Foo } from \"module\";\n            export { type Bar } from \"module\";\n            export { type Baz } from \"module\";",
+      "valid": false,
+      "options": [
+        {
+          "allowSeparateTypeImports": true,
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import { type Foo } from \"module\";\n            export { type Bar } from \"module\";\n            export { regular } from \"module\";",
+      "valid": false,
+      "options": [
+        {
+          "allowSeparateTypeImports": true,
+          "includeExports": true
+        }
+      ]
+    },
+    {
+      "code": "import { type Foo } from \"module\";\n            import { regular } from \"module\";\n            export { type Bar } from \"module\";\n            export { regular as other } from \"module\";",
+      "valid": false,
+      "options": [
+        {
+          "allowSeparateTypeImports": true,
+          "includeExports": true
+        }
+      ]
+    }
+  ]
+}
