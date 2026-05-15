@@ -195,6 +195,7 @@ func additionalRulesSnapshot() []string {
 		"no-async-promise-executor",
 		"no-await-in-loop",
 		"no-class-assign",
+		"no-compare-neg-zero",
 		"no-confusing-void-expression",
 		"no-deprecated",
 		"no-dupe-keys",
