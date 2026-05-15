@@ -1,0 +1,43 @@
+{
+  "ruleId": "no-sparse-arrays",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_sparse_arrays.rs",
+  "cases": [
+    {
+      "code": "var a = [ 1, 2, ]",
+      "valid": true
+    },
+    {
+      "code": "var a = [];",
+      "valid": true
+    },
+    {
+      "code": "var a = [,];",
+      "valid": false
+    },
+    {
+      "code": "var a = [ 1,, 2];",
+      "valid": false
+    },
+    {
+      "code": "var a = [ 1,,,, 2];",
+      "valid": false
+    },
+    {
+      "code": "var a = [ 1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, 2];",
+      "valid": false
+    },
+    {
+      "code": "var a = [ 1, , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , ,  2];",
+      "valid": false
+    },
+    {
+      "code": "var a = [ 1, , , , , , , , , , , , , , , , , , , , , , , , , , hello, , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , ,  2];",
+      "valid": false
+    },
+    {
+      "code": "var a = [ 1, , , , , , , , , , , , , , , , , , , , , , , , , ,\n\n\n        hello, , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , ,\n\n\n        , , , , , , , , , , , , , , , , , , ,  2];",
+      "valid": false
+    }
+  ]
+}

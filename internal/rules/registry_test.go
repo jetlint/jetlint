@@ -218,6 +218,7 @@ func additionalRulesSnapshot() []string {
 		"no-redundant-type-constituents",
 		"no-self-assign",
 		"no-self-compare",
+		"no-sparse-arrays",
 		"no-unnecessary-boolean-literal-compare",
 		"no-unnecessary-condition",
 		"no-unnecessary-qualifier",
