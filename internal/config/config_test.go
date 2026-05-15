@@ -95,11 +95,11 @@ func TestResolveCascade_NoConfigUsesDefaults(t *testing.T) {
 		t.Fatalf("ResolveCascade: %v", err)
 	}
 	for _, ruleID := range []string{
+		"await-thenable",
+		"no-base-to-string",
 		"no-floating-promises",
 		"no-misused-promises",
-		"strict-boolean-expressions",
 		"no-unsafe-assignment",
-		"no-base-to-string",
 	} {
 		if got.Rules[ruleID] != wrapperlint.SeverityError {
 			t.Errorf("expected %s at error severity by default, got %q", ruleID, got.Rules[ruleID])
