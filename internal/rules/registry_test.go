@@ -236,6 +236,7 @@ func additionalRulesSnapshot() []string {
 		"no-unsafe-argument",
 		"no-unsafe-call",
 		"no-unsafe-enum-comparison",
+		"no-unsafe-finally",
 		"no-unsafe-member-access",
 		"no-unsafe-return",
 		"no-unsafe-type-assertion",
