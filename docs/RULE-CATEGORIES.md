@@ -64,7 +64,7 @@ for one release as a signal to early adopters.
 
 Of the 61 rules shipped today, the assignment is:
 
-### correctness (26)
+### correctness (27)
 
 `await-thenable`, `consistent-return`, `no-array-delete`, `no-base-to-string`,
 `no-floating-promises`, `no-for-in-array`, `no-misused-promises`,
@@ -74,15 +74,17 @@ Of the 61 rules shipped today, the assignment is:
 `only-throw-error`, `prefer-promise-reject-errors`,
 `related-getter-setter-pairs`, `require-array-sort-compare`, `require-await`,
 `strict-void-return`, `switch-exhaustiveness-check`, `use-isnan`,
-`use-unknown-in-catch-callback-variable`
+`use-unknown-in-catch-callback-variable`, `valid-typeof`
 
-Non-type-aware rules in this category — `no-self-compare`, `use-isnan` —
-carry `RequiresTypeChecking: false`. They walk the AST without ever calling
-the checker and rely on syntactic helpers like [Node.SourceText][srctext]
-and [Node.PropertyAccessName][pan].
+Non-type-aware rules in this category — `no-self-compare`, `use-isnan`,
+`valid-typeof` — carry `RequiresTypeChecking: false`. They walk the AST
+without ever calling the checker and rely on syntactic helpers like
+[Node.SourceText][srctext], [Node.PropertyAccessName][pan], and
+[Node.LiteralText][lit].
 
 [srctext]: https://pkg.go.dev/github.com/microsoft/typescript-go/pkg/checker#Node.SourceText
 [pan]: https://pkg.go.dev/github.com/microsoft/typescript-go/pkg/checker#Node.PropertyAccessName
+[lit]: https://pkg.go.dev/github.com/microsoft/typescript-go/pkg/checker#Node.LiteralText
 
 ### suspicious (9)
 
