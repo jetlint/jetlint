@@ -164,6 +164,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/usejsxkeyiniterable"
 	"github.com/jetlint/jetlint/internal/rules/useparseintradix"
 	"github.com/jetlint/jetlint/internal/rules/usesinglejsdocasterisk"
+	"github.com/jetlint/jetlint/internal/rules/useuniqueelementids"
 	"github.com/jetlint/jetlint/internal/rules/useunknownincatchcallbackvariable"
 	"github.com/jetlint/jetlint/internal/rules/useyield"
 	"github.com/jetlint/jetlint/internal/rules/validtypeof"
@@ -711,6 +712,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		usejsxkeyiniterable.New(),
 		useparseintradix.New(),
 		usesinglejsdocasterisk.New(),
+		useuniqueelementids.New(),
 		useunknownincatchcallbackvariable.New(),
 		useyield.New(),
 		validtypeof.New(),

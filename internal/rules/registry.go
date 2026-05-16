@@ -167,6 +167,7 @@ var All = []Metadata{
 	{ID: "use-jsx-key-in-iterable", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-parse-int-radix", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-single-js-doc-asterisk", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-unique-element-ids", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-unknown-in-catch-callback-variable", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-yield", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "valid-typeof", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

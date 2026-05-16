@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-unique-element-ids",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/useUniqueElementIds",
+  "cases": [
+    {
+      "code": "function Foo() {\n\treturn \u003cdiv id=\"foo\"\u003e\u003c/div\u003e;\n}\n\nfunction Foo() {\n\treturn (\n\t\t\u003cdiv id=\"foo\"\u003e\n\t\t\t\u003cdiv\u003ebar\u003c/div\u003e\n\t\t\u003c/div\u003e\n\t);\n}\n\nfunction Foo() {\n\treturn (\n\t\t\u003cdiv\u003e\n\t\t\t\u003cdiv id=\"foo\"\u003ebar\u003c/div\u003e\n\t\t\u003c/div\u003e\n\t);\n}\n\nfunction Foo() {\n\treturn React.createElement(\"div\", { id: \"foo\" });\n}\n\nimport { createElement } from \"react\";\nfunction Foo() {\n\treturn createElement(\"div\", { id: \"foo\" });\n}\n",
+      "valid": false
+    },
+    {
+      "code": "// should not generate diagnostics;\nfunction Foo() {\n\tconst id = useId();\n\treturn \u003cdiv id={id}\u003e\u003c/div\u003e;\n}\n\nfunction Foo() {\n\tconst id = useId();\n\treturn (\n\t\t\u003cdiv id={id}\u003e\n\t\t\t\u003cdiv\u003ebar\u003c/div\u003e\n\t\t\u003c/div\u003e\n\t);\n}\n\nfunction Foo() {\n\tconst id = useId();\n\treturn (\n\t\t\u003cdiv\u003e\n\t\t\t\u003cdiv id={id}\u003ebar\u003c/div\u003e\n\t\t\u003c/div\u003e\n\t);\n}\n\nfunction Foo() {\n\tconst id = crypto.randomUUID();\n\treturn \u003cdiv id={id}\u003e\u003c/div\u003e;\n}\n\nfunction Foo({ id }) {\n\treturn \u003cdiv id={id}\u003e\u003c/div\u003e;\n}\n\nfunction Foo() {\n\tconst id = useId();\n\treturn React.createElement(\"div\", { id });\n}\n\nfunction Foo() {\n\treturn createElement(\"div\", { id: \"foo\" });\n}\n\nimport { createElement } from \"not-react\";\nfunction Foo() {\n\treturn createElement(\"div\", { id: \"foo\" });\n}\n",
+      "valid": true
+    }
+  ]
+}

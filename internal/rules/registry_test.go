@@ -316,6 +316,7 @@ func additionalRulesSnapshot() []string {
 		"use-jsx-key-in-iterable",
 		"use-parse-int-radix",
 		"use-single-js-doc-asterisk",
+		"use-unique-element-ids",
 		"use-unknown-in-catch-callback-variable",
 		"use-yield",
 		"valid-typeof",
