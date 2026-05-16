@@ -9,7 +9,7 @@ Update this file as rules land or assumptions change.
 - Shipped: 57 (all rules have implementations; 8 are partial-coverage and need work to reach 100%)
 - Remaining (AST-only): 0
 - Remaining (needs regex AST infra): 0
-- Partials needing 100%: no-undef (92/97), no-use-before-define (351/354)
+- Partials needing 100%: no-undef (92/97), no-use-before-define (353/354)
 
 **Symbols**
 
@@ -73,7 +73,7 @@ Update this file as rules land or assumptions change.
 | `no-unsafe-optional-chaining` | ✓ | Shipped 2026-05-15 (82/82 fixtures, 100% — `with(...)` head detected via integer cast to KindWithStatement) |
 | `no-unused-private-class-members` | ✓ | Shipped 2026-05-15 |
 | `no-unused-vars` | ✓ | Shipped 2026-05-15 (conservative port — flags declarations whose name never appears in a reference position; underscore-prefix and `export`-attached names suppressed; full option set deferred) |
-| `no-use-before-define` | ✓ | Shipped 2026-05-15 (351/354 fixtures, 99.2%; flags self-init / TDZ patterns; eager class contexts override hoisting options when not nested in a deferred body; `new X()` at non-deferred positions forces flagging regardless of Classes option; `with (...)` blocks fall back to source-file binding lookup; declarationKind covers Enums, Modules, and Type Aliases (not Interfaces — those remain hoist-friendly per oxlint semantics); Variables option's deferred-body suppression is scoped to deferred bodies that do not enclose the declaration; AllowNamedExports and IgnoreTypeReferences honored) |
+| `no-use-before-define` | ✓ | Shipped 2026-05-15 (353/354 fixtures, 99.7%; flags self-init / TDZ patterns; eager class contexts override hoisting options when not nested in a deferred body; `new X()` at non-deferred positions forces flagging regardless of Classes option; `with (...)` blocks fall back to source-file binding lookup; declarationKind covers Enums, Modules, and Type Aliases (not Interfaces); typescript-eslint `enums: false` option suppresses forward refs to enum declarations; Variables option's deferred-body suppression is scoped to deferred bodies that do not enclose the declaration; AllowNamedExports and IgnoreTypeReferences honored. Remaining case is a fixture conflict: `"use strict"; a(); { function a() {} }` appears with both valid and invalid expectations in oxc's source) |
 | `no-useless-backreference` | ✓ | Shipped 2026-05-15 (hand-rolled pattern scanner counts capturing/named groups, flags backreferences with no target) |
 | `require-atomic-updates` | ✓ | Shipped 2026-05-15 (hand-written tests; no oxc source available) |
 | `use-isnan` | ✓ | Shipped 2026-05-15 |
