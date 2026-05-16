@@ -81,11 +81,17 @@ func (r *rule) visitWhile(ctx *engine.Context, n *wrapperchecker.Node) {
 	if r.opts.CheckLoops == CheckLoopsAllExceptWhileTrue && isLiteralTrue(cond) {
 		return
 	}
+	if loopExemptByYield(n) {
+		return
+	}
 	r.report(ctx, cond)
 }
 
 func (r *rule) visitDoWhile(ctx *engine.Context, n *wrapperchecker.Node) {
 	if r.opts.CheckLoops == CheckLoopsNone {
+		return
+	}
+	if loopExemptByYield(n) {
 		return
 	}
 	r.report(ctx, n.WhileCondition())
@@ -95,7 +101,80 @@ func (r *rule) visitFor(ctx *engine.Context, n *wrapperchecker.Node) {
 	if r.opts.CheckLoops == CheckLoopsNone {
 		return
 	}
+	if loopExemptByYield(n) {
+		return
+	}
 	r.report(ctx, n.ForStatementCondition())
+}
+
+// loopExemptByYield reports whether the loop sits inside a generator
+// function AND a `yield` can run during a loop iteration — i.e. in
+// the body, the condition, or (for `for`) the update expression.
+// `yield` in a for-loop's *initializer* runs once before the loop
+// starts, so it does NOT prevent the loop from hanging on a
+// statically-constant condition.
+func loopExemptByYield(loop *wrapperchecker.Node) bool {
+	if !insideGenerator(loop) {
+		return false
+	}
+	switch loop.Kind() {
+	case wrapperchecker.KindWhileStatement,
+		wrapperchecker.KindDoStatement:
+		return containsYield(loop.IterationBody()) || containsYield(loop.WhileCondition())
+	case wrapperchecker.KindForStatement:
+		return containsYield(loop.IterationBody()) ||
+			containsYield(loop.ForStatementCondition()) ||
+			containsYield(loop.ForStatementIncrementor())
+	}
+	return false
+}
+
+// insideGenerator reports whether `n` is lexically nested inside a
+// generator function (a `function*` declaration or expression).
+func insideGenerator(n *wrapperchecker.Node) bool {
+	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
+		switch cur.Kind() {
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindMethodDeclaration:
+			return cur.IsGeneratorFunction()
+		case wrapperchecker.KindArrowFunction:
+			// Arrow functions can't be generators.
+			return false
+		}
+	}
+	return false
+}
+
+// containsYield reports whether the subtree rooted at `n` contains a
+// `yield` expression that isn't nested inside another function.
+func containsYield(n *wrapperchecker.Node) bool {
+	found := false
+	var walk func(c *wrapperchecker.Node)
+	walk = func(c *wrapperchecker.Node) {
+		if found || c == nil {
+			return
+		}
+		switch c.Kind() {
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindGetAccessor,
+			wrapperchecker.KindSetAccessor,
+			wrapperchecker.KindConstructor:
+			return
+		case wrapperchecker.KindYieldExpression:
+			found = true
+			return
+		}
+		c.ForEachChild(func(child *wrapperchecker.Node) bool {
+			walk(child)
+			return false
+		})
+	}
+	walk(n)
+	return found
 }
 
 func (r *rule) report(ctx *engine.Context, cond *wrapperchecker.Node) {
@@ -599,12 +678,59 @@ func isPrimitiveConstantTruthy(n *wrapperchecker.Node) bool {
 		if op == wrapperchecker.KindPlusToken {
 			return isPrimitiveConstantTruthy(n.BinaryLeft()) && isPrimitiveConstantTruthy(n.BinaryRight())
 		}
+	case wrapperchecker.KindArrayLiteralExpression:
+		// An array literal stringifies to its elements joined by
+		// `,`. The result is truthy when the array is coercible
+		// (so the stringification is statically known) AND it has
+		// at least one truthy element or two-or-more elements (the
+		// separators by themselves make the string non-empty).
+		return isCoercibleArrayLiteral(n) && arrayCoercionIsTruthy(n)
 	case wrapperchecker.KindTemplateExpression:
 		// Reuse the rule's main detector — a template whose
 		// truthiness is statically known is acceptable here.
 		return isObviouslyConstant(n)
 	}
 	return false
+}
+
+// arrayCoercionIsTruthy reports whether stringifying the array
+// literal `n` yields a non-empty string. Caller has already verified
+// `isCoercibleArrayLiteral(n)`. Pre-condition: `n.Kind() ==
+// KindArrayLiteralExpression`.
+func arrayCoercionIsTruthy(n *wrapperchecker.Node) bool {
+	count := 0
+	hasNonEmpty := false
+	for _, e := range n.ArrayElements() {
+		if e == nil || e.Kind() == wrapperchecker.KindOmittedExpression {
+			count++
+			continue
+		}
+		if e.Kind() == wrapperchecker.KindSpreadElement {
+			arg := spreadArgument(e)
+			if arg != nil && arg.Kind() == wrapperchecker.KindArrayLiteralExpression {
+				for _, inner := range arg.ArrayElements() {
+					count++
+					if inner != nil && inner.Kind() != wrapperchecker.KindOmittedExpression {
+						if isPrimitiveConstantTruthy(inner) {
+							hasNonEmpty = true
+						}
+					}
+				}
+			}
+			continue
+		}
+		count++
+		if isPrimitiveConstantTruthy(e) {
+			hasNonEmpty = true
+		}
+	}
+	if hasNonEmpty {
+		return true
+	}
+	// Two-or-more elements introduce at least one `,` separator,
+	// making the joined string non-empty even if every element
+	// stringifies to `""`.
+	return count >= 2
 }
 
 // isConstantFalsy reports whether n is a literal expression whose
@@ -795,8 +921,8 @@ func isPrimitiveConstant(n *wrapperchecker.Node) bool {
 // isCoercibleArrayLiteral reports whether `n` is an array literal
 // whose string coercion is statically known: zero elements
 // (stringifies to `""`), or all elements are primitive constants /
-// nested coercible arrays (each contributes a known piece, joined
-// by `,`). Spread elements and identifiers disqualify it.
+// nested coercible arrays / spreads of coercible arrays. Identifier
+// or call-expression elements disqualify it.
 func isCoercibleArrayLiteral(n *wrapperchecker.Node) bool {
 	if n == nil {
 		return false
@@ -817,7 +943,10 @@ func isCoercibleArrayLiteral(n *wrapperchecker.Node) bool {
 			continue
 		}
 		if e.Kind() == wrapperchecker.KindSpreadElement {
-			return false
+			if !isCoercibleArrayLiteral(spreadArgument(e)) {
+				return false
+			}
+			continue
 		}
 		// `OmittedExpression` (a hole) stringifies to `""`, which is
 		// fine — keep iterating.
@@ -829,6 +958,17 @@ func isCoercibleArrayLiteral(n *wrapperchecker.Node) bool {
 		}
 	}
 	return true
+}
+
+// spreadArgument returns the expression spread by `n` (a
+// SpreadElement node), or nil if extraction fails.
+func spreadArgument(n *wrapperchecker.Node) *wrapperchecker.Node {
+	var arg *wrapperchecker.Node
+	n.ForEachChild(func(c *wrapperchecker.Node) bool {
+		arg = c
+		return true
+	})
+	return arg
 }
 
 func isAssignmentOperator(op wrapperchecker.Kind) bool {
