@@ -789,7 +789,11 @@ func isSingletonValue(n *wrapperchecker.Node) bool {
 	case wrapperchecker.KindTrueKeyword,
 		wrapperchecker.KindFalseKeyword,
 		wrapperchecker.KindNullKeyword,
-		wrapperchecker.KindVoidExpression:
+		wrapperchecker.KindVoidExpression,
+		wrapperchecker.KindNumericLiteral,
+		wrapperchecker.KindStringLiteral,
+		wrapperchecker.KindNoSubstitutionTemplateLiteral,
+		wrapperchecker.KindBigIntLiteral:
 		return true
 	case wrapperchecker.KindIdentifier:
 		return n.LiteralText() == "undefined"
