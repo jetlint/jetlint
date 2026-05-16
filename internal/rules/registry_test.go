@@ -241,6 +241,7 @@ func additionalRulesSnapshot() []string {
 		"no-promise-executor-return",
 		"no-render-return-value",
 		"no-prototype-builtins",
+		"no-react-prop-assignments",
 		"no-redundant-type-constituents",
 		"no-self-assign",
 		"no-self-compare",

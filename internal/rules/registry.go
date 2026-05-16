@@ -111,6 +111,7 @@ var All = []Metadata{
 	{ID: "no-promise-executor-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-render-return-value", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-prototype-builtins", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-react-prop-assignments", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-setter-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-template-curly-in-string", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-this-before-super", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

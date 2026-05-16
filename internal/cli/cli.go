@@ -89,6 +89,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nopromiseexecutorreturn"
 	"github.com/jetlint/jetlint/internal/rules/norenderreturnvalue"
 	"github.com/jetlint/jetlint/internal/rules/noprototypebuiltins"
+	"github.com/jetlint/jetlint/internal/rules/noreactpropassignments"
 	"github.com/jetlint/jetlint/internal/rules/noredundanttypeconstituents"
 	"github.com/jetlint/jetlint/internal/rules/noselfassign"
 	"github.com/jetlint/jetlint/internal/rules/noselfcompare"
@@ -619,6 +620,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nopromiseexecutorreturn.New(),
 		norenderreturnvalue.New(),
 		noprototypebuiltins.New(),
+		noreactpropassignments.New(),
 		notemplatecurlyinstring.New(),
 		nothisbeforesuper.New(),
 		noundef.New(),
