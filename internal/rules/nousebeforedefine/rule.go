@@ -19,6 +19,12 @@ const id = "no-use-before-define"
 // run eagerly as part of class evaluation.
 const kindClassStaticBlockDeclaration wrapperchecker.Kind = 176
 
+// kindWithStatement mirrors `ast.KindWithStatement`. References inside
+// a `with` block fail TS-go symbol resolution (the object's properties
+// are not statically known), so we fall back to a source-file scope
+// lookup for these.
+const kindWithStatement wrapperchecker.Kind = 255
+
 // Options configures the rule.
 type Options struct {
 	// Functions, when true, flags function declarations used before
@@ -79,6 +85,15 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	}
 	sym := ctx.Checker().SymbolOf(n)
 	if sym == nil {
+		// TS-go's resolver cannot reach through a `with` block (the
+		// object's property set is dynamic). Fall back to a
+		// source-file scope lookup so a let/const/etc. declared
+		// after the with statement is still seen.
+		if isInWithStatement(n) {
+			if local := findSourceFileBinding(n, n.LiteralText()); local != nil && n.Pos() < local.Pos() {
+				ctx.Report(n, "'"+n.SourceText()+"' was used before it was defined.")
+			}
+		}
 		return
 	}
 	decls := sym.Declarations()
@@ -299,6 +314,20 @@ func findSourceFileBinding(ref *wrapperchecker.Node, name string) *wrapperchecke
 		return found != nil
 	})
 	return found
+}
+
+// isInWithStatement reports whether `n` is nested inside a `with`
+// statement.
+func isInWithStatement(n *wrapperchecker.Node) bool {
+	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
+		if cur.Kind() == kindWithStatement {
+			return true
+		}
+		if cur.Kind() == wrapperchecker.KindSourceFile {
+			return false
+		}
+	}
+	return false
 }
 
 // referenceInDeferredBody reports whether `ref` sits inside a body
