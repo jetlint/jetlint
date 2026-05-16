@@ -1,0 +1,395 @@
+{
+  "ruleId": "no-undef",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_undef.rs",
+  "cases": [
+    {
+      "code": "var a = 1, b = 2; a;",
+      "valid": true
+    },
+    {
+      "code": "function f() { b; }",
+      "valid": true
+    },
+    {
+      "code": "function a(){}  a();",
+      "valid": true
+    },
+    {
+      "code": "function f(b) { b; }",
+      "valid": true
+    },
+    {
+      "code": "var a; a = 1; a++;",
+      "valid": true
+    },
+    {
+      "code": "var a; function f() { a = 1; }",
+      "valid": true
+    },
+    {
+      "code": "Object; isNaN();",
+      "valid": true
+    },
+    {
+      "code": "function evilEval(stuffToEval) { var ultimateAnswer; ultimateAnswer = 42; eval(stuffToEval); }",
+      "valid": true
+    },
+    {
+      "code": "typeof a",
+      "valid": true
+    },
+    {
+      "code": "typeof (a)",
+      "valid": true
+    },
+    {
+      "code": "var b = typeof a",
+      "valid": true
+    },
+    {
+      "code": "typeof a === 'undefined'",
+      "valid": true
+    },
+    {
+      "code": "if (typeof a === 'undefined') {}",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var [a, b=4] = [1, 2]; return {a, b}; }",
+      "valid": true
+    },
+    {
+      "code": "var toString = 1;",
+      "valid": true
+    },
+    {
+      "code": "function myFunc(...foo) {  return foo;}",
+      "valid": true
+    },
+    {
+      "code": "var React, App, a=1; React.render(\u003cApp attr={a} /\u003e);",
+      "valid": true
+    },
+    {
+      "code": "var console; [1,2,3].forEach(obj =\u003e {\n  console.log(obj);\n});",
+      "valid": true
+    },
+    {
+      "code": "var Foo; class Bar extends Foo { constructor() { super();  }}",
+      "valid": true
+    },
+    {
+      "code": "import Warning from '../lib/warning'; var warn = new Warning('text');",
+      "valid": true
+    },
+    {
+      "code": "import * as Warning from '../lib/warning'; var warn = new Warning('text');",
+      "valid": true
+    },
+    {
+      "code": "var a; [a] = [0];",
+      "valid": true
+    },
+    {
+      "code": "var a; ({a} = {});",
+      "valid": true
+    },
+    {
+      "code": "var a; ({b: a} = {});",
+      "valid": true
+    },
+    {
+      "code": "var obj; [obj.a, obj.b] = [0, 1];",
+      "valid": true
+    },
+    {
+      "code": "URLSearchParams;",
+      "valid": true
+    },
+    {
+      "code": "URLSearchParams;",
+      "valid": true
+    },
+    {
+      "code": "Intl;",
+      "valid": true
+    },
+    {
+      "code": "IntersectionObserver;",
+      "valid": true
+    },
+    {
+      "code": "Credential;",
+      "valid": true
+    },
+    {
+      "code": "requestIdleCallback;",
+      "valid": true
+    },
+    {
+      "code": "customElements;",
+      "valid": true
+    },
+    {
+      "code": "PromiseRejectionEvent;",
+      "valid": true
+    },
+    {
+      "code": "(foo, bar) =\u003e { foo ||= WeakRef; bar ??= FinalizationRegistry; }",
+      "valid": true
+    },
+    {
+      "code": "class C extends C {}",
+      "valid": true
+    },
+    {
+      "code": "function f() { b = 1; }",
+      "valid": true
+    },
+    {
+      "code": "Array = 1;",
+      "valid": true
+    },
+    {
+      "code": "class A { constructor() { new.target; } }",
+      "valid": true
+    },
+    {
+      "code": "var {bacon, ...others} = stuff; foo(others)",
+      "valid": true
+    },
+    {
+      "code": "export * as ns from \"source\"",
+      "valid": true
+    },
+    {
+      "code": "import.meta",
+      "valid": true
+    },
+    {
+      "code": "let a; class C { static {} } a;",
+      "valid": true
+    },
+    {
+      "code": "var a; class C { static {} } a;",
+      "valid": true
+    },
+    {
+      "code": "a; class C { static {} } var a;",
+      "valid": true
+    },
+    {
+      "code": "class C { static { C; } }",
+      "valid": true
+    },
+    {
+      "code": "const C = class { static { C; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { a; } } var a;",
+      "valid": true
+    },
+    {
+      "code": "class C { static { a; } } let a;",
+      "valid": true
+    },
+    {
+      "code": "class C { static { var a; a; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { a; var a; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { a; { var a; } } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { let a; a; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { a; let a; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { function a() {} a; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { a; function a() {} } }",
+      "valid": true
+    },
+    {
+      "code": "String;Array;Boolean;",
+      "valid": true
+    },
+    {
+      "code": "[Float16Array, Iterator]",
+      "valid": true
+    },
+    {
+      "code": "function test() { return arguments; }",
+      "valid": true
+    },
+    {
+      "code": "var fn = function() { return arguments[0]; };",
+      "valid": true
+    },
+    {
+      "code": "const obj = { method() { return arguments.length; } };",
+      "valid": true
+    },
+    {
+      "code": "function correct(a) { { return arguments; } }",
+      "valid": true
+    },
+    {
+      "code": "function test() { if (true) { return arguments[0]; } }",
+      "valid": true
+    },
+    {
+      "code": "function test() { for (let i = 0; i \u003c 1; i++) { return arguments; } }",
+      "valid": true
+    },
+    {
+      "code": "function resolve\u003cT\u003e(path: string): T { return { path } as T; }",
+      "valid": true
+    },
+    {
+      "code": "let xyz: NodeListOf\u003cHTMLElement\u003e",
+      "valid": true
+    },
+    {
+      "code": "type Foo = Record\u003cstring, unknown\u003e;",
+      "valid": true
+    },
+    {
+      "code": "export interface StoreImpl { onOutputBlobs: (callback: (blobs: MediaSetBlobs) =\u003e void) =\u003e import('rxjs').Subscription; }",
+      "valid": true
+    },
+    {
+      "code": "a = 1;",
+      "valid": false
+    },
+    {
+      "code": "var a = b;",
+      "valid": false
+    },
+    {
+      "code": "function f() { b; }",
+      "valid": false
+    },
+    {
+      "code": "window;",
+      "valid": false
+    },
+    {
+      "code": "require(\"a\");",
+      "valid": false
+    },
+    {
+      "code": "var React; React.render(\u003cimg attr={a} /\u003e);",
+      "valid": false
+    },
+    {
+      "code": "var React, App; React.render(\u003cApp attr={a} /\u003e);",
+      "valid": false
+    },
+    {
+      "code": "[a] = [0];",
+      "valid": false
+    },
+    {
+      "code": "({a} = {});",
+      "valid": false
+    },
+    {
+      "code": "({b: a} = {});",
+      "valid": false
+    },
+    {
+      "code": "[obj.a, obj.b] = [0, 1];",
+      "valid": false
+    },
+    {
+      "code": "const c = 0; const a = {...b, c};",
+      "valid": false
+    },
+    {
+      "code": "class C { static { a; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { { let a; } a; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { { function a() {} } a; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { function foo() { var a; }  a; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { var a; } static { a; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { let a; } static { a; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { function a(){} } static { a; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { var a; } foo() { a; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { let a; } foo() { a; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { var a; } [a]; }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { let a; } [a]; }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { function a() {} } [a]; }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { var a; } } a;",
+      "valid": false
+    },
+    {
+      "code": "toString()",
+      "valid": false
+    },
+    {
+      "code": "hasOwnProperty()",
+      "valid": false
+    },
+    {
+      "code": "export class Foo{ bar: notDefined; }; const t = r + 1;",
+      "valid": false
+    },
+    {
+      "code": "const arrow = () =\u003e arguments;",
+      "valid": false
+    },
+    {
+      "code": "var a = arguments;",
+      "valid": false
+    }
+  ]
+}

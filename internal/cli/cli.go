@@ -44,28 +44,35 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nocomparenegzero"
 	"github.com/jetlint/jetlint/internal/rules/nocondassign"
 	"github.com/jetlint/jetlint/internal/rules/noconfusingvoidexpression"
+	"github.com/jetlint/jetlint/internal/rules/noconstantbinaryexpression"
 	"github.com/jetlint/jetlint/internal/rules/noconstantcondition"
 	"github.com/jetlint/jetlint/internal/rules/noconstassign"
 	"github.com/jetlint/jetlint/internal/rules/noconstructorreturn"
+	"github.com/jetlint/jetlint/internal/rules/nocontrolregex"
 	"github.com/jetlint/jetlint/internal/rules/nodebugger"
 	"github.com/jetlint/jetlint/internal/rules/nodeprecated"
+	"github.com/jetlint/jetlint/internal/rules/nodupeargs"
 	"github.com/jetlint/jetlint/internal/rules/nodupeclassmembers"
 	"github.com/jetlint/jetlint/internal/rules/nodupeelseif"
 	"github.com/jetlint/jetlint/internal/rules/nodupekeys"
 	"github.com/jetlint/jetlint/internal/rules/noduplicatecase"
 	"github.com/jetlint/jetlint/internal/rules/noduplicateimports"
 	"github.com/jetlint/jetlint/internal/rules/noduplicatetypeconstituents"
+	"github.com/jetlint/jetlint/internal/rules/noemptycharacterclass"
 	"github.com/jetlint/jetlint/internal/rules/noemptypattern"
 	"github.com/jetlint/jetlint/internal/rules/noexassign"
+	"github.com/jetlint/jetlint/internal/rules/nofallthrough"
 	"github.com/jetlint/jetlint/internal/rules/nofloatingpromises"
 	"github.com/jetlint/jetlint/internal/rules/noforinarray"
 	"github.com/jetlint/jetlint/internal/rules/nofuncassign"
 	"github.com/jetlint/jetlint/internal/rules/noimpliedeval"
 	"github.com/jetlint/jetlint/internal/rules/noimportassign"
 	"github.com/jetlint/jetlint/internal/rules/noinnerdeclarations"
+	"github.com/jetlint/jetlint/internal/rules/noinvalidregexp"
 	"github.com/jetlint/jetlint/internal/rules/noirregularwhitespace"
 	"github.com/jetlint/jetlint/internal/rules/nolossofprecision"
 	"github.com/jetlint/jetlint/internal/rules/nomeaninglessvoidoperator"
+	"github.com/jetlint/jetlint/internal/rules/nomisleadingcharacterclass"
 	"github.com/jetlint/jetlint/internal/rules/nomisusedpromises"
 	"github.com/jetlint/jetlint/internal/rules/nomisusedspread"
 	"github.com/jetlint/jetlint/internal/rules/nomixedenums"
@@ -80,7 +87,10 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nosetterreturn"
 	"github.com/jetlint/jetlint/internal/rules/nosparsearrays"
 	"github.com/jetlint/jetlint/internal/rules/notemplatecurlyinstring"
+	"github.com/jetlint/jetlint/internal/rules/nothisbeforesuper"
+	"github.com/jetlint/jetlint/internal/rules/noundef"
 	"github.com/jetlint/jetlint/internal/rules/nounexpectedmultiline"
+	"github.com/jetlint/jetlint/internal/rules/nounmodifiedloopcondition"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarybooleanliteralcompare"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarycondition"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessaryqualifier"
@@ -89,6 +99,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarytypeassertion"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarytypeconversion"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarytypeparameters"
+	"github.com/jetlint/jetlint/internal/rules/nounreachable"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeargument"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeassignment"
 	"github.com/jetlint/jetlint/internal/rules/nounsafecall"
@@ -100,7 +111,11 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounsafereturn"
 	"github.com/jetlint/jetlint/internal/rules/nounsafetypeassertion"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeunaryminus"
+	"github.com/jetlint/jetlint/internal/rules/nounreachableloop"
 	"github.com/jetlint/jetlint/internal/rules/nounusedprivateclassmembers"
+	"github.com/jetlint/jetlint/internal/rules/nounusedvars"
+	"github.com/jetlint/jetlint/internal/rules/nouselessbackreference"
+	"github.com/jetlint/jetlint/internal/rules/nousebeforedefine"
 	"github.com/jetlint/jetlint/internal/rules/nouselessdefaultassignment"
 	"github.com/jetlint/jetlint/internal/rules/onlythrowerror"
 	"github.com/jetlint/jetlint/internal/rules/preferdestructuring"
@@ -118,6 +133,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/promisefunctionasync"
 	"github.com/jetlint/jetlint/internal/rules/relatedgettersetterpairs"
 	"github.com/jetlint/jetlint/internal/rules/requirearraysortcompare"
+	"github.com/jetlint/jetlint/internal/rules/requireatomicupdates"
 	"github.com/jetlint/jetlint/internal/rules/requireawait"
 	"github.com/jetlint/jetlint/internal/rules/restrictplusoperands"
 	"github.com/jetlint/jetlint/internal/rules/restricttemplateexpressions"
@@ -536,6 +552,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 	return []engine.Rule{
 		// MVP rules with full options support.
 		nofloatingpromises.NewWithOptions(nfpOpts),
+		nomisleadingcharacterclass.New(),
 		nomisusedpromises.NewWithOptions(nmpOpts),
 		strictbooleanexpressions.New(),
 		nounsafeassignment.New(),
@@ -557,20 +574,27 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nocomparenegzero.New(),
 		nocondassign.New(),
 		noconfusingvoidexpression.New(),
+		noconstantbinaryexpression.New(),
 		noconstantcondition.New(),
 		noconstassign.New(),
 		noconstructorreturn.New(),
+		nocontrolregex.New(),
 		nodebugger.New(),
 		nodeprecated.New(),
+		nodupeargs.New(),
 		nodupeclassmembers.New(),
 		nodupeelseif.New(),
+		noemptycharacterclass.New(),
 		noemptypattern.New(),
 		noexassign.New(),
+		nofallthrough.New(),
 		nofuncassign.New(),
 		nosparsearrays.New(),
 		nopromiseexecutorreturn.New(),
 		noprototypebuiltins.New(),
 		notemplatecurlyinstring.New(),
+		nothisbeforesuper.New(),
+		noundef.New(),
 		nodupekeys.New(),
 		noduplicatecase.New(),
 		noduplicateimports.New(),
@@ -579,6 +603,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noimpliedeval.New(),
 		noimportassign.New(),
 		noinnerdeclarations.New(),
+		noinvalidregexp.New(),
 		noirregularwhitespace.New(),
 		nolossofprecision.New(),
 		nomeaninglessvoidoperator.New(),
@@ -592,6 +617,8 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noselfcompare.New(),
 		nosetterreturn.New(),
 		nounexpectedmultiline.New(),
+		nounreachable.New(),
+		nounreachableloop.New(),
 		nounnecessarybooleanliteralcompare.New(),
 		nounnecessarycondition.New(),
 		nounnecessaryqualifier.New(),
@@ -610,7 +637,11 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nounsafereturn.New(),
 		nounsafetypeassertion.New(),
 		nounsafeunaryminus.New(),
+		nounmodifiedloopcondition.New(),
 		nounusedprivateclassmembers.New(),
+		nounusedvars.New(),
+		nousebeforedefine.New(),
+		nouselessbackreference.New(),
 		nouselessdefaultassignment.New(),
 		onlythrowerror.New(),
 		preferdestructuring.New(),
@@ -628,6 +659,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		promisefunctionasync.New(),
 		relatedgettersetterpairs.New(),
 		requirearraysortcompare.New(),
+		requireatomicupdates.New(),
 		requireawait.New(),
 		restrictplusoperands.New(),
 		restricttemplateexpressions.New(),

@@ -1,0 +1,2125 @@
+{
+  "ruleId": "no-use-before-define",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_use_before_define.rs",
+  "cases": [
+    {
+      "code": "unresolved",
+      "valid": true
+    },
+    {
+      "code": "Array",
+      "valid": true
+    },
+    {
+      "code": "function foo () { arguments; }",
+      "valid": true
+    },
+    {
+      "code": "var a=10; alert(a);",
+      "valid": true
+    },
+    {
+      "code": "function b(a) { alert(a); }",
+      "valid": true
+    },
+    {
+      "code": "Object.hasOwnProperty.call(a);",
+      "valid": true
+    },
+    {
+      "code": "function a() { alert(arguments);}",
+      "valid": true
+    },
+    {
+      "code": "a(); function a() { alert(arguments); }",
+      "valid": true,
+      "options": [
+        "nofunc"
+      ]
+    },
+    {
+      "code": "(() =\u003e { var a = 42; alert(a); })();",
+      "valid": true
+    },
+    {
+      "code": "a(); try { throw new Error() } catch (a) {}",
+      "valid": true
+    },
+    {
+      "code": "class A {} new A();",
+      "valid": true
+    },
+    {
+      "code": "var a = 0, b = a;",
+      "valid": true
+    },
+    {
+      "code": "var {a = 0, b = a} = {};",
+      "valid": true
+    },
+    {
+      "code": "var [a = 0, b = a] = {};",
+      "valid": true
+    },
+    {
+      "code": "function foo() { foo(); }",
+      "valid": true
+    },
+    {
+      "code": "var foo = function() { foo(); };",
+      "valid": true
+    },
+    {
+      "code": "var a; for (a in a) {}",
+      "valid": true
+    },
+    {
+      "code": "var a; for (a of a) {}",
+      "valid": true
+    },
+    {
+      "code": "let a; class C { static { a; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { let a; a; } }",
+      "valid": true
+    },
+    {
+      "code": "\"use strict\"; a(); { function a() {} }",
+      "valid": true
+    },
+    {
+      "code": "\"use strict\"; { a(); function a() {} }",
+      "valid": true,
+      "options": [
+        "nofunc"
+      ]
+    },
+    {
+      "code": "switch (foo) { case 1:  { a(); } default: { let a; }}",
+      "valid": true
+    },
+    {
+      "code": "a(); { let a = function () {}; }",
+      "valid": true
+    },
+    {
+      "code": "a(); function a() { alert(arguments); }",
+      "valid": true,
+      "options": [
+        {
+          "functions": false
+        }
+      ]
+    },
+    {
+      "code": "\"use strict\"; { a(); function a() {} }",
+      "valid": true,
+      "options": [
+        {
+          "functions": false
+        }
+      ]
+    },
+    {
+      "code": "function foo() { new A(); } class A {};",
+      "valid": true,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "function foo() { bar; } var bar;",
+      "valid": true,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "var foo = () =\u003e bar; var bar;",
+      "valid": true,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static { () =\u003e foo; let foo; } }",
+      "valid": true,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C extends (class { method() { C; } }) {}",
+      "valid": true
+    },
+    {
+      "code": "(class extends (class { method() { C; } }) {});",
+      "valid": true
+    },
+    {
+      "code": "const C = (class extends (class { method() { C; } }) {});",
+      "valid": true
+    },
+    {
+      "code": "class C extends (class { field = C; }) {}",
+      "valid": true
+    },
+    {
+      "code": "(class extends (class { field = C; }) {});",
+      "valid": true
+    },
+    {
+      "code": "const C = (class extends (class { field = C; }) {});",
+      "valid": true
+    },
+    {
+      "code": "class C { [() =\u003e C](){} }",
+      "valid": true
+    },
+    {
+      "code": "(class C { [() =\u003e C](){} });",
+      "valid": true
+    },
+    {
+      "code": "const C = class { [() =\u003e C](){} };",
+      "valid": true
+    },
+    {
+      "code": "class C { static [() =\u003e C](){} }",
+      "valid": true
+    },
+    {
+      "code": "(class C { static [() =\u003e C](){} });",
+      "valid": true
+    },
+    {
+      "code": "const C = class { static [() =\u003e C](){} };",
+      "valid": true
+    },
+    {
+      "code": "class C { [() =\u003e C]; }",
+      "valid": true
+    },
+    {
+      "code": "(class C { [() =\u003e C]; });",
+      "valid": true
+    },
+    {
+      "code": "const C = class { [() =\u003e C]; };",
+      "valid": true
+    },
+    {
+      "code": "class C { static [() =\u003e C]; }",
+      "valid": true
+    },
+    {
+      "code": "(class C { static [() =\u003e C]; });",
+      "valid": true
+    },
+    {
+      "code": "const C = class { static [() =\u003e C]; };",
+      "valid": true
+    },
+    {
+      "code": "class C { method() { C; } }",
+      "valid": true
+    },
+    {
+      "code": "(class C { method() { C; } });",
+      "valid": true
+    },
+    {
+      "code": "const C = class { method() { C; } };",
+      "valid": true
+    },
+    {
+      "code": "class C { static method() { C; } }",
+      "valid": true
+    },
+    {
+      "code": "(class C { static method() { C; } });",
+      "valid": true
+    },
+    {
+      "code": "const C = class { static method() { C; } };",
+      "valid": true
+    },
+    {
+      "code": "class C { field = C; }",
+      "valid": true
+    },
+    {
+      "code": "(class C { field = C; });",
+      "valid": true
+    },
+    {
+      "code": "const C = class { field = C; };",
+      "valid": true
+    },
+    {
+      "code": "class C { static field = C; }",
+      "valid": true
+    },
+    {
+      "code": "(class C { static field = C; });",
+      "valid": true
+    },
+    {
+      "code": "class C { static field = class { static field = C; }; }",
+      "valid": true
+    },
+    {
+      "code": "(class C { static field = class { static field = C; }; });",
+      "valid": true
+    },
+    {
+      "code": "class C { field = () =\u003e C; }",
+      "valid": true
+    },
+    {
+      "code": "(class C { field = () =\u003e C; });",
+      "valid": true
+    },
+    {
+      "code": "const C = class { field = () =\u003e C; };",
+      "valid": true
+    },
+    {
+      "code": "class C { static field = () =\u003e C; }",
+      "valid": true
+    },
+    {
+      "code": "(class C { static field = () =\u003e C; });",
+      "valid": true
+    },
+    {
+      "code": "const C = class { static field = () =\u003e C; };",
+      "valid": true
+    },
+    {
+      "code": "class C { field = class extends C {}; }",
+      "valid": true
+    },
+    {
+      "code": "(class C { field = class extends C {}; });",
+      "valid": true
+    },
+    {
+      "code": "const C = class { field = class extends C {}; }",
+      "valid": true
+    },
+    {
+      "code": "class C { static field = class extends C {}; }",
+      "valid": true
+    },
+    {
+      "code": "(class C { static field = class extends C {}; });",
+      "valid": true
+    },
+    {
+      "code": "class C { static field = class { [C]; }; }",
+      "valid": true
+    },
+    {
+      "code": "(class C { static field = class { [C]; }; });",
+      "valid": true
+    },
+    {
+      "code": "const C = class { static field = class { field = C; }; };",
+      "valid": true
+    },
+    {
+      "code": "class C { method() { a; } } let a;",
+      "valid": true,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static method() { a; } } let a;",
+      "valid": true,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { field = a; } let a;",
+      "valid": true,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { field = D; } class D {}",
+      "valid": true,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "class C { field = class extends D {}; } class D {}",
+      "valid": true,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "class C { field = () =\u003e a; } let a;",
+      "valid": true,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static field = () =\u003e a; } let a;",
+      "valid": true,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { field = () =\u003e D; } class D {}",
+      "valid": true,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static field = () =\u003e D; } class D {}",
+      "valid": true,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static field = class { field = a; }; } let a;",
+      "valid": true,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static { C; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { C; } static {} static { C; } }",
+      "valid": true
+    },
+    {
+      "code": "(class C { static { C; } })",
+      "valid": true
+    },
+    {
+      "code": "class C { static { class D extends C {} } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { (class { static { C } }) } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { () =\u003e C; } }",
+      "valid": true
+    },
+    {
+      "code": "(class C { static { () =\u003e C; } })",
+      "valid": true
+    },
+    {
+      "code": "const C = class { static { () =\u003e C; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { () =\u003e D; } } class D {}",
+      "valid": true,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static { () =\u003e a; } } let a;",
+      "valid": true,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class C { static { C.x; } }",
+      "valid": true
+    },
+    {
+      "code": "export { a }; const a = 1;",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "export { a as b }; const a = 1;",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "export { a, b }; let a, b;",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "export { a }; var a;",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "export { f }; function f() {}",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "export { C }; class C {}",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "const App = () =\u003e \u003cdiv/\u003e; \u003cApp /\u003e;",
+      "valid": true
+    },
+    {
+      "code": "let Foo, Bar; \u003cFoo\u003e\u003cBar /\u003e\u003c/Foo\u003e;",
+      "valid": true
+    },
+    {
+      "code": "function App() { return \u003cdiv/\u003e } \u003cApp /\u003e;",
+      "valid": true
+    },
+    {
+      "code": "\u003cApp /\u003e; function App() { return \u003cdiv/\u003e }",
+      "valid": true,
+      "options": [
+        {
+          "functions": false
+        }
+      ]
+    },
+    {
+      "code": "\n                type foo = 1;\n                const x: foo = 1;\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                type foo = 1;\n                type bar = foo;\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                interface Foo {}\n                const x: Foo = {};\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                var a = 10;\n                alert(a);\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                function b(a) {\n                  alert(a);\n                }\n                    ",
+      "valid": true
+    },
+    {
+      "code": "Object.hasOwnProperty.call(a);",
+      "valid": true
+    },
+    {
+      "code": "\n                function a() {\n                  alert(arguments);\n                }\n                    ",
+      "valid": true
+    },
+    {
+      "code": "declare function a();",
+      "valid": true
+    },
+    {
+      "code": "\n                declare class a {\n                  foo();\n                }\n                    ",
+      "valid": true
+    },
+    {
+      "code": "const updatedAt = data?.updatedAt;",
+      "valid": true
+    },
+    {
+      "code": "\n                function f() {\n                  return function t() {};\n                }\n                f()?.();\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                var a = { b: 5 };\n                alert(a?.b);\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                a();\n                function a() {\n                  alert(arguments);\n                }\n                      ",
+      "valid": true,
+      "options": [
+        "nofunc"
+      ]
+    },
+    {
+      "code": "\n                (() =\u003e {\n                  var a = 42;\n                  alert(a);\n                })();\n                      ",
+      "valid": true
+    },
+    {
+      "code": "\n                a();\n                try {\n                  throw new Error();\n                } catch (a) {}\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                class A {}\n                new A();\n                      ",
+      "valid": true
+    },
+    {
+      "code": "\n                var a = 0,\n                  b = a;\n                    ",
+      "valid": true
+    },
+    {
+      "code": "var { a = 0, b = a } = {};",
+      "valid": true
+    },
+    {
+      "code": "var [a = 0, b = a] = {};",
+      "valid": true
+    },
+    {
+      "code": "\n                function foo() {\n                  foo();\n                }\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                var foo = function () {\n                  foo();\n                };\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                var a;\n                for (a in a) {\n                }\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                var a;\n                for (a of a) {\n                }\n                      ",
+      "valid": true
+    },
+    {
+      "code": "\n                'use strict';\n                a();\n                {\n                  function a() {}\n                }\n                      ",
+      "valid": true
+    },
+    {
+      "code": "\n                'use strict';\n                {\n                  a();\n                  function a() {}\n                }\n                      ",
+      "valid": true,
+      "options": [
+        "nofunc"
+      ]
+    },
+    {
+      "code": "\n                switch (foo) {\n                  case 1: {\n                    a();\n                  }\n                  default: {\n                    let a;\n                  }\n                }\n                      ",
+      "valid": true
+    },
+    {
+      "code": "\n                a();\n                {\n                  let a = function () {};\n                }\n                      ",
+      "valid": true
+    },
+    {
+      "code": "\n                a();\n                function a() {\n                  alert(arguments);\n                }\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "functions": false
+        }
+      ]
+    },
+    {
+      "code": "\n                'use strict';\n                {\n                  a();\n                  function a() {}\n                }\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "functions": false
+        }
+      ]
+    },
+    {
+      "code": "\n                function foo() {\n                  new A();\n                }\n                class A {}\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "\n                function foo() {\n                  bar;\n                }\n                var bar;\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "\n                var foo = () =\u003e bar;\n                var bar;\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "\n                var x: Foo = 2;\n                type Foo = string | number;\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "typedefs": false
+        }
+      ]
+    },
+    {
+      "code": "\n                var x: Foo = {};\n                interface Foo {}\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "ignoreTypeReferences": false,
+          "typedefs": false
+        }
+      ]
+    },
+    {
+      "code": "\n                let myVar: String;\n                type String = string;\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "ignoreTypeReferences": false,
+          "typedefs": false
+        }
+      ]
+    },
+    {
+      "code": "\n                interface Bar {\n                  type: typeof Foo;\n                }\n\n                const Foo = 2;\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "ignoreTypeReferences": true
+        }
+      ]
+    },
+    {
+      "code": "\n                interface Bar {\n                  type: typeof Foo.FOO;\n                }\n\n                class Foo {\n                  public static readonly FOO = '';\n                }\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "ignoreTypeReferences": true
+        }
+      ]
+    },
+    {
+      "code": "\n                interface Bar {\n                  type: typeof Foo.Bar.Baz;\n                }\n\n                const Foo = {\n                  Bar: {\n                    Baz: 1,\n                  },\n                };\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "ignoreTypeReferences": true
+        }
+      ]
+    },
+    {
+      "code": "\n                interface ITest {\n                  first: boolean;\n                  second: string;\n                  third: boolean;\n                }\n\n                let first = () =\u003e console.log('first');\n\n                export let second = () =\u003e console.log('second');\n\n                export namespace Third {\n                  export let third = () =\u003e console.log('third');\n                }\n                      ",
+      "valid": true
+    },
+    {
+      "code": "\n                function test(file: Blob) {\n                  const slice: typeof file.slice =\n                    file.slice || (file as any).webkitSlice || (file as any).mozSlice;\n                  return slice;\n                }\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                interface Foo {\n                  bar: string;\n                }\n                const bar = 'blah';\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                function foo(): Foo {\n                  return Foo.FOO;\n                }\n\n                enum Foo {\n                  FOO,\n                }\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "enums": false
+        }
+      ]
+    },
+    {
+      "code": "\n                let foo: Foo;\n\n                enum Foo {\n                  FOO,\n                }\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "enums": false
+        }
+      ]
+    },
+    {
+      "code": "\n                class Test {\n                  foo(args: Foo): Foo {\n                    return Foo.FOO;\n                  }\n                }\n\n                enum Foo {\n                  FOO,\n                }\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "enums": false
+        }
+      ]
+    },
+    {
+      "code": "\n                export { a };\n                const a = 1;\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "\n                export { a as b };\n                const a = 1;\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "\n                export { a, b };\n                let a, b;\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "\n                export { a };\n                var a;\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "\n                export { f };\n                function f() {}\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "\n                export { C };\n                class C {}\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "\n                export { Foo };\n\n                enum Foo {\n                  BAR,\n                }\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "\n                export { Foo };\n\n                namespace Foo {\n                  export let bar = () =\u003e console.log('bar');\n                }\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "\n                export { Foo, baz };\n\n                enum Foo {\n                  BAR,\n                }\n\n                let baz: Enum;\n                enum Enum {}\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "\n                import * as React from 'react';\n\n                \u003cdiv /\u003e;\n                      ",
+      "valid": true
+    },
+    {
+      "code": "\n                import React from 'react';\n\n                \u003cdiv /\u003e;\n                      ",
+      "valid": true
+    },
+    {
+      "code": "\n                import { h } from 'preact';\n\n                \u003cdiv /\u003e;\n                      ",
+      "valid": true
+    },
+    {
+      "code": "\n                const React = require('react');\n\n                \u003cdiv /\u003e;\n                      ",
+      "valid": true
+    },
+    {
+      "code": "\n                type T = (value: unknown) =\u003e value is Id;\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                global.foo = true;\n\n                declare global {\n                  namespace NodeJS {\n                    interface Global {\n                      foo?: boolean;\n                    }\n                  }\n                }\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                @Directive({\n                  selector: '[rcCidrIpPattern]',\n                  providers: [\n                    {\n                      provide: NG_VALIDATORS,\n                      useExisting: CidrIpPatternDirective,\n                      multi: true,\n                    },\n                  ],\n                })\n                export class CidrIpPatternDirective implements Validator {}\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                @Directive({\n                  selector: '[rcCidrIpPattern]',\n                  providers: [\n                    {\n                      provide: NG_VALIDATORS,\n                      useExisting: CidrIpPatternDirective,\n                      multi: true,\n                    },\n                  ],\n                })\n                export class CidrIpPatternDirective implements Validator {}\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "\n                class A {\n                  constructor(printName) {\n                    this.printName = printName;\n                  }\n\n                  openPort(printerName = this.printerName) {\n                    this.tscOcx.ActiveXopenport(printerName);\n\n                    return this;\n                  }\n                }\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                const obj = {\n                  foo: 'foo-value',\n                  bar: 'bar-value',\n                } satisfies {\n                  [key in 'foo' | 'bar']: `${key}-value`;\n                };\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "ignoreTypeReferences": false
+        }
+      ]
+    },
+    {
+      "code": "\n                const obj = {\n                  foo: 'foo-value',\n                  bar: 'bar-value',\n                } as {\n                  [key in 'foo' | 'bar']: `${key}-value`;\n                };\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "ignoreTypeReferences": false
+        }
+      ]
+    },
+    {
+      "code": "\n                const obj = {\n                  foo: {\n                    foo: 'foo',\n                  } as {\n                    [key in 'foo' | 'bar']: key;\n                  },\n                };\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "ignoreTypeReferences": false
+        }
+      ]
+    },
+    {
+      "code": "\n                const foo = {\n                  bar: 'bar',\n                } satisfies {\n                  bar: typeof baz;\n                };\n\n                const baz = '';\n                      ",
+      "valid": true,
+      "options": [
+        {
+          "ignoreTypeReferences": true
+        }
+      ]
+    },
+    {
+      "code": "\n                namespace A.X.Y {}\n\n                import Z = A.X.Y;\n\n                const X = 23;\n                    ",
+      "valid": true
+    },
+    {
+      "code": "\n                    namespace A {\n                        export namespace X {\n                            export namespace Y {\n                                export const foo = 40;\n                            }\n                        }\n                    }\n\n                    import Z = A.X.Y;\n\n                    const X = 23;\n                    ",
+      "valid": true
+    },
+    {
+      "code": "a++; var a=19;",
+      "valid": false
+    },
+    {
+      "code": "a++; var a=19;",
+      "valid": false
+    },
+    {
+      "code": "a++; var a=19;",
+      "valid": false
+    },
+    {
+      "code": "a(); var a=function() {};",
+      "valid": false
+    },
+    {
+      "code": "alert(a[1]); var a=[1,3];",
+      "valid": false
+    },
+    {
+      "code": "a(); function a() { alert(b); var b=10; a(); }",
+      "valid": false
+    },
+    {
+      "code": "a(); var a=function() {};",
+      "valid": false,
+      "options": [
+        "nofunc"
+      ]
+    },
+    {
+      "code": "(() =\u003e { alert(a); var a = 42; })();",
+      "valid": false
+    },
+    {
+      "code": "(() =\u003e a())(); function a() { }",
+      "valid": false
+    },
+    {
+      "code": "\"use strict\"; a(); { function a() {} }",
+      "valid": false
+    },
+    {
+      "code": "a(); try { throw new Error() } catch (foo) {var a;}",
+      "valid": false
+    },
+    {
+      "code": "var f = () =\u003e a; var a;",
+      "valid": false
+    },
+    {
+      "code": "new A(); class A {};",
+      "valid": false
+    },
+    {
+      "code": "function foo() { new A(); } class A {};",
+      "valid": false
+    },
+    {
+      "code": "new A(); var A = class {};",
+      "valid": false
+    },
+    {
+      "code": "function foo() { new A(); } var A = class {};",
+      "valid": false
+    },
+    {
+      "code": "a++; { var a; }",
+      "valid": false
+    },
+    {
+      "code": "\"use strict\"; { a(); function a() {} }",
+      "valid": false
+    },
+    {
+      "code": "{a; let a = 1}",
+      "valid": false
+    },
+    {
+      "code": "switch (foo) { case 1: a();\n             default:\n             let a;}",
+      "valid": false
+    },
+    {
+      "code": "if (true) { function foo() { a; } let a;}",
+      "valid": false
+    },
+    {
+      "code": "a(); var a=function() {};",
+      "valid": false,
+      "options": [
+        {
+          "classes": false,
+          "functions": false
+        }
+      ]
+    },
+    {
+      "code": "new A(); class A {};",
+      "valid": false,
+      "options": [
+        {
+          "classes": false,
+          "functions": false
+        }
+      ]
+    },
+    {
+      "code": "new A(); var A = class {};",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "function foo() { new A(); } var A = class {};",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "var a = a;",
+      "valid": false
+    },
+    {
+      "code": "let a = a + b;",
+      "valid": false
+    },
+    {
+      "code": "const a = foo(a);",
+      "valid": false
+    },
+    {
+      "code": "function foo(a = a) {}",
+      "valid": false
+    },
+    {
+      "code": "var {a = a} = [];",
+      "valid": false
+    },
+    {
+      "code": "var [a = a] = [];",
+      "valid": false
+    },
+    {
+      "code": "var {b = a, a} = {};",
+      "valid": false
+    },
+    {
+      "code": "var [b = a, a] = {};",
+      "valid": false
+    },
+    {
+      "code": "var {a = 0} = a;",
+      "valid": false
+    },
+    {
+      "code": "var [a = 0] = a;",
+      "valid": false
+    },
+    {
+      "code": "for (var a in a) {}",
+      "valid": false
+    },
+    {
+      "code": "for (var a of a) {}",
+      "valid": false
+    },
+    {
+      "code": "function foo() { bar; var bar = 1; } var bar;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "foo; var foo;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "for (let x = x;;); let x = 0",
+      "valid": false
+    },
+    {
+      "code": "for (let x in xs); let xs = []",
+      "valid": false
+    },
+    {
+      "code": "for (let x of xs); let xs = []",
+      "valid": false
+    },
+    {
+      "code": "try {} catch ({message = x}) {} let x = ''",
+      "valid": false
+    },
+    {
+      "code": "with (obj) x; let x = {}",
+      "valid": false
+    },
+    {
+      "code": "with (x); let x = {}",
+      "valid": false
+    },
+    {
+      "code": "with (obj) { x } let x = {}",
+      "valid": false
+    },
+    {
+      "code": "with (obj) { if (a) { x } } let x = {}",
+      "valid": false
+    },
+    {
+      "code": "with (obj) { (() =\u003e { if (a) { x } })() } let x = {}",
+      "valid": false
+    },
+    {
+      "code": "class C extends C {}",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class extends C {};",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C extends (class { [C](){} }) {}",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class extends (class { [C](){} }) {};",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C extends (class { static field = C; }) {}",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class extends (class { static field = C; }) {};",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { [C](){} }",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "(class C { [C](){} });",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class { [C](){} };",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static [C](){} }",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "(class C { static [C](){} });",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class { static [C](){} };",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { [C]; }",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "(class C { [C]; });",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class { [C]; };",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { [C] = foo; }",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "(class C { [C] = foo; });",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class { [C] = foo; };",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static [C]; }",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "(class C { static [C]; });",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class { static [C]; };",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static [C] = foo; }",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "(class C { static [C] = foo; });",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class { static [C] = foo; };",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class { static field = C; };",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class { static field = class extends C {}; };",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class { static field = class { [C]; } };",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class { static field = class { static field = C; }; };",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C extends D {} class D {}",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "class C extends (class { [a](){} }) {} let a;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C extends (class { static field = a; }) {} let a;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { [a]() {} } let a;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static [a]() {} } let a;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { [a]; } let a;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static [a]; } let a;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { [a] = foo; } let a;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static [a] = foo; } let a;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static field = a; } let a;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static field = D; } class D {}",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static field = class extends D {}; } class D {}",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static field = class { [a](){} } } let a;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static field = class { static field = a; }; } let a;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class { static { C; } };",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "const C = class { static { (class extends C {}); } };",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static { a; } } let a;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static { D; } } class D {}",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static { (class extends D {}); } } class D {}",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static { (class { [a](){} }); } } let a;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "class C { static { (class { static field = a; }); } } let a;",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "(class C extends C {});",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "(class C extends (class { [C](){} }) {});",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "(class C extends (class { static field = C; }) {});",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "export { a }; const a = 1;",
+      "valid": false
+    },
+    {
+      "code": "export { a }; const a = 1;",
+      "valid": false,
+      "options": [
+        {}
+      ]
+    },
+    {
+      "code": "export { a }; const a = 1;",
+      "valid": false,
+      "options": [
+        {
+          "allowNamedExports": false
+        }
+      ]
+    },
+    {
+      "code": "export { a }; const a = 1;",
+      "valid": false,
+      "options": [
+        "nofunc"
+      ]
+    },
+    {
+      "code": "export { a as b }; const a = 1;",
+      "valid": false
+    },
+    {
+      "code": "export { a, b }; let a, b;",
+      "valid": false
+    },
+    {
+      "code": "export { a }; var a;",
+      "valid": false
+    },
+    {
+      "code": "export { f }; function f() {}",
+      "valid": false
+    },
+    {
+      "code": "export { C }; class C {}",
+      "valid": false
+    },
+    {
+      "code": "export const foo = a; const a = 1;",
+      "valid": false,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "export default a; const a = 1;",
+      "valid": false,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "export function foo() { return a; }; const a = 1;",
+      "valid": false,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "export class C { foo() { return a; } }; const a = 1;",
+      "valid": false,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "\u003cApp /\u003e; const App = () =\u003e \u003cdiv /\u003e;",
+      "valid": false
+    },
+    {
+      "code": "function render() { return \u003cWidget /\u003e }; const Widget = () =\u003e \u003cspan /\u003e;",
+      "valid": false
+    },
+    {
+      "code": "\u003cFoo.Bar /\u003e; const Foo = { Bar: () =\u003e \u003cdiv/\u003e };",
+      "valid": false
+    },
+    {
+      "code": "\n                a++;\n                var a = 19;\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                a++;\n                var a = 19;\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                a++;\n                var a = 19;\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                a();\n                var a = function () {};\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                alert(a[1]);\n                var a = [1, 3];\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                a();\n                function a() {\n                  alert(b);\n                  var b = 10;\n                  a();\n                }\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                a();\n                var a = function () {};\n                      ",
+      "valid": false,
+      "options": [
+        "nofunc"
+      ]
+    },
+    {
+      "code": "\n                (() =\u003e {\n                  alert(a);\n                  var a = 42;\n                })();\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                (() =\u003e a())();\n                function a() {}\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                a();\n                try {\n                  throw new Error();\n                } catch (foo) {\n                  var a;\n                }\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                var f = () =\u003e a;\n                var a;\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                new A();\n                class A {}\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                function foo() {\n                  new A();\n                }\n                class A {}\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                new A();\n                var A = class {};\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                function foo() {\n                  new A();\n                }\n                var A = class {};\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                a++;\n                {\n                  var a;\n                }\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                'use strict';\n                {\n                  a();\n                  function a() {}\n                }\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                {\n                  a;\n                  let a = 1;\n                }\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                switch (foo) {\n                  case 1:\n                    a();\n                  default:\n                    let a;\n                }\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                if (true) {\n                  function foo() {\n                    a;\n                  }\n                  let a;\n                }\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                a();\n                var a = function () {};\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "classes": false,
+          "functions": false
+        }
+      ]
+    },
+    {
+      "code": "\n                new A();\n                var A = class {};\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "\n                function foo() {\n                  new A();\n                }\n                var A = class {};\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "classes": false
+        }
+      ]
+    },
+    {
+      "code": "var a = a;",
+      "valid": false
+    },
+    {
+      "code": "let a = a + b;",
+      "valid": false
+    },
+    {
+      "code": "const a = foo(a);",
+      "valid": false
+    },
+    {
+      "code": "function foo(a = a) {}",
+      "valid": false
+    },
+    {
+      "code": "var { a = a } = [];",
+      "valid": false
+    },
+    {
+      "code": "var [a = a] = [];",
+      "valid": false
+    },
+    {
+      "code": "var { b = a, a } = {};",
+      "valid": false
+    },
+    {
+      "code": "var [b = a, a] = {};",
+      "valid": false
+    },
+    {
+      "code": "var { a = 0 } = a;",
+      "valid": false
+    },
+    {
+      "code": "var [a = 0] = a;",
+      "valid": false
+    },
+    {
+      "code": "\n                for (var a in a) {\n                }\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                for (var a of a) {\n                }\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                interface Bar {\n                  type: typeof Foo;\n                }\n\n                const Foo = 2;\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "ignoreTypeReferences": false
+        }
+      ]
+    },
+    {
+      "code": "\n                let var1: StringOrNumber;\n\n            type StringOrNumber = string | number;\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "ignoreTypeReferences": false,
+          "typedefs": true
+        }
+      ]
+    },
+    {
+      "code": "\n                interface Bar {\n                  type: typeof Foo.FOO;\n                }\n\n                class Foo {\n                  public static readonly FOO = '';\n                }\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "ignoreTypeReferences": false
+        }
+      ]
+    },
+    {
+      "code": "\n                interface Bar {\n                  type: typeof Foo.Bar.Baz;\n                }\n\n                const Foo = {\n                  Bar: {\n                    Baz: 1,\n                  },\n                };\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "ignoreTypeReferences": false
+        }
+      ]
+    },
+    {
+      "code": "\n                const foo = {\n                  bar: 'bar',\n                } satisfies {\n                  bar: typeof baz;\n                };\n\n                const baz = '';\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "ignoreTypeReferences": false
+        }
+      ]
+    },
+    {
+      "code": "\n                function foo() {\n                  bar;\n                  var bar = 1;\n                }\n                var bar;\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "variables": false
+        }
+      ]
+    },
+    {
+      "code": "\n                class Test {\n                  foo(args: Foo): Foo {\n                    return Foo.FOO;\n                  }\n                }\n\n                enum Foo {\n                  FOO,\n                }\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "enums": true
+        }
+      ]
+    },
+    {
+      "code": "\n                function foo(): Foo {\n                  return Foo.FOO;\n                }\n\n                enum Foo {\n                   FOO,\n                 }\n                ",
+      "valid": false,
+      "options": [
+        {
+          "enums": true
+        }
+      ]
+    },
+    {
+      "code": "\n                const foo = Foo.Foo;\n\n                enum Foo {\n                  FOO,\n                }\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "enums": true
+        }
+      ]
+    },
+    {
+      "code": "\n                export { a };\n                const a = 1;\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                export { a };\n                const a = 1;\n                      ",
+      "valid": false,
+      "options": [
+        {}
+      ]
+    },
+    {
+      "code": "\n                export { a };\n                const a = 1;\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "allowNamedExports": false
+        }
+      ]
+    },
+    {
+      "code": "\n                export { a };\n                const a = 1;\n                      ",
+      "valid": false,
+      "options": [
+        "nofunc"
+      ]
+    },
+    {
+      "code": "\n                export { a as b };\n                const a = 1;\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                export { a, b };\n                let a, b;\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                export { a };\n                var a;\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                export { f };\n                function f() {}\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                export { C };\n                class C {}\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                export const foo = a;\n                const a = 1;\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "\n                export function foo() {\n                  return a;\n                }\n                const a = 1;\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "\n                export class C {\n                  foo() {\n                    return a;\n                  }\n                }\n                const a = 1;\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "allowNamedExports": true
+        }
+      ]
+    },
+    {
+      "code": "\n                export { Foo };\n\n                enum Foo {\n                  BAR,\n                }\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                export { Foo };\n\n                namespace Foo {\n                  export let bar = () =\u003e console.log('bar');\n                }\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                export { Foo, baz };\n\n                enum Foo {\n                  BAR,\n                }\n\n                let baz: Enum;\n                enum Enum {}\n                      ",
+      "valid": false,
+      "options": [
+        {
+          "allowNamedExports": false,
+          "ignoreTypeReferences": true
+        }
+      ]
+    },
+    {
+      "code": "\n                f();\n                function f() {}\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                alert(a);\n                var a = 10;\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                f()?.();\n                function f() {\n                  return function t() {};\n                }\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                alert(a?.b);\n                var a = { b: 5 };\n                      ",
+      "valid": false
+    },
+    {
+      "code": "\n                @decorator\n                class C {\n              \t\tstatic x = \"foo\";\n              \t\t[C.x]() { }\n                }\n                      ",
+      "valid": false
+    }
+  ]
+}
