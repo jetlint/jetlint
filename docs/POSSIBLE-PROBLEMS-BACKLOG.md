@@ -6,9 +6,9 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 45
+- Shipped: 46
 - Remaining (AST-only): ~9
-- Remaining (needs regex AST infra): 5
+- Remaining (needs regex AST infra): 4
 
 **Symbols**
 
@@ -33,7 +33,7 @@ Update this file as rules land or assumptions change.
 | `no-constant-binary-expression` | ✓ | Shipped 2026-05-15 (conservative port, 176/251 fixtures; full constant folding deferred to a shared utility) |
 | `no-constant-condition` | ✓ | Shipped 2026-05-15 (conservative port, 206/306 fixtures; full constant-folding deferred to a shared utility) |
 | `no-constructor-return` | ✓ | Shipped 2026-05-15 |
-| `no-control-regex` | ⊘ | Regex AST. |
+| `no-control-regex` | ✓ | Shipped 2026-05-15 (hand-rolled pattern scanner with JS string-escape unescaping; covers `/.../` and `RegExp(string)` forms) |
 | `no-debugger` | ✓ | Shipped 2026-05-15 |
 | `no-dupe-args` | ✓ | Shipped 2026-05-15 (hand-written tests; no oxc source available) |
 | `no-dupe-class-members` | ✓ | Shipped 2026-05-15 |

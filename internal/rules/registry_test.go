@@ -203,6 +203,7 @@ func additionalRulesSnapshot() []string {
 		"no-constant-binary-expression",
 		"no-constant-condition",
 		"no-constructor-return",
+		"no-control-regex",
 		"no-debugger",
 		"no-deprecated",
 		"no-dupe-args",
