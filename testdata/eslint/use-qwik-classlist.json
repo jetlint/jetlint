@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-qwik-classlist",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/useQwikClasslist",
+  "cases": [
+    {
+      "code": "import { component$ } from \"@builder.io/qwik\";\nimport classnames from \"classnames\";\nimport styles from \"./MyComponent.module.css\";\n\nexport default component$((props) =\u003e {\n  return (\n    \u003cdiv class={classnames(\n      styles.container,\n      \"p-8\",\n      {\n        \"text-green-500\": props.isHighAttention,\n        \"text-slate-500\": !props.isHighAttention,\n      },\n      { active: true }\n    )}\u003e\n      Hello world!\n    \u003c/div\u003e\n  );\n});\n\n// Invalid: classnames with spread props\nexport const SpreadPropsInvalid = (props) =\u003e (\n  \u003cdiv {...props} class={classnames('foo', { bar: true })} /\u003e\n);\n\n// Invalid: classnames in nested call\nexport const NestedClassnamesInvalid = () =\u003e (\n  \u003cdiv class={classnames(classnames('foo', { bar: true }))} /\u003e\n); ",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// should not generate diagnostics\nimport { component$ } from \"@builder.io/qwik\";\nimport styles from \"./MyComponent.module.css\";\n\nexport default component$((props) =\u003e {\n  const arrayClass = [\n    styles.container,\n    \"p-8\",\n    props.isHighAttention ? \"text-green-500\" : \"text-slate-500\",\n    { active: true },\n  ];\n\n  const objectClass = {\n    \"text-green-500\": props.isHighAttention,\n    \"p-4\": true,\n  };\n\n  return (\n    \u003c\u003e\n      \u003cdiv class={arrayClass}\u003eHello world!\u003c/div\u003e\n      \u003cdiv class={objectClass}\u003eHello world!\u003c/div\u003e\n    \u003c/\u003e\n  );\n});\n\n// should not generate diagnostics: spread props with valid class usage\nexport const SpreadPropsValid = (props) =\u003e (\n  \u003cdiv {...props} class={{ foo: true, bar: props.active }} /\u003e\n);\n\n// should not generate diagnostics: class as string with spread props\nexport const SpreadPropsStringValid = (props) =\u003e (\n  \u003cdiv {...props} class={\"foo bar\"} /\u003e\n); ",
+      "valid": true
+    }
+  ]
+}

@@ -323,6 +323,7 @@ func additionalRulesSnapshot() []string {
 		"use-json-import-attributes",
 		"use-jsx-key-in-iterable",
 		"use-parse-int-radix",
+		"use-qwik-classlist",
 		"use-single-js-doc-asterisk",
 		"use-unique-element-ids",
 		"use-unknown-in-catch-callback-variable",
