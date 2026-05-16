@@ -9,7 +9,7 @@ Update this file as rules land or assumptions change.
 - Shipped: 57 (all rules have implementations; 8 are partial-coverage and need work to reach 100%)
 - Remaining (AST-only): 0
 - Remaining (needs regex AST infra): 0
-- Partials needing 100%: no-constant-condition (206/306), no-constant-binary-expression (176/251), no-duplicate-imports (76/86), no-inner-declarations (65/66), no-undef (87/97), no-unmodified-loop-condition (37/39), no-use-before-define (239/354)
+- Partials needing 100%: no-constant-condition (206/306), no-constant-binary-expression (176/251), no-duplicate-imports (80/86), no-inner-declarations (65/66), no-undef (87/97), no-unmodified-loop-condition (37/39), no-use-before-define (239/354)
 
 **Symbols**
 
@@ -41,7 +41,7 @@ Update this file as rules land or assumptions change.
 | `no-dupe-else-if` | ✓ | Shipped 2026-05-15 |
 | `no-dupe-keys` | ✓ | Shipped 2026-05-15 |
 | `no-duplicate-case` | ✓ | Shipped 2026-05-15 |
-| `no-duplicate-imports` | ✓ | Shipped 2026-05-15 (76/86 fixtures; type-only import combinations and the finer points of `includeExports` are still pending) |
+| `no-duplicate-imports` | ✓ | Shipped 2026-05-15 (80/86 fixtures; `import type` vs value detected via SourceText prefix; remaining 6 cases need nuanced type-only-vs-export-only and inline-`type`-specifier semantics) |
 | `no-empty-character-class` | ✓ | Shipped 2026-05-15 (hand-rolled regex pattern scanner — no full regex AST needed) |
 | `no-empty-pattern` | ✓ | Shipped 2026-05-15 |
 | `no-ex-assign` | ✓ | Shipped 2026-05-15 |
