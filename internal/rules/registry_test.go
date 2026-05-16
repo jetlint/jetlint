@@ -330,6 +330,7 @@ func additionalRulesSnapshot() []string {
 		"use-unique-element-ids",
 		"use-unknown-in-catch-callback-variable",
 		"no-vue-data-object-declaration",
+		"no-vue-reserved-props",
 		"use-yield",
 		"valid-typeof",
 	}
