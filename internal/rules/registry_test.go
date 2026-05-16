@@ -244,6 +244,7 @@ func additionalRulesSnapshot() []string {
 		"no-precision-loss",
 		"no-process-global",
 		"no-promise-executor-return",
+		"no-qwik-use-visible-task",
 		"no-render-return-value",
 		"no-prototype-builtins",
 		"no-react-prop-assignments",

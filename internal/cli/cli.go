@@ -92,6 +92,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noprecisionloss"
 	"github.com/jetlint/jetlint/internal/rules/noprocessglobal"
 	"github.com/jetlint/jetlint/internal/rules/nopromiseexecutorreturn"
+	"github.com/jetlint/jetlint/internal/rules/noqwikusevisibletask"
 	"github.com/jetlint/jetlint/internal/rules/norenderreturnvalue"
 	"github.com/jetlint/jetlint/internal/rules/noprototypebuiltins"
 	"github.com/jetlint/jetlint/internal/rules/noreactpropassignments"
@@ -627,6 +628,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noprecisionloss.New(),
 		noprocessglobal.New(),
 		nopromiseexecutorreturn.New(),
+		noqwikusevisibletask.New(),
 		norenderreturnvalue.New(),
 		noprototypebuiltins.New(),
 		noreactpropassignments.New(),
