@@ -208,8 +208,25 @@ func hasConstantNullishness(n *wrapperchecker.Node) bool {
 		wrapperchecker.KindArrowFunction,
 		wrapperchecker.KindFunctionExpression,
 		wrapperchecker.KindClassExpression,
-		wrapperchecker.KindNullKeyword:
+		wrapperchecker.KindNullKeyword,
+		wrapperchecker.KindNewExpression:
 		return true
+	case wrapperchecker.KindIdentifier:
+		// `undefined` is statically nullish; `NaN` is a number
+		// (non-nullish).
+		text := n.LiteralText()
+		return text == "undefined" || text == "NaN"
+	case wrapperchecker.KindVoidExpression:
+		return true // `void x` is undefined => nullish.
+	case wrapperchecker.KindTypeOfExpression:
+		return true // `typeof x` is a string => non-nullish.
+	case wrapperchecker.KindParenthesizedExpression:
+		var inner *wrapperchecker.Node
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			inner = c
+			return true
+		})
+		return hasConstantNullishness(inner)
 	case wrapperchecker.KindPrefixUnaryExpression:
 		op := n.PrefixUnaryOperator()
 		switch op {
@@ -270,16 +287,100 @@ func hasConstantNullishness(n *wrapperchecker.Node) bool {
 // isConstantEquality reports whether a comparison of left and right
 // (strict if `strict`, loose otherwise) is statically constant.
 func isConstantEquality(left, right *wrapperchecker.Node, strict bool) bool {
-	if isFreshReferenceLiteral(left) || isFreshReferenceLiteral(right) {
-		return true
-	}
 	if strict {
-		// Under ===, a numeric/boolean/null/undefined literal can be
-		// compared to another with a known different type; covered
-		// by hasConstantNullishness on each side combined with a
-		// type-tag check.
+		// Under === / !==, a fresh-reference literal can never
+		// equal anything else (unique identity).
+		if isFreshReferenceLiteral(left) || isFreshReferenceLiteral(right) {
+			return true
+		}
 		if hasIncompatibleTypeTag(left, right) {
 			return true
+		}
+	}
+	// Either form: if both sides are primitive literals, the
+	// comparison's truth value is fully determined at compile
+	// time (the runtime applies fixed coercion rules).
+	if isPrimitiveLiteral(left) && isPrimitiveLiteral(right) {
+		return true
+	}
+	return false
+}
+
+// isPrimitiveLiteral reports whether n is a literal primitive value
+// whose runtime representation is fully determined by its source
+// text — true/false/null/undefined, a numeric / bigint / string
+// literal, a substitution-free template, or a unary `void`/`typeof`
+// expression.
+func isPrimitiveLiteral(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	if n.Kind() == wrapperchecker.KindParenthesizedExpression {
+		var inner *wrapperchecker.Node
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			inner = c
+			return true
+		})
+		return isPrimitiveLiteral(inner)
+	}
+	switch n.Kind() {
+	case wrapperchecker.KindTrueKeyword,
+		wrapperchecker.KindFalseKeyword,
+		wrapperchecker.KindNullKeyword,
+		wrapperchecker.KindNumericLiteral,
+		wrapperchecker.KindBigIntLiteral,
+		wrapperchecker.KindStringLiteral,
+		wrapperchecker.KindNoSubstitutionTemplateLiteral:
+		return true
+	case wrapperchecker.KindIdentifier:
+		return n.LiteralText() == "undefined"
+	case wrapperchecker.KindVoidExpression, wrapperchecker.KindTypeOfExpression:
+		return true
+	case wrapperchecker.KindPrefixUnaryExpression:
+		op := n.PrefixUnaryOperator()
+		switch op {
+		case "+", "-", "~":
+			// Result is a number — the value isn't fully known
+			// unless the operand is, but the *type* is fixed, so
+			// this counts as a primitive for purposes of
+			// equality (we only need the type to be determinable
+			// when checking against another primitive of the same
+			// or different type).
+			return isPrimitiveLiteral(n.PrefixUnaryOperand())
+		case "!":
+			// `!x` is a boolean — but the *value* depends on x;
+			// only count it as a primitive literal when the
+			// operand is one (same as +/-/~).
+			return isPrimitiveLiteral(n.PrefixUnaryOperand())
+		case "void":
+			return true
+		}
+	case wrapperchecker.KindPostfixUnaryExpression:
+		// `x++` / `x--` evaluates to a number.
+		return true
+	case wrapperchecker.KindBinaryExpression:
+		op := n.BinaryOperatorKind()
+		if isAssignmentOperator(op) && op != wrapperchecker.KindEqualsToken {
+			// Compound arithmetic assignment evaluates to a
+			// number — its primitive type is determined.
+			return true
+		}
+		if op == wrapperchecker.KindEqualsEqualsToken ||
+			op == wrapperchecker.KindEqualsEqualsEqualsToken ||
+			op == wrapperchecker.KindExclamationEqualsToken ||
+			op == wrapperchecker.KindExclamationEqualsEqualsToken {
+			// Equality / inequality always evaluates to a boolean.
+			return true
+		}
+	case wrapperchecker.KindCallExpression:
+		// `Boolean(...)`, `String(...)`, `Number(...)` — global
+		// conversion calls produce a known primitive type.
+		callee := n.CalleeExpression()
+		if callee != nil && callee.Kind() == wrapperchecker.KindIdentifier {
+			switch callee.SourceText() {
+			case "Boolean", "String", "Number":
+				return true
+			}
 		}
 	}
 	return false

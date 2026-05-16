@@ -31,7 +31,7 @@ Update this file as rules land or assumptions change.
 | `no-compare-neg-zero` | ✓ | Shipped 2026-05-15 |
 | `no-cond-assign` | ✓ | Shipped 2026-05-15 |
 | `no-const-assign` | ✓ | Shipped 2026-05-15 |
-| `no-constant-binary-expression` | ✓ | Shipped 2026-05-15 (conservative port, 176/251 fixtures; full constant folding deferred to a shared utility) |
+| `no-constant-binary-expression` | ✓ | Shipped 2026-05-15 (196/251 fixtures, 78.1%; expanded constant-detection: VoidExpression/TypeOfExpression/NewExpression, undefined-identifier, comma operator, assignment pass-through, Boolean/String/Number conversion calls, compound-arithmetic assignment as number-typed) |
 | `no-constant-condition` | ✓ | Shipped 2026-05-15 (251/306 fixtures, 82%; added short-circuit operator truthiness, template-span constant detection, NewExpression-always-truthy, assignment-expression pass-through, `\|\|=`/`&&=` truthiness inference, isPrimitiveConstant for arithmetic operand checks) |
 | `no-constructor-return` | ✓ | Shipped 2026-05-15 |
 | `no-control-regex` | ✓ | Shipped 2026-05-15 (hand-rolled pattern scanner with JS string-escape unescaping; covers `/.../` and `RegExp(string)` forms) |
