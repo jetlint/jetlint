@@ -152,6 +152,7 @@ var All = []Metadata{
 	{ID: "no-irregular-whitespace", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-loss-of-precision", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-self-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-solid-destructured-props", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-self-compare", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-argument", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-assignment", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},

@@ -98,6 +98,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noreactpropassignments"
 	"github.com/jetlint/jetlint/internal/rules/noredundanttypeconstituents"
 	"github.com/jetlint/jetlint/internal/rules/noselfassign"
+	"github.com/jetlint/jetlint/internal/rules/nosoliddestructuredprops"
 	"github.com/jetlint/jetlint/internal/rules/noselfcompare"
 	"github.com/jetlint/jetlint/internal/rules/nosetterreturn"
 	"github.com/jetlint/jetlint/internal/rules/nosparsearrays"
@@ -663,6 +664,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noredundanttypeconstituents.New(),
 		noselfassign.New(),
 		noselfcompare.New(),
+		nosoliddestructuredprops.New(),
 		nosetterreturn.New(),
 		nounexpectedmultiline.New(),
 		nounreachable.New(),

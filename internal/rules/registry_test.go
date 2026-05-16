@@ -251,6 +251,7 @@ func additionalRulesSnapshot() []string {
 		"no-redundant-type-constituents",
 		"no-self-assign",
 		"no-self-compare",
+		"no-solid-destructured-props",
 		"no-setter-return",
 		"no-sparse-arrays",
 		"no-string-case-mismatch",
