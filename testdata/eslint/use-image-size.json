@@ -1,0 +1,31 @@
+{
+  "ruleId": "use-image-size",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/useImageSize",
+  "cases": [
+    {
+      "code": "// Invalid: missing width and height\n\u003cimg src=\"https://example.com/image.png\" /\u003e ",
+      "valid": false
+    },
+    {
+      "code": "// Invalid: missing height\n\u003cimg src=\"/image.png\" width=\"200\" /\u003e ",
+      "valid": false
+    },
+    {
+      "code": "// Invalid: missing width\n\u003cimg src=\"/image.png\" height=\"200\" /\u003e ",
+      "valid": false
+    },
+    {
+      "code": "\u003cimg src=\"/image.png\" /\u003e ",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// should not generate diagnostics\n\u003cimg width=\"100\" height=\"100\" src=\"https://example.com/image.png\" /\u003e ",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// should not generate diagnostics\n\u003cimg width=\"200\" height=\"600\" src=\"/static/images/portrait-01.webp\" /\u003e\n",
+      "valid": true
+    }
+  ]
+}

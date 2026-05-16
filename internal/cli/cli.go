@@ -172,6 +172,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/strictvoidreturn"
 	"github.com/jetlint/jetlint/internal/rules/switchexhaustivenesscheck"
 	"github.com/jetlint/jetlint/internal/rules/unboundmethod"
+	"github.com/jetlint/jetlint/internal/rules/useimagesize"
 	"github.com/jetlint/jetlint/internal/rules/useisnan"
 	"github.com/jetlint/jetlint/internal/rules/usejsonimportattributes"
 	"github.com/jetlint/jetlint/internal/rules/usejsxkeyiniterable"
@@ -736,6 +737,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		strictvoidreturn.New(),
 		switchexhaustivenesscheck.New(),
 		unboundmethod.New(),
+		useimagesize.New(),
 		useisnan.New(),
 		usejsonimportattributes.New(),
 		usejsxkeyiniterable.New(),

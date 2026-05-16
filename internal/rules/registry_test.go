@@ -320,6 +320,7 @@ func additionalRulesSnapshot() []string {
 		"strict-void-return",
 		"switch-exhaustiveness-check",
 		"unbound-method",
+		"use-image-size",
 		"use-isnan",
 		"use-json-import-attributes",
 		"use-jsx-key-in-iterable",
