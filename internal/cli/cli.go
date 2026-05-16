@@ -149,6 +149,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/switchexhaustivenesscheck"
 	"github.com/jetlint/jetlint/internal/rules/unboundmethod"
 	"github.com/jetlint/jetlint/internal/rules/useisnan"
+	"github.com/jetlint/jetlint/internal/rules/usejsonimportattributes"
 	"github.com/jetlint/jetlint/internal/rules/useparseintradix"
 	"github.com/jetlint/jetlint/internal/rules/useunknownincatchcallbackvariable"
 	"github.com/jetlint/jetlint/internal/rules/useyield"
@@ -682,6 +683,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		switchexhaustivenesscheck.New(),
 		unboundmethod.New(),
 		useisnan.New(),
+		usejsonimportattributes.New(),
 		useparseintradix.New(),
 		useunknownincatchcallbackvariable.New(),
 		useyield.New(),

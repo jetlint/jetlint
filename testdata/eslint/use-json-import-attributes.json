@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-json-import-attributes",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/useJsonImportAttributes",
+  "cases": [
+    {
+      "code": "import foo from 'bar.json';\n\nimport foo from 'bar.json' // with comment\n\nimport foo from 'bar.json'; // with comment after colon\n\nimport foo from 'bar.json'/** with inline comment */;\n\nimport foo from 'bar.json' with { some: 'attr' };\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\nimport foo from 'bar.json' with { type: 'json' };\n\nimport bar from 'baz.json' with { other: 'value', type: 'json' }\n\nimport hoge from 'hoge.json' with {\n    type: 'json'\n}\n",
+      "valid": true
+    }
+  ]
+}

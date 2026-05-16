@@ -301,6 +301,7 @@ func additionalRulesSnapshot() []string {
 		"switch-exhaustiveness-check",
 		"unbound-method",
 		"use-isnan",
+		"use-json-import-attributes",
 		"use-parse-int-radix",
 		"use-unknown-in-catch-callback-variable",
 		"use-yield",
