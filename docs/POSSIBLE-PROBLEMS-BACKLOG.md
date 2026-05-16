@@ -9,7 +9,7 @@ Update this file as rules land or assumptions change.
 - Shipped: 57 (all rules have implementations; 8 are partial-coverage and need work to reach 100%)
 - Remaining (AST-only): 0
 - Remaining (needs regex AST infra): 0
-- Partials needing 100%: no-undef (91/97), no-use-before-define (333/354)
+- Partials needing 100%: no-undef (91/97), no-use-before-define (334/354)
 
 **Symbols**
 
@@ -73,7 +73,7 @@ Update this file as rules land or assumptions change.
 | `no-unsafe-optional-chaining` | ✓ | Shipped 2026-05-15 (82/82 fixtures, 100% — `with(...)` head detected via integer cast to KindWithStatement) |
 | `no-unused-private-class-members` | ✓ | Shipped 2026-05-15 |
 | `no-unused-vars` | ✓ | Shipped 2026-05-15 (conservative port — flags declarations whose name never appears in a reference position; underscore-prefix and `export`-attached names suppressed; full option set deferred) |
-| `no-use-before-define` | ✓ | Shipped 2026-05-15 (333/354 fixtures, 94.1%; flags self-init / TDZ patterns including parameter defaults, destructuring, for-in/of iterable self-ref, class heritage self-ref, computed method/field name self-ref; eager class contexts (heritage clause, computed name, static field, static block) override hoisting options when not nested in a deferred body; inner-class static fields/blocks treat their owning class as eager wrt outer-decl TDZ; declarationKind covers Enums; export specifier local-binding fallback extends to enum / namespace declarations; AllowNamedExports and IgnoreTypeReferences honored) |
+| `no-use-before-define` | ✓ | Shipped 2026-05-15 (334/354 fixtures, 94.4%; flags self-init / TDZ patterns including parameter defaults, destructuring, for-in/of iterable self-ref, class heritage self-ref, computed method/field name self-ref; eager class contexts (heritage clause, computed name, static field, static block) override hoisting options when not nested in a deferred body; inner-class static fields/blocks treat their owning class as eager wrt outer-decl TDZ; declarationKind covers Enums and Modules; export specifier local-binding fallback covers function / class / enum / module declarations; AllowNamedExports and IgnoreTypeReferences honored) |
 | `no-useless-backreference` | ✓ | Shipped 2026-05-15 (hand-rolled pattern scanner counts capturing/named groups, flags backreferences with no target) |
 | `require-atomic-updates` | ✓ | Shipped 2026-05-15 (hand-written tests; no oxc source available) |
 | `use-isnan` | ✓ | Shipped 2026-05-15 |
