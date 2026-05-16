@@ -125,6 +125,7 @@ var All = []Metadata{
 	{ID: "no-type-only-import-attributes", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-undef", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unexpected-multiline", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-unresolved-imports", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unreachable", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unreachable-loop", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unreachable-super", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

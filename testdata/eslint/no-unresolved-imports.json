@@ -1,0 +1,24 @@
+{
+  "ruleId": "no-unresolved-imports",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noUnresolvedImports",
+  "cases": [
+    {
+      "valid": false,
+      "main": "invalid.js",
+      "files": [
+        {"path": "invalid.js", "content": "import foo from \"./foo.js\";\nimport { bar } from \"./bar\";\nimport { other } from \"./nonExisting\";\n"},
+        {"path": "foo.js", "content": "export function foo() {}\n"},
+        {"path": "bar.ts", "content": "export default function bar() {}\n"}
+      ]
+    },
+    {
+      "valid": true,
+      "main": "aliased-reexport-barrel.js",
+      "files": [
+        {"path": "aliased-reexport-barrel.js", "content": "export { originalName as renamedSymbol } from \"./aliased-reexport-source.js\";\n"},
+        {"path": "aliased-reexport-source.js", "content": "export function originalName() {}\n"}
+      ]
+    }
+  ]
+}

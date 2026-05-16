@@ -263,6 +263,7 @@ func additionalRulesSnapshot() []string {
 		"no-type-only-import-attributes",
 		"no-undef",
 		"no-unexpected-multiline",
+		"no-unresolved-imports",
 		"no-unreachable",
 		"no-unreachable-loop",
 		"no-unreachable-super",

@@ -19,6 +19,7 @@ import (
 // Case is one extracted oxlint fixture case.
 type Case struct {
 	// Code is the source text the rule is being run against.
+	// For multi-file cases, leave Code empty and use Files+Main.
 	Code string `json:"code"`
 	// Valid is true for entries from oxc's `pass` vec, false for `fail`.
 	Valid bool `json:"valid"`
@@ -33,6 +34,21 @@ type Case struct {
 	// `{ name: bool }` map naming globals the rule should treat as
 	// declared) or `env`. Nil when the upstream case had no settings.
 	Settings map[string]any `json:"settings,omitempty"`
+	// Files lists every file the case needs on disk. For rules that
+	// reach across files (import resolution, package.json discovery)
+	// this carries the sibling fixtures alongside the entry point.
+	// Code-only cases leave it nil.
+	Files []File `json:"files,omitempty"`
+	// Main names the entry file the linter should treat as the case
+	// under test when Files is set. Defaults to the first file when
+	// blank.
+	Main string `json:"main,omitempty"`
+}
+
+// File is one file in a multi-file case.
+type File struct {
+	Path    string `json:"path"`
+	Content string `json:"content"`
 }
 
 // Globals returns the `globals` map from Settings, or nil when none
