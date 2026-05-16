@@ -66,6 +66,9 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if !isFreeReferenceContext(n) {
 		return
 	}
+	if r.opts.IgnoreTypeReferences && isInTypePosition(n) {
+		return
+	}
 	sym := ctx.Checker().SymbolOf(n)
 	if sym == nil {
 		return
@@ -179,6 +182,35 @@ func crossesDeferredBoundary(ref, decl *wrapperchecker.Node) bool {
 			}
 		}
 		prev = cur
+	}
+	return false
+}
+
+// isInTypePosition reports whether the identifier `n` sits inside a
+// TypeScript type-only construct (TypeReference, TypeQuery, TypeLiteral,
+// FunctionType, InterfaceDeclaration, TypeAliasDeclaration). Values
+// inside these constructs are erased at runtime, so a value-level
+// "use before define" doesn't apply.
+func isInTypePosition(n *wrapperchecker.Node) bool {
+	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
+		switch cur.Kind() {
+		case wrapperchecker.KindTypeReference,
+			wrapperchecker.KindTypeQuery,
+			wrapperchecker.KindTypeLiteral,
+			wrapperchecker.KindFunctionType,
+			wrapperchecker.KindInterfaceDeclaration,
+			wrapperchecker.KindTypeAliasDeclaration:
+			return true
+		case wrapperchecker.KindSourceFile,
+			wrapperchecker.KindBlock,
+			wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindClassDeclaration,
+			wrapperchecker.KindClassExpression:
+			return false
+		}
 	}
 	return false
 }
