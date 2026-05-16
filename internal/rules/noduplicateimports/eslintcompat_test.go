@@ -59,17 +59,8 @@ func TestNoDuplicateImports_EslintCompatibility(t *testing.T) {
 		pct = float64(passed) * 100.0 / float64(total)
 	}
 	t.Logf("oxlint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
-	// The current port covers default-config duplicate detection and
-	// the broad strokes of `includeExports`. The remaining
-	// divergences are around type-only imports (where oxc treats
-	// `import type` as separate even with the default config) and
-	// the finer points of `includeExports` (the rule treats some
-	// import + `export *` shapes as combinable while we don't model
-	// the difference between `export * from` and `export { … } from`
-	// for the import-vs-export pairing). Ship at 76/86 and tighten
-	// in a follow-up.
-	if failed > 10 {
-		t.Fatalf("expected at most 10 known divergences, got %d/%d (%.1f%%)", passed, total, pct)
+	if failed > 0 {
+		t.Fatalf("expected 100%% pass rate, got %d/%d (%.1f%%)", passed, total, pct)
 	}
 }
 
