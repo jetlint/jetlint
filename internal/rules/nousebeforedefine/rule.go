@@ -161,7 +161,11 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 			return
 		}
 	case declClass:
-		if !r.opts.Classes && !eager {
+		// `new ClassName()` outside a deferred body requires the
+		// class binding to be initialized; oxlint flags those even
+		// when Classes: false.
+		newCtor := isNewExpressionCallee(n) && !referenceInDeferredBody(n)
+		if !r.opts.Classes && !eager && !newCtor {
 			return
 		}
 	case declVar:
@@ -326,6 +330,28 @@ func isInWithStatement(n *wrapperchecker.Node) bool {
 		if cur.Kind() == wrapperchecker.KindSourceFile {
 			return false
 		}
+	}
+	return false
+}
+
+// isNewExpressionCallee reports whether `n` is the constructor
+// expression of a `new X(...)` expression (or a parenthesized form).
+func isNewExpressionCallee(n *wrapperchecker.Node) bool {
+	cur := n
+	for cur != nil {
+		p := cur.Parent()
+		if p == nil {
+			return false
+		}
+		switch p.Kind() {
+		case wrapperchecker.KindParenthesizedExpression:
+			cur = p
+			continue
+		case wrapperchecker.KindNewExpression:
+			callee := p.FirstChild()
+			return callee != nil && callee.Same(cur)
+		}
+		return false
 	}
 	return false
 }
