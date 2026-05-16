@@ -119,6 +119,7 @@ var All = []Metadata{
 	{ID: "no-unused-private-class-members", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unused-vars", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-use-before-define", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-void-type-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-floating-promises", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-for-in-array", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-misleading-character-class", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},

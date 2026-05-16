@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-void-type-return",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noVoidTypeReturn",
+  "cases": [
+    {
+      "code": "class A {\n\tf(): void {\n\t\treturn undefined;\n\t}\n}\n\nconst a = {\n\tf(): void {\n\t\treturn undefined;\n\t}\n}\n\nfunction f(): void {\n\treturn undefined;\n}\n\nexport default function(): void {\n\treturn undefined;\n}\n\nconst g = (): void =\u003e {\n\treturn undefined;\n};\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nclass A {\n\tf() {\n\t\treturn undefined;\n\t}\n}\n\nclass B {\n\tf(): void {\n\t\treturn;\n\t}\n}\n\nfunction f(): void {\n\treturn;\n}\n\nfunction g(): void {\n\treturn void 0;\n}\n",
+      "valid": true
+    }
+  ]
+}

@@ -272,6 +272,7 @@ func additionalRulesSnapshot() []string {
 		"no-unused-vars",
 		"no-use-before-define",
 		"no-useless-backreference",
+		"no-void-type-return",
 		"no-useless-default-assignment",
 		"non-nullable-type-assertion-style",
 		"only-throw-error",
