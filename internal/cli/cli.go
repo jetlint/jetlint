@@ -72,6 +72,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noirregularwhitespace"
 	"github.com/jetlint/jetlint/internal/rules/nolossofprecision"
 	"github.com/jetlint/jetlint/internal/rules/nomeaninglessvoidoperator"
+	"github.com/jetlint/jetlint/internal/rules/nomisleadingcharacterclass"
 	"github.com/jetlint/jetlint/internal/rules/nomisusedpromises"
 	"github.com/jetlint/jetlint/internal/rules/nomisusedspread"
 	"github.com/jetlint/jetlint/internal/rules/nomixedenums"
@@ -551,6 +552,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 	return []engine.Rule{
 		// MVP rules with full options support.
 		nofloatingpromises.NewWithOptions(nfpOpts),
+		nomisleadingcharacterclass.New(),
 		nomisusedpromises.NewWithOptions(nmpOpts),
 		strictbooleanexpressions.New(),
 		nounsafeassignment.New(),
