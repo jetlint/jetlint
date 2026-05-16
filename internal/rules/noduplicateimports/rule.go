@@ -50,8 +50,13 @@ type entry struct {
 	hasDefault bool
 	hasNamed   bool
 	hasNs      bool
-	isTypeOnly bool
-	isExport   bool
+	// hasAnonymousNs is true for `export * from "mod"` (no alias).
+	// This re-export form has a unique combinability profile: it
+	// only matches another anonymous `export * from` of the same
+	// source.
+	hasAnonymousNs bool
+	isTypeOnly     bool
+	isExport       bool
 }
 
 func (r *rule) visit(ctx *engine.Context, sf *wrapperchecker.Node) {
@@ -91,12 +96,49 @@ func (r *rule) visit(ctx *engine.Context, sf *wrapperchecker.Node) {
 	}
 }
 
+// isSideEffectOnly reports whether the entry carries no bindings —
+// i.e. `import "mod"` with no clause. Such a statement is fully
+// covered by any other statement of the same source.
+func isSideEffectOnly(e entry) bool {
+	return !e.hasDefault && !e.hasNamed && !e.hasNs && !e.hasAnonymousNs
+}
+
 // canCombine reports whether two import (or import+export) statements
-// of the same source could be expressed as a single statement.
-// JavaScript syntax allows {} (side-effect), {default}, {named},
-// {namespace}, {default, named}, {default, namespace}; the only
-// forbidden combo is `named + namespace` in the same statement.
+// of the same source are semantic duplicates that could be folded
+// into a single statement. JavaScript syntax allows {} (side-effect),
+// {default}, {named}, {namespace}, {default, named}, {default,
+// namespace}; the forbidden combo is `named + namespace`.
+//
+// `export *` is a special case — it can only "combine" with another
+// `export *`, since the wildcard re-export shape can't merge with a
+// value import or a named export.
+//
+// Two type-only statements that mix default and named bindings are
+// also kept separate: oxc's port treats `import type X` and
+// `import type { Y }` as distinct shapes that aren't combined by
+// the rule (matching ESLint behaviour even where syntax permits it).
 func canCombine(a, b entry) bool {
+	// A side-effect-only import (`import "mod"`) carries no bindings
+	// and is fully subsumed by any other statement of the same
+	// source.
+	if isSideEffectOnly(a) || isSideEffectOnly(b) {
+		return true
+	}
+	// Anonymous `export * from "mod"` only matches another anonymous
+	// `export *` — it's a wildcard re-export with no shared shape
+	// with imports or named exports.
+	if a.hasAnonymousNs != b.hasAnonymousNs {
+		return false
+	}
+	if a.hasAnonymousNs && b.hasAnonymousNs {
+		return true
+	}
+	if a.isTypeOnly && b.isTypeOnly {
+		if (a.hasDefault && b.hasNamed && !b.hasDefault) ||
+			(a.hasNamed && !a.hasDefault && b.hasDefault) {
+			return false
+		}
+	}
 	hasNamed := a.hasNamed || b.hasNamed
 	hasNs := a.hasNs || b.hasNs
 	if hasNamed && hasNs {
@@ -151,6 +193,12 @@ func exportEntry(n *wrapperchecker.Node) (entry, bool) {
 		}
 		return false
 	})
+	// `export * from "mod"` produces an ExportDeclaration with no
+	// ExportClause — neither NamedExports nor NamespaceExport
+	// children. Tag it as an anonymous namespace re-export.
+	if !e.hasNs && !e.hasNamed {
+		e.hasAnonymousNs = true
+	}
 	return e, true
 }
 
