@@ -1,0 +1,77 @@
+{
+  "ruleId": "use-yield",
+  "oxcSHA": "625758ab25657c0fc13555c890aeca979be8ebdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/require_yield.rs",
+  "cases": [
+    {
+      "code": "function foo() { return 0; }",
+      "valid": true
+    },
+    {
+      "code": "function* foo() { yield 0; }",
+      "valid": true
+    },
+    {
+      "code": "function* foo() { }",
+      "valid": true
+    },
+    {
+      "code": "(function* foo() { yield 0; })();",
+      "valid": true
+    },
+    {
+      "code": "(function* foo() { })();",
+      "valid": true
+    },
+    {
+      "code": "function* foo() { while (true) { yield 0; } }",
+      "valid": true
+    },
+    {
+      "code": "var obj = { *foo() { yield 0; } };",
+      "valid": true
+    },
+    {
+      "code": "var obj = { *foo() { } };",
+      "valid": true
+    },
+    {
+      "code": "class A { *foo() { yield 0; } };",
+      "valid": true
+    },
+    {
+      "code": "class A { *foo() { } };",
+      "valid": true
+    },
+    {
+      "code": "() => {}",
+      "valid": true
+    },
+    {
+      "code": "function* foo() { return 0; }",
+      "valid": false
+    },
+    {
+      "code": "(function* foo() { return 0; })();",
+      "valid": false
+    },
+    {
+      "code": "var obj = { *foo() { return 0; } }",
+      "valid": false
+    },
+    {
+      "code": "class A { *foo() { return 0; } }",
+      "valid": false
+    },
+    {
+      "code": "function* foo() { function* bar() { yield 0; } }",
+      "valid": false
+    },
+    {
+      "code": "function* foo() { function* bar() { return 0; } yield 0; }",
+      "valid": false
+    }
+  ],
+  "biomeName": "use-yield",
+  "eslintName": "require-yield"
+}

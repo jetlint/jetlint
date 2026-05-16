@@ -112,6 +112,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounsafetypeassertion"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeunaryminus"
 	"github.com/jetlint/jetlint/internal/rules/nounreachableloop"
+	"github.com/jetlint/jetlint/internal/rules/nounusedlabels"
 	"github.com/jetlint/jetlint/internal/rules/nounusedprivateclassmembers"
 	"github.com/jetlint/jetlint/internal/rules/nounusedvars"
 	"github.com/jetlint/jetlint/internal/rules/nouselessbackreference"
@@ -144,6 +145,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/unboundmethod"
 	"github.com/jetlint/jetlint/internal/rules/useisnan"
 	"github.com/jetlint/jetlint/internal/rules/useunknownincatchcallbackvariable"
+	"github.com/jetlint/jetlint/internal/rules/useyield"
 	"github.com/jetlint/jetlint/internal/rules/validtypeof"
 	"github.com/jetlint/jetlint/internal/toolerr"
 	"github.com/jetlint/jetlint/internal/transport"
@@ -638,6 +640,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nounsafetypeassertion.New(),
 		nounsafeunaryminus.New(),
 		nounmodifiedloopcondition.New(),
+		nounusedlabels.New(),
 		nounusedprivateclassmembers.New(),
 		nounusedvars.New(),
 		nousebeforedefine.New(),
@@ -669,6 +672,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		unboundmethod.New(),
 		useisnan.New(),
 		useunknownincatchcallbackvariable.New(),
+		useyield.New(),
 		validtypeof.New(),
 	}, nil
 }
