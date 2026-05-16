@@ -14,6 +14,8 @@
 package noconstantcondition
 
 import (
+	"strings"
+
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 
 	"github.com/jetlint/jetlint/internal/engine"
@@ -100,9 +102,176 @@ func (r *rule) report(ctx *engine.Context, cond *wrapperchecker.Node) {
 	if cond == nil {
 		return
 	}
-	if isObviouslyConstant(cond) {
-		ctx.Report(cond, "Unexpected constant condition")
+	if !isObviouslyConstant(cond) {
+		return
 	}
+	// A shadowed `undefined` or `Boolean` binding makes the constancy
+	// premise wrong — the local symbol could hold anything. Skip the
+	// diagnostic when scope resolution shows the relevant identifier
+	// doesn't refer to the global.
+	if hasLocallyShadowedReference(cond, ctx.Checker()) {
+		return
+	}
+	ctx.Report(cond, "Unexpected constant condition")
+}
+
+// hasLocallyShadowedReference walks `n` and returns true if any
+// `undefined` identifier or `Boolean(...)` call resolves to a
+// non-global binding. The constancy check assumes those names refer
+// to the global undefined value / Boolean constructor; when they're
+// shadowed, the assumption breaks and we must abstain.
+func hasLocallyShadowedReference(n *wrapperchecker.Node, checker *wrapperchecker.Checker) bool {
+	if n == nil || checker == nil {
+		return false
+	}
+	found := false
+	var walk func(c *wrapperchecker.Node)
+	walk = func(c *wrapperchecker.Node) {
+		if found || c == nil {
+			return
+		}
+		switch c.Kind() {
+		case wrapperchecker.KindIdentifier:
+			if c.LiteralText() == "undefined" && isLocallyBound(c, checker) {
+				found = true
+				return
+			}
+		case wrapperchecker.KindCallExpression:
+			callee := c.CalleeExpression()
+			if callee != nil && callee.Kind() == wrapperchecker.KindIdentifier &&
+				callee.LiteralText() == "Boolean" && isLocallyBound(callee, checker) {
+				found = true
+				return
+			}
+		}
+		c.ForEachChild(func(child *wrapperchecker.Node) bool {
+			walk(child)
+			return false
+		})
+	}
+	walk(n)
+	return found
+}
+
+// isLocallyBound reports whether `ref` resolves to a symbol with a
+// user-supplied declaration (i.e. NOT a global ambient binding).
+// Declarations inside ambient `.d.ts` files (lib type definitions
+// for the standard library) don't count — `Boolean` from
+// `lib.es5.d.ts` is the global constructor we're meant to detect,
+// not a shadow.
+//
+// TypeScript's symbol resolution prefers the global lib declaration
+// when a user file at script scope redeclares the same name (an
+// error, but the reference still resolves to the lib symbol). To
+// cover that case, fall back to a lexical scan of the enclosing
+// source file for a binding with the matching identifier name.
+func isLocallyBound(ref *wrapperchecker.Node, checker *wrapperchecker.Checker) bool {
+	sym := checker.SymbolOf(ref)
+	if sym != nil {
+		for _, decl := range sym.Declarations() {
+			if decl == nil || isAmbientDeclaration(decl) {
+				continue
+			}
+			switch decl.Kind() {
+			case wrapperchecker.KindVariableDeclaration,
+				wrapperchecker.KindParameter,
+				wrapperchecker.KindFunctionDeclaration,
+				wrapperchecker.KindFunctionExpression,
+				wrapperchecker.KindArrowFunction,
+				wrapperchecker.KindClassDeclaration,
+				wrapperchecker.KindClassExpression,
+				wrapperchecker.KindImportSpecifier,
+				wrapperchecker.KindImportClause,
+				wrapperchecker.KindNamespaceImport,
+				wrapperchecker.KindBindingElement:
+				return true
+			}
+		}
+	}
+	return enclosingSourceHasBinding(ref, ref.LiteralText())
+}
+
+// enclosingSourceHasBinding reports whether any binding visible at
+// `ref`'s position declares the identifier `name`. We walk up the
+// chain of scope-introducing ancestors (SourceFile, function bodies,
+// blocks) and at each level scan the direct statement siblings —
+// skipping the child containing the reference, so we don't re-enter
+// our own subtree. This correctly distinguishes bindings that
+// dominate the reference site (which shadow the global) from
+// bindings nested inside the reference's enclosing statement (which
+// don't).
+func enclosingSourceHasBinding(ref *wrapperchecker.Node, name string) bool {
+	if name == "" {
+		return false
+	}
+	cur := ref
+	for cur != nil {
+		parent := cur.Parent()
+		if parent == nil {
+			break
+		}
+		if isScopeIntroducer(parent) {
+			if scopeHasSiblingBinding(parent, cur, name) {
+				return true
+			}
+		}
+		cur = parent
+	}
+	return false
+}
+
+// isScopeIntroducer reports whether `n` introduces a lexical scope
+// where direct child declarations are visible to its other
+// descendants.
+func isScopeIntroducer(n *wrapperchecker.Node) bool {
+	switch n.Kind() {
+	case wrapperchecker.KindSourceFile,
+		wrapperchecker.KindBlock,
+		wrapperchecker.KindModuleBlock:
+		return true
+	}
+	return false
+}
+
+// scopeHasSiblingBinding checks the direct children of `scope` (a
+// scope-introducer) for a declaration with `name`. The `skip` child
+// — typically the path back to the reference — is excluded so we
+// don't pick up declarations nested inside the reference's own
+// subtree.
+func scopeHasSiblingBinding(scope, skip *wrapperchecker.Node, name string) bool {
+	found := false
+	scope.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if found || c == nil || c == skip {
+			return false
+		}
+		switch c.Kind() {
+		case wrapperchecker.KindVariableStatement:
+			if list := c.VariableStatementDeclarationList(); list != nil {
+				list.ForEachChild(func(decl *wrapperchecker.Node) bool {
+					if decl.Kind() == wrapperchecker.KindVariableDeclaration {
+						if nm := decl.DeclarationName(); nm != nil && nm.LiteralText() == name {
+							found = true
+						}
+					}
+					return found
+				})
+			}
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindClassDeclaration:
+			if nm := c.DeclarationName(); nm != nil && nm.LiteralText() == name {
+				found = true
+			}
+		}
+		return found
+	})
+	return found
+}
+
+// isAmbientDeclaration reports whether `decl` lives in a `.d.ts`
+// file (TypeScript's standard library / type-definition shape).
+func isAmbientDeclaration(decl *wrapperchecker.Node) bool {
+	name, _, _, _, _ := decl.SourceRange()
+	return strings.HasSuffix(name, ".d.ts")
 }
 
 // isObviouslyConstant reports whether `n` is a value the parser can
@@ -207,6 +376,17 @@ func isObviouslyConstant(n *wrapperchecker.Node) bool {
 				return true
 			}
 			return isObviouslyConstant(left) && isObviouslyConstant(right)
+		}
+		// `+` with one operand a primitive constant and the other a
+		// fully-coercible array literal produces a known string.
+		// Handle this before the generic primitive-constant check so
+		// `if ('' + [])` (always falsy) and `if ('' + ['a'])`
+		// (always truthy) are flagged.
+		if op == wrapperchecker.KindPlusToken {
+			if (isPrimitiveConstant(left) && isCoercibleArrayLiteral(right)) ||
+				(isPrimitiveConstant(right) && isCoercibleArrayLiteral(left)) {
+				return true
+			}
 		}
 		// Arithmetic / comparison / bitwise / equality: result is
 		// constant only when both operands are *primitive*
@@ -610,6 +790,45 @@ func isPrimitiveConstant(n *wrapperchecker.Node) bool {
 		return isPrimitiveConstant(left) && isPrimitiveConstant(right)
 	}
 	return false
+}
+
+// isCoercibleArrayLiteral reports whether `n` is an array literal
+// whose string coercion is statically known: zero elements
+// (stringifies to `""`), or all elements are primitive constants /
+// nested coercible arrays (each contributes a known piece, joined
+// by `,`). Spread elements and identifiers disqualify it.
+func isCoercibleArrayLiteral(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	if n.Kind() == wrapperchecker.KindParenthesizedExpression {
+		var inner *wrapperchecker.Node
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			inner = c
+			return true
+		})
+		return isCoercibleArrayLiteral(inner)
+	}
+	if n.Kind() != wrapperchecker.KindArrayLiteralExpression {
+		return false
+	}
+	for _, e := range n.ArrayElements() {
+		if e == nil {
+			continue
+		}
+		if e.Kind() == wrapperchecker.KindSpreadElement {
+			return false
+		}
+		// `OmittedExpression` (a hole) stringifies to `""`, which is
+		// fine — keep iterating.
+		if e.Kind() == wrapperchecker.KindOmittedExpression {
+			continue
+		}
+		if !isPrimitiveConstant(e) && !isCoercibleArrayLiteral(e) {
+			return false
+		}
+	}
+	return true
 }
 
 func isAssignmentOperator(op wrapperchecker.Kind) bool {
