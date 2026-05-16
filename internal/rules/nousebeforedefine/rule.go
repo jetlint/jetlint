@@ -14,6 +14,11 @@ import (
 
 const id = "no-use-before-define"
 
+// kindClassStaticBlockDeclaration mirrors `ast.KindClassStaticBlockDeclaration`,
+// which is not re-exported by the checker wrapper. Static block bodies
+// run eagerly as part of class evaluation.
+const kindClassStaticBlockDeclaration wrapperchecker.Kind = 176
+
 // Options configures the rule.
 type Options struct {
 	// Functions, when true, flags function declarations used before
@@ -207,6 +212,10 @@ func crossesDeferredBoundary(ref, decl *wrapperchecker.Node) bool {
 				break
 			}
 			return true
+		case kindClassStaticBlockDeclaration:
+			// Class static blocks run eagerly during class
+			// evaluation, mirroring static field initializers.
+			eagerThroughClass = true
 		case wrapperchecker.KindClassDeclaration,
 			wrapperchecker.KindClassExpression:
 			if eagerThroughClass {
@@ -273,7 +282,9 @@ func findSourceFileBinding(ref *wrapperchecker.Node, name string) *wrapperchecke
 				})
 			}
 		case wrapperchecker.KindFunctionDeclaration,
-			wrapperchecker.KindClassDeclaration:
+			wrapperchecker.KindClassDeclaration,
+			wrapperchecker.KindEnumDeclaration,
+			wrapperchecker.KindModuleDeclaration:
 			if nm := stmt.DeclarationName(); nm != nil && nm.LiteralText() == name {
 				found = stmt
 			}
@@ -283,12 +294,32 @@ func findSourceFileBinding(ref *wrapperchecker.Node, name string) *wrapperchecke
 	return found
 }
 
+// enclosingClass returns the nearest ClassDeclaration / ClassExpression
+// that contains `n`, or nil if there is none in the same compilation
+// unit.
+func enclosingClass(n *wrapperchecker.Node) *wrapperchecker.Node {
+	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
+		switch cur.Kind() {
+		case wrapperchecker.KindClassDeclaration,
+			wrapperchecker.KindClassExpression:
+			return cur
+		case wrapperchecker.KindSourceFile:
+			return nil
+		}
+	}
+	return nil
+}
+
 // referenceInEagerClassContext reports whether `ref` sits inside an
 // eagerly-evaluated position of a class definition — a heritage
-// clause, a computed property name, or a static field initializer.
-// Such positions run while their enclosing class binding is in TDZ,
-// so use-before-define applies regardless of the hoisting options.
+// clause, a computed property name, or a static field initializer —
+// AND the path from `ref` up to the source file never crosses a
+// deferred boundary (a function-like body or an instance-field
+// initializer). Eager-class references in this sense evaluate while
+// some class binding is still in TDZ, so use-before-define applies
+// regardless of the hoisting options.
 func referenceInEagerClassContext(ref *wrapperchecker.Node) bool {
+	sawEager := false
 	prev := ref
 	for cur := ref.Parent(); cur != nil; cur = cur.Parent() {
 		switch cur.Kind() {
@@ -303,23 +334,30 @@ func referenceInEagerClassContext(ref *wrapperchecker.Node) bool {
 			if prev.Kind() != wrapperchecker.KindComputedPropertyName {
 				return false
 			}
-			return true
+			sawEager = true
 		case wrapperchecker.KindPropertyDeclaration:
 			if prev.Kind() == wrapperchecker.KindComputedPropertyName {
-				return true
+				sawEager = true
+				break
 			}
 			if cur.HasStaticModifier() {
-				return true
+				sawEager = true
+				break
 			}
 			return false
 		case wrapperchecker.KindHeritageClause:
-			return true
+			sawEager = true
+		case kindClassStaticBlockDeclaration:
+			// Static blocks run eagerly during class evaluation —
+			// the enclosing class's binding is live, but any outer
+			// class binding is still in TDZ.
+			sawEager = true
 		case wrapperchecker.KindSourceFile:
-			return false
+			return sawEager
 		}
 		prev = cur
 	}
-	return false
+	return sawEager
 }
 
 // isExportSpecifierLocal reports whether `n` is the local-reference
@@ -389,16 +427,36 @@ func isClassHeritageSelfReference(decl, ref *wrapperchecker.Node) bool {
 			return false
 		case wrapperchecker.KindMethodDeclaration,
 			wrapperchecker.KindPropertyDeclaration:
-			// Self-reference to the class binding from within its
-			// own static field is NOT TDZ — the class binding is
-			// initialized before static initialization runs. Only
-			// computed names (which evaluate before the class body)
-			// remain eager for class-self-reference purposes.
-			if prev.Kind() != wrapperchecker.KindComputedPropertyName {
-				return false
+			if prev.Kind() == wrapperchecker.KindComputedPropertyName {
+				sawComputedName = true
+				eagerThroughClass = true
+				break
 			}
-			sawComputedName = true
-			eagerThroughClass = true
+			// A static field initializer is eager relative to its
+			// OUTER classes (those whose binding is still in TDZ)
+			// but NOT to its own class (whose binding has been
+			// initialized before its static elements run). Treat as
+			// eager only when this static field's owning class is a
+			// nested inner class, distinct from `decl`.
+			if cur.Kind() == wrapperchecker.KindPropertyDeclaration &&
+				cur.HasStaticModifier() {
+				if owner := enclosingClass(cur); owner != nil && !owner.Same(decl) {
+					sawComputedName = true
+					eagerThroughClass = true
+					break
+				}
+			}
+			return false
+		case kindClassStaticBlockDeclaration:
+			// Static blocks of inner classes are eager wrt decl; a
+			// static block of decl itself is not — by the time it
+			// runs, decl's class binding is initialized.
+			if owner := enclosingClass(cur); owner != nil && !owner.Same(decl) {
+				sawComputedName = true
+				eagerThroughClass = true
+				break
+			}
+			return false
 		case wrapperchecker.KindClassDeclaration,
 			wrapperchecker.KindClassExpression:
 			if eagerThroughClass {
@@ -521,7 +579,9 @@ func declarationKind(n *wrapperchecker.Node) declKind {
 	switch n.Kind() {
 	case wrapperchecker.KindFunctionDeclaration:
 		return declFunction
-	case wrapperchecker.KindClassDeclaration, wrapperchecker.KindClassExpression:
+	case wrapperchecker.KindClassDeclaration,
+		wrapperchecker.KindClassExpression,
+		wrapperchecker.KindEnumDeclaration:
 		return declClass
 	case wrapperchecker.KindParameter:
 		return declParameter
