@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 41
-- Remaining (AST-only): ~12
+- Shipped: 42
+- Remaining (AST-only): ~11
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -74,6 +74,6 @@ Update this file as rules land or assumptions change.
 | `no-unused-vars` | | Scope: unused declarations. TS catches under noUnusedLocals. |
 | `no-use-before-define` | ✓ | Shipped 2026-05-15 (239/354 fixtures; remaining cases need cross-scope analysis to honor the `variables: false` option fully) |
 | `no-useless-backreference` | ⊘ | Regex AST. |
-| `require-atomic-updates` | | Scope + async: `x = await … x …` pattern. |
+| `require-atomic-updates` | ✓ | Shipped 2026-05-15 (hand-written tests; no oxc source available) |
 | `use-isnan` | ✓ | Shipped 2026-05-15 |
 | `valid-typeof` | ✓ | Shipped 2026-05-15 |
