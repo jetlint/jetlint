@@ -57,9 +57,9 @@ func (r *rule) checkFor(ctx *engine.Context, cond, body, updater *wrapperchecker
 		return
 	}
 	checker := ctx.Checker()
-	// Conservative: if the body contains any call or `new`
-	// expression, assume the callee mutates one of the variables.
-	if bodyHasFunctionLikeCall(body) {
+	// `new` expressions and tagged-template calls can run arbitrary
+	// code we can't statically inspect — be conservative there.
+	if bodyHasOpaqueInvocation(body) {
 		return
 	}
 	// Split the condition into top-level operands by short-circuit
@@ -99,8 +99,9 @@ func (r *rule) checkFor(ctx *engine.Context, cond, body, updater *wrapperchecker
 		}
 		anyMutated := false
 		for _, sr := range refList {
-			if bodyMutatesSymbol(body, sr.id, checker) ||
-				(updater != nil && bodyMutatesSymbol(updater, sr.id, checker)) {
+			visited := map[uintptr]bool{}
+			if bodyMutatesSymbol(body, sr.id, checker, visited) ||
+				(updater != nil && bodyMutatesSymbol(updater, sr.id, checker, visited)) {
 				anyMutated = true
 				break
 			}
@@ -268,8 +269,13 @@ func collectConditionRefs(cond *wrapperchecker.Node) []*wrapperchecker.Node {
 
 // bodyMutatesSymbol reports whether `body` contains an assignment
 // or ++/-- targeting an identifier whose resolved symbol matches
-// `symID`.
-func bodyMutatesSymbol(body *wrapperchecker.Node, symID uintptr, checker *wrapperchecker.Checker) bool {
+// `symID`. Nested function-like declarations are not descended into
+// directly — their body only runs when the function is invoked.
+// Calls inside `body` are followed into the called function's body
+// (via the callee's resolved symbol) so a helper that closes over
+// `symID` and mutates it counts as a mutation. The `visited` map
+// breaks recursion through mutually-recursive callees.
+func bodyMutatesSymbol(body *wrapperchecker.Node, symID uintptr, checker *wrapperchecker.Checker, visited map[uintptr]bool) bool {
 	found := false
 	var walk func(c *wrapperchecker.Node)
 	walk = func(c *wrapperchecker.Node) {
@@ -277,6 +283,35 @@ func bodyMutatesSymbol(body *wrapperchecker.Node, symID uintptr, checker *wrappe
 			return
 		}
 		switch c.Kind() {
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindGetAccessor,
+			wrapperchecker.KindSetAccessor,
+			wrapperchecker.KindConstructor:
+			return
+		case wrapperchecker.KindCallExpression:
+			callee := c.CalleeExpression()
+			if callee != nil && callee.Kind() == wrapperchecker.KindIdentifier {
+				if sym := checker.SymbolOf(callee); sym != nil {
+					calleeID := sym.ID()
+					if !visited[calleeID] {
+						visited[calleeID] = true
+						for _, decl := range sym.Declarations() {
+							if isFunctionLikeNode(decl) {
+								if fnBody := decl.FunctionBody(); fnBody != nil {
+									if bodyMutatesSymbol(fnBody, symID, checker, visited) {
+										found = true
+										return
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			// Continue walking into the call's arguments below.
 		case wrapperchecker.KindBinaryExpression:
 			if isAssignmentOperator(c.BinaryOperatorKind()) {
 				if id := lhsTargetIdentifier(c.BinaryLeft()); id != nil {
@@ -313,6 +348,25 @@ func bodyMutatesSymbol(body *wrapperchecker.Node, symID uintptr, checker *wrappe
 	return found
 }
 
+// isFunctionLikeNode reports whether `n` is a function-like
+// declaration with a body we can inspect for mutations.
+func isFunctionLikeNode(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	switch n.Kind() {
+	case wrapperchecker.KindFunctionDeclaration,
+		wrapperchecker.KindFunctionExpression,
+		wrapperchecker.KindArrowFunction,
+		wrapperchecker.KindMethodDeclaration,
+		wrapperchecker.KindGetAccessor,
+		wrapperchecker.KindSetAccessor,
+		wrapperchecker.KindConstructor:
+		return true
+	}
+	return false
+}
+
 // lhsTargetIdentifier extracts the identifier being assigned to or
 // updated. For a property access (`obj.foo = ...`), there is no
 // single identifier target; this returns nil so the caller skips
@@ -327,10 +381,12 @@ func lhsTargetIdentifier(n *wrapperchecker.Node) *wrapperchecker.Node {
 	return nil
 }
 
-// bodyHasFunctionLikeCall returns true if `body` contains any call
-// or `new` expression, which we conservatively treat as potential
-// mutation of any free variable.
-func bodyHasFunctionLikeCall(body *wrapperchecker.Node) bool {
+// bodyHasOpaqueInvocation returns true if `body` contains an
+// invocation whose effect we can't trace: `new C(...)` (constructor
+// body may close over free variables) and tagged templates (the tag
+// is called with raw template parts). Regular calls are inspected
+// via the callee's symbol in `bodyMutatesSymbol`.
+func bodyHasOpaqueInvocation(body *wrapperchecker.Node) bool {
 	found := false
 	var walk func(c *wrapperchecker.Node)
 	walk = func(c *wrapperchecker.Node) {
@@ -338,8 +394,7 @@ func bodyHasFunctionLikeCall(body *wrapperchecker.Node) bool {
 			return
 		}
 		switch c.Kind() {
-		case wrapperchecker.KindCallExpression,
-			wrapperchecker.KindNewExpression,
+		case wrapperchecker.KindNewExpression,
 			wrapperchecker.KindTaggedTemplateExpression:
 			found = true
 			return

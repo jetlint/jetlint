@@ -9,7 +9,7 @@ Update this file as rules land or assumptions change.
 - Shipped: 57 (all rules have implementations; 8 are partial-coverage and need work to reach 100%)
 - Remaining (AST-only): 0
 - Remaining (needs regex AST infra): 0
-- Partials needing 100%: no-constant-condition (296/306), no-constant-binary-expression (249/251), no-undef (87/97), no-unmodified-loop-condition (37/39), no-use-before-define (239/354)
+- Partials needing 100%: no-constant-condition (296/306), no-constant-binary-expression (249/251), no-undef (87/97), no-use-before-define (239/354)
 
 **Symbols**
 
@@ -65,7 +65,7 @@ Update this file as rules land or assumptions change.
 | `no-this-before-super` | ✓ | Shipped 2026-05-15 (65/65 fixtures) |
 | `no-undef` | ✓ | Shipped 2026-05-15 (87/97 fixtures; remaining cases need `globals`/`env` settings from oxc test sources, which the fixture extractor does not yet capture) |
 | `no-unexpected-multiline` | ✓ | Shipped 2026-05-15 |
-| `no-unmodified-loop-condition` | ✓ | Shipped 2026-05-15 (37/39 fixtures; remaining 2 cases need intra-procedural analysis of called functions) |
+| `no-unmodified-loop-condition` | ✓ | Shipped 2026-05-15 (39/39 fixtures, 100%; nested function-likes are skipped (only executed when called) and direct calls follow the callee's symbol into its body for cross-procedural mutation detection) |
 | `no-unreachable` | ✓ | Shipped 2026-05-15 (65/65 fixtures) |
 | `no-unreachable-loop` | ✓ | Shipped 2026-05-15 (hand-written tests; no oxc source available) |
 | `no-unsafe-finally` | ✓ | Shipped 2026-05-15 |
