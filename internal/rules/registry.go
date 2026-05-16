@@ -140,6 +140,7 @@ var All = []Metadata{
 	{ID: "no-misused-spread", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-mixed-enums", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-import-assign", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-initializer-with-definite", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-invalid-builtin-instantiation", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-inner-declarations", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-invalid-regexp", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

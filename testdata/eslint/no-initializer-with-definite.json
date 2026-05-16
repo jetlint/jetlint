@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-initializer-with-definite",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noInitializerWithDefinite",
+  "cases": [
+    {
+      "code": "let a!: number = 5;",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nlet b!: number;\n",
+      "valid": true
+    }
+  ]
+}

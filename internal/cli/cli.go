@@ -70,6 +70,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noglobaldirnamefilename"
 	"github.com/jetlint/jetlint/internal/rules/noimpliedeval"
 	"github.com/jetlint/jetlint/internal/rules/noimportassign"
+	"github.com/jetlint/jetlint/internal/rules/noinitializerwithdefinite"
 	"github.com/jetlint/jetlint/internal/rules/noinnerdeclarations"
 	"github.com/jetlint/jetlint/internal/rules/noinvalidbuiltininstantiation"
 	"github.com/jetlint/jetlint/internal/rules/noinvalidregexp"
@@ -634,6 +635,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noforinarray.New(),
 		noimpliedeval.New(),
 		noimportassign.New(),
+		noinitializerwithdefinite.New(),
 		noinnerdeclarations.New(),
 		noinvalidbuiltininstantiation.New(),
 		noinvalidregexp.New(),
