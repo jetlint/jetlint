@@ -118,16 +118,30 @@ func extractRule(oxcPath, outDir, ruleID string) error {
 	if err != nil {
 		return fmt.Errorf("extract: %w", err)
 	}
+	// Deduplicate by (code, options, settings) — oxc's test data
+	// sometimes lists the same source under both pass and fail
+	// (legacy duplicates that depend on parser-version flags we don't
+	// model). The first occurrence wins, so pass entries take
+	// precedence over later fail duplicates.
 	fx := Fixture{
 		RuleID:    ruleID,
 		OxcSource: oxcRelSrc,
 		Cases:     make([]Case, 0, len(pass)+len(fail)),
 	}
+	seen := make(map[string]struct{}, len(pass)+len(fail))
+	add := func(c ExtractedCase, valid bool) {
+		key := dedupKey(c)
+		if _, ok := seen[key]; ok {
+			return
+		}
+		seen[key] = struct{}{}
+		fx.Cases = append(fx.Cases, Case{Code: c.Code, Valid: valid, Options: c.Options, Settings: c.Settings})
+	}
 	for _, c := range pass {
-		fx.Cases = append(fx.Cases, Case{Code: c.Code, Valid: true, Options: c.Options, Settings: c.Settings})
+		add(c, true)
 	}
 	for _, c := range fail {
-		fx.Cases = append(fx.Cases, Case{Code: c.Code, Valid: false, Options: c.Options, Settings: c.Settings})
+		add(c, false)
 	}
 	// Capture upstream SHA if the checkout is a git repo, so the
 	// fixture file records the exact source revision it was generated
@@ -147,6 +161,15 @@ func extractRule(oxcPath, outDir, ruleID string) error {
 	}
 	fmt.Printf("%s: %d pass, %d fail -> %s\n", ruleID, len(pass), len(fail), out)
 	return nil
+}
+
+// dedupKey produces a stable identity for a case — code plus a
+// JSON-serialised view of options and settings. Two cases sharing
+// this key are treated as the same fixture entry.
+func dedupKey(c ExtractedCase) string {
+	opts, _ := json.Marshal(c.Options)
+	sets, _ := json.Marshal(c.Settings)
+	return c.Code + "\x00" + string(opts) + "\x00" + string(sets)
 }
 
 func readGitSHA(dir string) (string, error) {

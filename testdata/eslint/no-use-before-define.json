@@ -578,10 +578,6 @@
       "valid": true
     },
     {
-      "code": "Object.hasOwnProperty.call(a);",
-      "valid": true
-    },
-    {
       "code": "\n                function a() {\n                  alert(arguments);\n                }\n                    ",
       "valid": true
     },
@@ -630,10 +626,6 @@
     },
     {
       "code": "var { a = 0, b = a } = {};",
-      "valid": true
-    },
-    {
-      "code": "var [a = 0, b = a] = {};",
       "valid": true
     },
     {
@@ -982,14 +974,6 @@
       "valid": false
     },
     {
-      "code": "a++; var a=19;",
-      "valid": false
-    },
-    {
-      "code": "a++; var a=19;",
-      "valid": false
-    },
-    {
       "code": "a(); var a=function() {};",
       "valid": false
     },
@@ -1014,10 +998,6 @@
     },
     {
       "code": "(() =\u003e a())(); function a() { }",
-      "valid": false
-    },
-    {
-      "code": "\"use strict\"; a(); { function a() {} }",
       "valid": false
     },
     {
@@ -1772,14 +1752,6 @@
       "valid": false
     },
     {
-      "code": "\n                a++;\n                var a = 19;\n                      ",
-      "valid": false
-    },
-    {
-      "code": "\n                a++;\n                var a = 19;\n                      ",
-      "valid": false
-    },
-    {
       "code": "\n                a();\n                var a = function () {};\n                      ",
       "valid": false
     },
@@ -1879,27 +1851,7 @@
       ]
     },
     {
-      "code": "var a = a;",
-      "valid": false
-    },
-    {
-      "code": "let a = a + b;",
-      "valid": false
-    },
-    {
-      "code": "const a = foo(a);",
-      "valid": false
-    },
-    {
-      "code": "function foo(a = a) {}",
-      "valid": false
-    },
-    {
       "code": "var { a = a } = [];",
-      "valid": false
-    },
-    {
-      "code": "var [a = a] = [];",
       "valid": false
     },
     {
@@ -1907,15 +1859,7 @@
       "valid": false
     },
     {
-      "code": "var [b = a, a] = {};",
-      "valid": false
-    },
-    {
       "code": "var { a = 0 } = a;",
-      "valid": false
-    },
-    {
-      "code": "var [a = 0] = a;",
       "valid": false
     },
     {
