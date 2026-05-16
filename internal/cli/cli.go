@@ -101,6 +101,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noswitchdeclarations"
 	"github.com/jetlint/jetlint/internal/rules/notemplatecurlyinstring"
 	"github.com/jetlint/jetlint/internal/rules/nothisbeforesuper"
+	"github.com/jetlint/jetlint/internal/rules/notypeonlyimportattributes"
 	"github.com/jetlint/jetlint/internal/rules/noundef"
 	"github.com/jetlint/jetlint/internal/rules/nounexpectedmultiline"
 	"github.com/jetlint/jetlint/internal/rules/nounmodifiedloopcondition"
@@ -627,6 +628,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noreactpropassignments.New(),
 		notemplatecurlyinstring.New(),
 		nothisbeforesuper.New(),
+		notypeonlyimportattributes.New(),
 		noundef.New(),
 		nodupekeys.New(),
 		noduplicatecase.New(),

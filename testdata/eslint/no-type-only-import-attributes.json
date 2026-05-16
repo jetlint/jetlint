@@ -1,0 +1,23 @@
+{
+  "ruleId": "no-type-only-import-attributes",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noTypeOnlyImportAttributes",
+  "cases": [
+    {
+      "code": "import type A from \"\" with { type: \"json\" };\nimport type * as B from \"\" with { type: \"json\" };\nimport type { C } from \"\" with { type: \"json\" };\nimport { type D } from \"\" with { type: \"json\" };\nimport { E, type F } from \"\" with { type: \"json\" };\n\nexport type { A } from \"\" with { type: \"json\" };\nexport type * as B from \"\" with { type: \"json\" };\nexport { E, type F } from \"\" with { type: \"json\" };",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport type { TypeFromRequire } from \"pkg\" with {\n    \"resolution-mode\": \"require\"\n};",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport A from \"\" with { type: \"json\" };\nimport * as B from \"\" with { type: \"json\" };\nimport { C } from \"\" with { type: \"json\" };\nimport D, * as E from \"\" with { type: \"json\" };\nimport F, { G } from \"\" with { type: \"json\" };\n\nexport { A } from \"\" with { type: \"json\" };\nexport * as B from \"\" with { type: \"json\" };\nexport { E, F } from \"\" with { type: \"json\" };",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport type A from \"\";\nimport type * as B from \"\";\nimport type { C } from \"\";\nimport { type D } from \"\";\n\nexport type { A } from \"\";\nexport type * as B from \"\";\nexport { E, type F } from \"\";",
+      "valid": true
+    }
+  ]
+}
