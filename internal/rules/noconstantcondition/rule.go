@@ -137,11 +137,15 @@ func isObviouslyConstant(n *wrapperchecker.Node) bool {
 		return isObviouslyConstant(inner)
 	case wrapperchecker.KindIdentifier:
 		return n.LiteralText() == "undefined"
+	case wrapperchecker.KindVoidExpression:
+		// `void <anything>` always evaluates to undefined → falsy.
+		return true
+	case wrapperchecker.KindTypeOfExpression:
+		// `typeof <anything>` always evaluates to a non-empty
+		// string → truthy.
+		return true
 	case wrapperchecker.KindPrefixUnaryExpression:
 		op := n.PrefixUnaryOperator()
-		if op == "void" || op == "typeof" {
-			return true
-		}
 		if op == "!" {
 			// `!expr` is constant when `expr`'s truthiness is
 			// known — i.e. when it's any obvious constant.
@@ -179,18 +183,20 @@ func isObviouslyConstant(n *wrapperchecker.Node) bool {
 			// `a, 1` — the result is the RHS; constant iff RHS is.
 			return isObviouslyConstant(right)
 		case wrapperchecker.KindAmpersandAmpersandToken:
-			// `&&`: result is constant when the LHS is a constant
-			// FALSY (then result = LHS) or when both sides are
-			// constant.
-			if isConstantFalsy(left) {
+			// `&&`: result is constant when *either* operand is a
+			// constant FALSY (the whole expression then evaluates
+			// to a falsy value regardless of the other side) or
+			// when both sides are constant.
+			if isConstantFalsy(left) || isConstantFalsy(right) {
 				return true
 			}
 			return isObviouslyConstant(left) && isObviouslyConstant(right)
 		case wrapperchecker.KindBarBarToken:
-			// `||`: result is constant when the LHS is a constant
-			// TRUTHY (then result = LHS) or when both sides are
-			// constant.
-			if isConstantTruthy(left) {
+			// `||`: result is constant when *either* operand is a
+			// constant TRUTHY (the whole expression then evaluates
+			// to a truthy value regardless of the other side) or
+			// when both sides are constant.
+			if isConstantTruthy(left) || isConstantTruthy(right) {
 				return true
 			}
 			return isObviouslyConstant(left) && isObviouslyConstant(right)
@@ -254,6 +260,23 @@ func isObviouslyConstant(n *wrapperchecker.Node) bool {
 		// object — truthy and never null. The condition can never
 		// flip on the inputs.
 		return true
+	case wrapperchecker.KindCallExpression:
+		// `Boolean()` with no args is always `false` (constant
+		// falsy). `Boolean(X)` with a value whose truthiness is
+		// known is a constant. We deliberately don't try to
+		// detect local shadowing of `Boolean` — ESLint's rule
+		// matches the identifier text and flags these uniformly.
+		callee := n.CalleeExpression()
+		if callee != nil && callee.Kind() == wrapperchecker.KindIdentifier && callee.SourceText() == "Boolean" {
+			args := n.CallArguments()
+			if len(args) == 0 {
+				return true
+			}
+			first := args[0]
+			if isConstantTruthy(first) || isConstantFalsy(first) {
+				return true
+			}
+		}
 	}
 	return false
 }
@@ -280,7 +303,8 @@ func isConstantTruthy(n *wrapperchecker.Node) bool {
 		wrapperchecker.KindFunctionExpression,
 		wrapperchecker.KindArrowFunction,
 		wrapperchecker.KindClassExpression,
-		wrapperchecker.KindNewExpression:
+		wrapperchecker.KindNewExpression,
+		wrapperchecker.KindTypeOfExpression:
 		return true
 	case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral:
 		return n.LiteralText() != ""
@@ -290,6 +314,70 @@ func isConstantTruthy(n *wrapperchecker.Node) bool {
 	case wrapperchecker.KindBigIntLiteral:
 		text := n.LiteralText()
 		return text != "" && text != "0n"
+	case wrapperchecker.KindPrefixUnaryExpression:
+		op := n.PrefixUnaryOperator()
+		if op == "!" {
+			return isConstantFalsy(n.PrefixUnaryOperand())
+		}
+	case wrapperchecker.KindBinaryExpression:
+		op := n.BinaryOperatorKind()
+		left := n.BinaryLeft()
+		right := n.BinaryRight()
+		switch op {
+		case wrapperchecker.KindAmpersandAmpersandToken:
+			// `a && b` is truthy iff both operands are truthy.
+			return isConstantTruthy(left) && isConstantTruthy(right)
+		case wrapperchecker.KindBarBarToken:
+			// `a || b` is truthy if either operand is truthy.
+			return isConstantTruthy(left) || isConstantTruthy(right)
+		case wrapperchecker.KindQuestionQuestionToken:
+			// `a ?? b` is truthy if a is non-nullish and truthy,
+			// or if a is nullish and b is truthy.
+			if isConstantTruthy(left) {
+				return true
+			}
+			// If LHS is provably nullish (null/undefined/void), result is RHS.
+			if isConstantNullish(left) {
+				return isConstantTruthy(right)
+			}
+		case wrapperchecker.KindCommaToken:
+			return isConstantTruthy(right)
+		case wrapperchecker.KindBarBarEqualsToken:
+			// `a ||= b` evaluates to `a` if a is truthy, else `b`.
+			// So the value is truthy iff b is truthy (both branches
+			// then yield a truthy result).
+			return isConstantTruthy(right)
+		case wrapperchecker.KindAmpersandAmpersandEqualsToken:
+			// `a &&= b` evaluates to `a` if a is falsy, else `b`.
+			// Constant truthy only when both arms are truthy, but
+			// the falsy arm yields `a` (unknown) — so not provable.
+			return false
+		case wrapperchecker.KindEqualsToken:
+			return isConstantTruthy(right)
+		}
+	}
+	return false
+}
+
+// isConstantNullish reports whether n is statically known to be
+// null or undefined.
+func isConstantNullish(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	if n.Kind() == wrapperchecker.KindParenthesizedExpression {
+		var inner *wrapperchecker.Node
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			inner = c
+			return true
+		})
+		return isConstantNullish(inner)
+	}
+	switch n.Kind() {
+	case wrapperchecker.KindNullKeyword, wrapperchecker.KindVoidExpression:
+		return true
+	case wrapperchecker.KindIdentifier:
+		return n.LiteralText() == "undefined"
 	}
 	return false
 }
@@ -324,6 +412,17 @@ func isPrimitiveConstantTruthy(n *wrapperchecker.Node) bool {
 		return true
 	case wrapperchecker.KindBigIntLiteral:
 		return true
+	case wrapperchecker.KindBinaryExpression:
+		// `+` of two primitives that each stringify to a
+		// non-empty string yields a non-empty string.
+		op := n.BinaryOperatorKind()
+		if op == wrapperchecker.KindPlusToken {
+			return isPrimitiveConstantTruthy(n.BinaryLeft()) && isPrimitiveConstantTruthy(n.BinaryRight())
+		}
+	case wrapperchecker.KindTemplateExpression:
+		// Reuse the rule's main detector — a template whose
+		// truthiness is statically known is acceptable here.
+		return isObviouslyConstant(n)
 	}
 	return false
 }
@@ -354,9 +453,42 @@ func isConstantFalsy(n *wrapperchecker.Node) bool {
 		return n.LiteralText() == "0n"
 	case wrapperchecker.KindIdentifier:
 		return n.LiteralText() == "undefined"
+	case wrapperchecker.KindVoidExpression:
+		return true
 	case wrapperchecker.KindPrefixUnaryExpression:
-		if n.PrefixUnaryOperator() == "void" {
-			return true
+		op := n.PrefixUnaryOperator()
+		if op == "!" {
+			return isConstantTruthy(n.PrefixUnaryOperand())
+		}
+	case wrapperchecker.KindBinaryExpression:
+		op := n.BinaryOperatorKind()
+		left := n.BinaryLeft()
+		right := n.BinaryRight()
+		switch op {
+		case wrapperchecker.KindAmpersandAmpersandToken:
+			// `a && b` is falsy if either operand is falsy.
+			return isConstantFalsy(left) || isConstantFalsy(right)
+		case wrapperchecker.KindBarBarToken:
+			// `a || b` is falsy iff both operands are falsy.
+			return isConstantFalsy(left) && isConstantFalsy(right)
+		case wrapperchecker.KindQuestionQuestionToken:
+			// `a ?? b` is falsy when a is non-nullish and falsy,
+			// or when a is nullish and b is falsy.
+			if isConstantNullish(left) {
+				return isConstantFalsy(right)
+			}
+			// Without known nullishness of a, can't prove falsy.
+		case wrapperchecker.KindCommaToken:
+			return isConstantFalsy(right)
+		case wrapperchecker.KindAmpersandAmpersandEqualsToken:
+			// `a &&= b` evaluates to `a` if a is falsy, else `b`.
+			// The result is falsy iff b is falsy (both branches
+			// then yield a falsy result).
+			return isConstantFalsy(right)
+		case wrapperchecker.KindBarBarEqualsToken:
+			return false
+		case wrapperchecker.KindEqualsToken:
+			return isConstantFalsy(right)
 		}
 	}
 	return false
@@ -413,6 +545,20 @@ func isPrimitiveConstant(n *wrapperchecker.Node) bool {
 		wrapperchecker.KindStringLiteral,
 		wrapperchecker.KindNoSubstitutionTemplateLiteral:
 		return true
+	case wrapperchecker.KindVoidExpression:
+		// `void <anything>` always yields the primitive `undefined`.
+		return true
+	case wrapperchecker.KindTypeOfExpression:
+		// `typeof X` yields a string whose VALUE depends on X.
+		// Only a known-primitive operand makes the result a known
+		// constant; `typeof someVariable` is the canonical runtime
+		// type-check idiom and must NOT be treated as constant.
+		var inner *wrapperchecker.Node
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			inner = c
+			return true
+		})
+		return isPrimitiveConstant(inner)
 	case wrapperchecker.KindParenthesizedExpression:
 		var inner *wrapperchecker.Node
 		n.ForEachChild(func(c *wrapperchecker.Node) bool {
@@ -424,10 +570,16 @@ func isPrimitiveConstant(n *wrapperchecker.Node) bool {
 		return n.LiteralText() == "undefined"
 	case wrapperchecker.KindPrefixUnaryExpression:
 		op := n.PrefixUnaryOperator()
-		if op == "void" {
-			return true
+		if op == "!" {
+			// `!X` yields boolean true/false whenever X has a
+			// statically known truthiness.
+			operand := n.PrefixUnaryOperand()
+			if isConstantTruthy(operand) || isConstantFalsy(operand) {
+				return true
+			}
+			return isPrimitiveConstant(operand)
 		}
-		if op == "+" || op == "-" || op == "~" || op == "!" {
+		if op == "+" || op == "-" || op == "~" {
 			return isPrimitiveConstant(n.PrefixUnaryOperand())
 		}
 	case wrapperchecker.KindBinaryExpression:
@@ -435,7 +587,27 @@ func isPrimitiveConstant(n *wrapperchecker.Node) bool {
 		if isAssignmentOperator(op) || op == wrapperchecker.KindCommaToken {
 			return false
 		}
-		return isPrimitiveConstant(n.BinaryLeft()) && isPrimitiveConstant(n.BinaryRight())
+		left := n.BinaryLeft()
+		right := n.BinaryRight()
+		// `&&` / `||` with a short-circuiting LHS resolve to that
+		// LHS — so the result is primitive iff the LHS is.
+		switch op {
+		case wrapperchecker.KindAmpersandAmpersandToken:
+			if isConstantFalsy(left) {
+				return isPrimitiveConstant(left)
+			}
+			if isConstantTruthy(left) {
+				return isPrimitiveConstant(right)
+			}
+		case wrapperchecker.KindBarBarToken:
+			if isConstantTruthy(left) {
+				return isPrimitiveConstant(left)
+			}
+			if isConstantFalsy(left) {
+				return isPrimitiveConstant(right)
+			}
+		}
+		return isPrimitiveConstant(left) && isPrimitiveConstant(right)
 	}
 	return false
 }

@@ -53,15 +53,14 @@ func TestNoConstantCondition_EslintCompatibility(t *testing.T) {
 		pct = float64(passed) * 100.0 / float64(total)
 	}
 	t.Logf("oxlint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
-	// This is a deliberately conservative port. The full ESLint rule
-	// evaluates logical-and-arithmetic constant folding, template
-	// substitutions, and `Boolean(...)` calls — all of which require
-	// a shared `is_constant` utility we haven't built yet. The port
-	// catches the literal-only test cases (which are the ones users
-	// actually hit) and lets the more elaborate fixtures slide. The
-	// long-term plan is a follow-up that introduces the utility and
-	// tightens this threshold.
-	minimumPassRate := 80.0
+	// Constant-folding through logical operators, template
+	// substitutions, `Boolean(...)` calls, `typeof`/`void`, and
+	// unary/binary chains is now handled. The handful of remaining
+	// divergences need scope analysis (Boolean shadowing, locally
+	// rebound `undefined`, generator-yield-in-loop exemptions) or
+	// array-stringification semantics that the rule deliberately
+	// doesn't implement.
+	minimumPassRate := 96.0
 	if pct < minimumPassRate {
 		t.Fatalf("expected at least %.1f%% pass rate, got %d/%d (%.1f%%)", minimumPassRate, passed, total, pct)
 	}
