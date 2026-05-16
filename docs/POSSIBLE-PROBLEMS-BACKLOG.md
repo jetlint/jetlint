@@ -9,7 +9,7 @@ Update this file as rules land or assumptions change.
 - Shipped: 57 (all rules have implementations; 8 are partial-coverage and need work to reach 100%)
 - Remaining (AST-only): 0
 - Remaining (needs regex AST infra): 0
-- Partials needing 100%: no-undef (92/97), no-use-before-define (346/354)
+- Partials needing 100%: no-undef (92/97), no-use-before-define (347/354)
 
 **Symbols**
 
@@ -73,7 +73,7 @@ Update this file as rules land or assumptions change.
 | `no-unsafe-optional-chaining` | ✓ | Shipped 2026-05-15 (82/82 fixtures, 100% — `with(...)` head detected via integer cast to KindWithStatement) |
 | `no-unused-private-class-members` | ✓ | Shipped 2026-05-15 |
 | `no-unused-vars` | ✓ | Shipped 2026-05-15 (conservative port — flags declarations whose name never appears in a reference position; underscore-prefix and `export`-attached names suppressed; full option set deferred) |
-| `no-use-before-define` | ✓ | Shipped 2026-05-15 (346/354 fixtures, 97.7%; flags self-init / TDZ patterns including parameter defaults, destructuring, for-in/of iterable self-ref, class heritage self-ref, computed method/field name self-ref; eager class contexts (heritage clause, computed name, static field, static block) override hoisting options when not nested in a deferred body; `with (...)` blocks fall back to source-file binding lookup when TS-go cannot resolve through the dynamic scope; declarationKind covers Enums and Modules; export specifier local-binding fallback covers function / class / enum / module declarations; AllowNamedExports and IgnoreTypeReferences honored) |
+| `no-use-before-define` | ✓ | Shipped 2026-05-15 (347/354 fixtures, 98.0%; flags self-init / TDZ patterns including parameter defaults, destructuring, for-in/of iterable self-ref, class heritage self-ref, computed method/field name self-ref; eager class contexts (heritage clause, computed name, static field, static block) override hoisting options when not nested in a deferred body; `new X()` at non-deferred positions forces flagging regardless of the Classes option; `with (...)` blocks fall back to source-file binding lookup when TS-go cannot resolve through the dynamic scope; declarationKind covers Enums and Modules; export specifier local-binding fallback; AllowNamedExports and IgnoreTypeReferences honored) |
 | `no-useless-backreference` | ✓ | Shipped 2026-05-15 (hand-rolled pattern scanner counts capturing/named groups, flags backreferences with no target) |
 | `require-atomic-updates` | ✓ | Shipped 2026-05-15 (hand-written tests; no oxc source available) |
 | `use-isnan` | ✓ | Shipped 2026-05-15 |
