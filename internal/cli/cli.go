@@ -69,6 +69,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noimpliedeval"
 	"github.com/jetlint/jetlint/internal/rules/noimportassign"
 	"github.com/jetlint/jetlint/internal/rules/noinnerdeclarations"
+	"github.com/jetlint/jetlint/internal/rules/noinvalidbuiltininstantiation"
 	"github.com/jetlint/jetlint/internal/rules/noinvalidregexp"
 	"github.com/jetlint/jetlint/internal/rules/noirregularwhitespace"
 	"github.com/jetlint/jetlint/internal/rules/nolossofprecision"
@@ -609,6 +610,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noimpliedeval.New(),
 		noimportassign.New(),
 		noinnerdeclarations.New(),
+		noinvalidbuiltininstantiation.New(),
 		noinvalidregexp.New(),
 		noirregularwhitespace.New(),
 		nolossofprecision.New(),

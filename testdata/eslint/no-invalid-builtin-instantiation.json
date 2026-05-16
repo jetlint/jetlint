@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-invalid-builtin-instantiation",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noInvalidBuiltinInstantiation",
+  "cases": [
+    {
+      "code": "ArrayBuffer()\nBigInt64Array()\nBigUint64Array()\nDataView()\nFloat32Array()\nFloat64Array()\nInt16Array()\nInt32Array()\nInt8Array()\nMap()\nProxy()\nSet()\nSharedArrayBuffer()\nUint16Array()\nUint32Array()\nUint8Array()\nUint8ClampedArray()\nWeakMap()\nWeakSet()\nWeakRef()\nFinalizationRegistry()\nwindow.Map()\nglobalThis.Map()\nfunction foo() {\n    return /** Start */ globalThis.Map([]) /** End */\n}\n\nnew BigInt(123)\nnew Symbol()\nnew window.BigInt(123)\nnew globalThis.BigInt(123)\nfunction foo() {\n    return /** Start */ new globalThis.BigInt(123) /** End */\n}",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nnew Object()\nnew Array()\nnew ArrayBuffer()\nnew BigInt64Array()\nnew BigUint64Array()\nnew DataView()\nnew Date()\nnew Error()\nnew Float32Array()\nnew Float64Array()\nnew Function()\nnew Int8Array()\nnew Int16Array()\nnew Int32Array()\nnew Map()\nnew WeakMap()\nnew Set()\nnew WeakSet()\nnew Promise()\nnew RegExp()\nnew Uint8Array()\nnew Uint16Array()\nnew Uint32Array()\nnew Uint8ClampedArray()\nnew SharedArrayBuffer()\nnew Proxy()\nnew WeakRef()\nnew FinalizationRegistry()\nnew window.Object({})\nnew globalThis.Object()\nfunction foo() {\n    return new globalThis.Object()\n}\n\nBoolean()\nBigInt()\nNumber()\nString()\nSymbol()\nwindow.String()\nglobalThis.String(123)\nfunction foo() {\n    return globalThis.String()\n}\n\nfunction varCheck() {\n    {\n        var String = class {}\n    }\n    // This should not be reported\n    return new String()\n}\n\nObject()\nArray()\n\nnew Boolean()\nnew Number()\nnew String()",
+      "valid": true
+    }
+  ]
+}
