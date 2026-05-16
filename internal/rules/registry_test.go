@@ -336,6 +336,7 @@ func additionalRulesSnapshot() []string {
 		"use-unique-element-ids",
 		"use-unknown-in-catch-callback-variable",
 		"no-vue-data-object-declaration",
+		"no-vue-duplicate-keys",
 		"no-vue-reserved-keys",
 		"no-vue-reserved-props",
 		"no-vue-setup-props-reactivity-loss",

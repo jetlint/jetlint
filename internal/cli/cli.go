@@ -111,6 +111,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/notypeonlyimportattributes"
 	"github.com/jetlint/jetlint/internal/rules/noundeclareddependencies"
 	"github.com/jetlint/jetlint/internal/rules/novuedataobjectdeclaration"
+	"github.com/jetlint/jetlint/internal/rules/novueduplicatekeys"
 	"github.com/jetlint/jetlint/internal/rules/novuereservedkeys"
 	"github.com/jetlint/jetlint/internal/rules/novuereservedprops"
 	"github.com/jetlint/jetlint/internal/rules/novuesetuppropsreactivityloss"
@@ -653,6 +654,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		notypeonlyimportattributes.New(),
 		noundeclareddependencies.New(),
 		novuedataobjectdeclaration.New(),
+		novueduplicatekeys.New(),
 		novuereservedkeys.New(),
 		novuereservedprops.New(),
 		novuesetuppropsreactivityloss.New(),

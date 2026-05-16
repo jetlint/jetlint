@@ -188,6 +188,7 @@ var All = []Metadata{
 	{ID: "use-unknown-in-catch-callback-variable", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-yield", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-vue-data-object-declaration", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-vue-duplicate-keys", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-vue-reserved-keys", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-vue-reserved-props", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-vue-setup-props-reactivity-loss", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
