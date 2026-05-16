@@ -158,6 +158,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/useisnan"
 	"github.com/jetlint/jetlint/internal/rules/usejsonimportattributes"
 	"github.com/jetlint/jetlint/internal/rules/useparseintradix"
+	"github.com/jetlint/jetlint/internal/rules/usesinglejsdocasterisk"
 	"github.com/jetlint/jetlint/internal/rules/useunknownincatchcallbackvariable"
 	"github.com/jetlint/jetlint/internal/rules/useyield"
 	"github.com/jetlint/jetlint/internal/rules/validtypeof"
@@ -699,6 +700,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		useisnan.New(),
 		usejsonimportattributes.New(),
 		useparseintradix.New(),
+		usesinglejsdocasterisk.New(),
 		useunknownincatchcallbackvariable.New(),
 		useyield.New(),
 		validtypeof.New(),
