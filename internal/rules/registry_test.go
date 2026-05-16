@@ -246,6 +246,7 @@ func additionalRulesSnapshot() []string {
 		"no-promise-executor-return",
 		"no-qwik-use-visible-task",
 		"no-render-return-value",
+		"no-restricted-elements",
 		"no-prototype-builtins",
 		"no-react-prop-assignments",
 		"no-redundant-type-constituents",
