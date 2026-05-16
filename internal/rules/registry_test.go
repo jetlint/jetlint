@@ -325,6 +325,7 @@ func additionalRulesSnapshot() []string {
 		"use-parse-int-radix",
 		"use-qwik-classlist",
 		"use-qwik-method-usage",
+		"use-qwik-valid-lexical-scope",
 		"use-single-js-doc-asterisk",
 		"use-unique-element-ids",
 		"use-unknown-in-catch-callback-variable",
