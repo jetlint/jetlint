@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 43
-- Remaining (AST-only): ~10
+- Shipped: 44
+- Remaining (AST-only): ~9
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -71,7 +71,7 @@ Update this file as rules land or assumptions change.
 | `no-unsafe-negation` | ✓ | Shipped 2026-05-15 |
 | `no-unsafe-optional-chaining` | ✓ | Shipped 2026-05-15 (80/82 fixtures; `with(...)` not detected because `KindWithStatement` is unexported by the wrapper) |
 | `no-unused-private-class-members` | ✓ | Shipped 2026-05-15 |
-| `no-unused-vars` | | Scope: unused declarations. TS catches under noUnusedLocals. |
+| `no-unused-vars` | ✓ | Shipped 2026-05-15 (conservative port — flags declarations whose name never appears in a reference position; underscore-prefix and `export`-attached names suppressed; full option set deferred) |
 | `no-use-before-define` | ✓ | Shipped 2026-05-15 (239/354 fixtures; remaining cases need cross-scope analysis to honor the `variables: false` option fully) |
 | `no-useless-backreference` | ⊘ | Regex AST. |
 | `require-atomic-updates` | ✓ | Shipped 2026-05-15 (hand-written tests; no oxc source available) |
