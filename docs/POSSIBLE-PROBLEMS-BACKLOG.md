@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 32
-- Remaining (AST-only): ~21
+- Shipped: 33
+- Remaining (AST-only): ~20
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -49,7 +49,7 @@ Update this file as rules land or assumptions change.
 | `no-import-assign` | ✓ | Shipped 2026-05-15 |
 | `no-inner-declarations` | ✓ | Shipped 2026-05-15 (65/66 fixtures; one diverges on sourceType=module heuristics) |
 | `no-invalid-regexp` | ⊘ | Regex AST. |
-| `no-irregular-whitespace` | | AST: source-text scan for control-whitespace characters. |
+| `no-irregular-whitespace` | ✓ | Shipped 2026-05-15 (220/220 fixtures) |
 | `no-loss-of-precision` | ✓ | Shipped 2026-05-15 |
 | `no-misleading-character-class` | ⊘ | Regex AST. |
 | `no-new-native-nonconstructor` | ✓ | Shipped 2026-05-15 |
