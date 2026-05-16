@@ -195,6 +195,7 @@ func additionalRulesSnapshot() []string {
 		"no-array-delete",
 		"no-async-promise-executor",
 		"no-await-in-loop",
+		"no-children-prop",
 		"no-class-assign",
 		"no-compare-neg-zero",
 		"no-cond-assign",

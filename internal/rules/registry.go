@@ -77,6 +77,7 @@ var All = []Metadata{
 	{ID: "getter-return", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-array-delete", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-async-promise-executor", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-children-prop", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-class-assign", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-compare-neg-zero", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-cond-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

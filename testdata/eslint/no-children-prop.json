@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-children-prop",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noChildrenProp",
+  "cases": [
+    {
+      "code": "import { createElement as aliased } from \"react\";\n\n\u003c\u003e\n    \u003cComponent children={'foo'}\u003e\u003c/Component\u003e\n    \u003cComponent\n      children={'foo'}\n    /\u003e\n    \u003cChild \n      className='testing'\n      children='Hello'\n    /\u003e\n\u003c/\u003e\n\ncreateElement('div', {\n    children: 'foo'\n})\n\nReact.createElement('div', {\n    children: 'foo'\n})\n\n\naliased('div', {\n\tchildren: 'foo'\n})\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport { cloneElement } from \"react\";\nimport React from \"react\";\n\n\u003c\u003e\n    \u003cComponent\u003e\u003cAnotherComponent /\u003e\u003c/Component\u003e\n    \u003cReact.StrictMode\u003e\n        \u003cComponent /\u003e\n    \u003c/React.StrictMode\u003e\n\u003c/\u003e\n\ncreateElement('div', {}, 'foo')\n\n\ncloneElement('div', { children: \u003cbr /\u003e });\nReact.cloneElement('div', { children: \u003cbr /\u003e });\n",
+      "valid": true
+    }
+  ]
+}

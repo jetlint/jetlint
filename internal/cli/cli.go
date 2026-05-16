@@ -40,6 +40,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noasyncpromiseexecutor"
 	"github.com/jetlint/jetlint/internal/rules/noawaitinloop"
 	"github.com/jetlint/jetlint/internal/rules/nobasetotostring"
+	"github.com/jetlint/jetlint/internal/rules/nochildrenprop"
 	"github.com/jetlint/jetlint/internal/rules/noclassassign"
 	"github.com/jetlint/jetlint/internal/rules/nocomparenegzero"
 	"github.com/jetlint/jetlint/internal/rules/nocondassign"
@@ -587,6 +588,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noarraydelete.New(),
 		noasyncpromiseexecutor.New(),
 		noawaitinloop.New(),
+		nochildrenprop.New(),
 		noclassassign.New(),
 		nocomparenegzero.New(),
 		nocondassign.New(),
