@@ -6,9 +6,9 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 48
+- Shipped: 49
 - Remaining (AST-only): ~9
-- Remaining (needs regex AST infra): 2
+- Remaining (needs regex AST infra): 1
 
 **Symbols**
 
@@ -51,7 +51,7 @@ Update this file as rules land or assumptions change.
 | `no-invalid-regexp` | ✓ | Shipped 2026-05-15 (hand-rolled structural validator catches unbalanced parens, unclosed char classes, dangling backslash, unterminated named groups) |
 | `no-irregular-whitespace` | ✓ | Shipped 2026-05-15 (220/220 fixtures) |
 | `no-loss-of-precision` | ✓ | Shipped 2026-05-15 |
-| `no-misleading-character-class` | ⊘ | Regex AST. |
+| `no-misleading-character-class` | ✓ | Shipped 2026-05-15 (flags astral-plane chars and surrogate pairs in classes without `u`/`v` flag) |
 | `no-new-native-nonconstructor` | ✓ | Shipped 2026-05-15 |
 | `no-obj-calls` | ✓ | Shipped 2026-05-15 |
 | `no-promise-executor-return` | ✓ | Shipped 2026-05-15 |
