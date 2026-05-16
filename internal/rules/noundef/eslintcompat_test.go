@@ -17,10 +17,12 @@ import (
 // by oxc's fixtures (URLSearchParams, IntersectionObserver, …) are
 // considered declared without our extractor needing to capture the
 // `env: { browser: true }` setting from the upstream test source.
+// `esnext` is used (not `es2022`) so newer built-ins like
+// `Float16Array` and `Iterator` resolve to library declarations.
 const eslintTsconfigBody = `{
   "compilerOptions": {
-    "strict": false, "target": "es2022", "module": "esnext",
-    "moduleResolution": "bundler", "lib": ["es2022", "dom"],
+    "strict": false, "target": "esnext", "module": "esnext",
+    "moduleResolution": "bundler", "lib": ["esnext", "dom"],
     "skipLibCheck": true, "allowJs": true, "noImplicitAny": false
   },
   "include": ["case.tsx"]
