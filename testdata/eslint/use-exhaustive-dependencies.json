@@ -1,0 +1,47 @@
+{
+  "ruleId": "use-exhaustive-dependencies",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/useExhaustiveDependencies",
+  "cases": [
+    {
+      "code": "function Component({ value }) {\n  useEffect(() => {\n    console.log(value);\n  }, []);\n}",
+      "valid": false
+    },
+    {
+      "code": "function Component({ a, b }) {\n  const x = useMemo(() => a + b, []);\n}",
+      "valid": false
+    },
+    {
+      "code": "function Component({ handler }) {\n  const cb = useCallback(() => { handler(); }, []);\n}",
+      "valid": false
+    },
+    {
+      "code": "function Component({ a, b }) {\n  useEffect(() => {\n    console.log(a);\n  }, [b]);\n}",
+      "valid": false
+    },
+    {
+      "code": "function Component({ value }) {\n  useEffect(() => {\n    console.log(value);\n  }, [value]);\n}",
+      "valid": true
+    },
+    {
+      "code": "function Component({ a, b }) {\n  useMemo(() => a + b, [a, b]);\n}",
+      "valid": true
+    },
+    {
+      "code": "function Component() {\n  useEffect(() => {\n    console.log('hello');\n  }, []);\n}",
+      "valid": true
+    },
+    {
+      "code": "function Component() {\n  useEffect(() => {\n    setTimeout(() => console.log('hi'), 1000);\n  }, []);\n}",
+      "valid": true
+    },
+    {
+      "code": "function Component({ handler }) {\n  const cb = useCallback(() => { handler(); }, [handler]);\n}",
+      "valid": true
+    },
+    {
+      "code": "function Component({ value }) {\n  useEffect(() => {\n    const local = value + 1;\n    console.log(local);\n  }, [value]);\n}",
+      "valid": true
+    }
+  ]
+}
