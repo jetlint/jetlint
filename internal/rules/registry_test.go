@@ -273,6 +273,7 @@ func additionalRulesSnapshot() []string {
 		"no-unsafe-unary-minus",
 		"no-unmodified-loop-condition",
 		"no-unused-function-parameters",
+		"no-unused-imports",
 		"no-unused-labels",
 		"no-unused-private-class-members",
 		"no-unused-vars",
