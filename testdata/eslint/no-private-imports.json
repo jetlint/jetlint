@@ -1,0 +1,89 @@
+{
+  "ruleId": "no-private-imports",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noPrivateImports",
+  "cases": [
+    {
+      "valid": false,
+      "main": "main.ts",
+      "files": [
+        {"path": "main.ts", "content": "import { secret } from \"./other\";\n"},
+        {"path": "other.ts", "content": "/** @private */\nexport const secret = 1;\n"}
+      ]
+    },
+    {
+      "valid": false,
+      "main": "main.ts",
+      "files": [
+        {"path": "main.ts", "content": "import { secret } from \"./other\";\n"},
+        {"path": "other.ts", "content": "/**\n * @access private\n */\nexport const secret = 1;\n"}
+      ]
+    },
+    {
+      "valid": false,
+      "main": "outer/main.ts",
+      "files": [
+        {"path": "outer/main.ts", "content": "import { pkgVar } from \"../inner/foo\";\n"},
+        {"path": "inner/foo.ts", "content": "/** @package */\nexport const pkgVar = 1;\n"}
+      ]
+    },
+    {
+      "valid": false,
+      "main": "main.ts",
+      "options": [{"defaultVisibility": "package"}],
+      "files": [
+        {"path": "main.ts", "content": "import { plain } from \"./inner/foo\";\n"},
+        {"path": "inner/foo.ts", "content": "export const plain = 1;\n"}
+      ]
+    },
+    {
+      "valid": true,
+      "main": "main.ts",
+      "files": [
+        {"path": "main.ts", "content": "import { ok } from \"./other\";\n"},
+        {"path": "other.ts", "content": "/** @public */\nexport const ok = 1;\n"}
+      ]
+    },
+    {
+      "valid": true,
+      "main": "main.ts",
+      "files": [
+        {"path": "main.ts", "content": "import { plain } from \"./other\";\n"},
+        {"path": "other.ts", "content": "export const plain = 1;\n"}
+      ]
+    },
+    {
+      "valid": true,
+      "main": "inner/main.ts",
+      "files": [
+        {"path": "inner/main.ts", "content": "import { pkgVar } from \"./foo\";\n"},
+        {"path": "inner/foo.ts", "content": "/** @package */\nexport const pkgVar = 1;\n"}
+      ]
+    },
+    {
+      "valid": true,
+      "main": "inner/sub/main.ts",
+      "files": [
+        {"path": "inner/sub/main.ts", "content": "import { pkgVar } from \"../foo\";\n"},
+        {"path": "inner/foo.ts", "content": "/** @package */\nexport const pkgVar = 1;\n"}
+      ]
+    },
+    {
+      "valid": true,
+      "main": "main.ts",
+      "options": [{"defaultVisibility": "public"}],
+      "files": [
+        {"path": "main.ts", "content": "import { plain } from \"./inner/foo\";\n"},
+        {"path": "inner/foo.ts", "content": "export const plain = 1;\n"}
+      ]
+    },
+    {
+      "valid": true,
+      "main": "main.ts",
+      "files": [
+        {"path": "main.ts", "content": "import { explicit } from \"./inner/foo\";\n"},
+        {"path": "inner/foo.ts", "content": "/** @public */\nexport const explicit = 1;\n"}
+      ]
+    }
+  ]
+}

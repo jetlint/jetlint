@@ -242,6 +242,7 @@ func additionalRulesSnapshot() []string {
 		"no-nonoctal-decimal-escape",
 		"no-obj-calls",
 		"no-precision-loss",
+		"no-private-imports",
 		"no-process-global",
 		"no-promise-executor-return",
 		"no-qwik-use-visible-task",
