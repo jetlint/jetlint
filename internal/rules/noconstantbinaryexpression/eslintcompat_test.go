@@ -57,7 +57,7 @@ func TestNoConstantBinaryExpression_EslintCompatibility(t *testing.T) {
 	// (Boolean(...), template substitutions, unary +/- chains) is
 	// out of scope. Targeting a modest baseline so future
 	// improvements only need to lift the threshold.
-	minimumPassRate := 50.0
+	minimumPassRate := 75.0
 	if pct < minimumPassRate {
 		t.Fatalf("expected at least %.1f%% pass rate, got %d/%d (%.1f%%)", minimumPassRate, passed, total, pct)
 	}
