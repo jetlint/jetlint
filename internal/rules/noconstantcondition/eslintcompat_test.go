@@ -53,16 +53,8 @@ func TestNoConstantCondition_EslintCompatibility(t *testing.T) {
 		pct = float64(passed) * 100.0 / float64(total)
 	}
 	t.Logf("oxlint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
-	// Constant-folding now covers logical operators, template
-	// substitutions, `Boolean(...)`, `typeof`/`void`, unary/binary
-	// chains, array `+` string coercion, and lexical-scope
-	// shadowing of `undefined` / `Boolean`. The remaining 4
-	// divergences need control-flow analysis (generators where
-	// `yield` exits an `infinite` loop) or template-spread
-	// stringification — both out of scope.
-	minimumPassRate := 98.5
-	if pct < minimumPassRate {
-		t.Fatalf("expected at least %.1f%% pass rate, got %d/%d (%.1f%%)", minimumPassRate, passed, total, pct)
+	if failed > 0 {
+		t.Fatalf("expected 100%% pass rate, got %d/%d (%.1f%%)", passed, total, pct)
 	}
 }
 

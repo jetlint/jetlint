@@ -9,7 +9,7 @@ Update this file as rules land or assumptions change.
 - Shipped: 57 (all rules have implementations; 8 are partial-coverage and need work to reach 100%)
 - Remaining (AST-only): 0
 - Remaining (needs regex AST infra): 0
-- Partials needing 100%: no-constant-condition (302/306), no-undef (87/97), no-use-before-define (239/354)
+- Partials needing 100%: no-undef (87/97), no-use-before-define (239/354)
 
 **Symbols**
 
@@ -32,7 +32,7 @@ Update this file as rules land or assumptions change.
 | `no-cond-assign` | ✓ | Shipped 2026-05-15 |
 | `no-const-assign` | ✓ | Shipped 2026-05-15 |
 | `no-constant-binary-expression` | ✓ | Shipped 2026-05-15 (251/251 fixtures, 100%; type-tag-aware equality, fresh-reference + well-known-builtin detection, array-coercion fixed cases, singleton self-equality across numeric/string/bigint literals, `??` chain non-nullish propagation) |
-| `no-constant-condition` | ✓ | Shipped 2026-05-15 (302/306 fixtures, 98.7%; expanded constant-folding plus lexical/symbolic shadowing detection for `undefined` and `Boolean`, and array-`+`-string coercion (`'' + []` → falsy, `'' + ['a']` → truthy)) |
+| `no-constant-condition` | ✓ | Shipped 2026-05-15 (306/306 fixtures, 100%; expanded constant-folding, scope-aware `undefined` / `Boolean` shadowing, array `+` string coercion, generator-yield-aware loop exemption, and array-spread template-span truthiness) |
 | `no-constructor-return` | ✓ | Shipped 2026-05-15 |
 | `no-control-regex` | ✓ | Shipped 2026-05-15 (hand-rolled pattern scanner with JS string-escape unescaping; covers `/.../` and `RegExp(string)` forms) |
 | `no-debugger` | ✓ | Shipped 2026-05-15 |
