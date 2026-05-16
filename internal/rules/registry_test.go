@@ -233,6 +233,7 @@ func additionalRulesSnapshot() []string {
 		"no-misused-spread",
 		"no-mixed-enums",
 		"no-new-native-nonconstructor",
+		"no-nodejs-modules",
 		"no-nonoctal-decimal-escape",
 		"no-obj-calls",
 		"no-process-global",

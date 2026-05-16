@@ -161,18 +161,29 @@ func extractRule(biomePath, outDir, ruleID, category string) error {
 			hasSnap[stem] = true
 		}
 	}
-	// Files with a sibling `.options.json` carry per-test rule
-	// options that this extractor doesn't parse. Skip them — the
-	// fixture would otherwise be exercised under default options
-	// and likely produce the wrong diagnostic count.
+	// Files with a sibling `<stem>.*.json` companion carry per-test
+	// configuration this extractor doesn't parse — rule options
+	// (`.options.json`), an emulated package.json
+	// (`.package.json`), and similar. Without applying the
+	// companion the fixture would run under default options and
+	// usually produce the wrong diagnostic count, so skip the
+	// whole file.
 	hasOptions := make(map[string]bool)
 	for _, e := range entries {
 		name := e.Name()
-		if !strings.HasSuffix(name, ".options.json") {
+		if !strings.HasSuffix(name, ".json") || strings.HasSuffix(name, ".jsonc") {
 			continue
 		}
-		stem := strings.TrimSuffix(name, ".options.json")
-		// Mark every fixture filename that shares this stem.
+		// Find the `<stem>` part by stripping the LAST two
+		// extensions: `.<flavor>.json` → `<stem>`. If only one
+		// extension exists this is a JSON fixture (we read it
+		// as a code source), not a companion.
+		dotJSON := strings.TrimSuffix(name, ".json")
+		dot := strings.LastIndexByte(dotJSON, '.')
+		if dot < 0 {
+			continue
+		}
+		stem := dotJSON[:dot]
 		for _, f := range entries {
 			fn := f.Name()
 			if strings.HasSuffix(fn, ".snap") {

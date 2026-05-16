@@ -104,6 +104,7 @@ var All = []Metadata{
 	{ID: "no-string-case-mismatch", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-switch-declarations", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-new-native-nonconstructor", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-nodejs-modules", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-obj-calls", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-process-global", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-promise-executor-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
