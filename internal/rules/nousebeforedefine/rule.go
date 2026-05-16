@@ -37,6 +37,10 @@ type Options struct {
 	// Variables, when true, flags variable declarations used before
 	// their declaration position. ESLint's default is true.
 	Variables bool
+	// Enums, when true, flags TypeScript enum declarations used
+	// before their declaration position. Defaults to true (matching
+	// typescript-eslint's default).
+	Enums bool
 	// AllowNamedExports allows `export { foo }; const foo = 1;`
 	// (named exports referencing later-declared values).
 	AllowNamedExports bool
@@ -51,6 +55,7 @@ func DefaultOptions() Options {
 		Functions:            true,
 		Classes:              true,
 		Variables:            true,
+		Enums:                true,
 		IgnoreTypeReferences: true,
 	}
 }
@@ -87,8 +92,8 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if sym == nil {
 		// TS-go's resolver cannot reach through a `with` block (the
 		// object's property set is dynamic). Fall back to a
-		// source-file scope lookup so a let/const/etc. declared
-		// after the with statement is still seen.
+		// source-file scope lookup so a binding declared after the
+		// with statement is still seen.
 		if isInWithStatement(n) {
 			if local := findSourceFileBinding(n, n.LiteralText()); local != nil && n.Pos() < local.Pos() {
 				ctx.Report(n, "'"+n.SourceText()+"' was used before it was defined.")
@@ -165,6 +170,12 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		// class binding to be initialized; oxlint flags those even
 		// when Classes: false.
 		newCtor := isNewExpressionCallee(n) && !referenceInDeferredBody(n)
+		// `enums: false` (typescript-eslint extension) suppresses
+		// forward references to TypeScript `enum` declarations.
+		if first.Kind() == wrapperchecker.KindEnumDeclaration &&
+			!r.opts.Enums && !eager && !newCtor {
+			return
+		}
 		if !r.opts.Classes && !eager && !newCtor {
 			return
 		}

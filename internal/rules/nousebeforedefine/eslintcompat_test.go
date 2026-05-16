@@ -84,6 +84,9 @@ func optionsForCase(c eslintcompat.Case) nousebeforedefine.Options {
 	if v, ok := cfg["variables"].(bool); ok {
 		opts.Variables = v
 	}
+	if v, ok := cfg["enums"].(bool); ok {
+		opts.Enums = v
+	}
 	if v, ok := cfg["allowNamedExports"].(bool); ok {
 		opts.AllowNamedExports = v
 	}
