@@ -8,6 +8,8 @@
 package noduplicateimports
 
 import (
+	"strings"
+
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 
 	"github.com/jetlint/jetlint/internal/engine"
@@ -49,6 +51,7 @@ type entry struct {
 	hasNamed   bool
 	hasNs      bool
 	isTypeOnly bool
+	isExport   bool
 }
 
 func (r *rule) visit(ctx *engine.Context, sf *wrapperchecker.Node) {
@@ -109,7 +112,7 @@ func importEntry(n *wrapperchecker.Node) (entry, bool) {
 	if spec == nil || spec.Kind() != wrapperchecker.KindStringLiteral {
 		return entry{}, false
 	}
-	e := entry{node: n, source: spec.LiteralText()}
+	e := entry{node: n, source: spec.LiteralText(), isTypeOnly: importIsTypeOnly(n)}
 	n.ForEachChild(func(c *wrapperchecker.Node) bool {
 		if c.Kind() != wrapperchecker.KindImportClause {
 			return false
@@ -120,6 +123,15 @@ func importEntry(n *wrapperchecker.Node) (entry, bool) {
 	return e, true
 }
 
+// importIsTypeOnly reports whether an ImportDeclaration carries the
+// type-only marker (`import type ...` or `import type { ... }`).
+// Detected via SourceText prefix because the wrapper does not
+// expose ImportClause.IsTypeOnly as an accessor.
+func importIsTypeOnly(n *wrapperchecker.Node) bool {
+	text := strings.TrimLeft(n.SourceText(), " \t")
+	return strings.HasPrefix(text, "import type")
+}
+
 // exportEntry inspects an ExportDeclaration with a `from "module"`
 // re-export and returns its source-string + binding flags.
 func exportEntry(n *wrapperchecker.Node) (entry, bool) {
@@ -127,7 +139,7 @@ func exportEntry(n *wrapperchecker.Node) (entry, bool) {
 	if spec == nil || spec.Kind() != wrapperchecker.KindStringLiteral {
 		return entry{}, false
 	}
-	e := entry{node: n, source: spec.LiteralText()}
+	e := entry{node: n, source: spec.LiteralText(), isTypeOnly: n.IsTypeOnlyExport(), isExport: true}
 	// For exports, classify by the export form: `export *` is
 	// namespace-style; `export { … }` is named-style.
 	n.ForEachChild(func(c *wrapperchecker.Node) bool {

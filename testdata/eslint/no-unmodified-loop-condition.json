@@ -1,0 +1,163 @@
+{
+  "ruleId": "no-unmodified-loop-condition",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_unmodified_loop_condition.rs",
+  "cases": [
+    {
+      "code": "var foo = 0; while (foo) { ++foo; }",
+      "valid": true
+    },
+    {
+      "code": "let foo = 0; while (foo) { ++foo; }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0; while (foo) { foo += 1; }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0; while (foo++) { }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0; while (foo = next()) { }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0; while (ok(foo)) { }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0, bar = 0; while (++foo \u003c bar) { }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0, obj = {}; while (foo === obj.bar) { }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0, f = {}, bar = {}; while (foo === f(bar)) { }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0, f = {}; while (foo === f()) { }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0, tag = 0; while (foo === tag`abc`) { }",
+      "valid": true
+    },
+    {
+      "code": "function* foo() { var foo = 0; while (yield foo) { } }",
+      "valid": true
+    },
+    {
+      "code": "function* foo() { var foo = 0; while (foo === (yield)) { } }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0; while (foo.ok) { }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0; while (foo) { update(); } function update() { ++foo; }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0, bar = 9; while (foo \u003c bar) { foo += 1; }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0, bar = 1, baz = 2; while (foo ? bar : baz) { foo += 1; }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0, bar = 0; while (foo \u0026\u0026 bar) { ++foo; ++bar; }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0, bar = 0; while (foo || bar) { ++foo; ++bar; }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0; do { ++foo; } while (foo);",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0; do { } while (foo++);",
+      "valid": true
+    },
+    {
+      "code": "for (var foo = 0; foo; ++foo) { }",
+      "valid": true
+    },
+    {
+      "code": "for (var foo = 0; foo;) { ++foo }",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0, bar = 0; for (bar; foo;) { ++foo }",
+      "valid": true
+    },
+    {
+      "code": "var foo; if (foo) { }",
+      "valid": true
+    },
+    {
+      "code": "var a = [1, 2, 3]; var len = a.length; for (var i = 0; i \u003c len - 1; i++) {}",
+      "valid": true
+    },
+    {
+      "code": "var foo = 0; while (foo) { } foo = 1;",
+      "valid": false
+    },
+    {
+      "code": "var foo = 0; while (!foo) { } foo = 1;",
+      "valid": false
+    },
+    {
+      "code": "var foo = 0; while (foo != null) { } foo = 1;",
+      "valid": false
+    },
+    {
+      "code": "var foo = 0, bar = 9; while (foo \u003c bar) { } foo = 1;",
+      "valid": false
+    },
+    {
+      "code": "var foo = 0, bar = 0; while (foo \u0026\u0026 bar) { ++bar; } foo = 1;",
+      "valid": false
+    },
+    {
+      "code": "var foo = 0, bar = 0; while (foo \u0026\u0026 bar) { ++foo; } foo = 1;",
+      "valid": false
+    },
+    {
+      "code": "var a, b, c; while (a \u003c c \u0026\u0026 b \u003c c) { ++a; } foo = 1;",
+      "valid": false
+    },
+    {
+      "code": "var foo = 0; while (foo ? 1 : 0) { } foo = 1;",
+      "valid": false
+    },
+    {
+      "code": "var foo = 0; while (foo) { update(); } function update(foo) { ++foo; }",
+      "valid": false
+    },
+    {
+      "code": "var foo = 0; while (foo \u003c 10) { function update() { foo++; } }",
+      "valid": false
+    },
+    {
+      "code": "var foo = 0; while (foo \u003c 10) { const fn = update; } function update() { foo++; }",
+      "valid": false
+    },
+    {
+      "code": "var foo; do { } while (foo);",
+      "valid": false
+    },
+    {
+      "code": "for (var foo = 0; foo \u003c 10; ) { } foo = 1;",
+      "valid": false
+    }
+  ]
+}

@@ -1,0 +1,442 @@
+{
+  "ruleId": "no-fallthrough",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_fallthrough.rs",
+  "cases": [
+    {
+      "code": "switch(foo) { case 0: a(); /* falls through */ case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: a()\n /* falls through */ case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: a(); /* fall through */ case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: a(); /* fallthrough */ case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: a(); /* FALLS THROUGH */ case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: { a(); /* falls through */ } case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: { a()\n /* falls through */ } case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: { a(); /* fall through */ } case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: { a(); /* fallthrough */ } case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: { a(); /* FALLS THROUGH */ } case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: { a(); } /* falls through */ case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: { a(); /* falls through */ } /* comment */ case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: { /* falls through */ } case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { switch(foo) { case 0: a(); return; case 1: b(); }; }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: a(); throw 'foo'; case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "while (a) { switch(foo) { case 0: a(); continue; case 1: b(); } }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: a(); break; case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: case 1: a(); break; case 2: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: case 1: break; case 2: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: case 1: break; default: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: case 1: a(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: case 1: a(); break; }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: case 1: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0:\n case 1: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: // comment\n case 1: break; }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { switch(foo) { case 0: case 1: return; } }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { switch(foo) { case 0: {return;}\n case 1: {return;} } }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: case 1: {break;} }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: switch(bar) { case 2: break; } /* falls through */ case 1: break; }",
+      "valid": true
+    },
+    {
+      "code": "function foo() { switch(foo) { case 1: return a; a++; }}",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 0: a(); /* falls through */ default:  b(); /* comment */ }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 0: a(); /* falls through */ default: /* comment */ b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 0: if (a) { break; } else { throw 0; } default: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 0: try { break; } finally {} default: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 0: try {} finally { break; } default: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 0: try { throw 0; } catch (err) { break; } default: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 0: do { throw 0; } while(a); default: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 0: a(); \n// eslint-disable-next-line no-fallthrough\n case 1: }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: default: a(); break; case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: a(); /* no break */ case 1: b(); }",
+      "valid": true,
+      "options": [
+        {
+          "commentPattern": "no break"
+        }
+      ]
+    },
+    {
+      "code": "switch(foo) { case 0: a(); /* no break: need to execute b() */ case 1: b(); }",
+      "valid": true,
+      "options": [
+        {
+          "commentPattern": "no break:\\s?\\w+"
+        }
+      ]
+    },
+    {
+      "code": "switch(foo) { case 0: a();\n// need to execute b(), so\n// falling through\n case 1: b(); }",
+      "valid": true,
+      "options": [
+        {
+          "commentPattern": "falling through"
+        }
+      ]
+    },
+    {
+      "code": "switch(foo) { case 0: a(); /* break omitted */ default:  b(); /* comment */ }",
+      "valid": true,
+      "options": [
+        {
+          "commentPattern": "break omitted"
+        }
+      ]
+    },
+    {
+      "code": "switch(foo) { case 0: a(); /* caution: break is omitted intentionally */ case 1: b(); /* break omitted */ default: c(); }",
+      "valid": true,
+      "options": [
+        {
+          "commentPattern": "break[\\s\\w]+omitted"
+        }
+      ]
+    },
+    {
+      "code": "switch(foo) { case 0: \n\n\n case 1: b(); }",
+      "valid": true,
+      "options": [
+        {
+          "allowEmptyCase": true
+        }
+      ]
+    },
+    {
+      "code": "switch(foo) { case 0: \n /* with comments */  \n case 1: b(); }",
+      "valid": true,
+      "options": [
+        {
+          "allowEmptyCase": true
+        }
+      ]
+    },
+    {
+      "code": "switch (a) {\n case 1: ; break; \n case 3: }",
+      "valid": true,
+      "options": [
+        {
+          "allowEmptyCase": true
+        }
+      ]
+    },
+    {
+      "code": "switch (a) {\n case 1: ; break; \n case 3: }",
+      "valid": true,
+      "options": [
+        {
+          "allowEmptyCase": false
+        }
+      ]
+    },
+    {
+      "code": "switch(foo) { case 0: a(); break; /* falls through */ case 1: b(); }",
+      "valid": true,
+      "options": [
+        {
+          "reportUnusedFallthroughComment": false
+        }
+      ]
+    },
+    {
+      "code": "function f(name) { switch(name) { case 'a': case 'b': default: return 'x'; case 'c': return 'y'; } }",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { default: a(); break; case 1: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(true) { case x === 1 || x === 2: a(); break; case x === 3: b(); }",
+      "valid": true
+    },
+    {
+      "code": "switch(true) { case x === 1 \u0026\u0026 y: a(); break; case x === 3: b(); }",
+      "valid": true
+    },
+    {
+      "code": "c.map(c =\u003e { switch (true) {\n        case c.f === 'qux' \u0026\u0026 xCount \u003e 1: { return \u003ctd key=\"foo\"\u003eFoo\u003c/td\u003e; }\n        case c.f === 'barbaz' \u0026\u0026 isFoo: { return \u003ctd key=\"bar\"\u003eFoobar\u003c/td\u003e; }\n        case c.f === 'baz': { return arrayOfRecords.map(r =\u003e \u003ctd key={r.id}\u003e{r.id}\u003c/td\u003e); }\n        default: { return \u003ctd\u003eBar\u003c/td\u003e; }\n      } });",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) {\n  case A\n    .B:\n  case B.A:\n    break;\n}",
+      "valid": true
+    },
+    {
+      "code": "switch(foo) { case 0: a();\ncase 1: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: a();\ndefault: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: a(); default: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: if (a) { break; } default: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: try { throw 0; } catch (err) {} default: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: while (a) { break; } default: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: do { break; } while (a); default: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0:\n\n default: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: {} default: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: a(); { /* falls through */ } default: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: { /* falls through */ } a(); default: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: if (a) { /* falls through */ } default: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: { { /* falls through */ } } default: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: { /* comment */ } default: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0:\n // comment\n default: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: a(); /* falling through */ default: b() }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: a();\n/* no break */\ncase 1: b(); }",
+      "valid": false,
+      "options": [
+        {
+          "commentPattern": "break omitted"
+        }
+      ]
+    },
+    {
+      "code": "switch(foo) { case 0: a();\n/* no break */\n/* todo: fix readability */\ndefault: b() }",
+      "valid": false,
+      "options": [
+        {
+          "commentPattern": "no break"
+        }
+      ]
+    },
+    {
+      "code": "switch(foo) { case 0: { a();\n/* no break */\n/* todo: fix readability */ }\ndefault: b() }",
+      "valid": false,
+      "options": [
+        {
+          "commentPattern": "no break"
+        }
+      ]
+    },
+    {
+      "code": "switch(foo) { case 0: \n /* with comments */  \ncase 1: b(); }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0:\n\ncase 1: b(); }",
+      "valid": false,
+      "options": [
+        {
+          "allowEmptyCase": false
+        }
+      ]
+    },
+    {
+      "code": "switch(foo) { case 0:\n\ncase 1: b(); }",
+      "valid": false,
+      "options": [
+        {}
+      ]
+    },
+    {
+      "code": "switch (a) { case 1: \n ; case 2:  }",
+      "valid": false,
+      "options": [
+        {
+          "allowEmptyCase": false
+        }
+      ]
+    },
+    {
+      "code": "switch (a) { case 1: ; case 2: ; case 3: }",
+      "valid": false,
+      "options": [
+        {
+          "allowEmptyCase": true
+        }
+      ]
+    },
+    {
+      "code": "switch (foo) { case 0: a(); \n// eslint-enable no-fallthrough\n case 1: }",
+      "valid": false,
+      "options": [
+        {}
+      ]
+    },
+    {
+      "code": "switch(foo) { case 0: a(); break; /* falls through */ case 1: b(); }",
+      "valid": false,
+      "options": [
+        {
+          "reportUnusedFallthroughComment": true
+        }
+      ]
+    },
+    {
+      "code": "switch(foo) { default: a(); case 1: b(); }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case 0: a(); default: b(); case 1: c(); }",
+      "valid": false
+    },
+    {
+      "code": "switch(true) { case x === 1 || x === 2: a(); case x === 3: b(); }",
+      "valid": false
+    },
+    {
+      "code": "switch(true) { case x === 1 \u0026\u0026 y: a(); case x === 3: b(); }",
+      "valid": false
+    }
+  ]
+}

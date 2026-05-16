@@ -18,6 +18,11 @@ import (
 
 const id = "no-unsafe-optional-chaining"
 
+// kindWithStatement is the syntax-kind constant for a `with`
+// statement. The wrapper does not export it, so we cast the
+// underlying enum value directly (255 in v0.2.7's ast.Kind).
+const kindWithStatement = wrapperchecker.Kind(255)
+
 // Options configures the rule.
 type Options struct {
 	// DisallowArithmeticOperators, when true, also flags optional
@@ -135,6 +140,15 @@ func (r *rule) classify(top *wrapperchecker.Node) errType {
 			return errNone
 		case wrapperchecker.KindForOfStatement:
 			if isPositionMatch(parent.ForInOrOfExpression(), curr) {
+				return errUsage
+			}
+			return errNone
+		case kindWithStatement:
+			// `with (obj?.foo) { ... }` — `with` reads the head as
+			// an object; a nullish head would throw at runtime.
+			// The first child of the WithStatement is the head
+			// expression; if that matches the chain, flag it.
+			if isPositionMatch(firstChild(parent), curr) {
 				return errUsage
 			}
 			return errNone

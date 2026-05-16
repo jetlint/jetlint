@@ -1,0 +1,267 @@
+{
+  "ruleId": "no-this-before-super",
+  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_this_before_super.rs",
+  "cases": [
+    {
+      "code": "class A { }",
+      "valid": true
+    },
+    {
+      "code": "class A { constructor() { } }",
+      "valid": true
+    },
+    {
+      "code": "class A { constructor() { this.b = 0; } }",
+      "valid": true
+    },
+    {
+      "code": "class A { constructor() { this.b(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends null { }",
+      "valid": true
+    },
+    {
+      "code": "class A extends null { constructor() { } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { super(); } }",
+      "valid": true
+    },
+    {
+      "code": "\n        function f() {\n            try {\n                return a();\n            }\n            catch (err) {\n                throw new class CustomError extends Error {\n                    constructor() {\n                        super(err);\n                    }\n                };\n            }\n            finally {\n                this.b();\n            }\n        }\n        ",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { super(); this.c = this.d; } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { super(); this.c(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { super(); super.c(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { if (true) { super(); } else { super(); } this.c(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { foo = super(); this.c(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { foo += super().a; this.c(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { foo |= super().a; this.c(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { foo \u0026= super().a; this.c(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { class B extends C { constructor() { super(); this.d = 0; } } super(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { var B = class extends C { constructor() { super(); this.d = 0; } }; super(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { function c() { this.d(); } super(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { var c = function c() { this.d(); }; super(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { var c = () =\u003e this.d(); super(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A { b() { this.c = 0; } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { c() { this.d = 0; } }",
+      "valid": true
+    },
+    {
+      "code": "function a() { this.b = 0; }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { if (a) { super(); this.a(); } else { super(); this.b(); } } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { if (a) super(); else super(); this.a(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { try { super(); } finally {} this.a(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor(a) { super(); for (const b of a) { this.a(); } } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor(a) { for (const b of a) { foo(b); } super(); } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor(a) { super(); this.a = a \u0026\u0026 function(){} \u0026\u0026 this.foo; } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends Object {\n                constructor() {\n                    super();\n                    for (let i = 0; i \u003c 0; i++);\n                    this;\n                }\n            }",
+      "valid": true
+    },
+    {
+      "code": "class A { constructor() { return; this; } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { return; this; } }",
+      "valid": true
+    },
+    {
+      "code": "\n            class A extends B {\n                constructor(props) {\n                    super(props);\n\n                    try {\n                        let arr = [];\n                        for (let a of arr) {\n                        }\n                    } catch (err) {\n                    }\n                }\n            }\n        ",
+      "valid": true
+    },
+    {
+      "code": "class C { field = this.toString(); }",
+      "valid": true
+    },
+    {
+      "code": "class C extends B { field = this.foo(); }",
+      "valid": true
+    },
+    {
+      "code": "class C extends B { field = this.foo(); constructor() { super(); } }",
+      "valid": true
+    },
+    {
+      "code": "class C extends B { field = this.foo(); constructor() { } }",
+      "valid": true
+    },
+    {
+      "code": "class A extends B { constructor() { this.c = 0; } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { this.c(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { super.c(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { this.c = 0; super(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { this.c(); super(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { super.c(); super(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { super(this); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { super(this.c); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { super(a(b(this.c))); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { super(this.c()); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { super(super.c); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { super(super.c()); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { class C extends D { constructor() { super(); this.e(); } } this.f(); super(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { class C extends D { constructor() { this.e(); super(); } } super(); this.f(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { if (a) super(); this.a(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { try { super(); } finally { this.a; } } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { try { super(); } catch (err) { } this.a; } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { foo \u0026\u0026= super().a; this.c(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { foo ||= super().a; this.c(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { foo ??= super().a; this.c(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { if (foo) { if (bar) { } super(); } this.a(); }}",
+      "valid": false
+    },
+    {
+      "code": "class A extends B {\n            constructor() {\n                if (foo) {\n                } else {\n                    super();\n                }\n                this.a();\n            }\n        }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B {\n            constructor() {\n                try {\n                    call();\n                } finally {\n                    this.a();\n                }\n            }\n        }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B {\n            constructor() {\n                while (foo) {\n                    super();\n                }\n                this.a();\n            }\n        }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B {\n            constructor() {\n                while (foo) {\n                    this.a();\n                    super();\n                }\n            }\n        }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B {\n            constructor() {\n                while (foo) {\n                    if (init) {\n                        this.a();\n                        super();\n                    }\n                }\n            }\n        }",
+      "valid": false
+    }
+  ]
+}
