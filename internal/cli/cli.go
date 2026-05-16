@@ -112,6 +112,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounreachableloop"
 	"github.com/jetlint/jetlint/internal/rules/nounusedprivateclassmembers"
 	"github.com/jetlint/jetlint/internal/rules/nounusedvars"
+	"github.com/jetlint/jetlint/internal/rules/nouselessbackreference"
 	"github.com/jetlint/jetlint/internal/rules/nousebeforedefine"
 	"github.com/jetlint/jetlint/internal/rules/nouselessdefaultassignment"
 	"github.com/jetlint/jetlint/internal/rules/onlythrowerror"
@@ -636,6 +637,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nounusedprivateclassmembers.New(),
 		nounusedvars.New(),
 		nousebeforedefine.New(),
+		nouselessbackreference.New(),
 		nouselessdefaultassignment.New(),
 		onlythrowerror.New(),
 		preferdestructuring.New(),

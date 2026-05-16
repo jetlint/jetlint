@@ -179,6 +179,7 @@ var All = []Metadata{
 	{ID: "no-unnecessary-type-assertion", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unnecessary-type-conversion", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unnecessary-type-parameters", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-useless-backreference", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-default-assignment", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "non-nullable-type-assertion-style", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "prefer-destructuring", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},

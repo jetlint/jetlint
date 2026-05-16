@@ -6,9 +6,9 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 46
+- Shipped: 47
 - Remaining (AST-only): ~9
-- Remaining (needs regex AST infra): 4
+- Remaining (needs regex AST infra): 3
 
 **Symbols**
 
@@ -73,7 +73,7 @@ Update this file as rules land or assumptions change.
 | `no-unused-private-class-members` | ✓ | Shipped 2026-05-15 |
 | `no-unused-vars` | ✓ | Shipped 2026-05-15 (conservative port — flags declarations whose name never appears in a reference position; underscore-prefix and `export`-attached names suppressed; full option set deferred) |
 | `no-use-before-define` | ✓ | Shipped 2026-05-15 (239/354 fixtures; remaining cases need cross-scope analysis to honor the `variables: false` option fully) |
-| `no-useless-backreference` | ⊘ | Regex AST. |
+| `no-useless-backreference` | ✓ | Shipped 2026-05-15 (hand-rolled pattern scanner counts capturing/named groups, flags backreferences with no target) |
 | `require-atomic-updates` | ✓ | Shipped 2026-05-15 (hand-written tests; no oxc source available) |
 | `use-isnan` | ✓ | Shipped 2026-05-15 |
 | `valid-typeof` | ✓ | Shipped 2026-05-15 |
