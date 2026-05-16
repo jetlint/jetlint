@@ -1,0 +1,227 @@
+// Command biome-fixtures extracts test cases from biome's per-rule test
+// spec directories and writes them as per-rule JSON files for jetlint's
+// eslintcompat harness to consume.
+//
+// Usage:
+//
+//	biome-fixtures --biome PATH --out DIR --rule RULE --category CAT [--rule RULE --category CAT ...]
+//
+// The --biome flag points at a checkout of github.com/biomejs/biome.
+// Each --rule argument is the kebab-case ESLint-style rule ID; the tool
+// maps it to biome's camelCase directory layout (e.g. no-precision-loss
+// -> noPrecisionLoss). The --category flag names biome's category
+// subdirectory (correctness, suspicious, performance, ...). Output JSON
+// files land at <out>/<rule>.json.
+//
+// Biome's test format: each rule directory holds pairs of source files
+// and snapshot files, e.g. valid.js / valid.js.snap, invalid.ts /
+// invalid.ts.snap, valid_01.tsx / valid_01.tsx.snap. The filename
+// stem encodes validity — files containing "invalid" produce
+// diagnostics; everything else passes clean. Snapshot files are
+// metadata-only here; we read them only to confirm the file is a
+// genuine test fixture (vs a stray helper).
+//
+// This is a developer tool, not a runtime dependency: re-run when
+// biome updates a rule's tests or when jetlint adds a new biome-derived
+// rule. The committed JSON files under testdata/biome/ are the durable
+// artifact.
+package main
+
+import (
+	"encoding/json"
+	"flag"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+func main() {
+	if err := run(os.Args[1:]); err != nil {
+		fmt.Fprintln(os.Stderr, "biome-fixtures:", err)
+		os.Exit(1)
+	}
+}
+
+// pair holds parallel slices of --rule and --category flags so the
+// Nth rule pairs with the Nth category. flag.Value lets either be
+// repeated; we error out if the lengths diverge.
+type pair struct {
+	values *[]string
+}
+
+func (p pair) String() string { return strings.Join(*p.values, ",") }
+func (p pair) Set(s string) error {
+	*p.values = append(*p.values, s)
+	return nil
+}
+
+func run(args []string) error {
+	fs := flag.NewFlagSet("biome-fixtures", flag.ContinueOnError)
+	biomePath := fs.String("biome", "", "path to biome checkout (required)")
+	outDir := fs.String("out", "testdata/biome", "directory to write JSON fixture files into")
+	var rules []string
+	var categories []string
+	fs.Var(pair{&rules}, "rule", "ESLint-style kebab-case rule ID (repeatable, paired with --category)")
+	fs.Var(pair{&categories}, "category", "biome category subdirectory (repeatable, paired with --rule)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *biomePath == "" {
+		return fmt.Errorf("--biome is required")
+	}
+	if len(rules) == 0 {
+		return fmt.Errorf("at least one --rule is required")
+	}
+	if len(rules) != len(categories) {
+		return fmt.Errorf("--rule and --category must be paired (got %d rules, %d categories)",
+			len(rules), len(categories))
+	}
+	if err := os.MkdirAll(*outDir, 0o755); err != nil {
+		return fmt.Errorf("create out dir: %w", err)
+	}
+	for i, rule := range rules {
+		if err := extractRule(*biomePath, *outDir, rule, categories[i]); err != nil {
+			return fmt.Errorf("rule %s: %w", rule, err)
+		}
+	}
+	return nil
+}
+
+// Fixture is the shape jetlint's eslintcompat package loads. Identical
+// to the oxlint-fixtures schema so the same loader handles both
+// sources; the BiomeSource field replaces OxcSource for traceability.
+type Fixture struct {
+	RuleID      string `json:"ruleId"`
+	BiomeSHA    string `json:"biomeSHA,omitempty"`
+	BiomeSource string `json:"biomeSource"`
+	Cases       []Case `json:"cases"`
+}
+
+// Case mirrors eslintcompat.Case. Options and Settings are present in
+// the schema for compatibility but unused: biome encodes per-test rule
+// options inside its own configuration files we don't parse.
+type Case struct {
+	Code     string         `json:"code"`
+	Valid    bool           `json:"valid"`
+	Options  []any          `json:"options,omitempty"`
+	Settings map[string]any `json:"settings,omitempty"`
+}
+
+// toCamelCase converts a kebab-case rule ID to the camelCase form biome
+// uses for directory names. Example: "no-precision-loss" -> "noPrecisionLoss".
+func toCamelCase(kebab string) string {
+	parts := strings.Split(kebab, "-")
+	if len(parts) == 0 {
+		return kebab
+	}
+	var b strings.Builder
+	b.WriteString(parts[0])
+	for _, p := range parts[1:] {
+		if p == "" {
+			continue
+		}
+		b.WriteString(strings.ToUpper(p[:1]))
+		b.WriteString(p[1:])
+	}
+	return b.String()
+}
+
+// classifyValidity inspects a fixture filename stem (without extension)
+// and reports whether biome treats this file as a passing test case.
+// Filenames containing "invalid" mark fail cases; everything else
+// (typically "valid", "valid_01", but also bare names) passes.
+func classifyValidity(stem string) bool {
+	return !strings.Contains(stem, "invalid")
+}
+
+// extractRule walks one rule's spec directory under biome's test tree
+// and emits a JSON fixture file. The directory layout is fixed by
+// biome's snapshot-test convention; we don't need biome's category
+// taxonomy except to find the right directory.
+func extractRule(biomePath, outDir, ruleID, category string) error {
+	camel := toCamelCase(ruleID)
+	ruleDir := filepath.Join(biomePath, "crates", "biome_js_analyze", "tests", "specs", category, camel)
+	entries, err := os.ReadDir(ruleDir)
+	if err != nil {
+		return fmt.Errorf("read spec dir %s: %w", ruleDir, err)
+	}
+
+	// Pair each non-snap file with its .snap. Files without a snap
+	// neighbor are helpers (e.g. shared imports) and are skipped.
+	hasSnap := make(map[string]bool, len(entries))
+	for _, e := range entries {
+		if stem, ok := strings.CutSuffix(e.Name(), ".snap"); ok {
+			hasSnap[stem] = true
+		}
+	}
+
+	biomeRelSrc, _ := filepath.Rel(biomePath, ruleDir)
+	fx := Fixture{
+		RuleID:      ruleID,
+		BiomeSource: biomeRelSrc,
+		Cases:       make([]Case, 0, len(hasSnap)),
+	}
+
+	// Deduplicate identical sources. Biome occasionally lists the same
+	// source under multiple filenames when it's testing config variations
+	// rather than source variations; first occurrence wins.
+	seen := make(map[string]struct{}, len(hasSnap))
+	for _, e := range entries {
+		name := e.Name()
+		if strings.HasSuffix(name, ".snap") {
+			continue
+		}
+		if !hasSnap[name] {
+			continue
+		}
+		body, err := os.ReadFile(filepath.Join(ruleDir, name))
+		if err != nil {
+			return fmt.Errorf("read fixture %s: %w", name, err)
+		}
+		code := string(body)
+		if _, ok := seen[code]; ok {
+			continue
+		}
+		seen[code] = struct{}{}
+		stem := strings.TrimSuffix(name, filepath.Ext(name))
+		fx.Cases = append(fx.Cases, Case{Code: code, Valid: classifyValidity(stem)})
+	}
+
+	if sha, err := readGitSHA(biomePath); err == nil {
+		fx.BiomeSHA = sha
+	}
+
+	out := filepath.Join(outDir, ruleID+".json")
+	body, err := json.MarshalIndent(fx, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal: %w", err)
+	}
+	body = append(body, '\n')
+	if err := os.WriteFile(out, body, 0o644); err != nil {
+		return fmt.Errorf("write %s: %w", out, err)
+	}
+	fmt.Printf("%s: %d cases -> %s\n", ruleID, len(fx.Cases), out)
+	return nil
+}
+
+// readGitSHA reads the .git/HEAD ref the same way oxlint-fixtures does
+// so the fixture file records the exact biome revision it was generated
+// from. Returns an empty string when the path isn't a git checkout.
+func readGitSHA(dir string) (string, error) {
+	head := filepath.Join(dir, ".git", "HEAD")
+	data, err := os.ReadFile(head)
+	if err != nil {
+		return "", err
+	}
+	ref := strings.TrimSpace(string(data))
+	if rest, ok := strings.CutPrefix(ref, "ref: "); ok {
+		refPath := filepath.Join(dir, ".git", rest)
+		shaData, err := os.ReadFile(refPath)
+		if err != nil {
+			return "", err
+		}
+		return strings.TrimSpace(string(shaData)), nil
+	}
+	return ref, nil
+}

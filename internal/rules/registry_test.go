@@ -263,6 +263,7 @@ func additionalRulesSnapshot() []string {
 		"no-unsafe-optional-chaining",
 		"no-unsafe-unary-minus",
 		"no-unmodified-loop-condition",
+		"no-unused-labels",
 		"no-unused-private-class-members",
 		"no-unused-vars",
 		"no-use-before-define",

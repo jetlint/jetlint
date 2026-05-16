@@ -13,3 +13,4 @@
 
 # locally-built oxlint-fixtures binary
 /oxlint-fixtures
+/biome-fixtures

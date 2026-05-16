@@ -113,6 +113,7 @@ var All = []Metadata{
 	{ID: "no-unsafe-negation", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-optional-chaining", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unmodified-loop-condition", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-unused-labels", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unused-private-class-members", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unused-vars", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-use-before-define", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
