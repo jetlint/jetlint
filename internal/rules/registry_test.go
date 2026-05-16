@@ -239,6 +239,7 @@ func additionalRulesSnapshot() []string {
 		"no-nodejs-modules",
 		"no-nonoctal-decimal-escape",
 		"no-obj-calls",
+		"no-precision-loss",
 		"no-process-global",
 		"no-promise-executor-return",
 		"no-render-return-value",

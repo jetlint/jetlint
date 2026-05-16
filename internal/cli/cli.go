@@ -87,6 +87,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nononoctaldecimalescape"
 	"github.com/jetlint/jetlint/internal/rules/nonnullabletypeassertionstyle"
 	"github.com/jetlint/jetlint/internal/rules/noobjcalls"
+	"github.com/jetlint/jetlint/internal/rules/noprecisionloss"
 	"github.com/jetlint/jetlint/internal/rules/noprocessglobal"
 	"github.com/jetlint/jetlint/internal/rules/nopromiseexecutorreturn"
 	"github.com/jetlint/jetlint/internal/rules/norenderreturnvalue"
@@ -621,6 +622,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nosparsearrays.New(),
 		nostringcasemismatch.New(),
 		noswitchdeclarations.New(),
+		noprecisionloss.New(),
 		noprocessglobal.New(),
 		nopromiseexecutorreturn.New(),
 		norenderreturnvalue.New(),
