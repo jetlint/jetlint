@@ -202,6 +202,7 @@ func additionalRulesSnapshot() []string {
 		"no-const-assign",
 		"no-constant-binary-expression",
 		"no-constant-condition",
+		"no-constant-math-min-max-clamp",
 		"no-constructor-return",
 		"no-control-regex",
 		"no-debugger",

@@ -46,6 +46,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noconfusingvoidexpression"
 	"github.com/jetlint/jetlint/internal/rules/noconstantbinaryexpression"
 	"github.com/jetlint/jetlint/internal/rules/noconstantcondition"
+	"github.com/jetlint/jetlint/internal/rules/noconstantmathminmaxclamp"
 	"github.com/jetlint/jetlint/internal/rules/noconstassign"
 	"github.com/jetlint/jetlint/internal/rules/noconstructorreturn"
 	"github.com/jetlint/jetlint/internal/rules/nocontrolregex"
@@ -578,6 +579,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noconfusingvoidexpression.New(),
 		noconstantbinaryexpression.New(),
 		noconstantcondition.New(),
+		noconstantmathminmaxclamp.New(),
 		noconstassign.New(),
 		noconstructorreturn.New(),
 		nocontrolregex.New(),

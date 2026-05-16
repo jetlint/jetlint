@@ -83,6 +83,7 @@ var All = []Metadata{
 	{ID: "no-const-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-constant-binary-expression", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-constant-condition", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-constant-math-min-max-clamp", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-constructor-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-control-regex", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-debugger", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
