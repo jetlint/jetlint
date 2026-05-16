@@ -222,6 +222,7 @@ func additionalRulesSnapshot() []string {
 		"no-implied-eval",
 		"no-import-assign",
 		"no-inner-declarations",
+		"no-invalid-regexp",
 		"no-irregular-whitespace",
 		"no-loss-of-precision",
 		"no-meaningless-void-operator",
