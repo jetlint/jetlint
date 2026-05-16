@@ -92,10 +92,18 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	if n.Pos() >= first.Pos() {
-		// Reference is either after the declaration ends (fine) or
-		// lexically inside it (recursive self-reference inside a
-		// function / class / method body, which executes after the
-		// declaration completes). Either way, allow.
+		// The reference sits at or after the declaration name. A
+		// self-reference inside the declaration's *initializer* /
+		// default expression — `var a = a;`, `function f(a = a) {}`,
+		// `var {a = a} = ...;`, `for (var a in a) {}` — reads the
+		// binding before the initializer completes (TDZ for
+		// let/const; undefined for var). Flag those. Self-references
+		// nested in a deferred body (function / method / arrow
+		// body, class block) are still allowed because they run
+		// after the declaration completes.
+		if isSelfInitReference(first, n) {
+			ctx.Report(n, "'"+n.SourceText()+"' was used before it was defined.")
+		}
 		return
 	}
 	// Apply hoisting rules: function declarations and `var`s are
@@ -119,6 +127,38 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		return
 	}
 	ctx.Report(n, "'"+n.SourceText()+"' was used before it was defined.")
+}
+
+// isSelfInitReference reports whether `ref` reads the binding being
+// declared by `decl` — appearing inside the same VariableDeclaration
+// / Parameter / BindingElement's initializer or default expression,
+// not nested in a deferred function/method/class body.
+func isSelfInitReference(decl, ref *wrapperchecker.Node) bool {
+	switch decl.Kind() {
+	case wrapperchecker.KindVariableDeclaration,
+		wrapperchecker.KindParameter,
+		wrapperchecker.KindBindingElement:
+	default:
+		return false
+	}
+	if ref.Pos() < decl.Pos() || ref.End() > decl.End() {
+		return false
+	}
+	for cur := ref.Parent(); cur != nil && cur != decl; cur = cur.Parent() {
+		switch cur.Kind() {
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindGetAccessor,
+			wrapperchecker.KindSetAccessor,
+			wrapperchecker.KindConstructor,
+			wrapperchecker.KindClassDeclaration,
+			wrapperchecker.KindClassExpression:
+			return false
+		}
+	}
+	return true
 }
 
 type declKind int
