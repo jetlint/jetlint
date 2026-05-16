@@ -1,0 +1,91 @@
+{
+  "ruleId": "no-vue-reserved-keys",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noVueReservedKeys",
+  "cases": [
+    {
+      "code": "export default {\n    asyncData() {\n        return {\n            $el: '',\n            _foo: String,\n        }\n    }\n};",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    computed: {\n        $el() {},\n        $data: () =\u003e {},\n        $props: () =\u003e ({}),\n        $options: function() {},\n        $children: {\n            get() {},\n            set(value) {}\n        }\n    }\n};",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    data: () =\u003e {\n        return {\n            $el: '',\n            _foo: String,\n        }\n    }\n};",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    data: function() {\n        return {\n            $el: '',\n            _foo: String,\n        }\n    }\n};",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    data() {\n        return {\n            $el: '',\n            _foo: String,\n        }\n    }\n};",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    data: {\n        $el: '',\n        _foo: String,\n    },\n};",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    data: () =\u003e ({\n        $el: '',\n        _foo: String,\n    })\n};",
+      "valid": false
+    },
+    {
+      "code": "/* @script-setup */\ndefineProps({\n    $el: String\n});",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    methods: {\n        $el() {},\n        $data: () =\u003e {},\n        $props: () =\u003e ({}),\n        $options: function() {},\n    }\n};",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    props: ['$el'],\n};",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    props: {\n        $el: String,\n    }\n};",
+      "valid": false
+    },
+    {
+      "code": "/* @script-setup */\ninterface Props {\n    $el: string\n}\ndefineProps\u003cProps\u003e();",
+      "valid": false
+    },
+    {
+      "code": "/* @script-setup */\ntype A = {\n    $el: string\n};\ndefineProps\u003cA\u003e();",
+      "valid": false
+    },
+    {
+      "code": "/* @script-setup */\ndefineProps\u003c{$el: string}\u003e();",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    props: ['foo'],\n    computed: {\n        bar () {\n        }\n    },\n    data: () =\u003e {\n        return {\n            dat: null\n        }\n    },\n    methods: {\n        _foo () {},\n        test () {\n        }\n    }\n};",
+      "valid": true
+    },
+    {
+      "code": "export default {\n    props: ['foo'],\n    computed: {\n        bar () {\n        }\n    },\n    data() {\n        return {\n            dat: null\n        }\n    },\n    methods: {\n        _foo () {},\n        test () {\n        }\n    }\n};",
+      "valid": true
+    },
+    {
+      "code": "export default {\n    props: ['foo'],\n    computed: {\n        bar() {}\n    },\n    data: () =\u003e ({\n        dat: null\n    }),\n    methods: {\n        _foo () {},\n        test () {\n        }\n    }\n};",
+      "valid": true
+    },
+    {
+      "code": "// defineProps macro doesn't exist in non-setup scripts, so this is valid\ndefineProps({\n    $el: String\n});",
+      "valid": true
+    },
+    {
+      "code": "export default {\n    props: {\n        foo: String,\n    }\n};",
+      "valid": true
+    },
+    {
+      "code": "export default {\n    props: ['foo'],\n    computed: {\n        bar() {}\n    },\n    data: () =\u003e ({\n        dat: null\n    }),\n    methods: {\n        _foo () {},\n        test () {\n        }\n    },\n    setup() {\n        return {\n            _bar: () =\u003e {}\n        }\n    }\n};",
+      "valid": true
+    },
+    {
+      "code": "/* @script-setup */\n// Imports and variable definitions of SFC should not be flagged as reserved keys.\nimport {$el} from 'module1';\nimport {default as $slots} from 'module2';\nimport {x as $watch} from 'module3';\nimport {$watch as safe} from 'module4';\nimport $parent from 'module5';\nimport $destroy, {y as $emit} from 'module6';\nconst $set = 123;\nlet $data = 'test';",
+      "valid": true
+    }
+  ]
+}
