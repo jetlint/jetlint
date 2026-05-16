@@ -211,12 +211,20 @@ func isClassHeritageSelfReference(decl, ref *wrapperchecker.Node) bool {
 			wrapperchecker.KindGetAccessor,
 			wrapperchecker.KindSetAccessor,
 			wrapperchecker.KindConstructor,
-			wrapperchecker.KindClassDeclaration,
-			wrapperchecker.KindClassExpression,
 			wrapperchecker.KindPropertyDeclaration:
 			return false
+		case wrapperchecker.KindClassDeclaration,
+			wrapperchecker.KindClassExpression:
+			// Crossed into a nested class — its initializers run
+			// only when an instance is created, by which time decl
+			// is fully defined.
+			return false
 		case wrapperchecker.KindHeritageClause:
-			return true
+			// Only decl's own heritage clause puts decl in TDZ.
+			if hp := cur.Parent(); hp != nil && hp.Same(decl) {
+				return true
+			}
+			return false
 		}
 	}
 	return false
