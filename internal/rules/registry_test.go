@@ -278,6 +278,7 @@ func additionalRulesSnapshot() []string {
 		"promise-function-async",
 		"related-getter-setter-pairs",
 		"require-array-sort-compare",
+		"require-atomic-updates",
 		"require-await",
 		"restrict-plus-operands",
 		"restrict-template-expressions",

@@ -126,6 +126,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/promisefunctionasync"
 	"github.com/jetlint/jetlint/internal/rules/relatedgettersetterpairs"
 	"github.com/jetlint/jetlint/internal/rules/requirearraysortcompare"
+	"github.com/jetlint/jetlint/internal/rules/requireatomicupdates"
 	"github.com/jetlint/jetlint/internal/rules/requireawait"
 	"github.com/jetlint/jetlint/internal/rules/restrictplusoperands"
 	"github.com/jetlint/jetlint/internal/rules/restricttemplateexpressions"
@@ -644,6 +645,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		promisefunctionasync.New(),
 		relatedgettersetterpairs.New(),
 		requirearraysortcompare.New(),
+		requireatomicupdates.New(),
 		requireawait.New(),
 		restrictplusoperands.New(),
 		restricttemplateexpressions.New(),
