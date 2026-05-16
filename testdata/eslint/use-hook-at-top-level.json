@@ -4,43 +4,75 @@
   "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/useHookAtTopLevel",
   "cases": [
     {
-      "code": "function MyComponent() {\n    // This is valid\n    const { a } = useCustomHook();\n\n    // This is invalid\n    if (a) {\n        const { a } = useCustomHook();\n    }\n\n    // This is invalid\n    if (a) {\n        const { a } = foo.bar.useCustomHook();\n    }\n}",
+      "code": "function Component() {\n  if (cond) {\n    useEffect();\n  }\n}",
       "valid": false
     },
     {
-      "code": "// Invalid as hooks cannot be used at module level.\nuseHook();\n\n// Invalid as hooks cannot be called in non-component functions.\nfunction notAComponent() {\n\tuseHook();\n}\n\n// Valid as hook is called in a component (by naming convention).\nfunction AComponent() {\n\tuseHook();\n}\n\n// Invalid as hooks cannot be called in non-hook functions.\nfunction notUseMyHook() {\n\tuseHook();\n}\nconst SomeObject = {\n\tnotHook() {\n\t\tuseHook();\n\t},\n};\nclass SomeClass {\n\tnotHook() {\n\t\tuseHook();\n\t}\n}\n\n// Valid as hook is called in a hook (by naming convention).\nfunction useMyHook() {\n\tuseHook();\n}\n\n// Valid as hooks can be called within function expressions (for better or worse).\ntest(\"the hook\", () =\u003e {\n\tuseHook();\n});\ntest(\"the hook\", function () {\n\tuseHook();\n});\ntest(\"the hook\", function named() {\n\tuseHook();\n});\n\n// Valid as hooks can be called within nested function expressions.\ntest(\"more hook\", () =\u003e {\n\trenderHook(() =\u003e useHook());\n});\n",
+      "code": "function Component() {\n  for (let i = 0; i < 10; i++) {\n    useEffect();\n  }\n}",
       "valid": false
     },
     {
-      "code": "// Hook called directly at the component function\nfunction Component1({ a }) {\n    if (a == 1) {\n        useEffect();\n    }\n\n    if (a == 1) {\n        {\n            useEffect();\n        }\n    }\n\n    for (; a \u003c 10;) {\n        useEffect();\n    }\n\n    for (const x of a) {\n        useEffect();\n    }\n\n    for (const x in a) {\n        useEffect();\n    }\n\n    while (a \u003c 10) {\n        useEffect();\n    }\n\n    do {\n        useEffect();\n    } while (a \u003c 10)\n\n    a \u0026\u0026 useEffect();\n\n    a.map(() =\u003e useEffect());\n}\n\n// Hook called indirectly\nfunction helper1() {\n    useEffect();\n}\n\nfunction helper2() {\n    helper1();\n}\n\nfunction Component2({ a }) {\n    if (a) {\n        helper2(1);\n    }\n}\n\nconst Component3 = () =\u003e {\n    if (a == 1) {\n        useEffect();\n    }\n};\n\nexport function Component4() {\n    if (a == 1) {\n        useEffect();\n    }\n};\n\nexport default function Component5() {\n    if (a == 1) {\n        useEffect();\n    }\n};\n\nconst useHook6 = () =\u003e {\n    useEffect();\n};\n\nconst Component7 = () =\u003e {\n    if (a == 1) {\n        useHook6();\n    }\n};\n\nconst Component8 = () =\u003e {\n    if (a == 1) {\n        useRef().value;\n    }\n\n    const [_val, _setter] = useState(a ? useMemo('hello') : null);\n};\n\nconst Component9 = () =\u003e {\n    a ? useEffect() : null;\n    a ?? useEffect();\n};\n\nfunction Component10() {\n    return;\n\n    useEffect();\n}\n\nfunction Component11() {\n    if (!a) {\n        return;\n    }\n\n    useEffect();\n}\n\nfunction Component12() {\n    if (!a) {\n        return;\n    }\n\n    {\n        useEffect();\n    }\n}\n\nfunction Component13() {\n    useEffect();\n};\n\nfunction Component14() {\n    if (!a) {\n        return;\n    }\n\n    Component13();\n}\n\nfunction useHookInsideTryClause() {\n    try {\n        useState();\n    } catch { }\n}\n\nfunction useHookInsideCatchClause() {\n    try {\n    } catch (error) {\n        useErrorHandler(error);\n    }\n}\n\nfunction useHookInsideObjectBindingInitializer(props) {\n    const { value = useDefaultValue() } = props;\n}\n\nfunction useHookInsideObjectBindingInitializerInArgument({ value = useDefaultValue() }) {\n}\n\nfunction useHookInsideArrayAssignmentInitializer(props) {\n    let item;\n    [item = useDefaultItem()] = props.array;\n}\n\nfunction useHookInsideArrayBindingInitializer(props) {\n    const [item = useDefaultItem()] = props.array;\n}\n\ntest('b', () =\u003e {\n    const TestComponent = () =\u003e {\n        useState();\n        const handler = () =\u003e {\n            useHook();\n        };\n    };\n\n    render(\u003cTestComponent /\u003e);\n});\n\nclass DemoMethod {\n    useHook() {\n        if (condition) {\n            return useMemo(() =\u003e \"string\", []);\n        }\n    }\n}\n\nclass DemoProperty {\n    useHook = () =\u003e {\n        if (condition) {\n            return useMemo(() =\u003e \"string\", []);\n        }\n    }\n}\n\nfunction useRecursiveHookA() {\n    useRecursiveHookB();\n}\n\nfunction useRecursiveHookB() {\n    useRecursiveHookA();\n}\n",
+      "code": "function Component() {\n  while (cond) {\n    useEffect();\n  }\n}",
       "valid": false
     },
     {
-      "code": "function Component() {\n    return (\n        \u003cdiv onClick={function onClick() {\n            const [count, setCount] = useState();\n            setCount(count + 1);\n        }}\u003e\n            Click Me!\n        \u003c/div\u003e\n    );\n}\n",
+      "code": "function Component() {\n  cond ? useEffect() : null;\n}",
       "valid": false
     },
     {
-      "code": "const useHook = () =\u003e {\n  useEffect() as [];\n};\n\nconst Component2 = () =\u003e {\n  if (a == 1) {\n      useHook();\n  }\n};\n",
+      "code": "function Component() {\n  cond && useEffect();\n}",
       "valid": false
     },
     {
-      "code": "function useFoo() {\n    return useBar();\n}\n\nfunction Component() {\n    if (condition) {\n        // This call should be reported just once.\n        // See https://github.com/biomejs/biome/issues/6393\n        return useFoo();\n    }\n}\n",
+      "code": "function notAComponent() {\n  useEffect();\n}",
       "valid": false
     },
     {
-      "code": "const TestMemo = memo(\n    forwardRef((props, ref) =\u003e {\n        useEffect(() =\u003e {\n            const [test, setTest] = useState(1);\n        }, []);\n        return \u003cdiv ref={ref}\u003etest\u003c/div\u003e;\n    })\n);\n\nconst TestForwardRef = forwardRef((props, ref) =\u003e {\n    useEffect(() =\u003e {\n        const [test, setTest] = useState(1);\n    }, []);\n    return \u003cdiv ref={ref}\u003etest\u003c/div\u003e;\n});\n",
+      "code": "useEffect();",
       "valid": false
     },
     {
-      "code": "/* should not generate diagnostics */\n/* does not generate diagnostics */\n\nfunction Component1({ a }) {\n    useEffect();\n    const [name, setName] = useState(\"\");\n    const value = useContext();\n    const memoizedCallback = useCallback();\n\n    const otherValue = useValue() || defaultValue;\n\n    {\n        useEffect();\n    }\n}\n\nconst implicitReturn = (x) =\u003e useMemo(() =\u003e x, [x]);\n\nconst implicitReturnInsideWrappedComponent = forwardRef((x) =\u003e useMemo(() =\u003e x, [x]));\n\nfunction useHookInsideObjectLiteral() {\n    return {\n        abc: useCallback(() =\u003e null, [])\n    };\n}\n\nfunction useHookInsideArrayLiteral() {\n    return [useCallback(() =\u003e null, [])];\n}\n\nfunction useHookInsideFinallyClause() {\n    try {\n    } finally {\n        useCleanUp();\n    }\n}\n\nfunction useHookInsideFinallyClause2() {\n    try {\n    } catch (error) {\n    } finally {\n        useCleanUp();\n    }\n}\n\nfunction useHookToCalculateKey(key) {\n    const object = {};\n    object[useObjectKey(key)] = true;\n    return object;\n}\n\nfunction useKeyOfHookResult(key) {\n    return useContext(Context)[key];\n}\n\nfunction usePropertyOfHookResult() {\n    return useContext(Context).someProp;\n}\n\nconst obj = {\n    Component() {\n        const [count, setCount] = useState(0);\n\n        return count;\n    }\n}\n\nconst Component2 = () =\u003e {\n    useEffect();\n};\n\nexport function Component3() {\n    useEffect();\n};\n\nexport default function Component4() {\n    useEffect();\n};\n\nconst Component5 = () =\u003e {\n    return useState();\n};\n\nconst Component6 = () =\u003e {\n    const value = useRef().value;\n    const [_val, _setter] = useState(useMemo('hello'));\n}\n\nfunction Component7() {\n    const a = () =\u003e {\n        return;\n    };\n\n    useEffect();\n};\n\ntest('a', () =\u003e {\n    function TestComponent() {\n        useState();\n        useHook();\n    }\n\n    render(\u003cTestComponent /\u003e);\n});\n\ntest('b', () =\u003e {\n    const TestComponent = () =\u003e {\n        useState();\n        useHook();\n    };\n\n    render(\u003cTestComponent /\u003e);\n});\n\ntest('c', () =\u003e {\n    const { result } = renderHook(() =\u003e useHook());\n\n    expect(result.current).toBeDefined();\n});\n\ndescribe(\"foo\", () =\u003e {\n  beforeEach(() =\u003e jest.useFakeTimers('legacy'));\n  afterEach(() =\u003e jest.useRealTimers());\n});\n\ndescribe(\"bar\", () =\u003e {\n  beforeEach(() =\u003e vi.useFakeTimers('legacy'));\n  afterEach(() =\u003e vi.useRealTimers());\n});\n\nclass DemoMethod {\n    useHook() {\n        return useMemo(() =\u003e \"string\", []);\n    }\n}\n\nclass DemoProperty {\n    useHook = () =\u003e {\n        return useMemo(() =\u003e \"string\", []);\n    }\n}\n",
+      "code": "function Component() {\n  try {\n    useEffect();\n  } catch {}\n}",
+      "valid": false
+    },
+    {
+      "code": "class Demo {\n  notHook() {\n    useEffect();\n  }\n}",
+      "valid": false
+    },
+    {
+      "code": "function Component() {\n  useEffect();\n}",
       "valid": true
     },
     {
-      "code": "/* should not generate diagnostics */\n/* does not generate diagnostics */\n\nconst Component1 = () =\u003e {\n  useEffect() as [];\n};\n\nconst Component2 = () =\u003e {\n  useEffect() satisfies [];\n};\n",
+      "code": "function useCustomHook() {\n  useEffect();\n}",
       "valid": true
     },
     {
-      "code": "/* should not generate diagnostics */\nfunction ReactComponent() {\n    const testObj = {\n        get print() {\n            return \"hello\"\n        }\n    }\n\n    const callback = useCallback(() =\u003e {}, [])\n\n    return \u003c\u003e\u003c/\u003e\n}\n",
+      "code": "const Component = () => {\n  useEffect();\n};",
+      "valid": true
+    },
+    {
+      "code": "const useCustom = () => {\n  useEffect();\n};",
+      "valid": true
+    },
+    {
+      "code": "function Component() {\n  useState();\n  useEffect();\n  useMemo(() => 1, []);\n}",
+      "valid": true
+    },
+    {
+      "code": "const Component = memo(forwardRef((props, ref) => {\n  useEffect();\n}));",
+      "valid": true
+    },
+    {
+      "code": "function Component() {\n  try {\n  } finally {\n    useCleanup();\n  }\n}",
+      "valid": true
+    },
+    {
+      "code": "function Component() {\n  return useState();\n}",
+      "valid": true
+    },
+    {
+      "code": "function Component() {\n  const obj = { abc: useCallback(() => null, []) };\n  return obj;\n}",
       "valid": true
     }
   ]
