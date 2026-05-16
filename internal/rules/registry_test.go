@@ -212,6 +212,7 @@ func additionalRulesSnapshot() []string {
 		"no-duplicate-case",
 		"no-duplicate-imports",
 		"no-duplicate-type-constituents",
+		"no-empty-character-class",
 		"no-empty-pattern",
 		"no-ex-assign",
 		"no-fallthrough",

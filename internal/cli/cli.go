@@ -57,6 +57,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noduplicatecase"
 	"github.com/jetlint/jetlint/internal/rules/noduplicateimports"
 	"github.com/jetlint/jetlint/internal/rules/noduplicatetypeconstituents"
+	"github.com/jetlint/jetlint/internal/rules/noemptycharacterclass"
 	"github.com/jetlint/jetlint/internal/rules/noemptypattern"
 	"github.com/jetlint/jetlint/internal/rules/noexassign"
 	"github.com/jetlint/jetlint/internal/rules/nofallthrough"
@@ -577,6 +578,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nodupeargs.New(),
 		nodupeclassmembers.New(),
 		nodupeelseif.New(),
+		noemptycharacterclass.New(),
 		noemptypattern.New(),
 		noexassign.New(),
 		nofallthrough.New(),
