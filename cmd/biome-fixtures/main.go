@@ -141,6 +141,7 @@ func classifyValidity(snapBody []byte) bool {
 	return !bytes.Contains(snapBody, []byte("\n# Diagnostics\n"))
 }
 
+
 // extractRule walks one rule's spec directory under biome's test tree
 // and emits a JSON fixture file. The directory layout is fixed by
 // biome's snapshot-test convention; we don't need biome's category

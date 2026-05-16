@@ -13,6 +13,9 @@
 package useexhaustivedependencies
 
 import (
+	"os"
+	"strings"
+
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
 
 	"github.com/jetlint/jetlint/internal/engine"
@@ -65,14 +68,51 @@ func visitCall(ctx *engine.Context, call *wrapperchecker.Node) {
 	if !isReactiveHook(call) {
 		return
 	}
-	callback, deps := hookCallbackAndDeps(call)
-	if callback == nil || deps == nil {
+	if !hookIsFromReact(call) {
 		return
 	}
-	declared := depNames(deps)
+	callback, deps, depsNode := hookCallbackAndDeps(call)
+	if callback == nil {
+		return
+	}
+	suppress := suppressedNames(call)
+	if suppress.all {
+		return
+	}
+	// `deps` is the actual ArrayLiteralExpression. `depsNode` is the
+	// second argument as written — a non-array (e.g., a variable
+	// reference like `useEffect(fn, depsVar)`) means the rule can't
+	// verify anything; flag the spelling itself.
+	if deps == nil {
+		if depsNode != nil {
+			ctx.Report(depsNode, "Hook dependencies must be an array literal so the rule can verify them.")
+		}
+		return
+	}
 	moduleScope := moduleScopeNames(call)
 	stableSetters := stableSetterNames(call)
-	for _, ref := range freeIdentifiers(callback) {
+	literalConsts := literalConstNames(call)
+	declaredEntries := depEntries(deps)
+	declared := map[string]bool{}
+	pathCounts := map[string]int{}
+	for _, e := range declaredEntries {
+		declared[e.name] = true
+		pathCounts[e.path]++
+	}
+	// Duplicate entries — two array elements with the *same* path
+	// (`[a, a]` or `[obj.x, obj.x]`) — are a hard error: React
+	// diffs the array by index, so a duplicate either masks a real
+	// change or is dead weight. Distinct property paths sharing a
+	// head (`[obj.x, obj.y]`) are not duplicates.
+	for _, e := range declaredEntries {
+		if pathCounts[e.path] > 1 {
+			ctx.Report(e.node, "This dependency is listed more than once.")
+			pathCounts[e.path] = 0
+		}
+	}
+	used := map[string]bool{}
+	bodyRefs := freeIdentifiers(callback)
+	for _, ref := range bodyRefs {
 		name := ref.LiteralText()
 		if name == "" || globallyAvailable[name] {
 			continue
@@ -81,19 +121,458 @@ func visitCall(ctx *engine.Context, call *wrapperchecker.Node) {
 		// function declarations) don't change across renders, so
 		// they don't need to be listed as dependencies.
 		if moduleScope[name] {
+			used[name] = true
 			continue
 		}
 		// Setters returned from useState/useReducer have stable
 		// identity guaranteed by React; listing them is allowed
 		// but not required.
 		if stableSetters[name] {
+			used[name] = true
+			continue
+		}
+		// A `const X = <literal>` inside the component body is a
+		// compile-time constant — its value is the same across
+		// every render, so React never has to re-run on its
+		// account.
+		if literalConsts[name] {
+			used[name] = true
 			continue
 		}
 		if declared[name] {
+			used[name] = true
+			continue
+		}
+		// A `// biome-ignore lint/correctness/useExhaustiveDependencies(name)`
+		// directive on the call's leading line suppresses the
+		// missing-dep diagnostic for that name. We still mark it
+		// "used" so the extra-dep loop later sees it as accounted
+		// for if it appears in the array.
+		if suppress.names[name] {
+			used[name] = true
 			continue
 		}
 		ctx.Report(ref, "This dependency is not specified in the hook dependency list.")
 	}
+	// Extra dependencies — listed in the array but never read inside
+	// the callback. React still re-runs on their changes, so they
+	// can cause unnecessary work.
+	for _, e := range declaredEntries {
+		if suppress.names[e.name] {
+			continue
+		}
+		if !used[e.name] && !globallyAvailable[e.name] {
+			ctx.Report(e.node, "This dependency is not used in the hook callback.")
+		}
+	}
+	// Unstable dependencies — locally-declared values (arrow
+	// functions, function declarations, object/array literals) are
+	// recreated each render. Listing them in deps defeats the
+	// effect's purpose: it would re-run on every render.
+	unstable := unstableLocalNames(call)
+	for _, e := range declaredEntries {
+		if suppress.names[e.name] {
+			continue
+		}
+		if unstable[e.name] {
+			ctx.Report(e.node, e.name+" changes on every re-render and should not be used as a hook dependency.")
+		}
+	}
+}
+
+// suppression captures the biome-ignore directives that immediately
+// precede a hook call. `all` is true for a bare
+// `// biome-ignore lint/correctness/useExhaustiveDependencies`
+// without a parenthesized name list; `names` holds explicit names
+// from `(...)` forms.
+type suppression struct {
+	all   bool
+	names map[string]bool
+}
+
+// suppressedNames scans the source lines immediately preceding the
+// call's statement for biome-ignore directives addressing this rule.
+// The lookup uses 1-based line numbers from SourceRange because the
+// AST Pos() value covers leading trivia, which makes naive
+// substring-of-prefix scanning ambiguous.
+func suppressedNames(call *wrapperchecker.Node) suppression {
+	res := suppression{names: map[string]bool{}}
+	stmt := containingStatement(call)
+	if stmt == nil {
+		stmt = call
+	}
+	filePath, startLine, _, _, _ := stmt.SourceRange()
+	if startLine <= 0 || filePath == "" {
+		return res
+	}
+	// SourceText() on a SourceFile strips leading file-level trivia,
+	// so its line numbers don't line up with the original file the
+	// way SourceRange's do. Read the actual file off disk instead.
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return res
+	}
+	lines := strings.Split(string(data), "\n")
+	// SourceRange's line numbering is 1-based; the source array is
+	// 0-indexed, so the line immediately preceding the statement is
+	// at index startLine - 2.
+	for i := startLine - 2; i >= 0 && i < len(lines); i-- {
+		line := lines[i]
+		if all, names, ok := parseBiomeIgnore(line); ok {
+			if all {
+				res.all = true
+			}
+			for _, n := range names {
+				res.names[n] = true
+			}
+			continue
+		}
+		if strings.TrimSpace(line) == "" || !isCommentLine(line) {
+			break
+		}
+	}
+	return res
+}
+
+func isCommentLine(line string) bool {
+	s := strings.TrimSpace(line)
+	return strings.HasPrefix(s, "//") || strings.HasPrefix(s, "/*") || strings.HasPrefix(s, "*")
+}
+
+// parseBiomeIgnore matches `// biome-ignore lint/correctness/useExhaustiveDependencies`
+// or its `(name1, name2)` form. Returns (all, names, ok).
+func parseBiomeIgnore(line string) (bool, []string, bool) {
+	s := strings.TrimSpace(line)
+	s = strings.TrimPrefix(s, "//")
+	s = strings.TrimPrefix(s, "/*")
+	s = strings.TrimSpace(s)
+	const prefix = "biome-ignore"
+	if !strings.HasPrefix(s, prefix) {
+		return false, nil, false
+	}
+	s = strings.TrimSpace(s[len(prefix):])
+	const rulePath = "lint/correctness/useExhaustiveDependencies"
+	if !strings.HasPrefix(s, rulePath) {
+		return false, nil, false
+	}
+	s = s[len(rulePath):]
+	if strings.HasPrefix(s, "(") {
+		end := strings.Index(s, ")")
+		if end <= 0 {
+			return false, nil, true
+		}
+		inner := s[1:end]
+		var names []string
+		for _, part := range strings.Split(inner, ",") {
+			if t := strings.TrimSpace(part); t != "" {
+				names = append(names, t)
+			}
+		}
+		return false, names, true
+	}
+	return true, nil, true
+}
+
+// containingStatement returns the nearest ancestor that is a
+// statement (the level where a leading-line comment would attach).
+func containingStatement(n *wrapperchecker.Node) *wrapperchecker.Node {
+	cur := n.Parent()
+	for cur != nil {
+		switch cur.Kind() {
+		case wrapperchecker.KindExpressionStatement,
+			wrapperchecker.KindVariableStatement,
+			wrapperchecker.KindReturnStatement,
+			wrapperchecker.KindIfStatement,
+			wrapperchecker.KindForStatement,
+			wrapperchecker.KindWhileStatement,
+			wrapperchecker.KindBlock:
+			return cur
+		}
+		cur = cur.Parent()
+	}
+	return nil
+}
+
+// hookIsFromReact reports whether the hook callee comes from the
+// React module — either an identifier imported from "react" / "preact"
+// (any react-like alias) or a property access on a React-named
+// import (`React.useEffect`, `R.useEffect` if `R` was imported from
+// react). When the hook isn't recognizable as a React import,
+// biome (and we) skip the check entirely because it could be a
+// user-defined function that happens to share a hook's name.
+func hookIsFromReact(call *wrapperchecker.Node) bool {
+	callee := call.CalleeExpression()
+	if callee == nil {
+		return false
+	}
+	imports := reactImports(call)
+	switch callee.Kind() {
+	case wrapperchecker.KindIdentifier:
+		if imports == nil {
+			return false
+		}
+		return imports.names[callee.LiteralText()]
+	case wrapperchecker.KindPropertyAccessExpression:
+		var head *wrapperchecker.Node
+		callee.ForEachChild(func(c *wrapperchecker.Node) bool {
+			if head == nil {
+				head = c
+				return true
+			}
+			return false
+		})
+		if head == nil || head.Kind() != wrapperchecker.KindIdentifier {
+			return false
+		}
+		name := head.LiteralText()
+		if imports != nil && imports.namespaces[name] {
+			return true
+		}
+		// `React.useX` is the canonical pre-modules pattern: even
+		// without an explicit import, callers expect it to mean the
+		// global React unless the surrounding code shadows it with
+		// a local binding.
+		if name == "React" && !nameIsLocallyBound(head, "React") {
+			return true
+		}
+		return false
+	}
+	return false
+}
+
+// nameIsLocallyBound reports whether `name` is declared somewhere
+// inside an enclosing function body of n (component, hook, plain
+// function — anything function-shaped). Used to spot
+// `const React = { ... }` shadowing the global, which makes a
+// `React.useFoo` call refer to user code rather than React.
+func nameIsLocallyBound(n *wrapperchecker.Node, name string) bool {
+	host := n.Parent()
+	for host != nil {
+		switch host.Kind() {
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindMethodDeclaration:
+			body := functionBody(host)
+			if body != nil && hasLocalBinding(body, name) {
+				return true
+			}
+		case wrapperchecker.KindSourceFile:
+			return hasLocalBinding(host, name)
+		}
+		host = host.Parent()
+	}
+	return false
+}
+
+// hasLocalBinding scans body for any top-level (within body)
+// variable, function, class, or import declaration introducing
+// `name`. Doesn't descend through nested functions.
+func hasLocalBinding(body *wrapperchecker.Node, name string) bool {
+	found := false
+	body.ForEachChild(func(c *wrapperchecker.Node) bool {
+		switch c.Kind() {
+		case wrapperchecker.KindVariableStatement:
+			c.ForEachChild(func(g *wrapperchecker.Node) bool {
+				if g.Kind() != wrapperchecker.KindVariableDeclarationList {
+					return false
+				}
+				g.ForEachChild(func(d *wrapperchecker.Node) bool {
+					if d.Kind() != wrapperchecker.KindVariableDeclaration {
+						return false
+					}
+					for _, n := range bindingIdentifiers(d) {
+						if n == name {
+							found = true
+							return true
+						}
+					}
+					return false
+				})
+				return found
+			})
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindClassDeclaration:
+			c.ForEachChild(func(g *wrapperchecker.Node) bool {
+				if g.Kind() == wrapperchecker.KindIdentifier && g.LiteralText() == name {
+					found = true
+					return true
+				}
+				return false
+			})
+		}
+		return found
+	})
+	return found
+}
+
+type reactImportInfo struct {
+	hasReactImport bool
+	names          map[string]bool
+	namespaces     map[string]bool
+	// aliasToOriginal maps the locally-bound name back to the
+	// original react export. `import { useRef as uR }` becomes
+	// `uR -> useRef`. Identity mappings are present too so callers
+	// can do a single lookup.
+	aliasToOriginal map[string]string
+}
+
+// reactImports collects the named bindings imported from "react"
+// (and `preact/compat`) in the source file containing n. Always
+// returns a non-nil info — the caller decides what to do when
+// hasReactImport is false.
+func reactImports(n *wrapperchecker.Node) *reactImportInfo {
+	root := n
+	for root.Parent() != nil {
+		root = root.Parent()
+	}
+	if root.Kind() != wrapperchecker.KindSourceFile {
+		return nil
+	}
+	info := &reactImportInfo{
+		names:           map[string]bool{},
+		namespaces:      map[string]bool{},
+		aliasToOriginal: map[string]string{},
+	}
+	root.ForEachChild(func(stmt *wrapperchecker.Node) bool {
+		if stmt.Kind() != wrapperchecker.KindImportDeclaration {
+			return false
+		}
+		spec := stmt.ModuleSpecifier()
+		if spec == nil {
+			return false
+		}
+		text := strings.Trim(spec.LiteralText(), "\"'`")
+		if !isReactLikeSpecifier(text) {
+			return false
+		}
+		info.hasReactImport = true
+		stmt.ForEachChild(func(c *wrapperchecker.Node) bool {
+			if c.Kind() != wrapperchecker.KindImportClause {
+				return false
+			}
+			c.ForEachChild(func(g *wrapperchecker.Node) bool {
+				switch g.Kind() {
+				case wrapperchecker.KindIdentifier:
+					// Default import: `import React from "react"`.
+					info.namespaces[g.LiteralText()] = true
+				case wrapperchecker.KindNamespaceImport:
+					g.ForEachChild(func(i *wrapperchecker.Node) bool {
+						if i.Kind() == wrapperchecker.KindIdentifier {
+							info.namespaces[i.LiteralText()] = true
+							return true
+						}
+						return false
+					})
+				case wrapperchecker.KindNamedImports:
+					g.ForEachChild(func(spec *wrapperchecker.Node) bool {
+						var idents []string
+						spec.ForEachChild(func(i *wrapperchecker.Node) bool {
+							if i.Kind() == wrapperchecker.KindIdentifier {
+								idents = append(idents, i.LiteralText())
+							}
+							return false
+						})
+						if len(idents) == 0 {
+							return false
+						}
+						local := idents[len(idents)-1]
+						original := idents[0]
+						info.names[local] = true
+						info.aliasToOriginal[local] = original
+						return false
+					})
+				}
+				return false
+			})
+			return true
+		})
+		return false
+	})
+	return info
+}
+
+func isReactLikeSpecifier(s string) bool {
+	switch s {
+	case "react", "preact", "preact/compat", "preact/hooks":
+		return true
+	}
+	return false
+}
+
+type depEntry struct {
+	node *wrapperchecker.Node
+	name string // head identifier (`obj` for `obj.x.y`)
+	path string // textual normalized path (`obj.x.y`) — used to dedupe
+}
+
+// depEntries flattens the deps array into a list of (name, anchor)
+// pairs, one per dependency element. Non-identifier dependencies
+// (object expressions, calls) and unrecognized shapes contribute
+// nothing. propertyAccessHead handles the chain-walk plus TypeScript
+// wrappers, so this only needs to dispatch by top-level kind. The
+// path string is the element's source text with whitespace stripped
+// so two textually-equal accesses dedupe even when the AST node
+// instances differ.
+func depEntries(deps *wrapperchecker.Node) []depEntry {
+	var out []depEntry
+	deps.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if name := propertyAccessHead(c); name != "" {
+			out = append(out, depEntry{node: c, name: name, path: normalizePath(c.SourceText())})
+		}
+		return false
+	})
+	return out
+}
+
+// normalizePath collapses internal whitespace from a dependency
+// expression's source text so `obj.x` and `obj . x` compare equal.
+func normalizePath(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		if r == ' ' || r == '\t' || r == '\n' || r == '\r' {
+			continue
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
+// isTypeNode reports whether a node's kind represents a TypeScript
+// type position (so it should be skipped when peeling expression
+// wrappers like `as T`).
+func isTypeNode(n *wrapperchecker.Node) bool {
+	switch n.Kind() {
+	case wrapperchecker.KindTypeReference,
+		wrapperchecker.KindTypeLiteral,
+		wrapperchecker.KindUnionType,
+		wrapperchecker.KindIntersectionType,
+		wrapperchecker.KindArrayType,
+		wrapperchecker.KindTupleType,
+		wrapperchecker.KindFunctionType,
+		wrapperchecker.KindParenthesizedType,
+		wrapperchecker.KindLiteralType,
+		wrapperchecker.KindMappedType,
+		wrapperchecker.KindConditionalType,
+		wrapperchecker.KindIndexedAccessType,
+		wrapperchecker.KindTypeOperator,
+		wrapperchecker.KindRestType,
+		wrapperchecker.KindOptionalType,
+		wrapperchecker.KindThisType,
+		wrapperchecker.KindInferType,
+		wrapperchecker.KindImportType,
+		wrapperchecker.KindNamedTupleMember:
+		return true
+	}
+	return false
+}
+
+// isTypeQuery reports whether n is a `typeof X` query (which can
+// appear in expression-like positions inside types but is a TS-only
+// reflection that doesn't bind a runtime value).
+func isTypeQuery(n *wrapperchecker.Node) bool {
+	return n.Kind() == wrapperchecker.KindTypeQuery
 }
 
 // moduleScopeNames returns the set of identifiers declared at the
@@ -126,7 +605,8 @@ func moduleScopeNames(n *wrapperchecker.Node) map[string]bool {
 			wrapperchecker.KindClassDeclaration,
 			wrapperchecker.KindEnumDeclaration,
 			wrapperchecker.KindInterfaceDeclaration,
-			wrapperchecker.KindTypeAliasDeclaration:
+			wrapperchecker.KindTypeAliasDeclaration,
+			wrapperchecker.KindModuleDeclaration:
 			stmt.ForEachChild(func(c *wrapperchecker.Node) bool {
 				if c.Kind() == wrapperchecker.KindIdentifier {
 					out[c.LiteralText()] = true
@@ -196,10 +676,54 @@ func collectVariableStatementNames(stmt *wrapperchecker.Node, out map[string]boo
 	})
 }
 
-// stableSetterNames returns the names of setter bindings produced by
-// `const [_, setX] = useState(...)` / useReducer in the enclosing
-// component function. React guarantees these setters are stable
-// references and so they don't need to appear in deps arrays.
+// reassignedNames returns the set of identifier names that appear on
+// the left side of an assignment somewhere in the given function
+// body. Stable hooks lose their stability guarantee once their
+// returned binding is reassigned, so the caller subtracts this set
+// from the candidate stable names.
+func reassignedNames(body *wrapperchecker.Node) map[string]bool {
+	out := map[string]bool{}
+	var walk func(*wrapperchecker.Node)
+	walk = func(n *wrapperchecker.Node) {
+		if n == nil {
+			return
+		}
+		if n.Kind() == wrapperchecker.KindBinaryExpression && n.BinaryOperatorKind() == wrapperchecker.KindEqualsToken {
+			// Left-hand side identifier is the assignment target.
+			var left *wrapperchecker.Node
+			n.ForEachChild(func(c *wrapperchecker.Node) bool {
+				if left == nil {
+					left = c
+					return true
+				}
+				return false
+			})
+			if left != nil && left.Kind() == wrapperchecker.KindIdentifier {
+				out[left.LiteralText()] = true
+			}
+		}
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			walk(c)
+			return false
+		})
+	}
+	walk(body)
+	return out
+}
+
+// stableSetterNames returns the names of bindings produced inside
+// the enclosing component / hook function that React guarantees to
+// have stable identity across renders. These don't need to appear
+// in a deps array. Recognized patterns:
+//
+//	const [_, setX]            = useState(...)
+//	const [_, dispatch]        = useReducer(...)
+//	const [_, startTransition] = useTransition(...)
+//	const ref                  = useRef(...)
+//	const event                = useEffectEvent(...)
+//
+// Property-access callees (`React.useState`) are unwrapped so the
+// match is on the trailing name.
 func stableSetterNames(call *wrapperchecker.Node) map[string]bool {
 	host := enclosingFunctionLike(call)
 	if host == nil {
@@ -216,7 +740,7 @@ func stableSetterNames(call *wrapperchecker.Node) map[string]bool {
 			return
 		}
 		if n.Kind() == wrapperchecker.KindVariableDeclaration {
-			recordStableSetter(n, out)
+			recordStableBinding(n, out)
 		}
 		n.ForEachChild(func(c *wrapperchecker.Node) bool {
 			walk(c)
@@ -224,13 +748,83 @@ func stableSetterNames(call *wrapperchecker.Node) map[string]bool {
 		})
 	}
 	walk(body)
+	for name := range reassignedNames(body) {
+		delete(out, name)
+	}
 	return out
 }
 
-func recordStableSetter(decl *wrapperchecker.Node, out map[string]bool) {
-	// Layout: VariableDeclaration → [Pattern, Initializer]. Look for
-	// `[state, setState] = useState(...)`. The setter name is the
-	// second binding in the pattern.
+// stableTupleHooks names hooks whose return is a 2-tuple of
+// [value, stableSecond]: useState's setter, useReducer's dispatch,
+// useTransition's startTransition. The second element is stable.
+var stableTupleHooks = map[string]bool{
+	"useState":     true,
+	"useReducer":   true,
+	"useTransition": true,
+}
+
+// stableSingleHooks names hooks whose plain return value is
+// guaranteed stable: useRef returns a ref object whose identity
+// doesn't change, useEffectEvent / useEvent returns a stable
+// callback wrapper.
+var stableSingleHooks = map[string]bool{
+	"useRef":         true,
+	"useEffectEvent": true,
+	"useEvent":       true,
+}
+
+func recordStableBinding(decl *wrapperchecker.Node, out map[string]bool) {
+	pattern, initializer := splitVariableDeclaration(decl)
+	if pattern == nil || initializer == nil {
+		return
+	}
+	init := unwrapInitializer(initializer)
+	if init.Kind() != wrapperchecker.KindCallExpression {
+		return
+	}
+	calleeName := hookCalleeName(init.CalleeExpression())
+	if calleeName == "" {
+		return
+	}
+	// Resolve aliases — `import { useRef as uR }` then
+	// `const ref = uR()` should still be recognized as a stable
+	// useRef return.
+	if info := reactImports(decl); info != nil {
+		if orig, ok := info.aliasToOriginal[calleeName]; ok {
+			calleeName = orig
+		}
+	}
+	if stableSingleHooks[calleeName] {
+		if pattern.Kind() == wrapperchecker.KindIdentifier {
+			out[pattern.LiteralText()] = true
+		}
+		return
+	}
+	if stableTupleHooks[calleeName] {
+		if pattern.Kind() != wrapperchecker.KindArrayBindingPattern {
+			return
+		}
+		var i int
+		pattern.ForEachChild(func(elt *wrapperchecker.Node) bool {
+			if elt.Kind() == wrapperchecker.KindBindingElement {
+				if i == 1 {
+					name := elt.BindingElementName()
+					if name != nil && name.Kind() == wrapperchecker.KindIdentifier {
+						out[name.LiteralText()] = true
+					}
+				}
+				i++
+			}
+			return false
+		})
+	}
+}
+
+// splitVariableDeclaration returns the (pattern, initializer) pair
+// of a VariableDeclaration. The pattern is the binding-name slot
+// (identifier or destructure pattern); the initializer is the
+// post-`=` expression.
+func splitVariableDeclaration(decl *wrapperchecker.Node) (*wrapperchecker.Node, *wrapperchecker.Node) {
 	var pattern *wrapperchecker.Node
 	var initializer *wrapperchecker.Node
 	seenName := false
@@ -246,7 +840,6 @@ func recordStableSetter(decl *wrapperchecker.Node, out map[string]bool) {
 			}
 			return false
 		}
-		// Initializer is the first expression-y child after the name.
 		if c.Kind() == wrapperchecker.KindEqualsToken {
 			return false
 		}
@@ -257,39 +850,233 @@ func recordStableSetter(decl *wrapperchecker.Node, out map[string]bool) {
 		}
 		return false
 	})
-	if pattern == nil || initializer == nil {
-		return
+	return pattern, initializer
+}
+
+// hookCalleeName returns the unqualified name of a hook callee,
+// stripping namespace prefixes so `React.useState` → "useState".
+func hookCalleeName(callee *wrapperchecker.Node) string {
+	if callee == nil {
+		return ""
 	}
-	if pattern.Kind() != wrapperchecker.KindArrayBindingPattern {
-		return
+	switch callee.Kind() {
+	case wrapperchecker.KindIdentifier:
+		return callee.LiteralText()
+	case wrapperchecker.KindPropertyAccessExpression:
+		return callee.PropertyAccessName()
 	}
-	init := unwrap(initializer)
-	if init.Kind() != wrapperchecker.KindCallExpression {
-		return
+	return ""
+}
+
+// unstableLocalNames returns the set of locally-declared bindings
+// whose value is recreated each render: arrow functions, function
+// expressions, function declarations, object literals, array
+// literals, regex literals, and class expressions. Listing one of
+// these in a deps array defeats the hook — every render produces a
+// fresh reference that won't be `===` to last render's.
+//
+// useCallback / useMemo / useRef / useState / useReducer results are
+// the standard way to opt out of this — they're stable by design and
+// not flagged here.
+func unstableLocalNames(call *wrapperchecker.Node) map[string]bool {
+	host := enclosingFunctionLike(call)
+	if host == nil {
+		return nil
 	}
-	callee := init.CalleeExpression()
-	if callee == nil || callee.Kind() != wrapperchecker.KindIdentifier {
-		return
+	body := functionBody(host)
+	if body == nil {
+		return nil
 	}
-	switch callee.LiteralText() {
-	case "useState", "useReducer":
-		// ok
-	default:
-		return
-	}
-	var i int
-	pattern.ForEachChild(func(elt *wrapperchecker.Node) bool {
-		if elt.Kind() == wrapperchecker.KindBindingElement {
-			if i == 1 {
-				name := elt.BindingElementName()
-				if name != nil && name.Kind() == wrapperchecker.KindIdentifier {
-					out[name.LiteralText()] = true
+	out := map[string]bool{}
+	body.ForEachChild(func(stmt *wrapperchecker.Node) bool {
+		switch stmt.Kind() {
+		case wrapperchecker.KindVariableStatement:
+			stmt.ForEachChild(func(c *wrapperchecker.Node) bool {
+				if c.Kind() != wrapperchecker.KindVariableDeclarationList {
+					return false
 				}
-			}
-			i++
+				c.ForEachChild(func(d *wrapperchecker.Node) bool {
+					if d.Kind() != wrapperchecker.KindVariableDeclaration {
+						return false
+					}
+					pattern, initializer := splitVariableDeclaration(d)
+					if pattern == nil || initializer == nil {
+						return false
+					}
+					if pattern.Kind() != wrapperchecker.KindIdentifier {
+						return false
+					}
+					if isUnstableExpression(initializer) {
+						out[pattern.LiteralText()] = true
+					}
+					return false
+				})
+				return false
+			})
+		case wrapperchecker.KindFunctionDeclaration:
+			stmt.ForEachChild(func(g *wrapperchecker.Node) bool {
+				if g.Kind() == wrapperchecker.KindIdentifier {
+					out[g.LiteralText()] = true
+					return true
+				}
+				return false
+			})
 		}
 		return false
 	})
+	return out
+}
+
+// isUnstableExpression reports whether n produces a new reference on
+// every evaluation. Calls to useCallback/useMemo etc. are explicitly
+// excluded — those are the stable counterparts.
+func isUnstableExpression(n *wrapperchecker.Node) bool {
+	n = unwrap(n)
+	switch n.Kind() {
+	case wrapperchecker.KindArrowFunction,
+		wrapperchecker.KindFunctionExpression,
+		wrapperchecker.KindObjectLiteralExpression,
+		wrapperchecker.KindArrayLiteralExpression,
+		wrapperchecker.KindRegularExpressionLiteral,
+		wrapperchecker.KindClassExpression,
+		wrapperchecker.KindNewExpression:
+		return true
+	case wrapperchecker.KindCallExpression:
+		// Stable-returning hooks (useCallback, useMemo, useRef,
+		// useState, useReducer, useTransition, useEffectEvent)
+		// produce fresh values intentionally bound to a stable
+		// React-managed slot — not unstable.
+		callee := n.CalleeExpression()
+		name := hookCalleeName(callee)
+		switch name {
+		case "useCallback", "useMemo", "useRef", "useState",
+			"useReducer", "useTransition", "useEffectEvent",
+			"useSyncExternalStore", "useContext", "useId",
+			"useDeferredValue":
+			return false
+		}
+		// Any other call's return isn't intrinsically unstable
+		// (could be a stable getter); be conservative.
+		return false
+	}
+	return false
+}
+
+// literalConstNames returns the names of `const X = <stable-expr>`
+// bindings in the enclosing component / hook body. "Stable" here
+// means the expression either:
+//   - is a primitive literal (`const X = 1`)
+//   - reads (possibly via property access) from a module-scope
+//     identifier (`const X = globalConfig.debug`)
+// Either way the binding's value is fixed for the lifetime of the
+// render and doesn't need to be in a deps array.
+func literalConstNames(call *wrapperchecker.Node) map[string]bool {
+	host := enclosingFunctionLike(call)
+	if host == nil {
+		return nil
+	}
+	body := functionBody(host)
+	if body == nil {
+		return nil
+	}
+	moduleScope := moduleScopeNames(call)
+	out := map[string]bool{}
+	body.ForEachChild(func(stmt *wrapperchecker.Node) bool {
+		if stmt.Kind() != wrapperchecker.KindVariableStatement {
+			return false
+		}
+		stmt.ForEachChild(func(c *wrapperchecker.Node) bool {
+			if c.Kind() != wrapperchecker.KindVariableDeclarationList {
+				return false
+			}
+			if !c.IsConstVariableDeclaration() {
+				return false
+			}
+			c.ForEachChild(func(d *wrapperchecker.Node) bool {
+				if d.Kind() != wrapperchecker.KindVariableDeclaration {
+					return false
+				}
+				pattern, initializer := splitVariableDeclaration(d)
+				if pattern == nil || initializer == nil {
+					return false
+				}
+				if pattern.Kind() != wrapperchecker.KindIdentifier {
+					return false
+				}
+				if isStableInitializer(initializer, moduleScope) {
+					out[pattern.LiteralText()] = true
+				}
+				return false
+			})
+			return false
+		})
+		return false
+	})
+	return out
+}
+
+// isStableInitializer reports whether n is an expression whose
+// value won't change render-to-render: a primitive literal, an
+// identifier resolving to a module-scope binding, or a chain of
+// property/element accesses rooted in one.
+func isStableInitializer(n *wrapperchecker.Node, moduleScope map[string]bool) bool {
+	if isLiteralExpression(n) {
+		return true
+	}
+	head := propertyAccessHead(n)
+	if head == "" {
+		return false
+	}
+	return moduleScope[head]
+}
+
+// isLiteralExpression reports whether n is a primitive literal —
+// a constant value the developer typed directly. Used to identify
+// `const X = 1` (stable across renders) vs `const X = f()` (whose
+// value can change).
+func isLiteralExpression(n *wrapperchecker.Node) bool {
+	switch n.Kind() {
+	case wrapperchecker.KindNumericLiteral,
+		wrapperchecker.KindStringLiteral,
+		wrapperchecker.KindNoSubstitutionTemplateLiteral,
+		wrapperchecker.KindTrueKeyword,
+		wrapperchecker.KindFalseKeyword,
+		wrapperchecker.KindNullKeyword,
+		wrapperchecker.KindBigIntLiteral,
+		wrapperchecker.KindRegularExpressionLiteral:
+		return true
+	}
+	return false
+}
+
+// surroundingBindingName returns the identifier the callback's
+// containing hook call (useCallback / useMemo) is being assigned to,
+// if any. Walks: callback -> CallExpression -> VariableDeclaration
+// or BinaryExpression(=).
+func surroundingBindingName(callback *wrapperchecker.Node) string {
+	p := callback.Parent()
+	if p == nil || p.Kind() != wrapperchecker.KindCallExpression {
+		return ""
+	}
+	pp := p.Parent()
+	if pp == nil {
+		return ""
+	}
+	switch pp.Kind() {
+	case wrapperchecker.KindVariableDeclaration:
+		var first *wrapperchecker.Node
+		pp.ForEachChild(func(c *wrapperchecker.Node) bool {
+			if first == nil {
+				first = c
+				return true
+			}
+			return false
+		})
+		if first != nil && first.Kind() == wrapperchecker.KindIdentifier {
+			return first.LiteralText()
+		}
+	}
+	return ""
 }
 
 func enclosingFunctionLike(n *wrapperchecker.Node) *wrapperchecker.Node {
@@ -321,30 +1108,36 @@ func isReactiveHook(call *wrapperchecker.Node) bool {
 	return false
 }
 
-// hookCallbackAndDeps returns the (callback, depsArray) pair from a
-// reactive hook call. Either may be nil — useEffect with one
-// argument is intentionally non-reactive, useCallback with a
-// non-array second argument is too unusual to lint.
-func hookCallbackAndDeps(call *wrapperchecker.Node) (*wrapperchecker.Node, *wrapperchecker.Node) {
+// hookCallbackAndDeps returns the (callback, depsArray, depsNode)
+// triple from a reactive hook call:
+//   - callback: the resolved arrow / function expression callback, or
+//     nil when the first argument isn't function-shaped.
+//   - depsArray: the literal array of dependencies, or nil when the
+//     second argument is anything else (a variable, a function call,
+//     a spread, etc.). depsNode is non-nil in that case so the rule
+//     can anchor a diagnostic on the actual second argument.
+//   - depsNode: the second argument as written.
+func hookCallbackAndDeps(call *wrapperchecker.Node) (*wrapperchecker.Node, *wrapperchecker.Node, *wrapperchecker.Node) {
 	args := callArguments(call)
 	if len(args) < 2 {
-		return nil, nil
+		return nil, nil, nil
 	}
 	cb := unwrap(args[0])
-	deps := unwrap(args[1])
-	if cb == nil || deps == nil {
-		return nil, nil
+	depsArg := args[1]
+	deps := unwrap(depsArg)
+	if cb == nil {
+		return nil, nil, depsArg
 	}
 	switch cb.Kind() {
 	case wrapperchecker.KindArrowFunction, wrapperchecker.KindFunctionExpression:
 		// ok
 	default:
-		return nil, nil
+		return nil, nil, depsArg
 	}
-	if deps.Kind() != wrapperchecker.KindArrayLiteralExpression {
-		return nil, nil
+	if deps == nil || deps.Kind() != wrapperchecker.KindArrayLiteralExpression {
+		return cb, nil, depsArg
 	}
-	return cb, deps
+	return cb, deps, depsArg
 }
 
 func callArguments(call *wrapperchecker.Node) []*wrapperchecker.Node {
@@ -366,44 +1159,52 @@ func callArguments(call *wrapperchecker.Node) []*wrapperchecker.Node {
 	return out
 }
 
-// depNames returns the set of names listed in a deps array. Only
-// plain identifiers and property-access head identifiers are
-// recorded — `[user.id]` puts `user` in the set, matching the rule's
-// reference-collection granularity.
-func depNames(deps *wrapperchecker.Node) map[string]bool {
-	out := map[string]bool{}
-	deps.ForEachChild(func(c *wrapperchecker.Node) bool {
-		switch c.Kind() {
-		case wrapperchecker.KindIdentifier:
-			out[c.LiteralText()] = true
-		case wrapperchecker.KindPropertyAccessExpression:
-			if head := propertyAccessHead(c); head != "" {
-				out[head] = true
-			}
-		}
-		return false
-	})
-	return out
-}
-
+// propertyAccessHead walks a chain of property / element accesses
+// and TypeScript-only wrappers (non-null `!`, parens, `as T`, type
+// assertions, `satisfies`) down to the leftmost identifier and
+// returns its name. Returns "" if the head isn't an identifier (a
+// call result, a `this`, etc.).
 func propertyAccessHead(n *wrapperchecker.Node) string {
 	cur := n
-	for cur != nil && cur.Kind() == wrapperchecker.KindPropertyAccessExpression {
-		var inner *wrapperchecker.Node
-		cur.ForEachChild(func(c *wrapperchecker.Node) bool {
+	for cur != nil {
+		switch cur.Kind() {
+		case wrapperchecker.KindPropertyAccessExpression,
+			wrapperchecker.KindElementAccessExpression:
+			var inner *wrapperchecker.Node
+			cur.ForEachChild(func(c *wrapperchecker.Node) bool {
+				if inner == nil {
+					inner = c
+					return true
+				}
+				return false
+			})
 			if inner == nil {
-				inner = c
-				return true
+				return ""
 			}
-			return false
-		})
-		if inner == nil {
+			cur = inner
+		case wrapperchecker.KindParenthesizedExpression,
+			wrapperchecker.KindNonNullExpression,
+			wrapperchecker.KindAsExpression,
+			wrapperchecker.KindTypeAssertionExpression,
+			wrapperchecker.KindSatisfiesExpression:
+			var inner *wrapperchecker.Node
+			cur.ForEachChild(func(c *wrapperchecker.Node) bool {
+				if inner == nil && !isTypeNode(c) {
+					inner = c
+					return true
+				}
+				return false
+			})
+			if inner == nil {
+				return ""
+			}
+			cur = inner
+		default:
+			if cur.Kind() == wrapperchecker.KindIdentifier {
+				return cur.LiteralText()
+			}
 			return ""
 		}
-		cur = inner
-	}
-	if cur != nil && cur.Kind() == wrapperchecker.KindIdentifier {
-		return cur.LiteralText()
 	}
 	return ""
 }
@@ -422,10 +1223,22 @@ func freeIdentifiers(callback *wrapperchecker.Node) []*wrapperchecker.Node {
 	declared := map[string]bool{}
 	collectLocalDeclarations(callback, declared)
 	collectLocalDeclarations(body, declared)
+	// A useCallback/useMemo result is typically assigned to a
+	// variable (`const fib = useCallback(...)`). Inside the
+	// callback the binding refers to itself — useful for recursion.
+	// React guarantees the callback identity is stable across the
+	// same render's lifetime, so a self-reference doesn't require
+	// the binding to be in deps.
+	if name := surroundingBindingName(callback); name != "" {
+		declared[name] = true
+	}
 	var refs []*wrapperchecker.Node
 	var walk func(*wrapperchecker.Node)
 	walk = func(n *wrapperchecker.Node) {
 		if n == nil {
+			return
+		}
+		if isTypeNode(n) || isTypeQuery(n) {
 			return
 		}
 		switch n.Kind() {
@@ -582,11 +1395,24 @@ func collectLocalDeclarations(n *wrapperchecker.Node, declared map[string]bool) 
 				}
 				return false
 			})
-		case wrapperchecker.KindFunctionDeclaration:
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindClassDeclaration:
 			c.ForEachChild(func(g *wrapperchecker.Node) bool {
 				if g.Kind() == wrapperchecker.KindIdentifier {
 					declared[g.LiteralText()] = true
 					return true
+				}
+				return false
+			})
+		case wrapperchecker.KindVariableDeclarationList:
+			// Loop initializers (`for (let i = 0; ...)`,
+			// `for (const x of arr)`) reach us as a bare list
+			// without a VariableStatement wrapper.
+			c.ForEachChild(func(d *wrapperchecker.Node) bool {
+				if d.Kind() == wrapperchecker.KindVariableDeclaration {
+					for _, name := range bindingIdentifiers(d) {
+						declared[name] = true
+					}
 				}
 				return false
 			})
@@ -628,6 +1454,53 @@ func bindingIdentifiers(decl *wrapperchecker.Node) []string {
 		return false
 	})
 	return out
+}
+
+// unwrapInitializer peels TypeScript-only wrappers off the right-
+// hand side of a const/let binding so a call to useRef wrapped in
+// parens, non-null assertion, `as`, `satisfies`, or even a
+// comma-expression (`(side, useRef())`) is still recognized as a
+// stable-returning hook. For a comma expression the last operand
+// is the produced value.
+func unwrapInitializer(n *wrapperchecker.Node) *wrapperchecker.Node {
+	for n != nil {
+		switch n.Kind() {
+		case wrapperchecker.KindParenthesizedExpression,
+			wrapperchecker.KindNonNullExpression,
+			wrapperchecker.KindAsExpression,
+			wrapperchecker.KindTypeAssertionExpression,
+			wrapperchecker.KindSatisfiesExpression:
+			var inner *wrapperchecker.Node
+			n.ForEachChild(func(c *wrapperchecker.Node) bool {
+				if inner == nil && !isTypeNode(c) {
+					inner = c
+					return true
+				}
+				return false
+			})
+			if inner == nil {
+				return n
+			}
+			n = inner
+			continue
+		case wrapperchecker.KindBinaryExpression:
+			if n.BinaryOperatorKind() == wrapperchecker.KindCommaToken {
+				// Comma expression: the value is the last operand.
+				var last *wrapperchecker.Node
+				n.ForEachChild(func(c *wrapperchecker.Node) bool {
+					last = c
+					return false
+				})
+				if last == nil {
+					return n
+				}
+				n = last
+				continue
+			}
+		}
+		return n
+	}
+	return n
 }
 
 func unwrap(n *wrapperchecker.Node) *wrapperchecker.Node {
