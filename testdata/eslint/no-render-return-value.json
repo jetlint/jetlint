@@ -1,0 +1,27 @@
+{
+  "ruleId": "no-render-return-value",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noRenderReturnValue",
+  "cases": [
+    {
+      "code": "const a = ReactDOM.render(\u003cdiv /\u003e, document.body);\nconst foo = bar \u0026\u0026 ReactDOM.render(\u003cdiv /\u003e, document.body);\nconst foo = bar ? ReactDOM.render(\u003cdiv /\u003e, document.body) : null\nconst foo = () =\u003e ReactDOM.render(\u003cdiv /\u003e, document.body);\nconst foo = {\n    react: ReactDOM.render(\u003cdiv /\u003e, document.body)\n};\nlet lorem;\nlorem = ReactDOM.render(\u003cdiv /\u003e, document.body);\nfunction render() {\n    return ReactDOM.render(\u003cdiv /\u003e, document.body)\n}\n",
+      "valid": false
+    },
+    {
+      "code": "import CustomReactDOM, { render as customRender } from \"react-dom\";\n\nconst a = CustomReactDOM.render(\u003cdiv /\u003e, document.body);\nconst foo = bar \u0026\u0026 CustomReactDOM.render(\u003cdiv /\u003e, document.body);\nconst foo = bar ? CustomReactDOM.render(\u003cdiv /\u003e, document.body) : null\nconst foo = () =\u003e CustomReactDOM.render(\u003cdiv /\u003e, document.body);\nconst foo = {\n    react: CustomReactDOM.render(\u003cdiv /\u003e, document.body)\n};\nlet lorem;\nlorem = CustomReactDOM.render(\u003cdiv /\u003e, document.body);\nfunction render1() {\n    return CustomReactDOM.render(\u003cdiv /\u003e, document.body)\n}\n\nconst a = customRender(\u003cdiv /\u003e, document.body);\nconst foo = bar \u0026\u0026 customRender(\u003cdiv /\u003e, document.body);\nconst foo = bar ? customRender(\u003cdiv /\u003e, document.body) : null\nconst foo = () =\u003e customRender(\u003cdiv /\u003e, document.body);\nconst foo = {\n    react: customRender(\u003cdiv /\u003e, document.body)\n};\nlet lorem;\nlorem = customRender(\u003cdiv /\u003e, document.body);\nfunction render2() {\n    return customRender(\u003cdiv /\u003e, document.body)\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nReactDOM.render(\u003cdiv /\u003e, document.body);\nfunction render1() {\n    ReactDOM.render(\u003cdiv /\u003e, document.body);\n}\nconst render2 = () =\u003e {\n    ReactDOM.render(\u003cdiv /\u003e, document.body);\n}\n\nconst a = render(\u003cdiv /\u003e, document.body);\nconst foo = bar \u0026\u0026 render(\u003cdiv /\u003e, document.body);\nconst foo = bar ? render(\u003cdiv /\u003e, document.body) : null\nconst foo = () =\u003e render(\u003cdiv /\u003e, document.body);\nconst foo = {\n    react: render(\u003cdiv /\u003e, document.body)\n};\nlet lorem;\nlorem = render(\u003cdiv /\u003e, document.body);\nfunction render3() {\n    return render(\u003cdiv /\u003e, document.body)\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport ReactDom, { render } from \"react-dom\";\n\nReactDom.render(\u003cdiv /\u003e, document.body);\nfunction render1() {\n    ReactDom.render(\u003cdiv /\u003e, document.body);\n}\nconst render2 = () =\u003e {\n    ReactDom.render(\u003cdiv /\u003e, document.body);\n}\n\nrender(\u003cdiv /\u003e, document.body);\nfunction render1() {\n    render(\u003cdiv /\u003e, document.body);\n}\nconst render2 = () =\u003e {\n    render(\u003cdiv /\u003e, document.body);\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction render() { }\nconst ReactDOM = { render };\n\nconst a = ReactDOM.render(\u003cdiv /\u003e, document.body);\nconst foo = bar \u0026\u0026 ReactDOM.render(\u003cdiv /\u003e, document.body);\nconst foo = bar ? ReactDOM.render(\u003cdiv /\u003e, document.body) : null\nconst foo = () =\u003e ReactDOM.render(\u003cdiv /\u003e, document.body);\nconst foo = {\n    react: ReactDOM.render(\u003cdiv /\u003e, document.body)\n};\nlet lorem;\nlorem = ReactDOM.render(\u003cdiv /\u003e, document.body);\nfunction render1() {\n    return ReactDOM.render(\u003cdiv /\u003e, document.body)\n}\n\nconst a = render(\u003cdiv /\u003e, document.body);\nconst foo = bar \u0026\u0026 render(\u003cdiv /\u003e, document.body);\nconst foo = bar ? render(\u003cdiv /\u003e, document.body) : null\nconst foo = () =\u003e render(\u003cdiv /\u003e, document.body);\nconst foo = {\n    react: render(\u003cdiv /\u003e, document.body)\n};\nlet lorem;\nlorem = render(\u003cdiv /\u003e, document.body);\nfunction render1() {\n    return render(\u003cdiv /\u003e, document.body)\n}\n",
+      "valid": true
+    }
+  ]
+}

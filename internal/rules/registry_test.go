@@ -239,6 +239,7 @@ func additionalRulesSnapshot() []string {
 		"no-obj-calls",
 		"no-process-global",
 		"no-promise-executor-return",
+		"no-render-return-value",
 		"no-prototype-builtins",
 		"no-redundant-type-constituents",
 		"no-self-assign",

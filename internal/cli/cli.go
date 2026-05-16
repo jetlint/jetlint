@@ -87,6 +87,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noobjcalls"
 	"github.com/jetlint/jetlint/internal/rules/noprocessglobal"
 	"github.com/jetlint/jetlint/internal/rules/nopromiseexecutorreturn"
+	"github.com/jetlint/jetlint/internal/rules/norenderreturnvalue"
 	"github.com/jetlint/jetlint/internal/rules/noprototypebuiltins"
 	"github.com/jetlint/jetlint/internal/rules/noredundanttypeconstituents"
 	"github.com/jetlint/jetlint/internal/rules/noselfassign"
@@ -616,6 +617,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noswitchdeclarations.New(),
 		noprocessglobal.New(),
 		nopromiseexecutorreturn.New(),
+		norenderreturnvalue.New(),
 		noprototypebuiltins.New(),
 		notemplatecurlyinstring.New(),
 		nothisbeforesuper.New(),
