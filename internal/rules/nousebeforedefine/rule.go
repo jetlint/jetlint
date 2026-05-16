@@ -69,11 +69,23 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if r.opts.IgnoreTypeReferences && isInTypePosition(n) {
 		return
 	}
+	if r.opts.AllowNamedExports && isExportSpecifierLocal(n) {
+		return
+	}
 	sym := ctx.Checker().SymbolOf(n)
 	if sym == nil {
 		return
 	}
 	decls := sym.Declarations()
+	// `export { a }` resolves to a synthetic ExportSpecifier symbol
+	// whose only declaration is itself — TS-go does not auto-merge
+	// the local binding. Look it up in the source-file scope so the
+	// position comparison sees the real declaration.
+	if isExportSpecifierLocal(n) && allDeclsAreExportSpecifiers(decls) {
+		if local := findSourceFileBinding(n, n.LiteralText()); local != nil {
+			decls = []*wrapperchecker.Node{local}
+		}
+	}
 	if len(decls) == 0 {
 		return
 	}
@@ -85,6 +97,12 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	for _, d := range decls {
 		df, _, _, _, _ := d.SourceRange()
 		if df != refFile {
+			continue
+		}
+		// ExportSpecifiers are re-export bindings that mirror the
+		// real local binding; the real declaration is what counts
+		// for use-before-define.
+		if d.Kind() == wrapperchecker.KindExportSpecifier {
 			continue
 		}
 		if first == nil || d.Pos() < first.Pos() {
@@ -184,6 +202,73 @@ func crossesDeferredBoundary(ref, decl *wrapperchecker.Node) bool {
 		prev = cur
 	}
 	return false
+}
+
+func allDeclsAreExportSpecifiers(decls []*wrapperchecker.Node) bool {
+	if len(decls) == 0 {
+		return false
+	}
+	for _, d := range decls {
+		if d.Kind() != wrapperchecker.KindExportSpecifier {
+			return false
+		}
+	}
+	return true
+}
+
+// findSourceFileBinding walks up to the enclosing SourceFile and
+// scans its top-level statements for a binding whose name matches
+// `name` — used as a fallback when TS-go's SymbolOf gives us a
+// synthetic re-export symbol that does not link to the local
+// declaration.
+func findSourceFileBinding(ref *wrapperchecker.Node, name string) *wrapperchecker.Node {
+	if name == "" {
+		return nil
+	}
+	var sourceFile *wrapperchecker.Node
+	for cur := ref.Parent(); cur != nil; cur = cur.Parent() {
+		if cur.Kind() == wrapperchecker.KindSourceFile {
+			sourceFile = cur
+			break
+		}
+	}
+	if sourceFile == nil {
+		return nil
+	}
+	var found *wrapperchecker.Node
+	sourceFile.ForEachChild(func(stmt *wrapperchecker.Node) bool {
+		if found != nil {
+			return true
+		}
+		switch stmt.Kind() {
+		case wrapperchecker.KindVariableStatement:
+			if list := stmt.VariableStatementDeclarationList(); list != nil {
+				list.ForEachChild(func(decl *wrapperchecker.Node) bool {
+					if decl.Kind() == wrapperchecker.KindVariableDeclaration {
+						if nm := decl.DeclarationName(); nm != nil && nm.LiteralText() == name {
+							found = decl
+						}
+					}
+					return found != nil
+				})
+			}
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindClassDeclaration:
+			if nm := stmt.DeclarationName(); nm != nil && nm.LiteralText() == name {
+				found = stmt
+			}
+		}
+		return found != nil
+	})
+	return found
+}
+
+// isExportSpecifierLocal reports whether `n` is the local-reference
+// identifier of an ExportSpecifier (`export { a }` or the `a` in
+// `export { a as b }`).
+func isExportSpecifierLocal(n *wrapperchecker.Node) bool {
+	p := n.Parent()
+	return p != nil && p.Kind() == wrapperchecker.KindExportSpecifier
 }
 
 // isInTypePosition reports whether the identifier `n` sits inside a
@@ -451,13 +536,18 @@ func isFreeReferenceContext(n *wrapperchecker.Node) bool {
 	case wrapperchecker.KindImportSpecifier,
 		wrapperchecker.KindImportClause,
 		wrapperchecker.KindNamespaceImport,
-		wrapperchecker.KindExportSpecifier,
 		wrapperchecker.KindNamespaceExport,
 		wrapperchecker.KindLabeledStatement,
 		wrapperchecker.KindBreakStatement,
 		wrapperchecker.KindContinueStatement,
 		wrapperchecker.KindJsxAttribute:
 		return false
+	case wrapperchecker.KindExportSpecifier:
+		// `export { a }` — the identifier `a` references the value
+		// being exported. It IS a use-before-define when the local
+		// declaration of `a` comes later in source, unless the user
+		// opted into AllowNamedExports.
+		return true
 	case wrapperchecker.KindPropertyAccessExpression:
 		return p.PropertyAccessReceiver().Same(n)
 	case wrapperchecker.KindPropertyAssignment:
