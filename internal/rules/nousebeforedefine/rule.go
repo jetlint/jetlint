@@ -131,17 +131,21 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	}
 	// Apply hoisting rules: function declarations and `var`s are
 	// hoisted; only flag if the corresponding option says so.
+	// References inside an eager class-evaluation context (heritage
+	// clause, static field initializer, computed name) are always
+	// TDZ-sensitive and reported regardless of the hoisting options.
+	eager := referenceInEagerClassContext(n)
 	switch declarationKind(first) {
 	case declFunction:
-		if !r.opts.Functions {
+		if !r.opts.Functions && !eager {
 			return
 		}
 	case declClass:
-		if !r.opts.Classes {
+		if !r.opts.Classes && !eager {
 			return
 		}
 	case declVar:
-		if !r.opts.Variables {
+		if !r.opts.Variables && !eager {
 			return
 		}
 	case declParameter, declImport, declOther:
@@ -169,12 +173,15 @@ func isSelfInitReference(decl, ref *wrapperchecker.Node) bool {
 }
 
 // crossesDeferredBoundary walks parents of `ref` toward `decl` and
-// reports whether the walk passes through a deferred body — function,
-// method, arrow, or a class body whose initialization is not part of
-// the surrounding eager-evaluation chain. A class's heritage clause
-// and a method/property's computed name are still considered eager.
+// reports whether the walk passes through a deferred body. Function,
+// method, arrow, accessor, and constructor bodies are deferred; class
+// heritage clauses and method/property computed names are eager. Once
+// we have established that we are on an eager path through a class
+// member (via a computed name), traversing the surrounding class
+// declaration is not a deferred boundary.
 func crossesDeferredBoundary(ref, decl *wrapperchecker.Node) bool {
 	prev := ref
+	eagerThroughClass := false
 	for cur := ref.Parent(); cur != nil && !cur.Same(decl); cur = cur.Parent() {
 		switch cur.Kind() {
 		case wrapperchecker.KindFunctionDeclaration,
@@ -186,15 +193,28 @@ func crossesDeferredBoundary(ref, decl *wrapperchecker.Node) bool {
 			return true
 		case wrapperchecker.KindMethodDeclaration,
 			wrapperchecker.KindPropertyDeclaration:
-			// Computed names of methods / fields are evaluated at
-			// class-create time; their bodies / initializers are not.
-			if prev.Kind() != wrapperchecker.KindComputedPropertyName {
-				return true
+			if prev.Kind() == wrapperchecker.KindComputedPropertyName {
+				eagerThroughClass = true
+				break
 			}
+			// A static field's initializer runs eagerly at
+			// class-create time — while the class binding is still
+			// in the TDZ — so it counts as an eager path. Instance
+			// fields run on construction, well after the class is
+			// fully bound, so they remain deferred.
+			if cur.Kind() == wrapperchecker.KindPropertyDeclaration && cur.HasStaticModifier() {
+				eagerThroughClass = true
+				break
+			}
+			return true
 		case wrapperchecker.KindClassDeclaration,
 			wrapperchecker.KindClassExpression:
-			// A class's heritage clause runs eagerly when the class
-			// expression is evaluated; its body / methods do not.
+			if eagerThroughClass {
+				// Reset for any further enclosing class — each class
+				// nesting level resolves separately.
+				eagerThroughClass = false
+				break
+			}
 			if prev.Kind() != wrapperchecker.KindHeritageClause {
 				return true
 			}
@@ -263,6 +283,45 @@ func findSourceFileBinding(ref *wrapperchecker.Node, name string) *wrapperchecke
 	return found
 }
 
+// referenceInEagerClassContext reports whether `ref` sits inside an
+// eagerly-evaluated position of a class definition — a heritage
+// clause, a computed property name, or a static field initializer.
+// Such positions run while their enclosing class binding is in TDZ,
+// so use-before-define applies regardless of the hoisting options.
+func referenceInEagerClassContext(ref *wrapperchecker.Node) bool {
+	prev := ref
+	for cur := ref.Parent(); cur != nil; cur = cur.Parent() {
+		switch cur.Kind() {
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindGetAccessor,
+			wrapperchecker.KindSetAccessor,
+			wrapperchecker.KindConstructor:
+			return false
+		case wrapperchecker.KindMethodDeclaration:
+			if prev.Kind() != wrapperchecker.KindComputedPropertyName {
+				return false
+			}
+			return true
+		case wrapperchecker.KindPropertyDeclaration:
+			if prev.Kind() == wrapperchecker.KindComputedPropertyName {
+				return true
+			}
+			if cur.HasStaticModifier() {
+				return true
+			}
+			return false
+		case wrapperchecker.KindHeritageClause:
+			return true
+		case wrapperchecker.KindSourceFile:
+			return false
+		}
+		prev = cur
+	}
+	return false
+}
+
 // isExportSpecifierLocal reports whether `n` is the local-reference
 // identifier of an ExportSpecifier (`export { a }` or the `a` in
 // `export { a as b }`).
@@ -318,6 +377,7 @@ func isClassHeritageSelfReference(decl, ref *wrapperchecker.Node) bool {
 	}
 	var sawComputedName bool
 	prev := ref
+	eagerThroughClass := false
 	for cur := ref.Parent(); cur != nil && !cur.Same(decl); cur = cur.Parent() {
 		switch cur.Kind() {
 		case wrapperchecker.KindFunctionDeclaration,
@@ -329,21 +389,22 @@ func isClassHeritageSelfReference(decl, ref *wrapperchecker.Node) bool {
 			return false
 		case wrapperchecker.KindMethodDeclaration,
 			wrapperchecker.KindPropertyDeclaration:
-			// The method body / field initializer is deferred, but
-			// the computed property name is evaluated eagerly. We
-			// only continue when we came from a ComputedPropertyName
-			// child — anything else means we're in a deferred body.
+			// Self-reference to the class binding from within its
+			// own static field is NOT TDZ — the class binding is
+			// initialized before static initialization runs. Only
+			// computed names (which evaluate before the class body)
+			// remain eager for class-self-reference purposes.
 			if prev.Kind() != wrapperchecker.KindComputedPropertyName {
 				return false
 			}
 			sawComputedName = true
+			eagerThroughClass = true
 		case wrapperchecker.KindClassDeclaration,
 			wrapperchecker.KindClassExpression:
-			// Crossed into a nested class — once we enter the nested
-			// class's body, its initializers run when an instance is
-			// created, by which time decl is fully defined. The
-			// nested class's own computed names are eagerly
-			// evaluated but the symbol there is a *different* class.
+			if eagerThroughClass {
+				eagerThroughClass = false
+				break
+			}
 			return false
 		case wrapperchecker.KindHeritageClause:
 			if hp := cur.Parent(); hp != nil && hp.Same(decl) {
