@@ -149,6 +149,7 @@ var All = []Metadata{
 	{ID: "strict-void-return", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "switch-exhaustiveness-check", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-isnan", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-parse-int-radix", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-unknown-in-catch-callback-variable", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-yield", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "valid-typeof", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
