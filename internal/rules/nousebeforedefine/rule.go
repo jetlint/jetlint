@@ -169,7 +169,14 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 			return
 		}
 	case declVar:
-		if !r.opts.Variables && !eager {
+		// `var` declarations are always hoisted; oxlint flags
+		// use-before-define for `var` regardless of the Variables
+		// option except when the reference sits in a deferred body
+		// that is *outside* the variable's own scope (the body may
+		// execute long after the var is fully bound).
+		if !r.opts.Variables && !eager &&
+			referenceInDeferredBody(n) &&
+			!sameDeferredBody(n, first) {
 			return
 		}
 	case declLet, declConst:
@@ -354,6 +361,41 @@ func isNewExpressionCallee(n *wrapperchecker.Node) bool {
 		return false
 	}
 	return false
+}
+
+// sameDeferredBody reports whether `ref` and `decl` share the same
+// enclosing deferred body (function / method / accessor / constructor).
+// When they do, the body runs the declaration's initialization before
+// any caller can observe the binding state — hoisting rules apply as
+// if at the top level.
+func sameDeferredBody(ref, decl *wrapperchecker.Node) bool {
+	rb := enclosingDeferredBody(ref)
+	db := enclosingDeferredBody(decl)
+	if rb == nil && db == nil {
+		return true
+	}
+	if rb == nil || db == nil {
+		return false
+	}
+	return rb.Same(db)
+}
+
+func enclosingDeferredBody(n *wrapperchecker.Node) *wrapperchecker.Node {
+	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
+		switch cur.Kind() {
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindGetAccessor,
+			wrapperchecker.KindSetAccessor,
+			wrapperchecker.KindConstructor:
+			return cur
+		case wrapperchecker.KindSourceFile:
+			return nil
+		}
+	}
+	return nil
 }
 
 // referenceInDeferredBody reports whether `ref` sits inside a body
