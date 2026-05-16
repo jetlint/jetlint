@@ -1,0 +1,23 @@
+{
+  "ruleId": "no-process-global",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noProcessGlobal",
+  "cases": [
+    {
+      "code": "const process = {env: {}};\nconst a = process.env;",
+      "valid": true
+    },
+    {
+      "code": "// head\n/**\n * head comment\n */\nconst c = process.env;\n\nconst d = process;\n\nconst e = process.env.e;\n\n// A copyright notice\nconst f = process.env;\n\nfunction main() {\n    const local = process.env;\n}\n",
+      "valid": false
+    },
+    {
+      "code": "// head comment\nimport a from 'b';\n\nconst c = process.env;",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport process from \"node:process\";\n\nconst a = process.env;\n\nconst foo = process.env.FOO;\n\n// allow other globals\nconst bar = console;",
+      "valid": true
+    }
+  ]
+}

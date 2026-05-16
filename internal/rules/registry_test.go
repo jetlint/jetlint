@@ -235,6 +235,7 @@ func additionalRulesSnapshot() []string {
 		"no-new-native-nonconstructor",
 		"no-nonoctal-decimal-escape",
 		"no-obj-calls",
+		"no-process-global",
 		"no-promise-executor-return",
 		"no-prototype-builtins",
 		"no-redundant-type-constituents",
