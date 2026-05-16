@@ -153,6 +153,13 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 		if !r.opts.Variables && !eager {
 			return
 		}
+	case declLet, declConst:
+		// `Variables: false` suppresses lexical-binding
+		// use-before-define when the reference sits in a deferred
+		// body and is not part of an eager class-evaluation chain.
+		if !r.opts.Variables && !eager && referenceInDeferredBody(n) {
+			return
+		}
 	case declParameter, declImport, declOther:
 		// Parameters and imports are reachable before any
 		// statement, so the rule never flags them.
@@ -292,6 +299,35 @@ func findSourceFileBinding(ref *wrapperchecker.Node, name string) *wrapperchecke
 		return found != nil
 	})
 	return found
+}
+
+// referenceInDeferredBody reports whether `ref` sits inside a body
+// that runs deferred: function / method / accessor / constructor body,
+// or an instance class field initializer. Used to be optimistic about
+// forward references that may execute after the surrounding bindings
+// complete (in oxlint-compatible mode).
+func referenceInDeferredBody(ref *wrapperchecker.Node) bool {
+	for cur := ref.Parent(); cur != nil; cur = cur.Parent() {
+		switch cur.Kind() {
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindGetAccessor,
+			wrapperchecker.KindSetAccessor,
+			wrapperchecker.KindConstructor:
+			return true
+		case wrapperchecker.KindPropertyDeclaration:
+			if !cur.HasStaticModifier() {
+				return true
+			}
+		case kindClassStaticBlockDeclaration:
+			return true
+		case wrapperchecker.KindSourceFile:
+			return false
+		}
+	}
+	return false
 }
 
 // enclosingClass returns the nearest ClassDeclaration / ClassExpression
