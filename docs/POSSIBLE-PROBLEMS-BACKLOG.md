@@ -9,7 +9,7 @@ Update this file as rules land or assumptions change.
 - Shipped: 57 (all rules have implementations; 8 are partial-coverage and need work to reach 100%)
 - Remaining (AST-only): 0
 - Remaining (needs regex AST infra): 0
-- Partials needing 100%: no-constant-condition (251/306), no-constant-binary-expression (176/251), no-duplicate-imports (80/86), no-inner-declarations (65/66), no-undef (87/97), no-unmodified-loop-condition (37/39), no-use-before-define (239/354)
+- Partials needing 100%: no-constant-condition (296/306), no-constant-binary-expression (196/251), no-duplicate-imports (80/86), no-inner-declarations (65/66), no-undef (87/97), no-unmodified-loop-condition (37/39), no-use-before-define (239/354)
 
 **Symbols**
 
@@ -32,7 +32,7 @@ Update this file as rules land or assumptions change.
 | `no-cond-assign` | ✓ | Shipped 2026-05-15 |
 | `no-const-assign` | ✓ | Shipped 2026-05-15 |
 | `no-constant-binary-expression` | ✓ | Shipped 2026-05-15 (196/251 fixtures, 78.1%; expanded constant-detection: VoidExpression/TypeOfExpression/NewExpression, undefined-identifier, comma operator, assignment pass-through, Boolean/String/Number conversion calls, compound-arithmetic assignment as number-typed) |
-| `no-constant-condition` | ✓ | Shipped 2026-05-15 (251/306 fixtures, 82%; added short-circuit operator truthiness, template-span constant detection, NewExpression-always-truthy, assignment-expression pass-through, `\|\|=`/`&&=` truthiness inference, isPrimitiveConstant for arithmetic operand checks) |
+| `no-constant-condition` | ✓ | Shipped 2026-05-15 (296/306 fixtures, 96.7%; expanded constant-folding: void/typeof as their own Kinds, BinaryExpression recursion in isConstantTruthy/Falsy, ||=/&&= truthiness via short-circuit semantics, !-of-constant primitive, template-span binary plus, Boolean(...) global call detection) |
 | `no-constructor-return` | ✓ | Shipped 2026-05-15 |
 | `no-control-regex` | ✓ | Shipped 2026-05-15 (hand-rolled pattern scanner with JS string-escape unescaping; covers `/.../` and `RegExp(string)` forms) |
 | `no-debugger` | ✓ | Shipped 2026-05-15 |
