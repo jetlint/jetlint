@@ -9,7 +9,7 @@ Update this file as rules land or assumptions change.
 - Shipped: 57 (all rules have implementations; 8 are partial-coverage and need work to reach 100%)
 - Remaining (AST-only): 0
 - Remaining (needs regex AST infra): 0
-- Partials needing 100%: no-constant-condition (296/306), no-constant-binary-expression (249/251), no-undef (87/97), no-use-before-define (239/354)
+- Partials needing 100%: no-constant-condition (302/306), no-constant-binary-expression (249/251), no-undef (87/97), no-use-before-define (239/354)
 
 **Symbols**
 
@@ -32,7 +32,7 @@ Update this file as rules land or assumptions change.
 | `no-cond-assign` | ✓ | Shipped 2026-05-15 |
 | `no-const-assign` | ✓ | Shipped 2026-05-15 |
 | `no-constant-binary-expression` | ✓ | Shipped 2026-05-15 (249/251 fixtures, 99.2%; type-tag-aware equality with loose-coercion rules, fresh-reference + well-known-builtin constructor detection, `+`/`+=` non-boolean tag, array-coercion fixed cases, singleton self-equality, Boolean(const) / !X singleton resolution, `??` chain non-nullish propagation) |
-| `no-constant-condition` | ✓ | Shipped 2026-05-15 (296/306 fixtures, 96.7%; expanded constant-folding: void/typeof as their own Kinds, BinaryExpression recursion in isConstantTruthy/Falsy, ||=/&&= truthiness via short-circuit semantics, !-of-constant primitive, template-span binary plus, Boolean(...) global call detection) |
+| `no-constant-condition` | ✓ | Shipped 2026-05-15 (302/306 fixtures, 98.7%; expanded constant-folding plus lexical/symbolic shadowing detection for `undefined` and `Boolean`, and array-`+`-string coercion (`'' + []` → falsy, `'' + ['a']` → truthy)) |
 | `no-constructor-return` | ✓ | Shipped 2026-05-15 |
 | `no-control-regex` | ✓ | Shipped 2026-05-15 (hand-rolled pattern scanner with JS string-escape unescaping; covers `/.../` and `RegExp(string)` forms) |
 | `no-debugger` | ✓ | Shipped 2026-05-15 |
