@@ -261,6 +261,7 @@ func additionalRulesSnapshot() []string {
 		"no-template-curly-in-string",
 		"no-this-before-super",
 		"no-type-only-import-attributes",
+		"no-undeclared-dependencies",
 		"no-undef",
 		"no-unexpected-multiline",
 		"no-unresolved-imports",
