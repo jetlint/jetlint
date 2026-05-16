@@ -217,9 +217,10 @@ func isInTypePosition(n *wrapperchecker.Node) bool {
 
 // isClassHeritageSelfReference reports whether `ref` reads the class
 // being declared by `decl` from within `decl`'s heritage clause
-// (`class C extends C {}`). The class binding is in the TDZ while
-// `extends` evaluates, so this is always flagged — regardless of
-// the Classes option, which controls hoisting-style cases.
+// (`class C extends C {}`) or from a computed method / field name
+// (`class C { [C](){} }`). Both run eagerly during class evaluation,
+// before the class binding becomes live, so we flag regardless of the
+// Classes option.
 func isClassHeritageSelfReference(decl, ref *wrapperchecker.Node) bool {
 	switch decl.Kind() {
 	case wrapperchecker.KindClassDeclaration,
@@ -230,36 +231,44 @@ func isClassHeritageSelfReference(decl, ref *wrapperchecker.Node) bool {
 	if ref.Pos() < decl.Pos() || ref.End() > decl.End() {
 		return false
 	}
-	// Walk up — only flag when an enclosing HeritageClause exists
-	// before we leave `decl`. If we cross a nested function-like or
-	// class body first, the reference runs after the declaration
-	// completes.
+	var sawComputedName bool
+	prev := ref
 	for cur := ref.Parent(); cur != nil && !cur.Same(decl); cur = cur.Parent() {
 		switch cur.Kind() {
 		case wrapperchecker.KindFunctionDeclaration,
 			wrapperchecker.KindFunctionExpression,
 			wrapperchecker.KindArrowFunction,
-			wrapperchecker.KindMethodDeclaration,
 			wrapperchecker.KindGetAccessor,
 			wrapperchecker.KindSetAccessor,
-			wrapperchecker.KindConstructor,
-			wrapperchecker.KindPropertyDeclaration:
+			wrapperchecker.KindConstructor:
 			return false
+		case wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindPropertyDeclaration:
+			// The method body / field initializer is deferred, but
+			// the computed property name is evaluated eagerly. We
+			// only continue when we came from a ComputedPropertyName
+			// child — anything else means we're in a deferred body.
+			if prev.Kind() != wrapperchecker.KindComputedPropertyName {
+				return false
+			}
+			sawComputedName = true
 		case wrapperchecker.KindClassDeclaration,
 			wrapperchecker.KindClassExpression:
-			// Crossed into a nested class — its initializers run
-			// only when an instance is created, by which time decl
-			// is fully defined.
+			// Crossed into a nested class — once we enter the nested
+			// class's body, its initializers run when an instance is
+			// created, by which time decl is fully defined. The
+			// nested class's own computed names are eagerly
+			// evaluated but the symbol there is a *different* class.
 			return false
 		case wrapperchecker.KindHeritageClause:
-			// Only decl's own heritage clause puts decl in TDZ.
 			if hp := cur.Parent(); hp != nil && hp.Same(decl) {
 				return true
 			}
 			return false
 		}
+		prev = cur
 	}
-	return false
+	return sawComputedName
 }
 
 // isForInOfIterableSelfReference reports whether `ref` reads the loop
