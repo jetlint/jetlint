@@ -70,9 +70,23 @@ func visitCall(ctx *engine.Context, call *wrapperchecker.Node) {
 		return
 	}
 	declared := depNames(deps)
+	moduleScope := moduleScopeNames(call)
+	stableSetters := stableSetterNames(call)
 	for _, ref := range freeIdentifiers(callback) {
 		name := ref.LiteralText()
 		if name == "" || globallyAvailable[name] {
+			continue
+		}
+		// Module-level bindings (imports, top-level const/let/var,
+		// function declarations) don't change across renders, so
+		// they don't need to be listed as dependencies.
+		if moduleScope[name] {
+			continue
+		}
+		// Setters returned from useState/useReducer have stable
+		// identity guaranteed by React; listing them is allowed
+		// but not required.
+		if stableSetters[name] {
 			continue
 		}
 		if declared[name] {
@@ -80,6 +94,217 @@ func visitCall(ctx *engine.Context, call *wrapperchecker.Node) {
 		}
 		ctx.Report(ref, "This dependency is not specified in the hook dependency list.")
 	}
+}
+
+// moduleScopeNames returns the set of identifiers declared at the
+// top level of the source file containing n. These bindings are
+// stable across renders and never need to appear in a deps array.
+func moduleScopeNames(n *wrapperchecker.Node) map[string]bool {
+	root := n
+	for root.Parent() != nil {
+		root = root.Parent()
+	}
+	if root.Kind() != wrapperchecker.KindSourceFile {
+		return nil
+	}
+	out := map[string]bool{}
+	root.ForEachChild(func(stmt *wrapperchecker.Node) bool {
+		switch stmt.Kind() {
+		case wrapperchecker.KindImportDeclaration:
+			collectImportClauseNames(stmt, out)
+		case wrapperchecker.KindImportEqualsDeclaration:
+			stmt.ForEachChild(func(c *wrapperchecker.Node) bool {
+				if c.Kind() == wrapperchecker.KindIdentifier {
+					out[c.LiteralText()] = true
+					return true
+				}
+				return false
+			})
+		case wrapperchecker.KindVariableStatement:
+			collectVariableStatementNames(stmt, out)
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindClassDeclaration,
+			wrapperchecker.KindEnumDeclaration,
+			wrapperchecker.KindInterfaceDeclaration,
+			wrapperchecker.KindTypeAliasDeclaration:
+			stmt.ForEachChild(func(c *wrapperchecker.Node) bool {
+				if c.Kind() == wrapperchecker.KindIdentifier {
+					out[c.LiteralText()] = true
+					return true
+				}
+				return false
+			})
+		}
+		return false
+	})
+	return out
+}
+
+func collectImportClauseNames(imp *wrapperchecker.Node, out map[string]bool) {
+	imp.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() != wrapperchecker.KindImportClause {
+			return false
+		}
+		c.ForEachChild(func(g *wrapperchecker.Node) bool {
+			switch g.Kind() {
+			case wrapperchecker.KindIdentifier:
+				out[g.LiteralText()] = true
+			case wrapperchecker.KindNamedImports:
+				g.ForEachChild(func(spec *wrapperchecker.Node) bool {
+					// Local name is the LAST identifier (handles `a as b`).
+					var last *wrapperchecker.Node
+					spec.ForEachChild(func(i *wrapperchecker.Node) bool {
+						if i.Kind() == wrapperchecker.KindIdentifier {
+							last = i
+						}
+						return false
+					})
+					if last != nil {
+						out[last.LiteralText()] = true
+					}
+					return false
+				})
+			case wrapperchecker.KindNamespaceImport:
+				g.ForEachChild(func(i *wrapperchecker.Node) bool {
+					if i.Kind() == wrapperchecker.KindIdentifier {
+						out[i.LiteralText()] = true
+						return true
+					}
+					return false
+				})
+			}
+			return false
+		})
+		return true
+	})
+}
+
+func collectVariableStatementNames(stmt *wrapperchecker.Node, out map[string]bool) {
+	stmt.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if c.Kind() != wrapperchecker.KindVariableDeclarationList {
+			return false
+		}
+		c.ForEachChild(func(d *wrapperchecker.Node) bool {
+			if d.Kind() == wrapperchecker.KindVariableDeclaration {
+				for _, name := range bindingIdentifiers(d) {
+					out[name] = true
+				}
+			}
+			return false
+		})
+		return false
+	})
+}
+
+// stableSetterNames returns the names of setter bindings produced by
+// `const [_, setX] = useState(...)` / useReducer in the enclosing
+// component function. React guarantees these setters are stable
+// references and so they don't need to appear in deps arrays.
+func stableSetterNames(call *wrapperchecker.Node) map[string]bool {
+	host := enclosingFunctionLike(call)
+	if host == nil {
+		return nil
+	}
+	body := functionBody(host)
+	if body == nil {
+		return nil
+	}
+	out := map[string]bool{}
+	var walk func(*wrapperchecker.Node)
+	walk = func(n *wrapperchecker.Node) {
+		if n == nil {
+			return
+		}
+		if n.Kind() == wrapperchecker.KindVariableDeclaration {
+			recordStableSetter(n, out)
+		}
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			walk(c)
+			return false
+		})
+	}
+	walk(body)
+	return out
+}
+
+func recordStableSetter(decl *wrapperchecker.Node, out map[string]bool) {
+	// Layout: VariableDeclaration → [Pattern, Initializer]. Look for
+	// `[state, setState] = useState(...)`. The setter name is the
+	// second binding in the pattern.
+	var pattern *wrapperchecker.Node
+	var initializer *wrapperchecker.Node
+	seenName := false
+	decl.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if !seenName {
+			switch c.Kind() {
+			case wrapperchecker.KindArrayBindingPattern,
+				wrapperchecker.KindObjectBindingPattern,
+				wrapperchecker.KindIdentifier:
+				pattern = c
+				seenName = true
+				return false
+			}
+			return false
+		}
+		// Initializer is the first expression-y child after the name.
+		if c.Kind() == wrapperchecker.KindEqualsToken {
+			return false
+		}
+		if initializer == nil && c.Kind() != wrapperchecker.KindArrayBindingPattern &&
+			c.Kind() != wrapperchecker.KindObjectBindingPattern {
+			initializer = c
+			return true
+		}
+		return false
+	})
+	if pattern == nil || initializer == nil {
+		return
+	}
+	if pattern.Kind() != wrapperchecker.KindArrayBindingPattern {
+		return
+	}
+	init := unwrap(initializer)
+	if init.Kind() != wrapperchecker.KindCallExpression {
+		return
+	}
+	callee := init.CalleeExpression()
+	if callee == nil || callee.Kind() != wrapperchecker.KindIdentifier {
+		return
+	}
+	switch callee.LiteralText() {
+	case "useState", "useReducer":
+		// ok
+	default:
+		return
+	}
+	var i int
+	pattern.ForEachChild(func(elt *wrapperchecker.Node) bool {
+		if elt.Kind() == wrapperchecker.KindBindingElement {
+			if i == 1 {
+				name := elt.BindingElementName()
+				if name != nil && name.Kind() == wrapperchecker.KindIdentifier {
+					out[name.LiteralText()] = true
+				}
+			}
+			i++
+		}
+		return false
+	})
+}
+
+func enclosingFunctionLike(n *wrapperchecker.Node) *wrapperchecker.Node {
+	cur := n.Parent()
+	for cur != nil {
+		switch cur.Kind() {
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindMethodDeclaration:
+			return cur
+		}
+		cur = cur.Parent()
+	}
+	return nil
 }
 
 func isReactiveHook(call *wrapperchecker.Node) bool {

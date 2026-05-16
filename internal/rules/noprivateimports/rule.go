@@ -230,28 +230,33 @@ var exportPatterns = []*regexp.Regexp{
 	regexp.MustCompile(`(?m)^\s*export\s+enum\s+([A-Za-z_$][A-Za-z0-9_$]*)`),
 }
 
-var defaultExportPattern = regexp.MustCompile(`(?m)^\s*export\s+default\s+(?:async\s+)?function`)
+var defaultExportPattern = regexp.MustCompile(`(?m)^\s*export\s+default\s+(?:async\s+)?`)
 
 func scanExports(src string) []exportInfo {
-	seen := map[int]bool{}
 	var out []exportInfo
+	addedAt := map[int]map[string]bool{}
+	add := func(name string, start int) {
+		if addedAt[start] == nil {
+			addedAt[start] = map[string]bool{}
+		}
+		if addedAt[start][name] {
+			return
+		}
+		addedAt[start][name] = true
+		out = append(out, exportInfo{name: name, start: start})
+	}
 	for _, re := range exportPatterns {
 		for _, m := range re.FindAllStringSubmatchIndex(src, -1) {
-			start := m[0]
-			name := src[m[2]:m[3]]
-			if seen[start] {
-				continue
-			}
-			seen[start] = true
-			out = append(out, exportInfo{name: name, start: start})
+			add(src[m[2]:m[3]], m[0])
 		}
 	}
+	// Default-exported declarations get an additional "default"
+	// entry so `import X from "..."` can be matched against the
+	// export's visibility annotation. A single declaration like
+	// `export default function fooFn() {}` therefore appears under
+	// both `fooFn` and `default`.
 	for _, m := range defaultExportPattern.FindAllStringIndex(src, -1) {
-		if seen[m[0]] {
-			continue
-		}
-		seen[m[0]] = true
-		out = append(out, exportInfo{name: "default", start: m[0]})
+		add("default", m[0])
 	}
 	return out
 }

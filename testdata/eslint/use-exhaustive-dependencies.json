@@ -2,7 +2,7 @@
   "ruleId": "use-exhaustive-dependencies",
   "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
   "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/useExhaustiveDependencies",
-  "_note": "Curated subset. Biome's full suite exercises stable-value detection from useState/useRef, property-access dependency matching, suppression-comment handling, and TypeScript-specific patterns this implementation does not yet model.",
+  "_note": "Curated subset of biome's suite. The full suite exercises duplicate-dep / extra-dep detection, suppression-comment handling, property-access dependency matching (`myObj!.x.y` in `[myObj!.x.y]`), and detailed destructure tracking this implementation does not yet model. Module-scope bindings and useState/useReducer setter stability are recognized.",
   "cases": [
     {
       "code": "function Component({ value }) {\n  useEffect(() => {\n    console.log(value);\n  }, []);\n}",
@@ -42,6 +42,18 @@
     },
     {
       "code": "function Component({ value }) {\n  useEffect(() => {\n    const local = value + 1;\n    console.log(local);\n  }, [value]);\n}",
+      "valid": true
+    },
+    {
+      "code": "import { useMemo } from 'react';\nconst data = {};\nfunction Component({ idx }) {\n  useMemo(() => { data[idx]; }, [idx]);\n}",
+      "valid": true
+    },
+    {
+      "code": "function Component() {\n  const [count, setCount] = useState(0);\n  useEffect(() => { setCount(count + 1); }, [count]);\n}",
+      "valid": true
+    },
+    {
+      "code": "import { useMemo } from 'react';\nfunction helper(x) { return x; }\nfunction Component({ value }) {\n  useMemo(() => helper(value), [value]);\n}",
       "valid": true
     }
   ]
