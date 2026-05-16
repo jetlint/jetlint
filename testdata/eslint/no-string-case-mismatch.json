@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-string-case-mismatch",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noStringCaseMismatch",
+  "cases": [
+    {
+      "code": "s.toUpperCase() === 'abc';\ns.toUpperCase() == 'abc';\n'abc' === s.toUpperCase();\ns.toLowerCase() === \"\\u001aX\";\ns.toLowerCase() === \"\\u{001a}X\";\ns.toLowerCase() === \"\\xaaX\";\ns.toLowerCase() === \"\\nX\";\n\nif (s.toUpperCase() === 'abc' \u0026\u0026 c == d \u0026\u0026 e == f) {};\nwhile (s.toUpperCase() === 'abc' \u0026\u0026 c == d \u0026\u0026 e == f) {};\nwhile (s.toUpperCase() === 'abc') {};\nlet b = s.toLowerCase() === `eFg`;;\ndo {} while (s.toLowerCase() === 'ABC');;\nfor (; s.toLowerCase() === 'ABC'; ) {};\n\nswitch (s.toUpperCase()) { case 'ABC': case 'abc': case 'aBc': default: }\n\nfor (; s['toLowerCase']() === 'ABC'; ) {}\nfor (; s[`toUpperCase`]() === 'abc'; ) {}\n\nswitch (s['toLowerCase']()) { case 'Abc': case 'aBc': case 'abC': default: }\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\ns.toUpperCase() === 'ABC';\ns.toLowerCase() === 'abc';\ns.toUpperCase() === '20';\ns.toLowerCase() === '20';\ns.toLowerCase() === `eFg${12}`;\ns.toLowerCase() == `eFg${12}`;\ns.toLowerCase() === \"\\xaa\";\ns.toLowerCase() === \"\\xAA\";\ns.toUpperCase() === \"\\u001b\";\ns.toLowerCase() === \"\\u001B\";\ns.toUpperCase() === \"\\u000D\";\ns.toLowerCase() === \"\\u000D\";\ns.toLowerCase() === \"\\u{a}aa\";\ns.toLowerCase() === \"\\u{A}aa\";\ns.toUpperCase() === \"{}\";\ns.toLowerCase() === \"{}\";",
+      "valid": true
+    }
+  ]
+}

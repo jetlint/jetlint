@@ -241,6 +241,7 @@ func additionalRulesSnapshot() []string {
 		"no-self-compare",
 		"no-setter-return",
 		"no-sparse-arrays",
+		"no-string-case-mismatch",
 		"no-switch-declarations",
 		"no-template-curly-in-string",
 		"no-this-before-super",
