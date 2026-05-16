@@ -80,6 +80,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nomisusedpromises"
 	"github.com/jetlint/jetlint/internal/rules/nomisusedspread"
 	"github.com/jetlint/jetlint/internal/rules/nomixedenums"
+	"github.com/jetlint/jetlint/internal/rules/nonestedcomponentdefinitions"
 	"github.com/jetlint/jetlint/internal/rules/nonewnativenonconstructor"
 	"github.com/jetlint/jetlint/internal/rules/nonodejsmodules"
 	"github.com/jetlint/jetlint/internal/rules/nononoctaldecimalescape"
@@ -641,6 +642,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nomeaninglessvoidoperator.New(),
 		nomisusedspread.New(),
 		nomixedenums.New(),
+		nonestedcomponentdefinitions.New(),
 		nonewnativenonconstructor.New(),
 		nonodejsmodules.New(),
 		nononoctaldecimalescape.New(),

@@ -233,6 +233,7 @@ func additionalRulesSnapshot() []string {
 		"no-misleading-character-class",
 		"no-misused-spread",
 		"no-mixed-enums",
+		"no-nested-component-definitions",
 		"no-new-native-nonconstructor",
 		"no-nodejs-modules",
 		"no-nonoctal-decimal-escape",
