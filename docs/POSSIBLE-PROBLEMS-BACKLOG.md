@@ -9,7 +9,7 @@ Update this file as rules land or assumptions change.
 - Shipped: 57 (all rules have implementations; 8 are partial-coverage and need work to reach 100%)
 - Remaining (AST-only): 0
 - Remaining (needs regex AST infra): 0
-- Partials needing 100%: no-constant-condition (206/306), no-constant-binary-expression (176/251), no-duplicate-imports (80/86), no-inner-declarations (65/66), no-undef (87/97), no-unmodified-loop-condition (37/39), no-use-before-define (239/354)
+- Partials needing 100%: no-constant-condition (251/306), no-constant-binary-expression (176/251), no-duplicate-imports (80/86), no-inner-declarations (65/66), no-undef (87/97), no-unmodified-loop-condition (37/39), no-use-before-define (239/354)
 
 **Symbols**
 
@@ -32,7 +32,7 @@ Update this file as rules land or assumptions change.
 | `no-cond-assign` | ✓ | Shipped 2026-05-15 |
 | `no-const-assign` | ✓ | Shipped 2026-05-15 |
 | `no-constant-binary-expression` | ✓ | Shipped 2026-05-15 (conservative port, 176/251 fixtures; full constant folding deferred to a shared utility) |
-| `no-constant-condition` | ✓ | Shipped 2026-05-15 (conservative port, 206/306 fixtures; full constant-folding deferred to a shared utility) |
+| `no-constant-condition` | ✓ | Shipped 2026-05-15 (251/306 fixtures, 82%; added short-circuit operator truthiness, template-span constant detection, NewExpression-always-truthy, assignment-expression pass-through, `\|\|=`/`&&=` truthiness inference, isPrimitiveConstant for arithmetic operand checks) |
 | `no-constructor-return` | ✓ | Shipped 2026-05-15 |
 | `no-control-regex` | ✓ | Shipped 2026-05-15 (hand-rolled pattern scanner with JS string-escape unescaping; covers `/.../` and `RegExp(string)` forms) |
 | `no-debugger` | ✓ | Shipped 2026-05-15 |

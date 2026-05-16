@@ -61,7 +61,7 @@ func TestNoConstantCondition_EslintCompatibility(t *testing.T) {
 	// actually hit) and lets the more elaborate fixtures slide. The
 	// long-term plan is a follow-up that introduces the utility and
 	// tightens this threshold.
-	minimumPassRate := 50.0
+	minimumPassRate := 80.0
 	if pct < minimumPassRate {
 		t.Fatalf("expected at least %.1f%% pass rate, got %d/%d (%.1f%%)", minimumPassRate, passed, total, pct)
 	}
