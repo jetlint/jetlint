@@ -104,6 +104,7 @@ var All = []Metadata{
 	{ID: "no-global-dirname-filename", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-sparse-arrays", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-string-case-mismatch", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-super-without-extends", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-switch-declarations", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-nested-component-definitions", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-new-native-nonconstructor", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

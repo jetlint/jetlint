@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-super-without-extends",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noSuperWithoutExtends",
+  "cases": [
+    {
+      "code": "class A {\n    constructor() {\n        super()\n    }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n/* should not generate diagnostics */\nclass A {}\nclass B {\n\ta = class extends A {\n\t\tconstructor(_) {\n\t\t\tsuper();\n\t\t}\n\t};\n}\n",
+      "valid": true
+    }
+  ]
+}

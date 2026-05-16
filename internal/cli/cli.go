@@ -103,6 +103,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nosetterreturn"
 	"github.com/jetlint/jetlint/internal/rules/nosparsearrays"
 	"github.com/jetlint/jetlint/internal/rules/nostringcasemismatch"
+	"github.com/jetlint/jetlint/internal/rules/nosuperwithoutextends"
 	"github.com/jetlint/jetlint/internal/rules/noswitchdeclarations"
 	"github.com/jetlint/jetlint/internal/rules/notemplatecurlyinstring"
 	"github.com/jetlint/jetlint/internal/rules/nothisbeforesuper"
@@ -632,6 +633,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noglobaldirnamefilename.New(),
 		nosparsearrays.New(),
 		nostringcasemismatch.New(),
+		nosuperwithoutextends.New(),
 		noswitchdeclarations.New(),
 		noprecisionloss.New(),
 		noprocessglobal.New(),
