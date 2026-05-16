@@ -55,7 +55,108 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	sym := ctx.Checker().SymbolOf(n)
 	if sym == nil {
 		ctx.Report(n, "'"+n.SourceText()+"' is not defined.")
+		return
 	}
+	// Destructuring-assignment shorthand like `({a} = {})` gets
+	// TS-resolved to a synthetic symbol attached to the pattern
+	// itself, even when there is no real binding. Verify a separate
+	// declaration with the same name exists somewhere in scope —
+	// otherwise the assignment target is undeclared.
+	if isDestructuringAssignmentShorthand(n) && !hasLexicalBinding(n, n.LiteralText()) {
+		ctx.Report(n, "'"+n.SourceText()+"' is not defined.")
+	}
+}
+
+// isDestructuringAssignmentShorthand reports whether `n` is the
+// identifier of a `{a}` ShorthandPropertyAssignment whose parent
+// ObjectLiteralExpression is the assignment target of `=` (i.e.
+// `({a} = ...)`).
+func isDestructuringAssignmentShorthand(n *wrapperchecker.Node) bool {
+	p := n.Parent()
+	if p == nil || p.Kind() != wrapperchecker.KindShorthandPropertyAssignment {
+		return false
+	}
+	gp := p.Parent()
+	if gp == nil || gp.Kind() != wrapperchecker.KindObjectLiteralExpression {
+		return false
+	}
+	// Walk up past parens to find the parent of the literal — must
+	// be a BinaryExpression with `=`.
+	cur := gp
+	for cur.Parent() != nil && cur.Parent().Kind() == wrapperchecker.KindParenthesizedExpression {
+		cur = cur.Parent()
+	}
+	bx := cur.Parent()
+	if bx == nil || bx.Kind() != wrapperchecker.KindBinaryExpression {
+		return false
+	}
+	return bx.BinaryOperatorKind() == wrapperchecker.KindEqualsToken && bx.BinaryLeft().Same(cur)
+}
+
+// hasLexicalBinding walks the scope-introducing ancestors of `ref`
+// looking for a sibling declaration of `name`. Mirrors the helper
+// used by `no-constant-condition` for shadowing detection.
+func hasLexicalBinding(ref *wrapperchecker.Node, name string) bool {
+	if name == "" {
+		return false
+	}
+	cur := ref
+	for cur != nil {
+		parent := cur.Parent()
+		if parent == nil {
+			break
+		}
+		if isScopeIntroducer(parent) {
+			if scopeHasSiblingBinding(parent, cur, name) {
+				return true
+			}
+		}
+		cur = parent
+	}
+	return false
+}
+
+func isScopeIntroducer(n *wrapperchecker.Node) bool {
+	switch n.Kind() {
+	case wrapperchecker.KindSourceFile,
+		wrapperchecker.KindBlock,
+		wrapperchecker.KindModuleBlock,
+		wrapperchecker.KindFunctionDeclaration,
+		wrapperchecker.KindFunctionExpression,
+		wrapperchecker.KindArrowFunction:
+		return true
+	}
+	return false
+}
+
+func scopeHasSiblingBinding(scope, skip *wrapperchecker.Node, name string) bool {
+	found := false
+	scope.ForEachChild(func(c *wrapperchecker.Node) bool {
+		if found || c == nil || c == skip {
+			return false
+		}
+		switch c.Kind() {
+		case wrapperchecker.KindVariableStatement:
+			if list := c.VariableStatementDeclarationList(); list != nil {
+				list.ForEachChild(func(decl *wrapperchecker.Node) bool {
+					if decl.Kind() == wrapperchecker.KindVariableDeclaration {
+						if nm := decl.DeclarationName(); nm != nil && nm.LiteralText() == name {
+							found = true
+						}
+					}
+					return found
+				})
+			}
+		case wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindClassDeclaration,
+			wrapperchecker.KindParameter:
+			if nm := c.DeclarationName(); nm != nil && nm.LiteralText() == name {
+				found = true
+			}
+		}
+		return found
+	})
+	return found
 }
 
 // isFreeReferenceContext reports whether the identifier appears in a
@@ -78,12 +179,20 @@ func isFreeReferenceContext(n *wrapperchecker.Node) bool {
 		wrapperchecker.KindPropertySignature,
 		wrapperchecker.KindEnumMember,
 		wrapperchecker.KindBindingElement,
-		wrapperchecker.KindImportSpecifier,
+		wrapperchecker.KindTypeParameter:
+		// These nodes have an identifier *name* plus other
+		// children (initializers, types, bodies). Only the name is
+		// a declaration; the rest are value/type references that
+		// should still be checked.
+		if name := p.DeclarationName(); name != nil && name.Same(n) {
+			return false
+		}
+		return true
+	case wrapperchecker.KindImportSpecifier,
 		wrapperchecker.KindImportClause,
 		wrapperchecker.KindNamespaceImport,
 		wrapperchecker.KindExportSpecifier,
 		wrapperchecker.KindNamespaceExport,
-		wrapperchecker.KindTypeParameter,
 		wrapperchecker.KindLabeledStatement,
 		wrapperchecker.KindBreakStatement,
 		wrapperchecker.KindContinueStatement,
