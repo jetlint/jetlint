@@ -52,12 +52,14 @@ func TestNoConstantBinaryExpression_EslintCompatibility(t *testing.T) {
 		pct = float64(passed) * 100.0 / float64(total)
 	}
 	t.Logf("oxlint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
-	// Conservative port — focuses on the literal-on-LHS logical/??
-	// patterns and reference-literal equality. Full constant folding
-	// (Boolean(...), template substitutions, unary +/- chains) is
-	// out of scope. Targeting a modest baseline so future
-	// improvements only need to lift the threshold.
-	minimumPassRate := 75.0
+	// Heavily expanded port: handles logical/?? chains with
+	// Boolean(...) / !X / void / typeof, fresh-reference and
+	// well-known-constructor equality, type-tag-aware equality
+	// (including loose-coercion rules), array-coercion fixed
+	// cases, and singleton self-equality. The remaining
+	// divergences require literal-value constant folding
+	// (`true == 1`, `` `hello` == true ``).
+	minimumPassRate := 99.0
 	if pct < minimumPassRate {
 		t.Fatalf("expected at least %.1f%% pass rate, got %d/%d (%.1f%%)", minimumPassRate, passed, total, pct)
 	}

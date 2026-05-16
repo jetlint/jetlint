@@ -31,6 +31,26 @@ import (
 
 const id = "no-constant-binary-expression"
 
+// Operator-token Kinds the wrapper doesn't surface as named
+// constants. Values come from the underlying AST kind enum order
+// in typescript-go's internal/ast/kind_generated.go and travel
+// through BinaryOperatorKind() unchanged. Mirroring is unfortunate
+// but stable: the enum order is locked by upstream TypeScript.
+const (
+	kindAsteriskToken                       wrapperchecker.Kind = 41
+	kindAsteriskAsteriskToken               wrapperchecker.Kind = 42
+	kindSlashToken                          wrapperchecker.Kind = 43
+	kindPercentToken                        wrapperchecker.Kind = 44
+	kindLessThanLessThanToken               wrapperchecker.Kind = 47
+	kindGreaterThanGreaterThanToken         wrapperchecker.Kind = 48
+	kindGreaterThanGreaterThanGreaterThanToken wrapperchecker.Kind = 49
+	kindAmpersandToken                      wrapperchecker.Kind = 50
+	kindBarToken                            wrapperchecker.Kind = 51
+	kindCaretToken                          wrapperchecker.Kind = 52
+	kindInKeyword                           wrapperchecker.Kind = 120
+	kindInstanceOfKeyword                   wrapperchecker.Kind = 121
+)
+
 // New constructs the rule.
 func New() engine.Rule { return &rule{} }
 
@@ -168,6 +188,35 @@ func hasConstantTruthiness(n *wrapperchecker.Node) bool {
 		if isAssignmentOperator(op) && op == wrapperchecker.KindEqualsToken {
 			return hasConstantTruthiness(unwrapParens(n.BinaryRight()))
 		}
+		left := unwrapParens(n.BinaryLeft())
+		right := unwrapParens(n.BinaryRight())
+		if op == wrapperchecker.KindAmpersandAmpersandToken {
+			// `&&`: result truthiness is known when either operand
+			// is provably falsy, or both have known truthiness.
+			if isAlwaysFalsy(left) || isAlwaysFalsy(right) {
+				return true
+			}
+			if hasConstantTruthiness(left) && hasConstantTruthiness(right) {
+				return true
+			}
+		}
+		if op == wrapperchecker.KindBarBarToken {
+			// `||`: result truthiness is known when either operand
+			// is provably truthy, or both have known truthiness.
+			if isAlwaysTruthy(left) || isAlwaysTruthy(right) {
+				return true
+			}
+			if hasConstantTruthiness(left) && hasConstantTruthiness(right) {
+				return true
+			}
+		}
+		if op == wrapperchecker.KindQuestionQuestionToken {
+			// `??`: when LHS is provably non-nullish, result is
+			// LHS; when provably nullish, result is RHS.
+			if hasConstantNullishness(left) && hasConstantTruthiness(left) && hasConstantTruthiness(right) {
+				return true
+			}
+		}
 	case wrapperchecker.KindPrefixUnaryExpression:
 		op := n.PrefixUnaryOperator()
 		switch op {
@@ -183,6 +232,141 @@ func hasConstantTruthiness(n *wrapperchecker.Node) bool {
 			return true // `void x` is always undefined => falsy.
 		case "typeof":
 			return true // `typeof x` is a non-empty string => truthy.
+		}
+	case wrapperchecker.KindCallExpression:
+		// `Boolean(const)` / `Boolean()` is a known boolean; can
+		// be classified at the rule's logical-operator visit.
+		return isAlwaysTruthy(n) || isAlwaysFalsy(n)
+	}
+	return false
+}
+
+// isAlwaysTruthy reports whether n is statically known to be truthy.
+func isAlwaysTruthy(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	if n.Kind() == wrapperchecker.KindParenthesizedExpression {
+		var inner *wrapperchecker.Node
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			inner = c
+			return true
+		})
+		return isAlwaysTruthy(inner)
+	}
+	switch n.Kind() {
+	case wrapperchecker.KindTrueKeyword,
+		wrapperchecker.KindRegularExpressionLiteral,
+		wrapperchecker.KindArrayLiteralExpression,
+		wrapperchecker.KindObjectLiteralExpression,
+		wrapperchecker.KindArrowFunction,
+		wrapperchecker.KindFunctionExpression,
+		wrapperchecker.KindClassExpression,
+		wrapperchecker.KindNewExpression,
+		wrapperchecker.KindTypeOfExpression:
+		return true
+	case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral:
+		return n.LiteralText() != ""
+	case wrapperchecker.KindNumericLiteral:
+		t := n.LiteralText()
+		return t != "" && t != "0" && t != "0.0" && t != ".0"
+	case wrapperchecker.KindBigIntLiteral:
+		return n.LiteralText() != "0n"
+	case wrapperchecker.KindPrefixUnaryExpression:
+		if n.PrefixUnaryOperator() == "!" {
+			return isAlwaysFalsy(n.PrefixUnaryOperand())
+		}
+	case wrapperchecker.KindCallExpression:
+		callee := n.CalleeExpression()
+		if callee == nil || callee.Kind() != wrapperchecker.KindIdentifier {
+			return false
+		}
+		if callee.SourceText() != "Boolean" {
+			return false
+		}
+		args := n.CallArguments()
+		if len(args) == 0 {
+			return false
+		}
+		return isAlwaysTruthy(args[0])
+	}
+	return false
+}
+
+// isAlwaysFalsy reports whether n is statically known to be falsy.
+func isAlwaysFalsy(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	if n.Kind() == wrapperchecker.KindParenthesizedExpression {
+		var inner *wrapperchecker.Node
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			inner = c
+			return true
+		})
+		return isAlwaysFalsy(inner)
+	}
+	switch n.Kind() {
+	case wrapperchecker.KindFalseKeyword,
+		wrapperchecker.KindNullKeyword,
+		wrapperchecker.KindVoidExpression:
+		return true
+	case wrapperchecker.KindStringLiteral, wrapperchecker.KindNoSubstitutionTemplateLiteral:
+		return n.LiteralText() == ""
+	case wrapperchecker.KindNumericLiteral:
+		t := n.LiteralText()
+		return t == "0" || t == "0.0" || t == ".0"
+	case wrapperchecker.KindBigIntLiteral:
+		return n.LiteralText() == "0n"
+	case wrapperchecker.KindIdentifier:
+		return n.LiteralText() == "undefined"
+	case wrapperchecker.KindPrefixUnaryExpression:
+		if n.PrefixUnaryOperator() == "!" {
+			return isAlwaysTruthy(n.PrefixUnaryOperand())
+		}
+	case wrapperchecker.KindCallExpression:
+		callee := n.CalleeExpression()
+		if callee == nil || callee.Kind() != wrapperchecker.KindIdentifier {
+			return false
+		}
+		if callee.SourceText() != "Boolean" {
+			return false
+		}
+		args := n.CallArguments()
+		if len(args) == 0 {
+			// `Boolean()` evaluates to `false`.
+			return true
+		}
+		return isAlwaysFalsy(args[0])
+	}
+	return false
+}
+
+// isStaticallyNullish reports whether n is statically known to
+// evaluate to null or undefined.
+func isStaticallyNullish(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	if n.Kind() == wrapperchecker.KindParenthesizedExpression {
+		var inner *wrapperchecker.Node
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			inner = c
+			return true
+		})
+		return isStaticallyNullish(inner)
+	}
+	switch n.Kind() {
+	case wrapperchecker.KindNullKeyword, wrapperchecker.KindVoidExpression:
+		return true
+	case wrapperchecker.KindIdentifier:
+		return n.LiteralText() == "undefined"
+	case wrapperchecker.KindBinaryExpression:
+		op := n.BinaryOperatorKind()
+		// `(a, b)` and `a = b` evaluate to the right-hand side —
+		// nullishness traces through.
+		if op == wrapperchecker.KindCommaToken || op == wrapperchecker.KindEqualsToken {
+			return isStaticallyNullish(unwrapParens(n.BinaryRight()))
 		}
 	}
 	return false
@@ -241,13 +425,20 @@ func hasConstantNullishness(n *wrapperchecker.Node) bool {
 		return true // postfix ++/-- returns a number.
 	case wrapperchecker.KindBinaryExpression:
 		op := n.BinaryOperatorKind()
-		// Logical operators (&&, ||, ??) can produce a nullish
-		// result; for the `??` form the comma operator passes
-		// through; otherwise any binary operator produces a
-		// primitive non-nullish value (number, string, boolean).
+		// For `??`, the result is non-nullish whenever the RHS is
+		// non-nullish: even if the LHS is nullish, the RHS takes
+		// over. `&&` / `||` short-circuit semantics make their
+		// result depend on operand values too dynamically to call
+		// constant here.
+		if op == wrapperchecker.KindQuestionQuestionToken {
+			right := unwrapParens(n.BinaryRight())
+			if hasConstantNullishness(right) && !isStaticallyNullish(right) {
+				return true
+			}
+			return false
+		}
 		if op == wrapperchecker.KindAmpersandAmpersandToken ||
-			op == wrapperchecker.KindBarBarToken ||
-			op == wrapperchecker.KindQuestionQuestionToken {
+			op == wrapperchecker.KindBarBarToken {
 			return false
 		}
 		if op == wrapperchecker.KindCommaToken {
@@ -280,6 +471,16 @@ func hasConstantNullishness(n *wrapperchecker.Node) bool {
 		return true
 	case wrapperchecker.KindDeleteExpression:
 		return true // `delete x` is a boolean.
+	case wrapperchecker.KindCallExpression:
+		// `Boolean(...)` / `String(...)` / `Number(...)` always
+		// return a primitive of a known type — never nullish.
+		callee := n.CalleeExpression()
+		if callee != nil && callee.Kind() == wrapperchecker.KindIdentifier {
+			switch callee.SourceText() {
+			case "Boolean", "String", "Number":
+				return true
+			}
+		}
 	}
 	return false
 }
@@ -293,25 +494,88 @@ func isConstantEquality(left, right *wrapperchecker.Node, strict bool) bool {
 		if isFreshReferenceLiteral(left) || isFreshReferenceLiteral(right) {
 			return true
 		}
+		// `new C()` always yields a freshly-allocated object — it
+		// can't strictly-equal any primitive value.
+		if (left.Kind() == wrapperchecker.KindNewExpression && primitiveTypeTag(right) != "") ||
+			(right.Kind() == wrapperchecker.KindNewExpression && primitiveTypeTag(left) != "") {
+			return true
+		}
+		// `new <well-known-builtin>()` is guaranteed to allocate a
+		// new object instance; comparing strictly to any prior
+		// reference always yields false.
+		if isWellKnownNewExpression(left) || isWellKnownNewExpression(right) {
+			return true
+		}
 		if hasIncompatibleTypeTag(left, right) {
 			return true
 		}
+		return false
 	}
-	// Either form: if both sides are primitive literals, the
-	// comparison's truth value is fully determined at compile
-	// time (the runtime applies fixed coercion rules).
-	if isPrimitiveLiteral(left) && isPrimitiveLiteral(right) {
+	// Loose `==` / `!=`: an object / function / class / regex
+	// literal has a fixed primitive coercion that never matches
+	// `true` / `false` / `null` / `undefined`. Arrays with zero or
+	// 2+ elements are included: zero stringifies to `""` (→ 0),
+	// 2+ elements introduce a `,` so the string can't parse to a
+	// finite number — neither can match boolean / null / undefined.
+	if (isStablyCoercedReference(left) || isCoercionFixedArray(left)) && isLooseEqualityImmuneLiteral(right) {
+		return true
+	}
+	if (isStablyCoercedReference(right) || isCoercionFixedArray(right)) && isLooseEqualityImmuneLiteral(left) {
+		return true
+	}
+	// Two fresh-reference literals always allocate distinct objects;
+	// loose equality between two references collapses to identity
+	// comparison, which is always false.
+	if isFreshReferenceLiteral(left) && isFreshReferenceLiteral(right) {
+		return true
+	}
+	// Two singleton-valued expressions (true / false / null /
+	// undefined / void X / !knownTruthiness / Boolean(const)) have a
+	// statically determinable equality result under both `==` and
+	// `===`.
+	if hasSingletonSelfEquality(left, right) {
+		return true
+	}
+	if hasIncompatibleTypeTag(left, right) && !looseEqualityCanCoerce(left, right) {
 		return true
 	}
 	return false
 }
 
-// isPrimitiveLiteral reports whether n is a literal primitive value
-// whose runtime representation is fully determined by its source
-// text — true/false/null/undefined, a numeric / bigint / string
-// literal, a substitution-free template, or a unary `void`/`typeof`
-// expression.
-func isPrimitiveLiteral(n *wrapperchecker.Node) bool {
+// isCoercionFixedArray reports whether n is an array literal whose
+// loose-equality coercion is fixed regardless of the elements'
+// values: an empty array (`[]` → `""` → 0) or one with two-or-more
+// elements (joined with `,`, never parseable as a finite number).
+// Sparse arrays and spreads are excluded because ESLint's matching
+// rule treats them as dynamic.
+func isCoercionFixedArray(n *wrapperchecker.Node) bool {
+	n = unwrapParens(n)
+	if n == nil || n.Kind() != wrapperchecker.KindArrayLiteralExpression {
+		return false
+	}
+	elems := n.ArrayElements()
+	if len(elems) == 0 {
+		return true
+	}
+	if len(elems) == 1 {
+		return false
+	}
+	for _, e := range elems {
+		if e == nil ||
+			e.Kind() == wrapperchecker.KindOmittedExpression ||
+			e.Kind() == wrapperchecker.KindSpreadElement {
+			return false
+		}
+	}
+	return true
+}
+
+// isStablyCoercedReference reports whether n is a fresh reference
+// whose primitive coercion is a fixed string regardless of any
+// embedded sub-expression: object / arrow / function / class / regex
+// literal — but NOT array literals (their toString depends on
+// elements).
+func isStablyCoercedReference(n *wrapperchecker.Node) bool {
 	if n == nil {
 		return false
 	}
@@ -321,67 +585,90 @@ func isPrimitiveLiteral(n *wrapperchecker.Node) bool {
 			inner = c
 			return true
 		})
-		return isPrimitiveLiteral(inner)
+		return isStablyCoercedReference(inner)
+	}
+	switch n.Kind() {
+	case wrapperchecker.KindObjectLiteralExpression,
+		wrapperchecker.KindArrowFunction,
+		wrapperchecker.KindFunctionExpression,
+		wrapperchecker.KindClassExpression,
+		wrapperchecker.KindRegularExpressionLiteral:
+		return true
+	}
+	return false
+}
+
+// isLooseEqualityImmuneLiteral reports whether n is a primitive whose
+// loose-equality coercion never matches a fresh reference literal:
+// `true`, `false`, `null`, `undefined`. Numbers and strings are
+// excluded because they can match an array's `toString()` output.
+func isLooseEqualityImmuneLiteral(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	if n.Kind() == wrapperchecker.KindParenthesizedExpression {
+		var inner *wrapperchecker.Node
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			inner = c
+			return true
+		})
+		return isLooseEqualityImmuneLiteral(inner)
 	}
 	switch n.Kind() {
 	case wrapperchecker.KindTrueKeyword,
 		wrapperchecker.KindFalseKeyword,
-		wrapperchecker.KindNullKeyword,
-		wrapperchecker.KindNumericLiteral,
-		wrapperchecker.KindBigIntLiteral,
-		wrapperchecker.KindStringLiteral,
-		wrapperchecker.KindNoSubstitutionTemplateLiteral:
+		wrapperchecker.KindNullKeyword:
 		return true
 	case wrapperchecker.KindIdentifier:
-		return n.LiteralText() == "undefined"
-	case wrapperchecker.KindVoidExpression, wrapperchecker.KindTypeOfExpression:
+		return n.SourceText() == "undefined"
+	case wrapperchecker.KindVoidExpression:
 		return true
-	case wrapperchecker.KindPrefixUnaryExpression:
-		op := n.PrefixUnaryOperator()
-		switch op {
-		case "+", "-", "~":
-			// Result is a number — the value isn't fully known
-			// unless the operand is, but the *type* is fixed, so
-			// this counts as a primitive for purposes of
-			// equality (we only need the type to be determinable
-			// when checking against another primitive of the same
-			// or different type).
-			return isPrimitiveLiteral(n.PrefixUnaryOperand())
-		case "!":
-			// `!x` is a boolean — but the *value* depends on x;
-			// only count it as a primitive literal when the
-			// operand is one (same as +/-/~).
-			return isPrimitiveLiteral(n.PrefixUnaryOperand())
-		case "void":
-			return true
-		}
-	case wrapperchecker.KindPostfixUnaryExpression:
-		// `x++` / `x--` evaluates to a number.
-		return true
-	case wrapperchecker.KindBinaryExpression:
-		op := n.BinaryOperatorKind()
-		if isAssignmentOperator(op) && op != wrapperchecker.KindEqualsToken {
-			// Compound arithmetic assignment evaluates to a
-			// number — its primitive type is determined.
-			return true
-		}
-		if op == wrapperchecker.KindEqualsEqualsToken ||
-			op == wrapperchecker.KindEqualsEqualsEqualsToken ||
-			op == wrapperchecker.KindExclamationEqualsToken ||
-			op == wrapperchecker.KindExclamationEqualsEqualsToken {
-			// Equality / inequality always evaluates to a boolean.
-			return true
-		}
 	case wrapperchecker.KindCallExpression:
-		// `Boolean(...)`, `String(...)`, `Number(...)` — global
-		// conversion calls produce a known primitive type.
+		// `Boolean(...)` always returns a boolean, which can't
+		// loose-equal a fresh reference.
 		callee := n.CalleeExpression()
 		if callee != nil && callee.Kind() == wrapperchecker.KindIdentifier {
-			switch callee.SourceText() {
-			case "Boolean", "String", "Number":
-				return true
-			}
+			return callee.SourceText() == "Boolean"
 		}
+	case wrapperchecker.KindPrefixUnaryExpression:
+		// `!X` always evaluates to a boolean primitive, immune to
+		// loose-coercion against a fresh reference.
+		if n.PrefixUnaryOperator() == "!" {
+			return true
+		}
+	}
+	return false
+}
+
+// looseEqualityCanCoerce reports whether the loose-equality coercion
+// rules might collapse two values with different primitive type tags
+// to a runtime-dependent result (e.g. `'5' == 5` depends on the
+// string's content). Returning false means the comparison's outcome
+// is statically determinable.
+func looseEqualityCanCoerce(left, right *wrapperchecker.Node) bool {
+	lt := primitiveTypeTag(left)
+	rt := primitiveTypeTag(right)
+	// `typeof X` returns a value from a fixed set of identifier-like
+	// strings ("string", "number", ...) — none of which coerce to a
+	// numeric value matching `true` (1) or `false` (0), and none of
+	// which can equal an empty string under `==`. Treat any
+	// typeof-vs-non-string comparison as statically determinable.
+	lUnwrapped := unwrapParens(left)
+	rUnwrapped := unwrapParens(right)
+	if lUnwrapped != nil && lUnwrapped.Kind() == wrapperchecker.KindTypeOfExpression && rt != "string" && rt != "" {
+		return false
+	}
+	if rUnwrapped != nil && rUnwrapped.Kind() == wrapperchecker.KindTypeOfExpression && lt != "string" && lt != "" {
+		return false
+	}
+	pair := lt + "|" + rt
+	switch pair {
+	case "number|string", "string|number",
+		"number|boolean", "boolean|number",
+		"string|boolean", "boolean|string",
+		"bigint|number", "number|bigint",
+		"bigint|string", "string|bigint":
+		return true
 	}
 	return false
 }
@@ -389,6 +676,10 @@ func isPrimitiveLiteral(n *wrapperchecker.Node) bool {
 // isFreshReferenceLiteral reports whether n is an expression that
 // evaluates to a freshly constructed object/function/class/regex —
 // these never strictly equal any value the user already has.
+//
+// Deliberately omits `new Expr()`: a constructor may return an
+// existing object via an explicit `return`, so `new Foo() === x`
+// is not provably constant without resolving `Foo`'s body.
 func isFreshReferenceLiteral(n *wrapperchecker.Node) bool {
 	if n == nil {
 		return false
@@ -399,8 +690,7 @@ func isFreshReferenceLiteral(n *wrapperchecker.Node) bool {
 		wrapperchecker.KindArrowFunction,
 		wrapperchecker.KindFunctionExpression,
 		wrapperchecker.KindClassExpression,
-		wrapperchecker.KindRegularExpressionLiteral,
-		wrapperchecker.KindNewExpression:
+		wrapperchecker.KindRegularExpressionLiteral:
 		return true
 	case wrapperchecker.KindBinaryExpression:
 		if n.BinaryOperatorKind() == wrapperchecker.KindCommaToken {
@@ -418,20 +708,7 @@ func isFreshReferenceLiteral(n *wrapperchecker.Node) bool {
 }
 
 func conditionalBranches(cond *wrapperchecker.Node) (thn, els *wrapperchecker.Node) {
-	// A ConditionalExpression has three children in order: condition,
-	// whenTrue, whenFalse. ForEachChild walks them in syntactic order.
-	var seen int
-	cond.ForEachChild(func(c *wrapperchecker.Node) bool {
-		switch seen {
-		case 1:
-			thn = c
-		case 2:
-			els = c
-		}
-		seen++
-		return false
-	})
-	return
+	return cond.ConditionalWhenTrue(), cond.ConditionalWhenFalse()
 }
 
 func isAssignmentOperator(op wrapperchecker.Kind) bool {
@@ -461,12 +738,127 @@ func isAssignmentOperator(op wrapperchecker.Kind) bool {
 // statically known primitive types that don't match — making `===`
 // (or `!==`) constant.
 func hasIncompatibleTypeTag(left, right *wrapperchecker.Node) bool {
+	if hasSingletonSelfEquality(left, right) {
+		return true
+	}
+	if isStringOrNumberBinary(left) && isNonStringOrNumberTag(primitiveTypeTag(right)) {
+		return true
+	}
+	if isStringOrNumberBinary(right) && isNonStringOrNumberTag(primitiveTypeTag(left)) {
+		return true
+	}
 	lt := primitiveTypeTag(left)
 	rt := primitiveTypeTag(right)
 	if lt == "" || rt == "" {
 		return false
 	}
 	return lt != rt
+}
+
+// hasSingletonSelfEquality reports whether both operands are nodes
+// whose value is a single statically-known constant (e.g. `null`,
+// `true`, `undefined`, `void X`). Comparing two such values strictly
+// yields a known result either way (equal or not).
+func hasSingletonSelfEquality(left, right *wrapperchecker.Node) bool {
+	l := unwrapParens(left)
+	r := unwrapParens(right)
+	if isSingletonValue(l) && isSingletonValue(r) {
+		return true
+	}
+	return false
+}
+
+// isSingletonValue reports whether n always evaluates to one
+// specific runtime value (and therefore comparison against another
+// singleton is statically determinable). Includes the keywords
+// true/false/null, the `undefined` identifier, `void X`, `!X` when
+// X has known truthiness, and `Boolean()` / `Boolean(const)`.
+func isSingletonValue(n *wrapperchecker.Node) bool {
+	if n == nil {
+		return false
+	}
+	if n.Kind() == wrapperchecker.KindParenthesizedExpression {
+		var inner *wrapperchecker.Node
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			inner = c
+			return true
+		})
+		return isSingletonValue(inner)
+	}
+	switch n.Kind() {
+	case wrapperchecker.KindTrueKeyword,
+		wrapperchecker.KindFalseKeyword,
+		wrapperchecker.KindNullKeyword,
+		wrapperchecker.KindVoidExpression:
+		return true
+	case wrapperchecker.KindIdentifier:
+		return n.LiteralText() == "undefined"
+	case wrapperchecker.KindPrefixUnaryExpression:
+		if n.PrefixUnaryOperator() == "!" {
+			operand := n.PrefixUnaryOperand()
+			return isAlwaysTruthy(operand) || isAlwaysFalsy(operand)
+		}
+	case wrapperchecker.KindCallExpression:
+		callee := n.CalleeExpression()
+		if callee == nil || callee.Kind() != wrapperchecker.KindIdentifier {
+			return false
+		}
+		if callee.SourceText() != "Boolean" {
+			return false
+		}
+		args := n.CallArguments()
+		if len(args) == 0 {
+			return true
+		}
+		return isAlwaysTruthy(args[0]) || isAlwaysFalsy(args[0])
+	}
+	return false
+}
+
+// isWellKnownNewExpression reports whether n is `new C(...)` where
+// C is a built-in constructor name known to always allocate a fresh
+// instance (so `x === new C(...)` is always false for any prior x).
+func isWellKnownNewExpression(n *wrapperchecker.Node) bool {
+	n = unwrapParens(n)
+	if n == nil || n.Kind() != wrapperchecker.KindNewExpression {
+		return false
+	}
+	callee := n.CalleeExpression()
+	if callee == nil || callee.Kind() != wrapperchecker.KindIdentifier {
+		return false
+	}
+	switch callee.SourceText() {
+	case "Array", "ArrayBuffer", "Boolean", "DataView",
+		"Date", "Error", "EvalError", "Map", "Number",
+		"Object", "Promise", "RangeError", "ReferenceError",
+		"RegExp", "Set", "String", "SyntaxError", "TypeError",
+		"URIError", "WeakMap", "WeakSet":
+		return true
+	}
+	return false
+}
+
+// isStringOrNumberBinary reports whether n is a binary `+` (or
+// compound `+=`) expression — both always evaluate to either a
+// number or a string.
+func isStringOrNumberBinary(n *wrapperchecker.Node) bool {
+	n = unwrapParens(n)
+	if n == nil || n.Kind() != wrapperchecker.KindBinaryExpression {
+		return false
+	}
+	op := n.BinaryOperatorKind()
+	return op == wrapperchecker.KindPlusToken || op == wrapperchecker.KindPlusEqualsToken
+}
+
+// isNonStringOrNumberTag reports whether a primitive-type tag refers
+// to a type that `+` could never produce: boolean, null, undefined,
+// or bigint (`+` of a bigint coerces, never yields bigint).
+func isNonStringOrNumberTag(tag string) bool {
+	switch tag {
+	case "boolean", "null", "undefined", "bigint":
+		return true
+	}
+	return false
 }
 
 // primitiveTypeTag returns a tag for n's primitive type when it is
@@ -501,11 +893,77 @@ func primitiveTypeTag(n *wrapperchecker.Node) string {
 		}
 	case wrapperchecker.KindPostfixUnaryExpression:
 		return "number"
+	case wrapperchecker.KindVoidExpression:
+		return "undefined"
+	case wrapperchecker.KindTypeOfExpression:
+		return "string"
+	case wrapperchecker.KindParenthesizedExpression:
+		var inner *wrapperchecker.Node
+		n.ForEachChild(func(c *wrapperchecker.Node) bool {
+			inner = c
+			return true
+		})
+		return primitiveTypeTag(inner)
 	case wrapperchecker.KindIdentifier:
 		if n.SourceText() == "undefined" {
 			return "undefined"
 		}
 		if n.SourceText() == "NaN" {
+			return "number"
+		}
+	case wrapperchecker.KindDeleteExpression:
+		// `delete x` always evaluates to a boolean.
+		return "boolean"
+	case wrapperchecker.KindCallExpression:
+		callee := n.CalleeExpression()
+		if callee != nil && callee.Kind() == wrapperchecker.KindIdentifier {
+			switch callee.SourceText() {
+			case "Boolean":
+				return "boolean"
+			case "String":
+				return "string"
+			case "Number":
+				return "number"
+			}
+		}
+	case wrapperchecker.KindBinaryExpression:
+		op := n.BinaryOperatorKind()
+		switch op {
+		case wrapperchecker.KindMinusToken,
+			kindAsteriskToken,
+			kindSlashToken,
+			kindPercentToken,
+			kindAsteriskAsteriskToken,
+			kindLessThanLessThanToken,
+			kindGreaterThanGreaterThanToken,
+			kindGreaterThanGreaterThanGreaterThanToken,
+			kindAmpersandToken,
+			kindBarToken,
+			kindCaretToken:
+			// Arithmetic / bitwise binary always yields a number.
+			return "number"
+		case wrapperchecker.KindLessThanToken,
+			wrapperchecker.KindLessThanEqualsToken,
+			wrapperchecker.KindGreaterThanToken,
+			wrapperchecker.KindGreaterThanEqualsToken,
+			kindInKeyword,
+			kindInstanceOfKeyword,
+			wrapperchecker.KindEqualsEqualsToken,
+			wrapperchecker.KindEqualsEqualsEqualsToken,
+			wrapperchecker.KindExclamationEqualsToken,
+			wrapperchecker.KindExclamationEqualsEqualsToken:
+			return "boolean"
+		case wrapperchecker.KindMinusEqualsToken,
+			wrapperchecker.KindAsteriskEqualsToken,
+			wrapperchecker.KindSlashEqualsToken,
+			wrapperchecker.KindPercentEqualsToken,
+			wrapperchecker.KindAsteriskAsteriskEqualsToken,
+			wrapperchecker.KindLessThanLessThanEqualsToken,
+			wrapperchecker.KindGreaterThanGreaterThanEqualsToken,
+			wrapperchecker.KindGreaterThanGreaterThanGreaterThanEqualsToken,
+			wrapperchecker.KindAmpersandEqualsToken,
+			wrapperchecker.KindBarEqualsToken,
+			wrapperchecker.KindCaretEqualsToken:
 			return "number"
 		}
 	}
