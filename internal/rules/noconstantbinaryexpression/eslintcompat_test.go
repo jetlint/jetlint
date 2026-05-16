@@ -52,16 +52,8 @@ func TestNoConstantBinaryExpression_EslintCompatibility(t *testing.T) {
 		pct = float64(passed) * 100.0 / float64(total)
 	}
 	t.Logf("oxlint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
-	// Heavily expanded port: handles logical/?? chains with
-	// Boolean(...) / !X / void / typeof, fresh-reference and
-	// well-known-constructor equality, type-tag-aware equality
-	// (including loose-coercion rules), array-coercion fixed
-	// cases, and singleton self-equality. The remaining
-	// divergences require literal-value constant folding
-	// (`true == 1`, `` `hello` == true ``).
-	minimumPassRate := 99.0
-	if pct < minimumPassRate {
-		t.Fatalf("expected at least %.1f%% pass rate, got %d/%d (%.1f%%)", minimumPassRate, passed, total, pct)
+	if failed > 0 {
+		t.Fatalf("expected 100%% pass rate, got %d/%d (%.1f%%)", passed, total, pct)
 	}
 }
 
