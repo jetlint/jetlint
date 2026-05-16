@@ -332,6 +332,7 @@ func additionalRulesSnapshot() []string {
 		"no-vue-data-object-declaration",
 		"no-vue-reserved-keys",
 		"no-vue-reserved-props",
+		"no-vue-setup-props-reactivity-loss",
 		"use-yield",
 		"valid-typeof",
 	}

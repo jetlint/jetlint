@@ -184,6 +184,7 @@ var All = []Metadata{
 	{ID: "no-vue-data-object-declaration", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-vue-reserved-keys", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-vue-reserved-props", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-vue-setup-props-reactivity-loss", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "valid-typeof", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 
 	// suspicious — usually wrong, occasionally intentional.
