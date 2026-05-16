@@ -10,3 +10,6 @@
 
 # local build artifact when go-building from repo root
 /jetlint
+
+# locally-built oxlint-fixtures binary
+/oxlint-fixtures
