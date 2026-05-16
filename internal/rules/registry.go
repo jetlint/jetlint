@@ -90,6 +90,7 @@ var All = []Metadata{
 	{ID: "no-debugger", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-dupe-args", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-dupe-class-members", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-duplicate-private-class-members", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-dupe-else-if", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-base-to-string", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-dupe-keys", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
