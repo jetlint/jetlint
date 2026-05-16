@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-nonoctal-decimal-escape",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noNonoctalDecimalEscape",
+  "cases": [
+    {
+      "code": "let x = \"\\8\"\nlet x = \"\\9\"\nlet x = \"\\\"\\8\\\"\"\nlet x = \"f\\9\"\nlet x = \"fo\\9\"\nlet x = \"foo\\9\"\nlet x = \"foo\\8bar\"\nlet x = \"👍\\8\"\nlet x = \"\\\\\\8\"\nlet x = \"\\\\\\\\\\9\"\nlet x = \"foo\\\\\\8\"\nlet x = \"\\\\ \\8\"\nlet x = \"\\\\1\\9\"\nlet x = \"foo\\\\1\\9\"\nlet x = \"\\\\n\\\\n\\8\\\\n\"\nlet x = \"\\\\n.\\\\n\\8\\\\n\"\nlet x = \"\\\\n.\\\\nn\\8\\\\n\"\nlet x = \"\\\\👍\\8\"\nlet x = \"\\\\\\8\\9\"\nlet x = \"\\8\\\\\\9\"\nlet x = \"\\8 \\\\\\9\"\nlet x = \"\\8\\8\"\nlet x = \"\\9\\8\"\nlet x = \"foo\\8bar\\9baz\"\nlet x = \"\\8\\\\1\\9\"\nlet x = \"\\9\\\\n9\\\\\\9\\9\"\nlet x = \"\\8\\\\\\\\\\9\"\nlet x = \"var foo = '\\8'; bar('\\9')\"\nlet x = \"var foo = '8'\\n  bar = '\\9'\"\nlet x = \"\\\\\\n\\8\"\nlet x = \"\\\\\\r\\n\\9\"\nlet x = \"\\\\\\\\\\n\\8\"\nlet x = \"foo\\\\\\nbar\\9baz\"\nlet x = \"\\\\0\\8\"\nlet x = \"foo\\\\0\\9bar\"\nlet x = \"\\\\1\\\\0\\8\"\nlet x = \"\\\\0\\8\\9\"\nlet x = \"\\8\\\\0\\9\"\nlet x = \"0\\8\"\nlet x = \"\\\\0\\8\"\nlet x = \"\\0 \\8\"\nlet x = \"\\01\\8\"\nlet x = \"\\0\\1\\8\"\nlet x = \"\\0\\\\n\\8\"\n\nlet x = {\n    \"\\8\": 0,\n}",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// /* should not generate diagnostics */\nlet x = \"8\"\nlet x = \"var \\u8888\"\nlet x = /\\8/\nlet x = \"\"\nlet x = \"foo\"\nlet x = \"8\"\nlet x = \"9\"\nlet x = \"foo8\"\nlet x = \"foo9bar\"\nlet x = \"\\ \"\nlet x = \"\\\\\"\nlet x = \"\\a\"\nlet x = \"\\n\"\nlet x = \"\\0\"\nlet x = \"\\1\"\nlet x = \"\\7\"\nlet x = \"\\01\"\nlet x = \"\\08\"\nlet x = \"\\19\"\nlet x = \"\\t9\"\nlet x = \"\\👍8\"\nlet x = \"\\\\8\"\nlet x = \"\\\\9\"\nlet x = \"\\\\8\\\\9\"\nlet x = \"\\\\ \\\\8\"\nlet x = \"\\\\\\\\9\"\nlet x = \"\\\\9bar\"\nlet x = \"a\\\\8\"\nlet x = \"foo\\\\8\"\nlet x = \"foo\\\\8bar\"\nlet x = \"9\\\\9\"\nlet x = \"n\\n8\"\nlet x = \"n\\nn\\n8\"\nlet x = \"\\1.8\"\nlet x = \"\\1\\28\"\nlet x = \"\\x99\"\nlet x = \"\\\\\\x38\"\nlet x = \"\\u99999\"\nlet x = \"\\n8\"\nlet x = \"\\n\\\\9\"\n",
+      "valid": true
+    }
+  ]
+}
