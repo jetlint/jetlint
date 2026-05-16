@@ -1,6 +1,5 @@
 {
   "ruleId": "no-use-before-define",
-  "oxcSHA": "7cb5ac96e1fbb59deb6e57dd60226ac80318dcdf",
   "oxcSource": "crates/oxc_linter/src/rules/eslint/no_use_before_define.rs",
   "cases": [
     {

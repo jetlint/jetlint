@@ -443,11 +443,49 @@ func firstString(toks []tok) (string, bool) {
 // between the `[` and matching `]` after `json!(` and parse it as
 // JSON, which works because the macro body is JSON-shaped.
 func extractOptions(src string, entry []tok) ([]any, error) {
+	after := tokensAfterCommaAtDepth(entry, 1)
+	val, err := findJSONMacroValue(src, after, tokOpenBracket, tokCloseBracket)
+	if err != nil || val == "" {
+		return nil, err
+	}
+	cleaned := stripTrailingCommas(val)
+	var opts []any
+	if err := json.Unmarshal([]byte(cleaned), &opts); err != nil {
+		return nil, fmt.Errorf("decode options %q: %w", cleaned, err)
+	}
+	return opts, nil
+}
+
+// extractSettings returns the parsed settings object for a 3-tuple
+// entry of the form `(code, options, settings)`. oxc uses this slot to
+// supply ESLint-style `globals` / `env` configuration via
+// `Some(serde_json::json!({...}))`. Returns nil if the entry has no
+// settings.
+func extractSettings(src string, entry []tok) (map[string]any, error) {
+	// Skip past the first comma (after code) and second comma (after
+	// options) to reach the settings position.
+	after := tokensAfterCommaAtDepth(entry, 2)
+	val, err := findJSONMacroValue(src, after, tokOpenBrace, tokCloseBrace)
+	if err != nil || val == "" {
+		return nil, err
+	}
+	cleaned := stripTrailingCommas(val)
+	var settings map[string]any
+	if err := json.Unmarshal([]byte(cleaned), &settings); err != nil {
+		return nil, fmt.Errorf("decode settings %q: %w", cleaned, err)
+	}
+	return settings, nil
+}
+
+// tokensAfterCommaAtDepth returns the tokens that appear after the
+// n-th top-level comma (depth 1) in `entry`. Used to slice into the
+// trailing positional arguments of a Rust tuple.
+func tokensAfterCommaAtDepth(entry []tok, n int) []tok {
 	depth := 0
-	sawFirstComma := false
-	var after []tok
+	commasSeen := 0
+	var out []tok
 	for _, t := range entry {
-		if !sawFirstComma {
+		if commasSeen < n {
 			switch t.kind {
 			case tokOpenParen, tokOpenBracket, tokOpenBrace:
 				depth++
@@ -455,51 +493,50 @@ func extractOptions(src string, entry []tok) ([]any, error) {
 				depth--
 			case tokComma:
 				if depth == 1 {
-					sawFirstComma = true
-					continue
+					commasSeen++
+					if commasSeen == n {
+						continue
+					}
 				}
 			}
 			continue
 		}
-		after = append(after, t)
+		out = append(out, t)
 	}
-	for i := 0; i+3 < len(after); i++ {
-		if after[i].kind != tokOther || after[i].value != "json" {
+	return out
+}
+
+// findJSONMacroValue scans `toks` for the first `json!(<open>...<close>)`
+// invocation, returning the source slice of the macro argument.
+func findJSONMacroValue(src string, toks []tok, openKind, closeKind tokKind) (string, error) {
+	for i := 0; i+3 < len(toks); i++ {
+		if toks[i].kind != tokOther || toks[i].value != "json" {
 			continue
 		}
-		if after[i+1].kind != tokOther || after[i+1].value != "!" {
+		if toks[i+1].kind != tokOther || toks[i+1].value != "!" {
 			continue
 		}
-		if after[i+2].kind != tokOpenParen {
+		if toks[i+2].kind != tokOpenParen {
 			continue
 		}
-		if after[i+3].kind != tokOpenBracket {
+		if toks[i+3].kind != openKind {
 			continue
 		}
-		open := after[i+3]
+		open := toks[i+3]
 		d := 1
-		for j := i + 4; j < len(after); j++ {
-			switch after[j].kind {
-			case tokOpenBracket:
+		for j := i + 4; j < len(toks); j++ {
+			switch toks[j].kind {
+			case openKind:
 				d++
-			case tokCloseBracket:
+			case closeKind:
 				d--
 				if d == 0 {
-					raw := src[open.pos : after[j].pos+1]
-					// Rust's serde_json::json! macro accepts trailing
-					// commas before `]` or `}`; Go's encoding/json does
-					// not. Strip them so the macro body round-trips.
-					cleaned := stripTrailingCommas(raw)
-					var opts []any
-					if err := json.Unmarshal([]byte(cleaned), &opts); err != nil {
-						return nil, fmt.Errorf("decode options %q: %w", cleaned, err)
-					}
-					return opts, nil
+					return src[open.pos : toks[j].pos+1], nil
 				}
 			}
 		}
 	}
-	return nil, nil
+	return "", nil
 }
 
 // stripTrailingCommas removes commas that appear immediately before
@@ -531,10 +568,13 @@ func stripTrailingCommas(s string) string {
 }
 
 // ExtractedCase is one fixture entry — code plus the parsed options
-// array (nil when the upstream case had no options or used `None`).
+// array (nil when the upstream case had no options or used `None`)
+// and optional ESLint-style settings (globals / env) captured from
+// oxc's third tuple position.
 type ExtractedCase struct {
-	Code    string
-	Options []any
+	Code     string
+	Options  []any
+	Settings map[string]any
 }
 
 // Extract reads a single oxc rule source file and returns its pass
@@ -561,9 +601,14 @@ func Extract(src string) (pass, fail []ExtractedCase, err error) {
 			if optErr != nil {
 				return nil, nil, fmt.Errorf("%s entry: %w", name, optErr)
 			}
+			settings, setErr := extractSettings(src, e)
+			if setErr != nil {
+				return nil, nil, fmt.Errorf("%s entry settings: %w", name, setErr)
+			}
 			out = append(out, ExtractedCase{
-				Code:    code,
-				Options: opts,
+				Code:     code,
+				Options:  opts,
+				Settings: settings,
 			})
 		}
 		if name == "pass" {

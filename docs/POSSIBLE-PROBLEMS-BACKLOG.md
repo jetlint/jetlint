@@ -6,10 +6,10 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 57 (all rules have implementations; 8 are partial-coverage and need work to reach 100%)
+- Shipped: 57 (all rules have implementations; only 1 fixture-data conflict remains, in oxc itself)
 - Remaining (AST-only): 0
 - Remaining (needs regex AST infra): 0
-- Partials needing 100%: no-undef (92/97), no-use-before-define (353/354)
+- Partials needing 100%: no-use-before-define (353/354 — 1 fixture conflict in oxc itself)
 
 **Symbols**
 
@@ -63,7 +63,7 @@ Update this file as rules land or assumptions change.
 | `no-sparse-arrays` | ✓ | Shipped 2026-05-15 |
 | `no-template-curly-in-string` | ✓ | Shipped 2026-05-15 |
 | `no-this-before-super` | ✓ | Shipped 2026-05-15 (65/65 fixtures) |
-| `no-undef` | ✓ | Shipped 2026-05-15 (92/97 fixtures, 94.8%; declaration-vs-initializer disambiguation, destructuring-assignment-shorthand detection, esnext lib for newer built-ins, type-position skip for TypeScript type-only constructs; remaining 5 cases need `globals`/`env` settings from oxc test sources, which the fixture extractor does not yet capture) |
+| `no-undef` | ✓ | Shipped 2026-05-15 (97/97 fixtures, 100%; declaration-vs-initializer disambiguation, destructuring-assignment-shorthand detection, per-case lib (esnext + optional dom when env.browser is set), type-position skip, ambient `declare var` injection driven by the fixture's `globals` settings — extractor now captures the 3rd-tuple settings position) |
 | `no-unexpected-multiline` | ✓ | Shipped 2026-05-15 |
 | `no-unmodified-loop-condition` | ✓ | Shipped 2026-05-15 (39/39 fixtures, 100%; nested function-likes are skipped (only executed when called) and direct calls follow the callee's symbol into its body for cross-procedural mutation detection) |
 | `no-unreachable` | ✓ | Shipped 2026-05-15 (65/65 fixtures) |

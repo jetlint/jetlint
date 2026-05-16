@@ -28,6 +28,22 @@ type Case struct {
 	// FirstOption() and convert it to a typed Options struct for
 	// NewWithOptions(...).
 	Options []any `json:"options,omitempty"`
+	// Settings is the ESLint-style settings object captured from
+	// oxc's third tuple position. Typically supplies `globals` (a
+	// `{ name: bool }` map naming globals the rule should treat as
+	// declared) or `env`. Nil when the upstream case had no settings.
+	Settings map[string]any `json:"settings,omitempty"`
+}
+
+// Globals returns the `globals` map from Settings, or nil when none
+// is present. Values are kept as their original Rust JSON form (bool
+// for "readonly"/"writable" in ESLint terms).
+func (c Case) Globals() map[string]any {
+	if c.Settings == nil {
+		return nil
+	}
+	g, _ := c.Settings["globals"].(map[string]any)
+	return g
 }
 
 // FirstOption returns Options[0] as a map[string]any (the shape rules
