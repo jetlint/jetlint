@@ -161,6 +161,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/unboundmethod"
 	"github.com/jetlint/jetlint/internal/rules/useisnan"
 	"github.com/jetlint/jetlint/internal/rules/usejsonimportattributes"
+	"github.com/jetlint/jetlint/internal/rules/usejsxkeyiniterable"
 	"github.com/jetlint/jetlint/internal/rules/useparseintradix"
 	"github.com/jetlint/jetlint/internal/rules/usesinglejsdocasterisk"
 	"github.com/jetlint/jetlint/internal/rules/useunknownincatchcallbackvariable"
@@ -707,6 +708,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		unboundmethod.New(),
 		useisnan.New(),
 		usejsonimportattributes.New(),
+		usejsxkeyiniterable.New(),
 		useparseintradix.New(),
 		usesinglejsdocasterisk.New(),
 		useunknownincatchcallbackvariable.New(),

@@ -313,6 +313,7 @@ func additionalRulesSnapshot() []string {
 		"unbound-method",
 		"use-isnan",
 		"use-json-import-attributes",
+		"use-jsx-key-in-iterable",
 		"use-parse-int-radix",
 		"use-single-js-doc-asterisk",
 		"use-unknown-in-catch-callback-variable",

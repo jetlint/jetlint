@@ -164,6 +164,7 @@ var All = []Metadata{
 	{ID: "switch-exhaustiveness-check", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-isnan", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-json-import-attributes", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-jsx-key-in-iterable", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-parse-int-radix", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-single-js-doc-asterisk", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-unknown-in-catch-callback-variable", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
