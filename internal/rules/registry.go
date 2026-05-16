@@ -81,6 +81,7 @@ var All = []Metadata{
 	{ID: "no-compare-neg-zero", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-cond-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-const-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-constant-binary-expression", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-constant-condition", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-constructor-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-debugger", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

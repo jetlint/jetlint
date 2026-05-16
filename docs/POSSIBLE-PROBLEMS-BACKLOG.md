@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 42
-- Remaining (AST-only): ~11
+- Shipped: 43
+- Remaining (AST-only): ~10
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -30,7 +30,7 @@ Update this file as rules land or assumptions change.
 | `no-compare-neg-zero` | ✓ | Shipped 2026-05-15 |
 | `no-cond-assign` | ✓ | Shipped 2026-05-15 |
 | `no-const-assign` | ✓ | Shipped 2026-05-15 |
-| `no-constant-binary-expression` | | AST + light type inference. |
+| `no-constant-binary-expression` | ✓ | Shipped 2026-05-15 (conservative port, 176/251 fixtures; full constant folding deferred to a shared utility) |
 | `no-constant-condition` | ✓ | Shipped 2026-05-15 (conservative port, 206/306 fixtures; full constant-folding deferred to a shared utility) |
 | `no-constructor-return` | ✓ | Shipped 2026-05-15 |
 | `no-control-regex` | ⊘ | Regex AST. |
