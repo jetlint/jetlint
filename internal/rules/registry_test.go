@@ -329,6 +329,7 @@ func additionalRulesSnapshot() []string {
 		"use-single-js-doc-asterisk",
 		"use-unique-element-ids",
 		"use-unknown-in-catch-callback-variable",
+		"no-vue-data-object-declaration",
 		"use-yield",
 		"valid-typeof",
 	}

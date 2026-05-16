@@ -1,0 +1,59 @@
+{
+  "ruleId": "no-vue-data-object-declaration",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noVueDataObjectDeclaration",
+  "cases": [
+    {
+      "code": "// createApp(...).mount with object `data`\nimport { createApp } from 'vue';\n\ncreateApp({\n\tdata: {\n\t\tfoo: 'bar'\n\t}\n}).mount('#app');",
+      "valid": false
+    },
+    {
+      "code": "// createApp with object `data`\nimport { createApp } from 'vue';\n\ncreateApp({\n\tdata: {\n\t\tfoo: 'bar'\n\t}\n});",
+      "valid": false
+    },
+    {
+      "code": "// export default with object `data`\nexport default {\n\tdata: {\n\t\tfoo: 'bar'\n\t}\n}",
+      "valid": false
+    },
+    {
+      "code": "// export default with parenthesized object `data`\nexport default {\n\tdata: /*a*/ (/*b*/{\n\t\tfoo: 'bar'\n\t})\n};",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// const app = createApp + app.component with function `data` (dot access)\nimport { createApp } from 'vue';\n\nconst app = createApp(App);\napp.component('some-comp', {\n\tdata: function () {\n\t\treturn {\n\t\t\tfoo: 'bar'\n\t\t};\n\t}\n});",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// createApp with function `data`\nimport { createApp } from 'vue';\n\ncreateApp({\n\tdata: function () {\n\t\treturn {\n\t\t\tfoo: 'bar'\n\t\t};\n\t}\n}).mount('#app');",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// createApp with spread + method `data`\nimport { createApp } from 'vue';\n\ncreateApp({\n\t...data,\n\tdata() {\n\t\treturn {\n\t\t\tfoo: 'bar'\n\t\t};\n\t}\n}).mount('#app');",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// export default arrow `data`\nexport default {\n\tdata: () =\u003e {\n\t\t// no-op\n\t}\n};",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// export default with data property on an object defined in methods\nexport default {\n\tmethods: {\n\t\tfoo() {\n\t\t\tconst bar = {\n\t\t\t\tdata: {}\n\t\t\t}\n\t\t}\n\t}\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// export default with function `data`\nexport default {\n\tdata: function () {\n\t\treturn {\n\t\t\tfoo: 'bar'\n\t\t};\n\t}\n};",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// export default method and methods/computed mix\nexport default {\n\tdata() { },\n\tmethods: {},\n};",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// new Vue with function `data`\nnew Vue({\n\tdata: function () {\n\t\treturn {\n\t\t\tfoo: 'bar'\n\t\t};\n\t}\n});\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// new Vue with method shorthand `data`\nnew Vue({\n\t...data,\n\tdata() {\n\t\treturn {\n\t\t\tfoo: 'bar'\n\t\t};\n\t}\n});",
+      "valid": true
+    }
+  ]
+}
