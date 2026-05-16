@@ -128,11 +128,22 @@ func toCamelCase(kebab string) string {
 }
 
 // classifyValidity inspects a fixture filename stem (without extension)
-// and reports whether biome treats this file as a passing test case.
-// Filenames containing "invalid" mark fail cases; everything else
-// (typically "valid", "valid_01", but also bare names) passes.
-func classifyValidity(stem string) bool {
-	return !strings.Contains(stem, "invalid")
+// and its body and reports whether biome treats this file as a
+// passing test case. The biome convention is:
+//   - filename containing "invalid" → fail case
+//   - filename starting with "valid" → pass case
+//   - otherwise → pass iff the body opens with the magic comment
+//     `/* should not generate diagnostics */`, which biome's other
+//     fixture files use to mark passing tests with non-standard
+//     names (e.g. `duplicateSuper.js`).
+func classifyValidity(stem string, body []byte) bool {
+	if strings.Contains(stem, "invalid") {
+		return false
+	}
+	if strings.HasPrefix(stem, "valid") {
+		return true
+	}
+	return strings.Contains(string(body), "/* should not generate diagnostics */")
 }
 
 // extractRule walks one rule's spec directory under biome's test tree
@@ -206,7 +217,7 @@ func extractRule(biomePath, outDir, ruleID, category string) error {
 			return fmt.Errorf("read fixture %s: %w", name, err)
 		}
 		stem := strings.TrimSuffix(name, filepath.Ext(name))
-		valid := classifyValidity(stem)
+		valid := classifyValidity(stem, body)
 		// JSONC files contain a top-level array of code strings — biome
 		// runs each string as its own test case. The raw JSONC text isn't
 		// valid JS, so leaving it whole would produce a parse error
