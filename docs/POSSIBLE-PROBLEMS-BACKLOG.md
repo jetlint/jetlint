@@ -9,7 +9,7 @@ Update this file as rules land or assumptions change.
 - Shipped: 57 (all rules have implementations; 8 are partial-coverage and need work to reach 100%)
 - Remaining (AST-only): 0
 - Remaining (needs regex AST infra): 0
-- Partials needing 100%: no-undef (91/97), no-use-before-define (239/354)
+- Partials needing 100%: no-undef (91/97), no-use-before-define (243/354)
 
 **Symbols**
 
@@ -73,7 +73,7 @@ Update this file as rules land or assumptions change.
 | `no-unsafe-optional-chaining` | ✓ | Shipped 2026-05-15 (82/82 fixtures, 100% — `with(...)` head detected via integer cast to KindWithStatement) |
 | `no-unused-private-class-members` | ✓ | Shipped 2026-05-15 |
 | `no-unused-vars` | ✓ | Shipped 2026-05-15 (conservative port — flags declarations whose name never appears in a reference position; underscore-prefix and `export`-attached names suppressed; full option set deferred) |
-| `no-use-before-define` | ✓ | Shipped 2026-05-15 (239/354 fixtures; remaining cases need cross-scope analysis to honor the `variables: false` option fully) |
+| `no-use-before-define` | ✓ | Shipped 2026-05-15 (243/354 fixtures; flags self-init / self-default patterns (`var a = a`, `function f(a = a) {}`, `var {a = a} = …`); remaining cases need cross-scope and TDZ analysis (deferred bodies, for-in/of iterable reads, class hoisting semantics)) |
 | `no-useless-backreference` | ✓ | Shipped 2026-05-15 (hand-rolled pattern scanner counts capturing/named groups, flags backreferences with no target) |
 | `require-atomic-updates` | ✓ | Shipped 2026-05-15 (hand-written tests; no oxc source available) |
 | `use-isnan` | ✓ | Shipped 2026-05-15 |
