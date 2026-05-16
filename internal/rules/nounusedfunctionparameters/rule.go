@@ -2,11 +2,9 @@
 // flag parameters that are declared and never read inside their
 // function body. Underscore-prefixed parameter names are treated as
 // intentional placeholders (matching ESLint's `argsIgnorePattern`
-// default). Similarly, a function whose own name starts with `_` is
-// treated as a private/unused entry point, and its parameters are
-// not checked — biome's fixtures rely on that escape hatch.
+// default).
 //
-// The body walk skips into nested function-likes so a parameter
+// The body walk descends into nested function-likes so a parameter
 // referenced inside a closure still counts as used by the outer
 // function.
 package nounusedfunctionparameters
@@ -38,9 +36,6 @@ func (rule) Handlers() map[wrapperchecker.Kind]engine.Handler {
 }
 
 func visit(ctx *engine.Context, fn *wrapperchecker.Node) {
-	if functionNameSkipped(fn) {
-		return
-	}
 	params := functionParameters(fn)
 	if len(params) == 0 {
 		return
@@ -64,32 +59,6 @@ func visit(ctx *engine.Context, fn *wrapperchecker.Node) {
 			ctx.Report(name, "parameter '"+text+"' is declared but never used")
 		}
 	}
-}
-
-// functionNameSkipped reports whether fn carries a name that biome's
-// convention treats as intentionally-unused (leading underscore).
-// Anonymous functions (arrow, expression with no name, methods with
-// non-identifier keys) are NOT skipped — biome flags unused params
-// inside them.
-func functionNameSkipped(fn *wrapperchecker.Node) bool {
-	switch fn.Kind() {
-	case wrapperchecker.KindFunctionDeclaration,
-		wrapperchecker.KindFunctionExpression,
-		wrapperchecker.KindMethodDeclaration:
-		var name *wrapperchecker.Node
-		fn.ForEachChild(func(c *wrapperchecker.Node) bool {
-			if c.Kind() == wrapperchecker.KindIdentifier {
-				name = c
-				return true
-			}
-			return false
-		})
-		if name == nil {
-			return false
-		}
-		return strings.HasPrefix(name.LiteralText(), "_")
-	}
-	return false
 }
 
 // functionParameters returns the Parameter nodes of fn in source

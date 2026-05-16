@@ -99,6 +99,7 @@ var All = []Metadata{
 	{ID: "no-ex-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-fallthrough", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-func-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-global-dirname-filename", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-sparse-arrays", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-string-case-mismatch", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-switch-declarations", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

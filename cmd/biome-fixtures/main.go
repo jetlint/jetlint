@@ -28,6 +28,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -127,23 +128,17 @@ func toCamelCase(kebab string) string {
 	return b.String()
 }
 
-// classifyValidity inspects a fixture filename stem (without extension)
-// and its body and reports whether biome treats this file as a
-// passing test case. The biome convention is:
-//   - filename containing "invalid" → fail case
-//   - filename starting with "valid" → pass case
-//   - otherwise → pass iff the body opens with the magic comment
-//     `/* should not generate diagnostics */`, which biome's other
-//     fixture files use to mark passing tests with non-standard
-//     names (e.g. `duplicateSuper.js`).
-func classifyValidity(stem string, body []byte) bool {
-	if strings.Contains(stem, "invalid") {
-		return false
-	}
-	if strings.HasPrefix(stem, "valid") {
+// classifyValidity reports whether biome's snapshot file for this
+// fixture records any diagnostics. A `# Diagnostics` section in the
+// `.snap` file means the rule fires (so the test is invalid); its
+// absence means the file passes clean. This is the source of truth
+// — biome's filename conventions don't cover regression fixtures
+// like `issue-NNNN.tsx`.
+func classifyValidity(snapBody []byte) bool {
+	if snapBody == nil {
 		return true
 	}
-	return strings.Contains(string(body), "/* should not generate diagnostics */")
+	return !bytes.Contains(snapBody, []byte("\n# Diagnostics\n"))
 }
 
 // extractRule walks one rule's spec directory under biome's test tree
@@ -216,8 +211,8 @@ func extractRule(biomePath, outDir, ruleID, category string) error {
 		if err != nil {
 			return fmt.Errorf("read fixture %s: %w", name, err)
 		}
-		stem := strings.TrimSuffix(name, filepath.Ext(name))
-		valid := classifyValidity(stem, body)
+		snapBody, _ := os.ReadFile(filepath.Join(ruleDir, name+".snap"))
+		valid := classifyValidity(snapBody)
 		// JSONC files contain a top-level array of code strings — biome
 		// runs each string as its own test case. The raw JSONC text isn't
 		// valid JS, so leaving it whole would produce a parse error

@@ -219,6 +219,7 @@ func additionalRulesSnapshot() []string {
 		"no-ex-assign",
 		"no-fallthrough",
 		"no-func-assign",
+		"no-global-dirname-filename",
 		"no-for-in-array",
 		"no-implied-eval",
 		"no-import-assign",

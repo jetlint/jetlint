@@ -1,0 +1,23 @@
+{
+  "ruleId": "no-global-dirname-filename",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noGlobalDirnameFilename",
+  "cases": [
+    {
+      "code": "const dirname = __dirname;\nconst filename = __filename;\nconst dirname_ = { __dirname };\nconst filename_ = { __filename };\nconst dirname__ = { dirname: __dirname, foo: \"foo\" };\nconst filename__ = { filename: __filename, foo: \"foo\" };\n\nif (__dirname.startsWith(\"/project/src/\")) {}\nif (__filename.endsWith(\".js\")) {}\n",
+      "valid": false
+    },
+    {
+      "code": "/**\n * `correctness/noGlobalDirnameFilename` does not trigger\n * in any of the following scenarios\n */\n\n// String concatenation\nconst path1 = __dirname + \"/data\";\nconst path2 = \"/data\" + __filename;\n\n// Template string literals\nconst command: string = `cat ${__filename}`;\n\n// Operators\nconst target = process.env.DEBUG \u0026\u0026 __filename;\nconst folder = __dirname || \"./default\";\nconst dir: string = __dirname ?? \"\";\nconst location = true ? __dirname : \"unknown\";\n\n// Array initialization\nconst arr: string[] = [__filename];\n\n// Computed property access\nconst cache: Record\u003cstring, string\u003e = {};\nconst value = cache[__dirname];\n\n// Function parameters\nfunction logPath(path = __dirname) {\n\tconsole.log(path);\n}\nconst arrowLog = (f = __filename) =\u003e console.log(f);\n\n// Type Assertions\nconst fileAsAny = __filename as any;\n\n// JSX\nconst Component = () =\u003e \u003cdiv data-path={__dirname} /\u003e;\n\n// Class properties\nclass FileLogger {\n\tcurrentFile = __filename;\n}\nnew FileLogger().currentFile = __filename;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst __filename = 1;\nconst foo = __filename;\n\nconst __dirname = 1;\nconst bar = __dirname;\n\nimport {__filename as filename} from \"foo.mjs\"\nconst baz = 1;\nexport {foo as __dirname}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst dirname = import.meta.dirname;\nconst filename = import.meta.filename;\nconst dirname_ = { __dirname: import.meta.dirname };\nconst filename_ = { __filename: import.meta.filename };\nconst dirname__ = { dirname: import.meta.dirname, foo: \"foo\" };\nconst filename__ = { filename: import.meta.filename, foo: \"foo\" };\n\nif (import.meta.dirname.startsWith(\"/project/src/\")) {}\nif (import.meta.filename.endsWith(\".js\")) {}\n",
+      "valid": true
+    }
+  ]
+}

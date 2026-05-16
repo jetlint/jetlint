@@ -17,7 +17,7 @@
     },
     {
       "code": "function _A(A) {}\n",
-      "valid": true
+      "valid": false
     },
     {
       "code": "/* should not generate diagnostics */\nfunction foo(myVar) {\n    console.log(myVar);\n}\n\nfunction foo(_unused) {\n    console.log('not using the parameter');\n}\n\nObject.fromEntries(Object.entries({a: 'A', b: 'B', c: 'C'}).map(([k, v]) =\u003e [v, k]));\n\nnew Promise((accept, _reject) =\u003e {\n    window.setTimeout(accept, 1000);\n});\n\ndata.filter(([_k, v]) =\u003e v \u003e 10);\n\nfunction withObjectSpread({ a, ...rest }) {\n    return rest;\n}\n",
