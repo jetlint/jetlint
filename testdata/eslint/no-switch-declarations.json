@@ -1,0 +1,59 @@
+{
+  "ruleId": "no-switch-declarations",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noSwitchDeclarations",
+  "cases": [
+    {
+      "code": "switch (a) { case 1: let x = 1; break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (a) { default: let x = 2; break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (a) { case 1: const x = 1; break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (a) { default: const x = 2; break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (a) { case 1: function f() {} break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (a) { default: function f() {} break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (a) { case 1: class C {} break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (a) { default: class C {} break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (1) {\n\tcase 1:\n\t\tenum E {}\n\t\tbreak;\n}\n\nswitch (1) {\n\tdefault:\n\t\tenum E {}\n\t\tbreak;\n}\n\nswitch (1) {\n\tcase 1:\n\t\tinterface I {}\n\t\tbreak;\n}\n\nswitch (1) {\n\tdefault:\n\t\tinterface I {}\n\t\t{\n\t\t}\n\t\tbreak;\n}\n\nswitch (1) {\n\tcase 1:\n\t\ttype N = number;\n\t\tbreak;\n}\n\nswitch (1) {\n\tdefault:\n\t\ttype N = number;\n\t\tbreak;\n}\n",
+      "valid": false
+    },
+    {
+      "code": "switch (a) { case 1: { let x = 1; break; } default: { let x = 2; break; } }",
+      "valid": true
+    },
+    {
+      "code": "switch (a) { case 1: { const x = 1; break; } default: { const x = 2; break; } }",
+      "valid": true
+    },
+    {
+      "code": "switch (a) { case 1: { function f() {} break; } default: { function f() {} break; } }",
+      "valid": true
+    },
+    {
+      "code": "switch (a) { case 1: { class C {} break; } default: { class C {} break; } }",
+      "valid": true
+    }
+  ]
+}

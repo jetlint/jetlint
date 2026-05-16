@@ -179,13 +179,33 @@ func extractRule(biomePath, outDir, ruleID, category string) error {
 		if err != nil {
 			return fmt.Errorf("read fixture %s: %w", name, err)
 		}
+		stem := strings.TrimSuffix(name, filepath.Ext(name))
+		valid := classifyValidity(stem)
+		// JSONC files contain a top-level array of code strings — biome
+		// runs each string as its own test case. The raw JSONC text isn't
+		// valid JS, so leaving it whole would produce a parse error
+		// instead of a real per-snippet check. Decode here and emit one
+		// case per element.
+		if strings.HasSuffix(name, ".jsonc") || strings.HasSuffix(name, ".json") {
+			snippets, ok := decodeJSONCStringArray(body)
+			if !ok {
+				return fmt.Errorf("fixture %s is JSONC but not a string array", name)
+			}
+			for _, code := range snippets {
+				if _, dup := seen[code]; dup {
+					continue
+				}
+				seen[code] = struct{}{}
+				fx.Cases = append(fx.Cases, Case{Code: code, Valid: valid})
+			}
+			continue
+		}
 		code := string(body)
-		if _, ok := seen[code]; ok {
+		if _, dup := seen[code]; dup {
 			continue
 		}
 		seen[code] = struct{}{}
-		stem := strings.TrimSuffix(name, filepath.Ext(name))
-		fx.Cases = append(fx.Cases, Case{Code: code, Valid: classifyValidity(stem)})
+		fx.Cases = append(fx.Cases, Case{Code: code, Valid: valid})
 	}
 
 	if sha, err := readGitSHA(biomePath); err == nil {
@@ -203,6 +223,73 @@ func extractRule(biomePath, outDir, ruleID, category string) error {
 	}
 	fmt.Printf("%s: %d cases -> %s\n", ruleID, len(fx.Cases), out)
 	return nil
+}
+
+// decodeJSONCStringArray parses a JSONC byte slice as a top-level
+// array of strings, stripping `//` and `/* */` comments first so
+// real-world biome fixtures (which often include `// Notes`) decode
+// cleanly. Returns ok=false if the body isn't a string array.
+func decodeJSONCStringArray(body []byte) ([]string, bool) {
+	cleaned := stripJSONCComments(body)
+	var snippets []string
+	if err := json.Unmarshal(cleaned, &snippets); err != nil {
+		return nil, false
+	}
+	return snippets, true
+}
+
+// stripJSONCComments removes // line comments and /* block comments,
+// taking care not to misinterpret comment-like sequences inside JSON
+// string literals. Sufficient for biome's fixture JSONC files; not a
+// general-purpose JSONC parser.
+func stripJSONCComments(body []byte) []byte {
+	out := make([]byte, 0, len(body))
+	inString := false
+	escape := false
+	for i := 0; i < len(body); i++ {
+		c := body[i]
+		if inString {
+			out = append(out, c)
+			if escape {
+				escape = false
+				continue
+			}
+			if c == '\\' {
+				escape = true
+				continue
+			}
+			if c == '"' {
+				inString = false
+			}
+			continue
+		}
+		if c == '"' {
+			inString = true
+			out = append(out, c)
+			continue
+		}
+		if c == '/' && i+1 < len(body) {
+			if body[i+1] == '/' {
+				for i < len(body) && body[i] != '\n' {
+					i++
+				}
+				if i < len(body) {
+					out = append(out, body[i])
+				}
+				continue
+			}
+			if body[i+1] == '*' {
+				i += 2
+				for i+1 < len(body) && !(body[i] == '*' && body[i+1] == '/') {
+					i++
+				}
+				i++ // land on '/'
+				continue
+			}
+		}
+		out = append(out, c)
+	}
+	return out
 }
 
 // readGitSHA reads the .git/HEAD ref the same way oxlint-fixtures does
