@@ -20,7 +20,7 @@ const eslintTsconfigBody = `{
     "skipLibCheck": true, "allowJs": true, "noImplicitAny": false,
     "jsx": "preserve"
   },
-  "include": ["case.ts"]
+  "include": ["case.tsx"]
 }`
 
 func TestUseHookAtTopLevel_EslintCompatibility(t *testing.T) {
@@ -75,7 +75,7 @@ func runEslintCase(t *testing.T, code string) (int, error) {
 	if err := os.WriteFile(tsc, []byte(eslintTsconfigBody), 0o644); err != nil {
 		return 0, err
 	}
-	if err := os.WriteFile(filepath.Join(dir, "case.ts"), []byte(code), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "case.tsx"), []byte(code), 0o644); err != nil {
 		return 0, err
 	}
 	prog, err := wrapperchecker.LoadProgram(tsc)

@@ -2,6 +2,7 @@
   "ruleId": "use-exhaustive-dependencies",
   "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
   "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/useExhaustiveDependencies",
+  "_note": "Curated subset. Biome's full suite exercises stable-value detection from useState/useRef, property-access dependency matching, suppression-comment handling, and TypeScript-specific patterns this implementation does not yet model.",
   "cases": [
     {
       "code": "function Component({ value }) {\n  useEffect(() => {\n    console.log(value);\n  }, []);\n}",
