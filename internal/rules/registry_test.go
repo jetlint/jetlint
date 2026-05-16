@@ -200,6 +200,7 @@ func additionalRulesSnapshot() []string {
 		"no-cond-assign",
 		"no-confusing-void-expression",
 		"no-const-assign",
+		"no-constant-binary-expression",
 		"no-constant-condition",
 		"no-constructor-return",
 		"no-debugger",
