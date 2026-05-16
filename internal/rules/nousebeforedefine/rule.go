@@ -715,7 +715,8 @@ func declarationKind(n *wrapperchecker.Node) declKind {
 	case wrapperchecker.KindClassDeclaration,
 		wrapperchecker.KindClassExpression,
 		wrapperchecker.KindEnumDeclaration,
-		wrapperchecker.KindModuleDeclaration:
+		wrapperchecker.KindModuleDeclaration,
+		wrapperchecker.KindTypeAliasDeclaration:
 		return declClass
 	case wrapperchecker.KindParameter:
 		return declParameter
