@@ -155,6 +155,29 @@ func extractRule(biomePath, outDir, ruleID, category string) error {
 			hasSnap[stem] = true
 		}
 	}
+	// Files with a sibling `.options.json` carry per-test rule
+	// options that this extractor doesn't parse. Skip them — the
+	// fixture would otherwise be exercised under default options
+	// and likely produce the wrong diagnostic count.
+	hasOptions := make(map[string]bool)
+	for _, e := range entries {
+		name := e.Name()
+		if !strings.HasSuffix(name, ".options.json") {
+			continue
+		}
+		stem := strings.TrimSuffix(name, ".options.json")
+		// Mark every fixture filename that shares this stem.
+		for _, f := range entries {
+			fn := f.Name()
+			if strings.HasSuffix(fn, ".snap") {
+				continue
+			}
+			fnStem := strings.TrimSuffix(fn, filepath.Ext(fn))
+			if fnStem == stem {
+				hasOptions[fn] = true
+			}
+		}
+	}
 
 	biomeRelSrc, _ := filepath.Rel(biomePath, ruleDir)
 	fx := Fixture{
@@ -173,6 +196,9 @@ func extractRule(biomePath, outDir, ruleID, category string) error {
 			continue
 		}
 		if !hasSnap[name] {
+			continue
+		}
+		if hasOptions[name] {
 			continue
 		}
 		body, err := os.ReadFile(filepath.Join(ruleDir, name))

@@ -117,6 +117,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounsafetypeassertion"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeunaryminus"
 	"github.com/jetlint/jetlint/internal/rules/nounreachableloop"
+	"github.com/jetlint/jetlint/internal/rules/nounusedfunctionparameters"
 	"github.com/jetlint/jetlint/internal/rules/nounusedlabels"
 	"github.com/jetlint/jetlint/internal/rules/nounusedprivateclassmembers"
 	"github.com/jetlint/jetlint/internal/rules/nounusedvars"
@@ -653,6 +654,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nounsafetypeassertion.New(),
 		nounsafeunaryminus.New(),
 		nounmodifiedloopcondition.New(),
+		nounusedfunctionparameters.New(),
 		nounusedlabels.New(),
 		nounusedprivateclassmembers.New(),
 		nounusedvars.New(),
