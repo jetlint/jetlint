@@ -107,6 +107,7 @@ var All = []Metadata{
 	{ID: "no-switch-declarations", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-nested-component-definitions", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-new-native-nonconstructor", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-next-async-client-component", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-nodejs-modules", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-obj-calls", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-process-global", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

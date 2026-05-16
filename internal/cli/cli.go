@@ -84,6 +84,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nomixedenums"
 	"github.com/jetlint/jetlint/internal/rules/nonestedcomponentdefinitions"
 	"github.com/jetlint/jetlint/internal/rules/nonewnativenonconstructor"
+	"github.com/jetlint/jetlint/internal/rules/nonextasyncclientcomponent"
 	"github.com/jetlint/jetlint/internal/rules/nonodejsmodules"
 	"github.com/jetlint/jetlint/internal/rules/nononoctaldecimalescape"
 	"github.com/jetlint/jetlint/internal/rules/nonnullabletypeassertionstyle"
@@ -652,6 +653,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nomixedenums.New(),
 		nonestedcomponentdefinitions.New(),
 		nonewnativenonconstructor.New(),
+		nonextasyncclientcomponent.New(),
 		nonodejsmodules.New(),
 		nononoctaldecimalescape.New(),
 		noobjcalls.New(),

@@ -237,6 +237,7 @@ func additionalRulesSnapshot() []string {
 		"no-mixed-enums",
 		"no-nested-component-definitions",
 		"no-new-native-nonconstructor",
+		"no-next-async-client-component",
 		"no-nodejs-modules",
 		"no-nonoctal-decimal-escape",
 		"no-obj-calls",
