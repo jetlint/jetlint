@@ -84,6 +84,10 @@ type Case struct {
 	// (`[options0, options1, ...]`). Nil when the upstream case had no
 	// options or used `None`. Rules typically read Options[0].
 	Options []any `json:"options,omitempty"`
+	// Settings carries ESLint-style configuration captured from oxc's
+	// third tuple position — typically `globals` (declared names that
+	// no-undef and friends should treat as defined). Nil when absent.
+	Settings map[string]any `json:"settings,omitempty"`
 }
 
 func extractRule(oxcPath, outDir, ruleID string) error {
@@ -120,10 +124,10 @@ func extractRule(oxcPath, outDir, ruleID string) error {
 		Cases:     make([]Case, 0, len(pass)+len(fail)),
 	}
 	for _, c := range pass {
-		fx.Cases = append(fx.Cases, Case{Code: c.Code, Valid: true, Options: c.Options})
+		fx.Cases = append(fx.Cases, Case{Code: c.Code, Valid: true, Options: c.Options, Settings: c.Settings})
 	}
 	for _, c := range fail {
-		fx.Cases = append(fx.Cases, Case{Code: c.Code, Valid: false, Options: c.Options})
+		fx.Cases = append(fx.Cases, Case{Code: c.Code, Valid: false, Options: c.Options, Settings: c.Settings})
 	}
 	// Capture upstream SHA if the checkout is a git repo, so the
 	// fixture file records the exact source revision it was generated
