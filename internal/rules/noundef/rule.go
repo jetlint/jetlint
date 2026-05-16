@@ -52,6 +52,11 @@ func (r *rule) visit(ctx *engine.Context, n *wrapperchecker.Node) {
 	if !r.opts.TypeofMode && isTypeofOperand(n) {
 		return
 	}
+	// References inside a TypeScript type-only construct are erased
+	// at runtime, so an "undefined value" reading there is harmless.
+	if isInTypePosition(n) {
+		return
+	}
 	sym := ctx.Checker().SymbolOf(n)
 	if sym == nil {
 		ctx.Report(n, "'"+n.SourceText()+"' is not defined.")
@@ -235,6 +240,34 @@ func isFreeReferenceContext(n *wrapperchecker.Node) bool {
 		return true
 	}
 	return true
+}
+
+// isInTypePosition reports whether `n` sits inside a TypeScript
+// type-only construct (TypeReference, TypeQuery, TypeLiteral,
+// FunctionType, InterfaceDeclaration, TypeAliasDeclaration). Such
+// references are erased at runtime.
+func isInTypePosition(n *wrapperchecker.Node) bool {
+	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
+		switch cur.Kind() {
+		case wrapperchecker.KindTypeReference,
+			wrapperchecker.KindTypeQuery,
+			wrapperchecker.KindTypeLiteral,
+			wrapperchecker.KindFunctionType,
+			wrapperchecker.KindInterfaceDeclaration,
+			wrapperchecker.KindTypeAliasDeclaration:
+			return true
+		case wrapperchecker.KindSourceFile,
+			wrapperchecker.KindBlock,
+			wrapperchecker.KindFunctionDeclaration,
+			wrapperchecker.KindFunctionExpression,
+			wrapperchecker.KindArrowFunction,
+			wrapperchecker.KindMethodDeclaration,
+			wrapperchecker.KindClassDeclaration,
+			wrapperchecker.KindClassExpression:
+			return false
+		}
+	}
+	return false
 }
 
 // isTypeofOperand reports whether `n` is the direct operand of a
