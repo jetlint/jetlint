@@ -252,6 +252,7 @@ func additionalRulesSnapshot() []string {
 		"no-unexpected-multiline",
 		"no-unreachable",
 		"no-unreachable-loop",
+		"no-unreachable-super",
 		"no-unnecessary-boolean-literal-compare",
 		"no-unnecessary-condition",
 		"no-unnecessary-qualifier",
