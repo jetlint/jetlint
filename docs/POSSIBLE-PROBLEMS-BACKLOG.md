@@ -6,8 +6,8 @@ Update this file as rules land or assumptions change.
 
 **Status counts**
 
-- Shipped: 40
-- Remaining (AST-only): ~13
+- Shipped: 41
+- Remaining (AST-only): ~12
 - Remaining (needs regex AST infra): 6
 
 **Symbols**
@@ -66,7 +66,7 @@ Update this file as rules land or assumptions change.
 | `no-unexpected-multiline` | ✓ | Shipped 2026-05-15 |
 | `no-unmodified-loop-condition` | ✓ | Shipped 2026-05-15 (37/39 fixtures; remaining 2 cases need intra-procedural analysis of called functions) |
 | `no-unreachable` | ✓ | Shipped 2026-05-15 (65/65 fixtures) |
-| `no-unreachable-loop` | | AST walk: every path through the loop body exits. |
+| `no-unreachable-loop` | ✓ | Shipped 2026-05-15 (hand-written tests; no oxc source available) |
 | `no-unsafe-finally` | ✓ | Shipped 2026-05-15 |
 | `no-unsafe-negation` | ✓ | Shipped 2026-05-15 |
 | `no-unsafe-optional-chaining` | ✓ | Shipped 2026-05-15 (80/82 fixtures; `with(...)` not detected because `KindWithStatement` is unexported by the wrapper) |
