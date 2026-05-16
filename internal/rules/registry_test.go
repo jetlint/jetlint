@@ -238,6 +238,7 @@ func additionalRulesSnapshot() []string {
 		"no-undef",
 		"no-unexpected-multiline",
 		"no-unreachable",
+		"no-unreachable-loop",
 		"no-unnecessary-boolean-literal-compare",
 		"no-unnecessary-condition",
 		"no-unnecessary-qualifier",

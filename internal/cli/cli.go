@@ -106,6 +106,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounsafereturn"
 	"github.com/jetlint/jetlint/internal/rules/nounsafetypeassertion"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeunaryminus"
+	"github.com/jetlint/jetlint/internal/rules/nounreachableloop"
 	"github.com/jetlint/jetlint/internal/rules/nounusedprivateclassmembers"
 	"github.com/jetlint/jetlint/internal/rules/nousebeforedefine"
 	"github.com/jetlint/jetlint/internal/rules/nouselessdefaultassignment"
@@ -604,6 +605,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nosetterreturn.New(),
 		nounexpectedmultiline.New(),
 		nounreachable.New(),
+		nounreachableloop.New(),
 		nounnecessarybooleanliteralcompare.New(),
 		nounnecessarycondition.New(),
 		nounnecessaryqualifier.New(),
