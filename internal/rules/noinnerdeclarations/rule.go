@@ -89,7 +89,8 @@ func (r *rule) checkParent(ctx *engine.Context, n *wrapperchecker.Node, decl str
 	if parent == nil {
 		return
 	}
-	if isAllowedContainer(parent) {
+	allowBareBlockChain := decl == "function" && r.opts.BlockScopedFunctions == BlockScopedAllow
+	if isAllowedContainer(parent, allowBareBlockChain) {
 		return
 	}
 	body := enclosingBodyKind(parent)
@@ -120,7 +121,15 @@ func isVarStatement(n *wrapperchecker.Node) bool {
 // where a function/var declaration is allowed: a top-level script,
 // a function/method/accessor body block, a class static block, or
 // the immediate child of an export declaration.
-func isAllowedContainer(parent *wrapperchecker.Node) bool {
+//
+// Nested bare `{ … }` blocks inside a function body are also
+// permitted: `function foo() { { function bar() {} } }` lifts to
+// `foo`'s scope and is treated as a function-body declaration. This
+// only applies when the chain consists entirely of plain blocks —
+// blocks attached to a control-flow statement (`if`, `do`, `while`,
+// `for`, `try`, `switch`) terminate the chain because they're
+// not pure scoping aliases.
+func isAllowedContainer(parent *wrapperchecker.Node, walkBareBlocks bool) bool {
 	switch parent.Kind() {
 	case wrapperchecker.KindSourceFile,
 		wrapperchecker.KindModuleBlock,
@@ -128,7 +137,13 @@ func isAllowedContainer(parent *wrapperchecker.Node) bool {
 		wrapperchecker.KindExportAssignment:
 		return true
 	case wrapperchecker.KindBlock:
-		grand := parent.Parent()
+		cur := parent
+		if walkBareBlocks {
+			for cur.Parent() != nil && cur.Parent().Kind() == wrapperchecker.KindBlock {
+				cur = cur.Parent()
+			}
+		}
+		grand := cur.Parent()
 		if grand == nil {
 			return false
 		}
@@ -203,8 +218,8 @@ func enclosingBodyKind(parent *wrapperchecker.Node) string {
 // isStrictMode reports whether `n`'s enclosing scope is in strict
 // mode. A scope is strict when it sits inside a class body, when the
 // enclosing function/script body opens with a `"use strict"`
-// directive, or when the source file is a module (it has at least one
-// top-level import/export).
+// directive, or when the source file is a module (it has at least
+// one top-level import/export).
 func isStrictMode(n *wrapperchecker.Node) bool {
 	for cur := n.Parent(); cur != nil; cur = cur.Parent() {
 		switch cur.Kind() {

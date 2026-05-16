@@ -9,7 +9,7 @@ Update this file as rules land or assumptions change.
 - Shipped: 57 (all rules have implementations; 8 are partial-coverage and need work to reach 100%)
 - Remaining (AST-only): 0
 - Remaining (needs regex AST infra): 0
-- Partials needing 100%: no-constant-condition (296/306), no-constant-binary-expression (249/251), no-inner-declarations (65/66), no-undef (87/97), no-unmodified-loop-condition (37/39), no-use-before-define (239/354)
+- Partials needing 100%: no-constant-condition (296/306), no-constant-binary-expression (249/251), no-undef (87/97), no-unmodified-loop-condition (37/39), no-use-before-define (239/354)
 
 **Symbols**
 
@@ -48,7 +48,7 @@ Update this file as rules land or assumptions change.
 | `no-fallthrough` | ✓ | Shipped 2026-05-15 (86/86 fixtures) |
 | `no-func-assign` | ✓ | Shipped 2026-05-15 |
 | `no-import-assign` | ✓ | Shipped 2026-05-15 |
-| `no-inner-declarations` | ✓ | Shipped 2026-05-15 (65/66 fixtures; one diverges on sourceType=module heuristics) |
+| `no-inner-declarations` | ✓ | Shipped 2026-05-15 (66/66 fixtures, 100%; nested bare-block chains rooted at a function body are recognised as in-scope under `blockScopedFunctions: allow`) |
 | `no-invalid-regexp` | ✓ | Shipped 2026-05-15 (hand-rolled structural validator catches unbalanced parens, unclosed char classes, dangling backslash, unterminated named groups) |
 | `no-irregular-whitespace` | ✓ | Shipped 2026-05-15 (220/220 fixtures) |
 | `no-loss-of-precision` | ✓ | Shipped 2026-05-15 |

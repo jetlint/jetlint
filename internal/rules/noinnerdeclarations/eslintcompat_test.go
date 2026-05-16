@@ -59,16 +59,8 @@ func TestNoInnerDeclarations_EslintCompatibility(t *testing.T) {
 		pct = float64(passed) * 100.0 / float64(total)
 	}
 	t.Logf("oxlint compatibility: %d/%d passed (%.1f%%)", passed, total, pct)
-	// Allow one expected divergence: oxc runs the
-	// `function foo() { { function bar() { } } }` case as
-	// sourceType=module (so it's strict and `blockScopedFunctions:
-	// allow` skips the diagnostic). The extracted fixture loses that
-	// hint, and a plain .ts file without any module syntax is treated
-	// as a script by TS-go. The other 65 cases match upstream
-	// exactly; this lone divergence only surfaces under
-	// `blockScopedFunctions: allow` with no `"use strict"` directive.
-	if failed > 1 {
-		t.Fatalf("expected at most 1 known divergence, got %d/%d (%.1f%%)", passed, total, pct)
+	if failed > 0 {
+		t.Fatalf("expected 100%% pass rate, got %d/%d (%.1f%%)", passed, total, pct)
 	}
 }
 
