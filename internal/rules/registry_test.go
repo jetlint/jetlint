@@ -323,6 +323,7 @@ func additionalRulesSnapshot() []string {
 		"switch-exhaustiveness-check",
 		"unbound-method",
 		"use-image-size",
+		"use-import-extensions",
 		"use-isnan",
 		"use-json-import-attributes",
 		"use-jsx-key-in-iterable",

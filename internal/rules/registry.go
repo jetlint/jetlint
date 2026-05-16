@@ -174,6 +174,7 @@ var All = []Metadata{
 	{ID: "strict-void-return", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "switch-exhaustiveness-check", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-image-size", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-import-extensions", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-isnan", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-json-import-attributes", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-jsx-key-in-iterable", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

@@ -175,6 +175,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/switchexhaustivenesscheck"
 	"github.com/jetlint/jetlint/internal/rules/unboundmethod"
 	"github.com/jetlint/jetlint/internal/rules/useimagesize"
+	"github.com/jetlint/jetlint/internal/rules/useimportextensions"
 	"github.com/jetlint/jetlint/internal/rules/useisnan"
 	"github.com/jetlint/jetlint/internal/rules/usejsonimportattributes"
 	"github.com/jetlint/jetlint/internal/rules/usejsxkeyiniterable"
@@ -742,6 +743,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		switchexhaustivenesscheck.New(),
 		unboundmethod.New(),
 		useimagesize.New(),
+		useimportextensions.New(),
 		useisnan.New(),
 		usejsonimportattributes.New(),
 		usejsxkeyiniterable.New(),
