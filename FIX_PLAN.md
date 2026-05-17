@@ -112,7 +112,8 @@ tests pass):_
 - _#449 no-document-cookie → `nodocumentcookie` (LANDED 2026-05-17)_
 - _#450 no-document-import-in-page → `nodocumentimportinpage` (LANDED 2026-05-17)_
 - _#451 no-double-equals → `nodoubleequals` (LANDED 2026-05-17)_
-- _#457/#458 no-duplicate-jsx-props/-test-hooks → `noduplicatejsxprops`/`noduplicatetesthooks`_
+- _#457 no-duplicate-jsx-props → `noduplicatejsxprops` (LANDED 2026-05-17)_
+- _#458 no-duplicate-test-hooks → `noduplicatetesthooks`_
 - _#460/#461 no-empty-interface/-source → `noemptyinterface`/`noemptysource`_
 - _#463 no-explicit-any → `noexplicitany`_
 - _#465 no-extra-non-null-assertion → `noextranonnullassertion`_
