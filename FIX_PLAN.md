@@ -197,7 +197,7 @@ tests pass):_
 - _#491 no-skipped-tests → `noskippedtests` (LANDED 2026-05-17, commit `cce0597b`)_
 - _#493 no-suspicious-semicolon-in-jsx → `nosuspicioussemicoloninjsx` (LANDED 2026-05-17, commit `b169cb9d`)_
 - _#495/#496 no-then-property/-ts-ignore_
-- _#499 no-unsafe-declaration-merging → `nounsafedeclarationmerging`_
+- _#499 no-unsafe-declaration-merging → `nounsafedeclarationmerging` (LANDED 2026-05-17, commit `b4f64e76`)_
 - _#503 no-useless-escape-in-string → `nouselessescapeinstring`_
 - _#505 no-var → `novar`_
 - _#515/#516/#517/#519/#520/#521 use-await/-error-message/-google-font-display/-number-to-fixed-digits-argument/-static-response-methods/-strict-mode_
