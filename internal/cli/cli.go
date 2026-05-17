@@ -77,6 +77,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noimportassign"
 	"github.com/jetlint/jetlint/internal/rules/noinitializerwithdefinite"
 	"github.com/jetlint/jetlint/internal/rules/noinnerdeclarations"
+	"github.com/jetlint/jetlint/internal/rules/noinstanceofarray"
 	"github.com/jetlint/jetlint/internal/rules/noinvalidbuiltininstantiation"
 	"github.com/jetlint/jetlint/internal/rules/noinvalidregexp"
 	"github.com/jetlint/jetlint/internal/rules/noirregularwhitespace"
@@ -157,13 +158,12 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/novuereservedkeys"
 	"github.com/jetlint/jetlint/internal/rules/novuereservedprops"
 	"github.com/jetlint/jetlint/internal/rules/novuesetuppropsreactivityloss"
-	"github.com/jetlint/jetlint/internal/rules/noinstanceofarray"
 	"github.com/jetlint/jetlint/internal/rules/nowith"
-	"github.com/jetlint/jetlint/internal/rules/prefernamespacekeyword"
 	"github.com/jetlint/jetlint/internal/rules/onlythrowerror"
 	"github.com/jetlint/jetlint/internal/rules/preferdestructuring"
 	"github.com/jetlint/jetlint/internal/rules/preferfind"
 	"github.com/jetlint/jetlint/internal/rules/preferincludes"
+	"github.com/jetlint/jetlint/internal/rules/prefernamespacekeyword"
 	"github.com/jetlint/jetlint/internal/rules/prefernullishcoalescing"
 	"github.com/jetlint/jetlint/internal/rules/preferoptionalchain"
 	"github.com/jetlint/jetlint/internal/rules/preferpromiserejecterrors"
@@ -190,6 +190,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/useimagesize"
 	"github.com/jetlint/jetlint/internal/rules/useimportextensions"
 	"github.com/jetlint/jetlint/internal/rules/useisnan"
+	"github.com/jetlint/jetlint/internal/rules/useiterablecallbackreturn"
 	"github.com/jetlint/jetlint/internal/rules/usejsonimportattributes"
 	"github.com/jetlint/jetlint/internal/rules/usejsxkeyiniterable"
 	"github.com/jetlint/jetlint/internal/rules/useparseintradix"
@@ -619,6 +620,10 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 	if err != nil {
 		return nil, toolerr.New(toolerr.CodeConfigInvalid, err.Error())
 	}
+	uicrOpts, err := useiterablecallbackreturn.OptionsFromJSON(ruleOptions["use-iterable-callback-return"])
+	if err != nil {
+		return nil, toolerr.New(toolerr.CodeConfigInvalid, err.Error())
+	}
 	rejectIfOptionsPresent := func(ruleID string) *toolerr.Error {
 		if len(ruleOptions[ruleID]) == 0 {
 			return nil
@@ -629,7 +634,8 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 	// Rules without options support: reject any user-supplied options
 	// at config-load time so typos are visible.
 	rulesWithOptions := map[string]bool{
-		"array-callback-return": true,
+		"array-callback-return":        true,
+		"use-iterable-callback-return": true,
 	}
 	for _, ruleID := range append([]string{
 		"strict-boolean-expressions",
@@ -714,6 +720,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nowith.New(),
 		noinstanceofarray.New(),
 		prefernamespacekeyword.New(),
+		useiterablecallbackreturn.NewWithOptions(uicrOpts),
 		noundef.New(),
 		nodupekeys.New(),
 		noduplicatecase.New(),

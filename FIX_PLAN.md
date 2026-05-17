@@ -27,7 +27,37 @@ should be reconciled to 33/36 in a follow-up bookkeeping pass.
 
 ## Active work / blockers
 
-- _(none)_ — pick from the next-up queue.
+- **Local jj divergence on `feat/big-batch` (2026-05-17, needs human
+  cleanup).** A loop accidentally snapshotted in-progress
+  use-iterable-callback-return work into the already-pushed
+  `feat(rules): add prefer-namespace-keyword` commit (change
+  `zrusspwm`), creating local commit `69216b6494e7` divergent from
+  the pushed `90d480e63778`. Recovery created a fresh commit
+  `adc84e3e36da` (change `zvoqrlsz`,
+  `feat(rules): add use-iterable-callback-return (suspicious)`) as
+  a direct child of pushed `90d480e6`, containing the entire rule,
+  its biome harness (2/2 pass), registry + cli wiring, and the
+  FIX_PLAN/OXLINT-COMPAT updates. Local bookmark `feat/big-batch`
+  still points at the orphan `69216b6494e7`; pushing as-is would
+  rewrite the pushed `zrusspwm` (force push, blocked by harness).
+
+  Human fix (one command sequence, all currently approval-gated):
+
+  ```
+  jj abandon 69216b6494e7
+  jj bookmark set feat/big-batch -r adc84e3e36da --allow-backwards
+  jj git push --bookmark feat/big-batch
+  ```
+
+  After abandon, local `zrusspwm` resolves to the single remaining
+  copy (`90d480e6`, the pushed one); the bookmark move becomes a
+  forward update rather than sideways, and the push is a clean
+  fast-forward that adds `adc84e3e` on top of `90d480e6`.
+
+  Lesson for next loop: when starting work on a pushed-bookmark
+  working copy, run `jj new <pushed-commit> -m "..."` **first**,
+  *before* editing any file, so subsequent snapshots land in the
+  new commit instead of mutating the pushed one.
 
 ## Notes carried over (not regressions)
 
@@ -129,7 +159,22 @@ Landed this batch (prior loops):
 1. #488 no-redeclare — **needs scope/binding analysis**; previously
    skipped on `feat/big-batch` (commit `wip(rules): more +6 (...,
    redeclare-skip)`). Defer until scope-symbol helpers land.
-2. #518 use-iterable-callback-return
+2. ~~#518 use-iterable-callback-return~~ **landed 2026-05-17** — biome
+   rule. Implemented in `internal/rules/useiterablecallbackreturn/`,
+   2/2 biome cases pass. Wraps `arraycallbackreturn` for non-`forEach`
+   methods (their semantics agree with biome) and overlays a local
+   `forEach` check with biome's looser rules: only an explicit
+   `return <non-void expr>` (or non-void concise-body arrow) is
+   flagged; bare returns, `void <expr>` returns, throw-only paths,
+   and empty bodies are accepted. Default `checkForEach: true`,
+   options surface mirrors arraycallbackreturn. Bug noted: the
+   biome-fixtures extractor only ingests `valid.js`/`invalid.js`, so
+   the option-variant fixtures
+   `checkForEachTrue.js`/`checkForEachFalse.js` (with `.options.json`
+   sidecars) are not captured. Follow-up: teach
+   `cmd/biome-fixtures` to enumerate every `*.js`/`.options.json`
+   pair under the rule directory and emit one case per file with the
+   sidecar options merged in.
 3. ~~#507 prefer-namespace-keyword~~ **landed 2026-05-17** — pure AST
    syntactic check. Reports `module Foo {}` (legacy spelling) but
    exempts `declare module 'foo'` (ambient external module),
