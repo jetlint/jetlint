@@ -316,6 +316,7 @@ func additionalRulesSnapshot() []string {
 		"no-useless-backreference",
 		"no-void-elements-with-children",
 		"no-void-type-return",
+		"no-with",
 		"no-useless-default-assignment",
 		"non-nullable-type-assertion-style",
 		"only-throw-error",

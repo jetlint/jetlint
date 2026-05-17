@@ -1,10 +1,54 @@
 {
   "ruleId": "no-with",
-  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
-  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noWith",
+  "oxcSHA": "625758ab25657c0fc13555c890aeca979be8ebdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_with.rs",
   "cases": [
     {
-      "code": "function f() {\n  with (point) {\n    r = Math.sqrt(x * x + y * y); // is r a member of point?\n  }\n}",
+      "code": "foo.bar();",
+      "valid": true
+    },
+    {
+      "code": "/* with keyword in block comment */ foo();",
+      "valid": true
+    },
+    {
+      "code": "// with in line comment\nfoo();",
+      "valid": true
+    },
+    {
+      "code": "var obj = { with: 1 }; obj.with;",
+      "valid": true
+    },
+    {
+      "code": "obj.with = 1;",
+      "valid": true
+    },
+    {
+      "code": "class C { with() {} } new C().with();",
+      "valid": true
+    },
+    {
+      "code": "console.log('with in string');",
+      "valid": true
+    },
+    {
+      "code": "console.log(`with in template`);",
+      "valid": true
+    },
+    {
+      "code": "const o = {}; o['with'] = 2;",
+      "valid": true
+    },
+    {
+      "code": "const p = { ['with']: 3 }; p.with;",
+      "valid": true
+    },
+    {
+      "code": "const { with: w } = { with: 4 }; w;",
+      "valid": true
+    },
+    {
+      "code": "with(foo) { bar() }",
       "valid": false
     }
   ]

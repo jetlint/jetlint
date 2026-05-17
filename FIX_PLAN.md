@@ -6,7 +6,7 @@ Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
 | Milestone | Open | Close-ready (impl exists) | Still missing |
 |---|---:|---:|---:|
-| #2 suspicious | 65 | 49 | 15 (+1 ambiguous #512 `strict`) |
+| #2 suspicious | 64 | 50 | 14 (+1 ambiguous #512 `strict`) |
 | #5 complexity | 45 | 35 | 10 |
 | #6 style | 69 | 53 | 16 |
 | #7 a11y | 34 | 34 | 0 (wiring + closure only) |
@@ -143,6 +143,12 @@ Landed this batch (prior loops):
 13. (ambiguous) #512 `strict` — needs manual title triage
 
 _Landed 2026-05-17 in this batch:_
+- #506 `no-with` — `internal/rules/nowith/`, 12/12 oxlint cases pass.
+  Pure AST: dispatches on `KindWithStatement` (Kind=255 magic constant
+  — wrapper does not re-export this Kind; precedent in
+  `noconstantbinaryexpression` for binary operator tokens). No options.
+  Wired into `cli.go` buildRules and the registry as
+  `CategorySuspicious`.
 - #428 `guard-for-in` — `internal/rules/guardforin/`, 12/12 oxlint cases
   pass. Pure AST: reports a `for-in` loop whose body is not guarded.
   Accepts EmptyStatement, IfStatement (direct), empty Block, Block with

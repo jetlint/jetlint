@@ -59,8 +59,9 @@ on 100%; the score is a baseline that improves as rules sharpen.
 | default-case-last | 37/37 (100%) |
 | no-unused-expressions | 110/110 (100%) |
 | guard-for-in | 12/12 (100%) |
+| no-with | 12/12 (100%) |
 
-**Aggregate: 657/657 cases pass (100%)** across all option
+**Aggregate: 669/669 cases pass (100%)** across all option
 combinations the upstream fixtures exercise.
 
 The five rules with options (\`valid-typeof\`, \`use-isnan\`,

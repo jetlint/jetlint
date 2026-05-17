@@ -157,6 +157,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/novuereservedkeys"
 	"github.com/jetlint/jetlint/internal/rules/novuereservedprops"
 	"github.com/jetlint/jetlint/internal/rules/novuesetuppropsreactivityloss"
+	"github.com/jetlint/jetlint/internal/rules/nowith"
 	"github.com/jetlint/jetlint/internal/rules/onlythrowerror"
 	"github.com/jetlint/jetlint/internal/rules/preferdestructuring"
 	"github.com/jetlint/jetlint/internal/rules/preferfind"
@@ -708,6 +709,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		novuereservedkeys.New(),
 		novuereservedprops.New(),
 		novuesetuppropsreactivityloss.New(),
+		nowith.New(),
 		noundef.New(),
 		nodupekeys.New(),
 		noduplicatecase.New(),
