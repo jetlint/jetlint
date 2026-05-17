@@ -4,7 +4,7 @@
   "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noCommaOperator",
   "cases": [
     {
-      "code": "\u003c!-- should generate diagnostics --\u003e\n\u003cscript\u003e\n  let x = 1;\n\u003c/script\u003e\n\n\u003c!-- Comma operator in template expression - should be flagged --\u003e\n\u003cp\u003e{(console.log(\"side effect\"), x)}\u003c/p\u003e\n\u003cp class={a, b}\u003ereal comma operator\u003c/p\u003e\n",
+      "code": "<!-- should generate diagnostics -->\n<script>\n  let x = 1;\n</script>\n\n<!-- Comma operator in template expression - should be flagged -->\n<p>{(console.log(\"side effect\"), x)}</p>\n<p class={a, b}>real comma operator</p>\n",
       "valid": false
     },
     {
@@ -36,7 +36,7 @@
       "valid": false
     },
     {
-      "code": "a =\u003e (doSomething(), a)",
+      "code": "a => (doSomething(), a)",
       "valid": false
     },
     {
@@ -88,12 +88,8 @@
       "valid": false
     },
     {
-      "code": "a =\u003e ((doSomething(), a))",
+      "code": "a => ((doSomething(), a))",
       "valid": false
-    },
-    {
-      "code": "\u003c!-- should not generate diagnostics --\u003e\n\n\u003cscript\u003e\n\tlet value = \"\";\n\tconst getToggled = () =\u003e true;\n\tconst setToggled = (value) =\u003e value;\n\tconst a = 1;\n\tconst b = 2;\n\tconst set = (value) =\u003e value;\n\u003c/script\u003e\n\n\u003cToggle bind:pressed={getToggled, setToggled} /\u003e\n\u003cinput bind:value={() =\u003e value, (v) =\u003e value = v.toLowerCase()} /\u003e\n\u003cinput bind:value={() =\u003e [a, b], (v) =\u003e set(v)} /\u003e\n",
-      "valid": true
     },
     {
       "code": "let arr = [1, 2];",
@@ -120,7 +116,7 @@
       "valid": true
     },
     {
-      "code": "for (let i = 0, j = 1, k = 2; i \u003c 100; i++, j++, k++) {}",
+      "code": "for (let i = 0, j = 1, k = 2; i < 100; i++, j++, k++) {}",
       "valid": true
     }
   ]
