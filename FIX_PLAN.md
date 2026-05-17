@@ -134,7 +134,8 @@ tests pass):_
 - _#451 no-double-equals → `nodoubleequals` (LANDED 2026-05-17)_
 - _#457 no-duplicate-jsx-props → `noduplicatejsxprops` (LANDED 2026-05-17)_
 - _#458 no-duplicate-test-hooks → `noduplicatetesthooks` (LANDED 2026-05-17)_
-- _#460/#461 no-empty-interface/-source → `noemptyinterface`/`noemptysource`_
+- _#460 no-empty-interface → `noemptyinterface` (LANDED 2026-05-17)_
+- _#461 no-empty-source → `noemptysource`_
 - _#463 no-explicit-any → `noexplicitany` (LANDED 2026-05-17)_
 - _#465 no-extra-non-null-assertion → `noextranonnullassertion` (LANDED 2026-05-17)_
 - _#467 no-focused-tests → `nofocusedtests`_
