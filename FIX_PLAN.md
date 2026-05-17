@@ -153,7 +153,7 @@ tests pass):_
 - _#461 no-empty-source → `noemptysource`_
 - _#463 no-explicit-any → `noexplicitany` (LANDED 2026-05-17)_
 - _#465 no-extra-non-null-assertion → `noextranonnullassertion` (LANDED 2026-05-17)_
-- _#467 no-focused-tests → `nofocusedtests`_
+- _#467 no-focused-tests → `nofocusedtests` (LANDED 2026-05-17)_
 - _#468 no-function-assign → `nofunctionassign` (LANDED 2026-05-17)_
 - _#469/#470/#471 no-global-assign/-global-is-finite/-global-is-nan_
 - _#472 no-head-import-in-document → `noheadimportindocument`_
