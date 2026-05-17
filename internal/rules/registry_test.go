@@ -232,6 +232,7 @@ func additionalRulesSnapshot() []string {
 		"no-evolving-types",
 		"no-ex-assign",
 		"no-explicit-any",
+		"no-extra-non-null-assertion",
 		"no-fallthrough",
 		"no-func-assign",
 		"no-global-dirname-filename",
