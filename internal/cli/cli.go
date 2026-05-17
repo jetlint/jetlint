@@ -81,6 +81,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noemptypattern"
 	"github.com/jetlint/jetlint/internal/rules/noevolvingtypes"
 	"github.com/jetlint/jetlint/internal/rules/noexassign"
+	"github.com/jetlint/jetlint/internal/rules/noexplicitany"
 	"github.com/jetlint/jetlint/internal/rules/nofallthrough"
 	"github.com/jetlint/jetlint/internal/rules/nofloatingpromises"
 	"github.com/jetlint/jetlint/internal/rules/noforinarray"
@@ -719,6 +720,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noemptypattern.New(),
 		noevolvingtypes.New(),
 		noexassign.New(),
+		noexplicitany.New(),
 		nofallthrough.New(),
 		nofuncassign.New(),
 		noglobaldirnamefilename.New(),

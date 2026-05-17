@@ -104,6 +104,7 @@ var All = []Metadata{
 	{ID: "no-empty-pattern", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-evolving-types", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-ex-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-explicit-any", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-fallthrough", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-func-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-global-dirname-filename", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
