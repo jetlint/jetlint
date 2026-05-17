@@ -329,6 +329,7 @@ func additionalRulesSnapshot() []string {
 		"no-catch-assign",
 		"no-comment-text",
 		"no-console",
+		"no-const-enum",
 		"no-useless-default-assignment",
 		"non-nullable-type-assertion-style",
 		"only-throw-error",

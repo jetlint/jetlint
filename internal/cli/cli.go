@@ -58,6 +58,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noconstantcondition"
 	"github.com/jetlint/jetlint/internal/rules/noconstantmathminmaxclamp"
 	"github.com/jetlint/jetlint/internal/rules/noconstassign"
+	"github.com/jetlint/jetlint/internal/rules/noconstenum"
 	"github.com/jetlint/jetlint/internal/rules/noconstructorreturn"
 	"github.com/jetlint/jetlint/internal/rules/nocontrolregex"
 	"github.com/jetlint/jetlint/internal/rules/nodebugger"
@@ -697,6 +698,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noconstantcondition.New(),
 		noconstantmathminmaxclamp.New(),
 		noconstassign.New(),
+		noconstenum.New(),
 		noconstructorreturn.New(),
 		nocontrolregex.New(),
 		nodebugger.New(),
