@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-unsafe-declaration-merging",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noUnsafeDeclarationMerging",
+  "cases": [
+    {
+      "code": "interface Foo {}\nclass Foo {}\n\nclass Foo2 {}\ninterface Foo2 {}\n\nfunction f(){\n    interface Foo3 {}\n    class Foo3 {}\n}\n\n{\n    interface Foo4 {}\n    class Foo4 {}\n}\n\nexport {}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\ninterface Foo {}\nclass Bar implements Foo {}\n\nnamespace Foo2 {}\nnamespace Foo2 {}\n\nenum Foo3 {}\nnamespace Foo3 {}\n\nnamespace Foo4 {}\nfunction Foo4() {}\n\nconst Foo5 = class {};\n\ninterface Foo6 {}\nfunction f6(){\n  class Foo6 {};\n}\n\nclass Foo7 {}\nfunction f7(){\n  interface Foo7 {}\n}\n\ninterface Foo8 {}\ndeclare class Foo8 {}\n\nexport interface Foo9 {}\nexport declare class Foo9 {}\n\ndeclare namespace A {\n  namespace B {\n    export interface Foo10 {}\n    export class Foo10 {}\n  }\n}\n\nexport declare namespace A {\n  namespace B {\n    export interface Foo11 {}\n    export class Foo11 {}\n  }\n}\n",
+      "valid": true
+    }
+  ]
+}

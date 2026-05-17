@@ -1,0 +1,35 @@
+{
+  "ruleId": "no-react-forward-ref",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noReactForwardRef",
+  "cases": [
+    {
+      "code": "import { forwardRef, memo } from \"react\";\n\nconst Component1 = forwardRef((props, ref) =\u003e {\n\treturn null;\n});\n\nconst Component2 = forwardRef((props, ref) =\u003e null);\n\nconst Component3 = forwardRef(function (props, ref) {\n\treturn null;\n});\n\nconst Component4 = forwardRef(function Component(props, ref) {\n\treturn null;\n});\n\nconst Component5 = memo(forwardRef(function Component(props, ref) {\n\treturn \u003cdiv ref={ref} /\u003e;\n}));\n",
+      "valid": false
+    },
+    {
+      "code": "import { forwardRef } from \"react\";\n\ninterface ComponentProps {\n\tfoo: string;\n}\n\nconst Component1 = forwardRef\u003cHTMLElement, ComponentProps\u003e(function Component(props, ref) {\n\treturn \u003cdiv ref={ref} /\u003e;\n});\n\nconst Component2 = forwardRef\u003cHTMLElement, { foo: string }\u003e(function Component(props, ref) {\n\treturn \u003cdiv ref={ref}\u003e{props.foo}\u003c/div\u003e;\n});\n\nconst Component3 = forwardRef\u003cHTMLElement, { foo: string }\u003e(function Component({ foo }, ref) {\n\treturn \u003cdiv ref={ref}\u003e{foo}\u003c/div\u003e;\n});\n\nconst Component4 = forwardRef\u003cHTMLElement, { foo: string }\u003e(function Component({ foo }, r) {\n\treturn \u003cdiv ref={r}\u003e{foo}\u003c/div\u003e;\n});\n\nconst Component5 = forwardRef\u003cHTMLElement, { foo: string, bar: number }\u003e(function Component({ foo, ...rest }, r) {\n\treturn \u003cdiv ref={r}\u003e{foo}\u003c/div\u003e;\n});\n",
+      "valid": false
+    },
+    {
+      "code": "import * as React from \"react\";\n\nconst Component1 = React.forwardRef((props, ref) =\u003e {\n\treturn null;\n});\n\nconst Component2 = React.forwardRef((props, ref) =\u003e null);\n\nconst Component3 = React.forwardRef(function (props, ref) {\n\treturn null;\n});\n\nconst Component4 = React.forwardRef(function Component(props) {\n\treturn null;\n});\n",
+      "valid": false
+    },
+    {
+      "code": "import * as React from \"react\";\n\nconst Component1 = React.forwardRef(function Component(props, ref) {\n\treturn \u003cdiv ref={ref} /\u003e;\n});\n\nconst Component2 = React.forwardRef(function Component({ foo, bar }, ref) {\n\treturn \u003cdiv ref={ref} /\u003e;\n});\n\nconst Component3 = React.memo(React.forwardRef(function Component(props, ref) {\n\treturn \u003cdiv ref={ref} /\u003e;\n}));\n",
+      "valid": false
+    },
+    {
+      "code": "import * as React from \"react\";\n\ninterface ComponentProps {\n\tfoo: string;\n}\n\nconst Component1 = React.forwardRef\u003cHTMLElement, ComponentProps\u003e(function Component(props, ref) {\n\treturn \u003cdiv ref={ref} /\u003e;\n});\n\nconst Component2 = React.forwardRef\u003cHTMLElement, { foo: string }\u003e(function Component(props, ref) {\n\treturn \u003cdiv ref={ref}\u003e{props.foo}\u003c/div\u003e;\n});\n\nconst Component3 = React.forwardRef\u003cHTMLElement, { foo: string }\u003e(function Component({ foo }, ref) {\n\treturn \u003cdiv ref={ref}\u003e{foo}\u003c/div\u003e;\n});\n\nconst Component4 = React.forwardRef\u003cHTMLElement, { foo: string }\u003e(function Component({ foo }, r) {\n\treturn \u003cdiv ref={r}\u003e{foo}\u003c/div\u003e;\n});\n\nconst Component5 = React.forwardRef\u003cHTMLElement, { foo: string, bar: number }\u003e(function Component({ foo, ...rest }, r) {\n\treturn \u003cdiv ref={r}\u003e{foo}\u003c/div\u003e;\n});\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\nconst Component1 = ({ ref }) =\u003e {\n\treturn null;\n};\n\nconst Component2 = ({ ref, ...props }) =\u003e {\n\treturn null;\n};\n\nconst Component3 = (props) =\u003e {\n\treturn null;\n};\n\nconst Component4 = ({ foo, bar }) =\u003e {\n\treturn null;\n};\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\nconst Component1 = ({ ref, ...props }) =\u003e {\n\treturn \u003cdiv ref={ref} /\u003e;\n};\n\nconst Component2 = ({ foo, bar, ref }) =\u003e {\n\treturn \u003cdiv ref={ref} /\u003e;\n};\n\nconst Component3 = React.memo(({ ref, ...props }) =\u003e {\n\treturn \u003cdiv ref={ref} /\u003e;\n});\n\nfunction Component4({ ref, ...props }) {\n\treturn \u003cdiv ref={ref} /\u003e;\n}\n",
+      "valid": true
+    }
+  ]
+}

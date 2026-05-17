@@ -1,0 +1,19 @@
+{
+  "ruleId": "no-negation-else",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noNegationElse",
+  "cases": [
+    {
+      "code": "// Comment\nif (!true) { // a\n\tconsequent;\n} else { // b\n\talternate;\n}\n\nif (a != b) {\n\tconsequent;\n} else {\n\talternate;\n}\n\nif (a !== b) {\n\tconsequent;\n} else {\n\talternate;\n}\n\n!condition ? consequent : alternate;\na != b ? consequent : alternate;\na !== b ? consequent : alternate;\n/*before-not*/!/*after-not*/spaced/*after-test*/ ? /*left-leading*/ left /*left-trailing*/   : /*right-leading*/ right /*right-trailing*/;\n\ncall(\n\t!test\n\t\t? consequent /*consequent-trailing*/\n\t\t: alternate\n);\n\nif (!true) {\n\tconsequent;\n} else something();\n\nif (!true) something(); else {\n\talternate\n}\n\n!-a ? b : c\n\n/*1*/!/*2*/cond/*3*/ ? /*a*/ b /*c*/ : /*d*/ e /*f*/\n",
+      "valid": false
+    },
+    {
+      "code": "const keyName =\n\tobj[val] !== undefined\n\t\t? // TS reverse mapped enum\n\t\t\tobj[val]\n\t\t: // Normal enum / `const object`\n\t\t\t// TODO: Figure out a way to cache the names of commonly-used enum numbers for performance if needed\n\t\t\ttestEnumValueToKey(obj, val);\n\ncall(\n\t!condition\n\t\t? consequent /*consequent-trailing*/\n\t\t: alternate\n);\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\nif (true) {\n\tconsequent;\n} else {\n\talternate;\n}\n\nif (a == b) {\n\tconsequent;\n} else {\n\talternate;\n}\n\nif (a === b) {\n\tconsequent;\n} else {\n\talternate;\n}\n\n// Single branch\nif (!true) {\n\tconsequent;\n}\n\nif (a != b) {\n\tconsequent;\n}\n\nif (a !== b) {\n\tconsequent;\n}\n\n// Ternary\ntrue ? consequent : alternate;\na == b ? consequent : alternate;\na === b ? consequent : alternate;\n\n// https://github.com/rome/tools/issues/2999\nif (!/^NCT/.test(input)) {\n\tmessages.push(\"NCT Number must start with NCT\");\n} else if (!/^NCT\\d{8}$/.test(input)) {\n\tmessages.push(\"NCT Number must have exactly 8 digits after NCT\");\n}\n\n// https://github.com/rome/tools/issues/3141\nfunction f() {\n\treturn !!specs.variables ? specs.variables(props) : {};\n}\n\nif (+5) { } else { }\nif (-5) { } else { }\nif (void f()) { } else { }\n",
+      "valid": true
+    }
+  ]
+}

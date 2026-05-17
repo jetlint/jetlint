@@ -1,0 +1,19 @@
+{
+  "ruleId": "use-nodejs-import-protocol",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useNodejsImportProtocol",
+  "cases": [
+    {
+      "code": "import assert from \"assert\";\nimport assert_strict from \"assert/strict\";\nimport async_hooks from \"async_hooks\";\nimport buffer from \"buffer\";\nimport child_process from \"child_process\";\nimport cluster from \"cluster\";\nimport console from \"console\";\nimport constants from \"constants\";\nimport crypto from \"crypto\";\nimport dgram from \"dgram\";\nimport diagnostics_channel from \"diagnostics_channel\";\nimport dns from \"dns\";\nimport dns_promises from \"dns/promises\";\nimport domain from \"domain\";\nimport events from \"events\";\nimport fs from \"fs\";\nimport fs_promises from \"fs/promises\";\nimport http from \"http\";\nimport http2 from \"http2\";\nimport https from \"https\";\nimport inspector from \"inspector\";\nimport inspector_promises from \"inspector/promises\";\nimport module from \"module\";\nimport net from \"net\";\nimport os from \"os\";\nimport path from \"path\";\nimport path_posix from \"path/posix\";\nimport path_win32 from \"path/win32\";\nimport perf_hooks from \"perf_hooks\";\nimport process from \"process\";\nimport punycode from \"punycode\";\nimport querystring from \"querystring\";\nimport readline from \"readline\";\nimport readline_promises from \"readline/promises\";\nimport repl from \"repl\";\nimport stream from \"stream\";\nimport stream_consumers from \"stream/consumers\";\nimport stream_promises from \"stream/promises\";\nimport stream_web from \"stream/web\";\nimport string_decoder from \"string_decoder\";\nimport sys from \"sys\";\nimport timers from \"timers\";\nimport timers_promises from \"timers/promises\";\nimport tls from \"tls\";\nimport trace_events from \"trace_events\";\nimport tty from \"tty\";\nimport url from \"url\";\nimport util from \"util\";\nimport util_types from \"util/types\";\nimport v8 from \"v8\";\nimport vm from \"vm\";\nimport wasi from \"wasi\";\nimport worker_threads from \"worker_threads\";\nimport zlib from \"zlib\";\n\n// check for require and import\nrequire(\"fs\");\nimport(\"fs\");\n\n// Use same quote style\nimport assert from \"assert\";\nimport assert from 'assert';\n\n// Keep comments\nimport assert from /*0*/ \"assert\" /*b*/;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport fs from \"node:fs\";\n\nimport os from \"node:os\";\n\nimport path from \"node:path\";\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\ndeclare module \"module\" {}",
+      "valid": true
+    }
+  ]
+}

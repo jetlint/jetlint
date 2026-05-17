@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-useless-rename",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessRename",
+  "cases": [
+    {
+      "code": "let { /*before*/ foo: foo /*after*/ } = obj;\n\nlet { a, foo: foo } = obj;\n\nlet { foo: foo, b } = obj;\n\nlet {\n\tfoo: { bar: bar },\n} = obj;\n\nlet { /*before*/ foo: foo /*after*/ = /*before default*/ a /*after default*/ } =\n\tobj;\n\nfunction f({ foo: foo }) {}\n\n({ foo: foo }) =\u003e {};\n\nimport { /*before*/ foo as foo /*after*/ } from \"foo\";\n\nimport { a as a } from \"foo\";\n\nexport { /*before*/ foo as foo /*after*/ };\n\nexport { /*before*/ foo as foo /*after*/ } from \"foo\";\n\n// following cases are supported by ESLint\n\n//import {a as \\u0061} from 'foo';\n//import {\\u0061 as a} from 'foo';\n//export {\\u0061 as a};\n//export {a as \\u0061};\n\n//let {\"a\": a} = obj;\n//import { \"a\" as a}\n//export { a as \"a\"}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nlet { foo } = obj;\n\nlet { foo: bar } = obj;\n\nlet { foo: bar, baz: qux } = obj;\n\nlet {\n\tfoo: { bar: baz },\n} = obj;\n\nlet {\n\tfoo,\n\tbar: { baz: qux },\n} = obj;\n\nlet { foo: bar } = obj;\n\nlet { foo: bar, baz: qux } = obj;\n\nlet {\n\tfoo: { bar: baz },\n} = obj;\n\nlet {\n\tfoo,\n\tbar: { baz: qux },\n} = obj;\n\nlet { [\"foo\"]: bar } = obj;\n\nlet { [\"foo\"]: bar, [\"baz\"]: qux } = obj;\n\nlet {\n\t[\"foo\"]: { [\"bar\"]: baz },\n} = obj;\n\nlet {\n\tfoo,\n\t[\"bar\"]: { [\"baz\"]: qux },\n} = obj;\n\nlet { [foo]: foo } = obj;\n\nlet { [\"foo\"]: foo } = obj;\n\nlet { [foo]: bar } = obj;\n\nfunction func({ foo }) {}\n\nfunction func({ foo: bar }) {}\n\nfunction func({ foo: bar, baz: qux }) {}\n\n({ foo }) =\u003e {};\n\n({ foo: bar }) =\u003e {};\n\n({ foo: bar, baz: qui }) =\u003e {};\n\nimport * as foo from \"foo\";\n\nimport foo from \"foo\";\n\nimport { foo } from \"foo\";\n\nimport { foo as bar } from \"foo\";\n\nimport { foo as bar, baz as qux } from \"foo\";\n\nimport { \"foo\" as bar } from \"baz\";\n\nexport { foo } from \"foo\";\n\nvar foo = 0;\nexport { foo as bar };\n\nvar foo = 0;\nvar baz = 0;\nexport { foo as bar, baz as qux };\n\nexport { foo as bar } from \"foo\";\n\nexport { foo as bar, baz as qux } from \"foo\";\n\nvar foo = 0;\nexport { foo as \"bar\" };\n\nexport { foo as \"bar\" } from \"baz\";\n\nexport { \"foo\" as bar } from \"baz\";\n\nexport { \"foo\" as \"bar\" } from \"baz\";\n\nexport { \"\" as \" \" } from \"baz\";\n\nexport { \" \" as \"\" } from \"baz\";\n\nexport { \"foo\" } from \"bar\";\n\nconst { ...stuff } = myObject;\n\nconst { foo, ...stuff } = myObject;\n\nconst { foo: bar, ...stuff } = myObject;\n",
+      "valid": true
+    }
+  ]
+}

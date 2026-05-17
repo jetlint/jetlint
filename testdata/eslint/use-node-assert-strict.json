@@ -1,0 +1,19 @@
+{
+  "ruleId": "use-node-assert-strict",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useNodeAssertStrict",
+  "cases": [
+    {
+      "code": "import assert from 'node:assert';\nimport(\"node:assert\");\nrequire(\"node:assert\");\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport * as assert from \"node:assert/assert\";\nimport(\"node:assert/assert\");\nrequire(\"node:assert/assert\");\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\ndeclare module \"node:assert\" {}",
+      "valid": true
+    }
+  ]
+}

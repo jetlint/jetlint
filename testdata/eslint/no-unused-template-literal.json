@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-unused-template-literal",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noUnusedTemplateLiteral",
+  "cases": [
+    {
+      "code": "var foo = /*1*/`bar`/*2*/;\nvar foo1 = `bar `;\nvar foo = `back\\rtick`;\nvar foo = `back\\ntick`;\nvar foo = `back\\u2028tick`\nvar foo = `back\\u2029tick`;\nvar foo = `back\\\\\\\\\\ntick`;\nvar foo = `\\n`;\nfunction foo() { `use strict`; foo(); }\nvar foo = `foo\\\\nbar`;\nvar foo = `foo\\\\\\nbar`;\nvar foo = `foo\\\\\\\\\\\\\\nbar`;",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nvar foo2 = `bar\nhas newline`;\nvar foo3 = `\\\"bar\\\"`\nvar foo4 = `'bar'`\nvar foo = `bar 'baz'`;\n\nvar foo = `back${x}tick`;\nvar foo = tag`backtick`;\nvar foo = `something \nelse`;",
+      "valid": true
+    }
+  ]
+}

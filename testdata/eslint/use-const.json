@@ -1,0 +1,559 @@
+{
+  "ruleId": "use-const",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useConst",
+  "cases": [
+    {
+      "code": "let x = 1; foo(x);",
+      "valid": false
+    },
+    {
+      "code": "for (let i in [1,2,3]) { foo(i); }",
+      "valid": false
+    },
+    {
+      "code": "for (let x of [1,2,3]) { foo(x); }",
+      "valid": false
+    },
+    {
+      "code": "(function() { let x = 1; foo(x); })();",
+      "valid": false
+    },
+    {
+      "code": "(function() { for (let i in [1,2,3]) { foo(i); } })();",
+      "valid": false
+    },
+    {
+      "code": "(function() { for (let x of [1,2,3]) { foo(x); } })();",
+      "valid": false
+    },
+    {
+      "code": "let f = (function() { let g = x; })(); f = 1;",
+      "valid": false
+    },
+    {
+      "code": "let x = 0; { let x = 1; foo(x); } x = 0;",
+      "valid": false
+    },
+    {
+      "code": "for (let i = 0; i \u003c 10; ++i) { let x = 1; foo(x); }",
+      "valid": false
+    },
+    {
+      "code": "for (let i in [1,2,3]) { let x = 1; foo(x); }",
+      "valid": false
+    },
+    {
+      "code": "var foo = function() { for (const b of c) { let a; a = 1; } };",
+      "valid": false
+    },
+    {
+      "code": "var foo = function() { for (const b of c) { let a; ({a} = 1); } };",
+      "valid": false
+    },
+    {
+      "code": "let x; x = 0;",
+      "valid": false
+    },
+    {
+      "code": "switch (a) { case 0: let x; x = 0; }",
+      "valid": false
+    },
+    {
+      "code": "(function() { let x; x = 1; })();",
+      "valid": false
+    },
+    {
+      "code": "let {a: {b, c}} = {a: {b: 1, c: 2}}",
+      "valid": false
+    },
+    {
+      "code": "let {a = 0, b} = obj; foo(a, b);",
+      "valid": false
+    },
+    {
+      "code": "let [a] = [1]",
+      "valid": false
+    },
+    {
+      "code": "let {a} = obj",
+      "valid": false
+    },
+    {
+      "code": "let a, b; ({a = 0, b} = obj); foo(a, b);",
+      "valid": false
+    },
+    {
+      "code": "let x; function foo() { bar(x); } x = 0;",
+      "valid": false
+    },
+    {
+      "code": "/*eslint use-x:error*/ let x = 1",
+      "valid": false
+    },
+    {
+      "code": "/*eslint use-x:error*/ { let x = 1 }",
+      "valid": false
+    },
+    {
+      "code": "let { foo, bar } = baz;",
+      "valid": false
+    },
+    {
+      "code": "const x = [1,2]; let [,y] = x;",
+      "valid": false
+    },
+    {
+      "code": "const x = [1,2,3]; let [y,,z] = x;",
+      "valid": false
+    },
+    {
+      "code": "let predicate; [, {foo:returnType, predicate}] = foo();",
+      "valid": false
+    },
+    {
+      "code": "let predicate; [, {foo:returnType, predicate}, ...bar ] = foo();",
+      "valid": false
+    },
+    {
+      "code": "let predicate; [, {foo:returnType, ...predicate} ] = foo();",
+      "valid": false
+    },
+    {
+      "code": "let x = 'x', y = 'y';",
+      "valid": false
+    },
+    {
+      "code": "let x = 1, y = 'y'; let z = 1;",
+      "valid": false
+    },
+    {
+      "code": "let { a, b, c} = obj; let { x, y, z} = anotherObj; x = 2;",
+      "valid": false
+    },
+    {
+      "code": "let x = 'x', y = 'y'; function someFunc() { let a = 1, b = 2; foo(a, b) }",
+      "valid": false
+    },
+    {
+      "code": "let someFunc = () =\u003e { let a = 1, b = 2; foo(a, b) }",
+      "valid": false
+    },
+    {
+      "code": "/*eslint no-undef-init:error*/ let foo = undefined;",
+      "valid": false
+    },
+    {
+      "code": "let a = 1; class C { static { a; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { a; } } let a = 1;",
+      "valid": false
+    },
+    {
+      "code": "class C { static { let a = 1; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { if (foo) { let a = 1; } } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { let a = 1; if (foo) { a; } } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { if (foo) { let a; a = 1; } } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { let a; a = 1; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { let { a, b } = foo; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { let a, b; ({ a, b } = foo); } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { let a; let b; ({ a, b } = foo); } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { let a; a = 0; console.log(a); } }",
+      "valid": false
+    },
+    {
+      "code": "let { itemId, list } = {}, obj = []; console.log(itemId, list, obj);",
+      "valid": false
+    },
+    {
+      "code": "let [ itemId, list ] = [], obj = []; console.log(itemId, list, obj);",
+      "valid": false
+    },
+    {
+      "code": "class C { static { () =\u003e a; let a = 1; } };",
+      "valid": false
+    },
+    {
+      "code": "\u003c!-- should not generate diagnostics --\u003e\n---\nlet hello = \"Hello World\";\n---\n\n\u003chtml\u003e\n    \u003cspan\u003e{hello}\u003c/span\u003e\n\u003c/html\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "\u003c!-- should not generate diagnostics --\u003e\n\u003cscript\u003e\nlet hello = \"Hello World\";\n\u003c/script\u003e\n\n\u003chtml\u003e\n    \u003cspan\u003e{hello}\u003c/span\u003e\n\u003c/html\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "let hello = \"Hello World\";\n",
+      "valid": true
+    },
+    {
+      "code": "var x = 0;",
+      "valid": true
+    },
+    {
+      "code": "let x;",
+      "valid": true
+    },
+    {
+      "code": "let x; { x = 0; } foo(x);",
+      "valid": true
+    },
+    {
+      "code": "let x = 0; x = 1;",
+      "valid": true
+    },
+    {
+      "code": "const x = 0;",
+      "valid": true
+    },
+    {
+      "code": "for (let i = 0, end = 10; i \u003c end; ++i) {}",
+      "valid": true
+    },
+    {
+      "code": "for (let i in [1,2,3]) { i = 0; }",
+      "valid": true
+    },
+    {
+      "code": "for (let x of [1,2,3]) { x = 0; }",
+      "valid": true
+    },
+    {
+      "code": "(function() { var x = 0; })();",
+      "valid": true
+    },
+    {
+      "code": "(function() { let x; })();",
+      "valid": true
+    },
+    {
+      "code": "(function() { let x; { x = 0; } foo(x); })();",
+      "valid": true
+    },
+    {
+      "code": "(function() { let x = 0; x = 1; })();",
+      "valid": true
+    },
+    {
+      "code": "(function() { const x = 0; })();",
+      "valid": true
+    },
+    {
+      "code": "(function() { for (let i = 0, end = 10; i \u003c end; ++i) {} })();",
+      "valid": true
+    },
+    {
+      "code": "(function() { for (let i in [1,2,3]) { i = 0; } })();",
+      "valid": true
+    },
+    {
+      "code": "(function() { for (let x of [1,2,3]) { x = 0; } })();",
+      "valid": true
+    },
+    {
+      "code": "(function(x = 0) { })();",
+      "valid": true
+    },
+    {
+      "code": "let a; while (a = foo());",
+      "valid": true
+    },
+    {
+      "code": "let a; do {} while (a = foo());",
+      "valid": true
+    },
+    {
+      "code": "let a; for (; a = foo(); );",
+      "valid": true
+    },
+    {
+      "code": "let a; for (;; ++a);",
+      "valid": true
+    },
+    {
+      "code": "let a; for (const {b = ++a} in foo());",
+      "valid": true
+    },
+    {
+      "code": "let a; for (const {b = ++a} of foo());",
+      "valid": true
+    },
+    {
+      "code": "let a; for (const x of [1,2,3]) { if (a) {} a = foo(); }",
+      "valid": true
+    },
+    {
+      "code": "let a; for (const x of [1,2,3]) { a = a || foo(); bar(a); }",
+      "valid": true
+    },
+    {
+      "code": "let a; for (const x of [1,2,3]) { foo(++a); }",
+      "valid": true
+    },
+    {
+      "code": "let a; function foo() { if (a) {} a = bar(); }",
+      "valid": true
+    },
+    {
+      "code": "let a; function foo() { a = a || bar(); baz(a); }",
+      "valid": true
+    },
+    {
+      "code": "let a; function foo() { bar(++a); }",
+      "valid": true
+    },
+    {
+      "code": "{ let id; function foo() { if (typeof id !== 'undefined') { return; } id = setInterval(() =\u003e {}, 250); } foo()",
+      "valid": true
+    },
+    {
+      "code": "/*exported a*/ let a; function init() { a = foo(); }",
+      "valid": true
+    },
+    {
+      "code": "let a; if (true) a = 0; foo(a);",
+      "valid": true
+    },
+    {
+      "code": "(function (a) { let b; ({ a, b } = obj); })();",
+      "valid": true
+    },
+    {
+      "code": "(function (a) { let b; ([ a, b ] = obj); })();",
+      "valid": true
+    },
+    {
+      "code": "var a; { var b; ({ a, b } = obj); }",
+      "valid": true
+    },
+    {
+      "code": "let a; { let b; ({ a, b } = obj); }",
+      "valid": true
+    },
+    {
+      "code": "var a; { var b; ([ a, b ] = obj); }",
+      "valid": true
+    },
+    {
+      "code": "let a; { let b; ([ a, b ] = obj); }",
+      "valid": true
+    },
+    {
+      "code": "let x; { x = 0; foo(x); }",
+      "valid": true
+    },
+    {
+      "code": "(function() { let x; { x = 0; foo(x); } })();",
+      "valid": true
+    },
+    {
+      "code": "let x; for (const a of [1,2,3]) { x = foo(); bar(x); }",
+      "valid": true
+    },
+    {
+      "code": "(function() { let x; for (const a of [1,2,3]) { x = foo(); bar(x); } })();",
+      "valid": true
+    },
+    {
+      "code": "let x; for (x of array) { x; }",
+      "valid": true
+    },
+    {
+      "code": "let {a, b} = obj; b = 0;",
+      "valid": true
+    },
+    {
+      "code": "let a, b; ({a, b} = obj); b++;",
+      "valid": true
+    },
+    {
+      "code": "let { name, ...otherStuff } = obj; otherStuff = {};",
+      "valid": true
+    },
+    {
+      "code": "let predicate; [typeNode.returnType, predicate] = foo();",
+      "valid": true
+    },
+    {
+      "code": "let predicate; [typeNode.returnType, ...predicate] = foo();",
+      "valid": true
+    },
+    {
+      "code": "let predicate; [typeNode.returnType,, predicate] = foo();",
+      "valid": true
+    },
+    {
+      "code": "let predicate; [typeNode.returnType=5, predicate] = foo();",
+      "valid": true
+    },
+    {
+      "code": "let predicate; [[typeNode.returnType=5], predicate] = foo();",
+      "valid": true
+    },
+    {
+      "code": "let predicate; [[typeNode.returnType, predicate]] = foo();",
+      "valid": true
+    },
+    {
+      "code": "let predicate; [typeNode.returnType, [predicate]] = foo();",
+      "valid": true
+    },
+    {
+      "code": "let predicate; [, [typeNode.returnType, predicate]] = foo();",
+      "valid": true
+    },
+    {
+      "code": "let predicate; [, {foo:typeNode.returnType, predicate}] = foo();",
+      "valid": true
+    },
+    {
+      "code": "let predicate; [, {foo:typeNode.returnType, ...predicate}] = foo();",
+      "valid": true
+    },
+    {
+      "code": "let a; const b = {}; ({ a, c: b.c } = func());",
+      "valid": true
+    },
+    {
+      "code": "const x = [1,2]; let y; [,y] = x; y = 0;",
+      "valid": true
+    },
+    {
+      "code": "const x = [1,2,3]; let y, z; [y,,z] = x; y = 0; z = 0;",
+      "valid": true
+    },
+    {
+      "code": "class C { static { let a = 1; a = 2; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { let a; a = 1; a = 2; } }",
+      "valid": true
+    },
+    {
+      "code": "let a; class C { static { a = 1; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { let a; if (foo) { a = 1; } } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { let a; if (foo) a = 1; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { let a, b; if (foo) { ({ a, b } = foo); } } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { let a, b; if (foo) ({ a, b } = foo); } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { a++; } foo() { a++ } } let a = 1; ",
+      "valid": true
+    },
+    {
+      "code": "let b; { let e; ({ a: { b, e } } = foo()); }",
+      "valid": true
+    },
+    {
+      "code": "let [x = -1, y] = [1,2]; y = 0;",
+      "valid": true
+    },
+    {
+      "code": "let {a: x = -1, b: y} = {a:1,b:2}; y = 0;",
+      "valid": true
+    },
+    {
+      "code": "(function() { let [x = -1, y] = [1,2]; y = 0; })();",
+      "valid": true
+    },
+    {
+      "code": "(function() { let {a: x = -1, b: y} = {a:1,b:2}; y = 0; })();",
+      "valid": true
+    },
+    {
+      "code": "let {a = 0, b} = obj; b = 0; foo(a, b);",
+      "valid": true
+    },
+    {
+      "code": "let {a: {b, c}} = {a: {b: 1, c: 2}}; b = 3;",
+      "valid": true
+    },
+    {
+      "code": "let a, b; ({a = 0, b} = obj); b = 0; foo(a, b);",
+      "valid": true
+    },
+    {
+      "code": "let {a = 0, b} = obj, c = a; b = a;",
+      "valid": true
+    },
+    {
+      "code": "let x = 'x', y = 'y'; x = 1",
+      "valid": true
+    },
+    {
+      "code": "let {a, b} = c, d;",
+      "valid": true
+    },
+    {
+      "code": "let {a, b, c} = {}, e, f;",
+      "valid": true
+    },
+    {
+      "code": "function a() { let foo = 0, bar = 1; foo = 1; } function b() { let foo = 0, bar = 2; foo = 2; }",
+      "valid": true
+    },
+    {
+      "code": "let { itemId, list } = {}, obj = [], total = 0; total = 9; console.log(itemId, list, obj, total);",
+      "valid": true
+    },
+    {
+      "code": "let [ itemId, list ] = [], total = 0; total = 9; console.log(itemId, list, total);",
+      "valid": true
+    },
+    {
+      "code": "let x; x; x = 0;",
+      "valid": true
+    },
+    {
+      "code": "let x; { x; }; x = 0;",
+      "valid": true
+    },
+    {
+      "code": "let x; { { x; } }; x = 0;",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nlet {a, b} = v;\na++;\nconsole.log(a);",
+      "valid": true
+    }
+  ]
+}

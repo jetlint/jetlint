@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-explicit-length-check",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useExplicitLengthCheck",
+  "cases": [
+    {
+      "code": "if (foo.bar \u0026\u0026 foo.bar.length) {}\nif (foo.length || foo.bar()) {}\nif (!!(!!foo.length)) {}\nif (!(foo.length === 0)) {}\nif (/** 1 **/ 0 === foo.length /** 2 **/) {}\nif (0 \u003c foo.length) {}\nwhile (foo.length \u003e= 1) {}\ndo {} while (/** 1 **/foo.length /** 2 **/);\nfor (let i = 0; (bar \u0026\u0026 !foo.length); i ++) {}\nconst isEmpty = foo.length \u003c 1;\nbar(foo.length \u003e= 1)\nbar(!foo.length || foo.length)\nconst bar = void !foo.length;\nconst isNotEmpty = Boolean(foo.length)\nconst isNotEmpty1 = Boolean(foo.length || bar)\nconst isEmpty1 = Boolean(!foo.length)\nconst isEmpty2 = Boolean(/** 1 **/foo.length === 0)\nconst isNotEmpty2 = !Boolean(foo.length === 0)\nconst isEmpty3 = !Boolean(!Boolean(foo.length === 0))\nif (foo.size) {}\nif (foo.size \u0026\u0026 bar.length) {}\n// Space after keywords\nfunction foo() {return!foo.length}\nfunction foo() {throw!foo.length}\nasync function foo() {await!foo.length}\nfunction * foo() {yield!foo.length}\nfunction * foo() {yield*!foo.length}\ndelete!foo.length\ntypeof!foo.length\nvoid!foo.length\na instanceof!foo.length\na in!foo.length\nexport default!foo.length\nif(true){}else!foo.length\ndo!foo.length;while(true) {}\nswitch(foo){case!foo.length:{}}\nfor(const a of!foo.length);\nfor(const a in!foo.length);\n\nclass A {\n    a() {\n        if (this.length) {};\n        while (!this.size || foo);\n    }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// Not length check\nif (foo.notLength) {}\nif (length) {}\nif (foo[length]) {}\nif (foo[\"length\"]) {}\n\n// Not boolean\nconst bar = foo.length\nconst bar1 = +foo.length\nconst x0 = Boolean(foo.length, foo.length)\nconst x1 = new Boolean(foo.length)\nconst x2 = NotBoolean(foo.length)\nconst length = foo.length ?? 0\nif (foo.length ?? bar) {}\n\n\n// Valid style\nfoo.length === 0\nfoo.length \u003e 0\nwhile (foo.length \u003e 0) {\n    foo.pop();\n}\nif (foo.length \u003e 0) {}\nfor (; foo.length \u003e 0; foo.pop()); {}\n\nif (foo.length !== 1) {}\nif (foo.length \u003e 1) {}\nif (foo.length \u003e 1) {}\nif (foo.length \u003c 2) {}\n\nif (foo.length === 0 || true) {}\n\n// TODO. Not supported yet.\n// With known static length value\n// const foo1 = { size: \"small\" }; if (foo1.size) {} // Not a number\n// const foo2 = { length: -1 }; if (foo2.length) {} // Array lengths cannot be negative\n// const foo3 = { length: 1.5 }; if (foo3.length) {} // Array lengths must be integers\n// const foo4 = { length: NaN }; if (foo4.length) {} // Array lengths cannot be NaN\n// const foo5 = { length: Infinity }; if (foo5.length) {} // Array lengths cannot be Infinity\n\n// Logical OR\nconst x3 = foo.length || 2\n// TODO. Not supported yet.\n// const A_NUMBER = 2; const x = foo.length || A_NUMBER\n",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "ruleId": "no-redundant-roles",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/noRedundantRoles",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n\t\u003carticle role=\"article\"\u003e\u003c/article\u003e\n\t\u003cbutton role=\"button\"\u003e\u003c/button\u003e\n\t\u003ch1 role=\"heading\" aria-level=\"1\"\u003e\n\t\ttitle\n\t\u003c/h1\u003e\n\t\u003ch1 role=\"heading\"\u003etitle\u003c/h1\u003e\n\t\u003ch2 role={`heading`}\u003e\u003c/h2\u003e\n\t\u003cdialog role=\"dialog\"\u003e\u003c/dialog\u003e\n\t\u003cinput type=\"checkbox\" role=\"checkbox\" /\u003e\n\t\u003cfigure role=\"figure\"\u003e\u003c/figure\u003e\n\t\u003cform role=\"form\"\u003e\u003c/form\u003e\n\t{/* Needs to check the ancestors: \u003ctd role=\"gridcell\"\u003e\u003c/td\u003e */}\n\t\u003cfieldset role=\"group\"\u003e\u003c/fieldset\u003e\n\t\u003cimg src=\"foo\" alt=\"bar\" role=\"img\" /\u003e\n\t\u003cimg alt=\"\" role=\"presentation\"\u003e\u003c/img\u003e\n\t\u003ca href=\"#\" role=\"link\"\u003e\u003c/a\u003e\n\t\u003col role=\"list\"\u003e\u003c/ol\u003e\n\t\u003cul role=\"list\"\u003e\u003c/ul\u003e\n\t\u003cselect name=\"name\" role=\"combobox\"\u003e\u003c/select\u003e\n\t\u003cselect name=\"name\" multiple size=\"4\" role=\"listbox\"\u003e\u003c/select\u003e\n\t\u003cli role=\"listitem\"\u003e\u003c/li\u003e\n\t\u003cnav role=\"navigation\"\u003e\u003c/nav\u003e\n\t{/* Needs to check the ancestors: \u003coption role=\"option\"\u003e\u003c/option\u003e */}\n\t\u003ctr role=\"row\"\u003e\u003c/tr\u003e\n\t\u003ctbody role=\"rowgroup\"\u003e\u003c/tbody\u003e\n\t\u003ctfoot role=\"rowgroup\"\u003e\u003c/tfoot\u003e\n\t\u003cthead role=\"rowgroup\"\u003e\u003c/thead\u003e\n\t{/* Needs to check the ancestors: \u003cth scope=\"row\" role=\"rowheader\"\u003e\u003c/th\u003e */}\n\t\u003cinput type=\"search\" role=\"searchbox\" /\u003e\n\t\u003ctable role=\"table\"\u003e\u003c/table\u003e\n\t\u003ctextarea role=\"textbox\"\u003e\u003c/textarea\u003e\n\t\u003cinput type=\"text\" role=\"textbox\" /\u003e\n\u003c/\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should generate diagnostics */\n// https://github.com/web-platform-tests/wpt/blob/master/html-aam/roles-generic.html\n\u003c\u003e\n\t\u003cb role=\"generic\"\u003ex\u003c/b\u003e\n\t\u003cbdi role=\"generic\"\u003ex\u003c/bdi\u003e\n\t\u003cbdo role=\"generic\"\u003ex\u003c/bdo\u003e\n\t\u003cdata value=\"1\" role=\"generic\"\u003e\n\t\tx\n\t\u003c/data\u003e\n\t\u003cdiv open role=\"generic\"\u003e\n\t\tx\n\t\u003c/div\u003e\n\t\u003ci role=\"generic\"\u003ex\u003c/i\u003e\n\t\u003cpre role=\"generic\"\u003ex\u003c/pre\u003e\n\t\u003cq role=\"generic\"\u003ex\u003c/q\u003e\n\t\u003csamp role=\"generic\"\u003ex\u003c/samp\u003e\n\t\u003csmall role=\"generic\"\u003ex\u003c/small\u003e\n\t\u003cspan role=\"generic\"\u003ex\u003c/span\u003e\n\t\u003cu role=\"generic\"\u003ex\u003c/u\u003e\n\u003c/\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n\t\u003carticle role=\"presentation\"\u003e\u003c/article\u003e\n\t\u003cButton role=\"button\"\u003e\u003c/Button\u003e\n\t\u003cspan\u003e\u003c/span\u003e\n\u003c/\u003e;\n",
+      "valid": true
+    }
+  ]
+}

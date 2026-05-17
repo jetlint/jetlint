@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-document-cookie",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noDocumentCookie",
+  "cases": [
+    {
+      "code": "document.cookie = \"foo=bar\";\ndocument.cookie += \";foo=bar\"\n\nwindow.document.cookie = \"foo=bar\";\nglobalThis.window.document.cookie = \"foo=bar\";\n\ndocument[\"cookie\"] = \"foo=bar\"\n\nfunction document_is_global1(){\n    const doc = document;\n    doc.cookie = \"bar=foo\"\n}\n\nfunction document_is_global2(){\n    const foo = window.document;\n    const bar = foo;\n    bar.cookie = \"foo=bar\";\n}\n\nconst global_doc = globalThis.document;\nfunction document_is_global3(){\n    global_doc.cookie = \"foo=bar\";\n}",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\ndocument.cookie\n\nconst foo = document.cookie;\n\nconst array = document.cookie.split(\"; \");\n\ncookieStore\n  .set({\n    name: \"foo\",\n    value: \"bar\",\n    expires: Date.now() + 24 * 60 * 60,\n    domain: \"example.com\",\n})\n\nfunction document_is_not_global1(document){\n    document.cookie = \"bar=foo\"\n}\n",
+      "valid": true
+    }
+  ]
+}

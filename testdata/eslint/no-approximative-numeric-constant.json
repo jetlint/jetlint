@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-approximative-numeric-constant",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noApproximativeNumericConstant",
+  "cases": [
+    {
+      "code": "const x = 3.141;\nconst y = 2.302;\nconst z = 2.3025;\n\nconst constants = [\n\t2.718281, // E\n\t2.718_281, // E with separator\n\t2.302585, // LN10\n\t0.693147, // LN2\n\t0.434294, // LOG10E\n\t1.442695, // LOG2E\n\t3.141592, // PI\n\t0.707106, // SQRT1_2\n\t1.414213, // SQRT2\n];\n\nconst constants1 = [\n\t2.718, // E\n\t2.302, // LN10\n\t0.693, // LN2\n\t0.434, // LOG10E\n\t1.442, // LOG2E\n\t3.141, // PI\n\t0.707, // SQRT1_2\n\t1.414, // SQRT2\n];\n\nconst exact = [\n\t2.718281828459045, // E\n    2.302585092994046, // LN10\n    0.6931471805599453, // LN2\n    0.4342944819032518, // LOG10E\n    1.4426950408889634, // LOG2E\n    3.141592653589793, // PI\n    0.7071067811865476, // SQRT1_2\n    .7071067811865476, // SQRT1_2 without leading 0\n    1.4142135623730951, // SQRT2\n];\n\nconst rounded = [\n\t// rounded\n\t2.7183, // E\n    2.302585093, // LN10\n    0.6931471806, // LN2\n    0.4342944819033, // LOG10E\n    1.442695040889, // LOG2E\n    3.1415926535898, // PI\n    0.70710678118655, // SQRT1_2\n    1.4142135623731, // SQRT2\n];\n\nconst precisionLoss = [\n\t2.71828182845904523536028747135266250, // E\n    2.30258509299404568401799145468436421, // LN10\n    0.693147180559945309417232121458176568, // LN2\n    0.301029995663981195213738894724493027, // LOG10E\n    1.44269504088896340735992468100189214, // LOG2E\n    3.14159265358979323846264338327950288, // PI\n    0.707106781186547524400844362104849039, // SQRT1_2\n    1.41421356237309504880168872420969808, // SQRT2\n];\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst x = Math.PI;\nconst y = Math.LN10;\nconst z = 2.301;\nconst w = 2.304;\nconst piOk = 3.14;\n\nconst tooMuchRounded = [\n\t2.7184, // E\n    2.302585094, // LN10\n    0.6931471807, // LN2\n    0.4342944819034, // LOG10E\n    1.442695042, // LOG2E\n    3.1415926537, // PI\n    0.7071067813, // SQRT1_2\n    1.4142135625, // SQRT2\n];\n",
+      "valid": true
+    }
+  ]
+}

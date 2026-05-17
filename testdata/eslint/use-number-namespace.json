@@ -1,0 +1,19 @@
+{
+  "ruleId": "use-number-namespace",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useNumberNamespace",
+  "cases": [
+    {
+      "code": "const foo = { [NaN]: 1 };\n\nconst foo = { [NaN]() {} };\n\nfoo[NaN] = 1;\n\nclass A {\n\t[NaN]() {}\n}\n\nfoo = { [NaN]: 1 };\n\nconst foo = Infinity;\n\nif (Object.is(foo, Infinity)) {\n}\n\nconst foo = bar[Infinity];\n\nconst foo = { Infinity };\n\nconst foo = { Infinity: Infinity };\n\nconst foo = { [Infinity]: -Infinity };\n\nconst foo = { [-Infinity]: Infinity };\n\nconst foo = { Infinity: -Infinity };\n\nconst { foo = Infinity } = {};\n\nconst { foo = -Infinity } = {};\n\nconst foo = Infinity.toString();\n\nconst foo = -Infinity.toString();\n\nconst foo = (-Infinity).toString();\n\nconst foo = +Infinity;\n\nconst foo = +-Infinity;\n\nconst foo = -Infinity;\n\nconst foo = -(-Infinity);\n\nconst foo = 1 - Infinity;\n\nconst foo = 1 - -Infinity;\n\nconst isPositiveZero = (value) =\u003e value === 0 \u0026\u0026 1 / value === Infinity;\n\nconst isNegativeZero = (value) =\u003e value === 0 \u0026\u0026 1 / value === -Infinity;\n\nconst { a = NaN } = {};\n\nconst { [NaN]: a = NaN } = {};\n\nconst [a = NaN] = [];\n\nfunction foo({ a = NaN }) {}\n\nfunction foo({ [NaN]: a = NaN }) {}\n\nfunction foo([a = NaN]) {}\n\nfunction foo() {\n\treturn -Infinity;\n}\n\nglobalThis.parseFloat(foo);\n\n// Biome doesn't support `global` for global namespacing\n// global.parseFloat(foo);\n\nwindow.parseFloat(foo);\n\n// Biome doesn't support `self` for global namespacing\n// self.parseFloat(foo);\n\nglobalThis.NaN - globalThis.Infinity;\n",
+      "valid": false
+    },
+    {
+      "code": "const options = {\n\tnormalize: parseFloat,\n\tparseInt,\n};\nrun(foo, options);\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nNumber.parseInt(\"1\");\n\nNumber.parseFloat(\"1.1\");\n\nNumber.NaN;\n\nNumber.POSITIVE_INFINITY;\n\nNumber.NEGATIVE_INFINITY;\n\nisFinite({});\n\nisNaN({});\n\nconst { parseInt } = Number;\nconst foo = parseInt(\"10\", 2);\n\nfunction f(parseFloat) {\n\tparseFloat(\"1.1\");\n}\n",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-useless-continue",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessContinue",
+  "cases": [
+    {
+      "code": "loop: for (let i = 0; i \u003c 5; i++) {\n\tcontinue loop;\n}\n\nwhile (i--) {\n\tcontinue;\n}\n\nwhile (1) {\n\tcontinue;\n}\n\nfor (let i = 0; i \u003c 10; i++) {\n\tif (i \u003e 5) {\n\t\tconsole.log(\"foo\");\n\t\tcontinue;\n\t} else if (i \u003e= 5 \u0026\u0026 i \u003c 8) {\n\t\tconsole.log(\"test\");\n\t} else {\n\t\tconsole.log(\"test\");\n\t}\n}\n\nfor (let i = 0; i \u003c 9; i++) {\n\tcontinue;\n}\n\ntest: for (let i = 0; i \u003c 9; i++) continue test;\n\ntest2: do {\n\tcontinue test2;\n} while (true);",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\ntest3: do {\n\tif (i \u003c 2) {\n\t\tcontinue test3;\n\t}\n\ti++;\n} while (true);\n\nwhile (i) {\n\tif (i \u003e 5) {\n\t\tcontinue;\n\t}\n\tconsole.log(i);\n\ti--;\n}\n\nwhile (i) {\n\tcontinue;\n\tconsole.log(i);\n}\n\nwhile (condition) {\n\tif (conditionZ) {\n\t\tif (conditionX) {\n\t\t\tconsole.log(\"log\");\n\t\t\tcontinue;\n\t\t}\n\t\tconsole.log(\"log\");\n\t\tif (conditionY) {\n\t\t\tconsole.log(\"log\");\n\t\t}\n\t}\n}\n\nloop: while (1) {\n\tforLoop: for (let i = 0; i \u003c 5; i++) {\n\t\tif (someCondition) {\n\t\t\tcontinue loop;\n\t\t}\n\t}\n}\n\nloop: for (let i = 0; i \u003c 10; i++) {\n\tfor (let j = 0; j \u003c byteLength; j++) {\n\t\tif (condition) {\n\t\t\tcontinue loop;\n\t\t}\n\t}\n}\n\n// FIXME: This should not generate a diagnostic\n// for (const x of []) {\n// \tif (x) {\n// \t\t// before\n// \t\tcontinue; // statement\n// \t\t// after\n// \t} else {\n// \t\tdoSomeStuff();\n// \t}\n// }\n\nfunction f(xs) {\n\tfor (const x of xs) {\n\t\tswitch (x) {\n\t\t\tcase 0:\n\t\t\t\tif (isConstValid) {\n\t\t\t\t\tcontinue;\n\t\t\t\t}\n\t\t\t// falls through\n\t\t\tcase 1:\n\t\t\t\tbreak;\n\t\t}\n\t}\n}\n",
+      "valid": true
+    }
+  ]
+}

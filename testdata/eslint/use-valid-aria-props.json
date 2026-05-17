@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-valid-aria-props",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/useValidAriaProps",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\nvar a = \u003cinput className=\"\" aria-labell=\"\" /\u003e;\nvar a = \u003cdiv aria-=\"foobar\" /\u003e;\nvar a = \u003cdiv aria-labeledby=\"foobar\" /\u003e;\nvar a = \u003cdiv aria-skldjfaria-foo1=\"foobar\" /\u003e;\nvar a = \u003cdiv aria-skldjfaria-foo1=\"foobar\" aria-skldjfaria-foo222=\"foobar\" /\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nvar a = \u003cdiv /\u003e;\nvar a = \u003cdiv\u003e\u003c/div\u003e;\nvar a = \u003cdiv aria=\"wee\"\u003e\u003c/div\u003e;\nvar a = \u003cdiv abcARIAdef=\"true\"\u003e\u003c/div\u003e;\nvar a = \u003cdiv fooaria-foobar=\"true\"\u003e\u003c/div\u003e;\nvar a = \u003cdiv fooaria-hidden=\"true\"\u003e\u003c/div\u003e;\nvar a = \u003cinput type=\"text\" aria-errormessage=\"foobar\" /\u003e;\nvar a = \u003cdiv type=\"text\" aria-atomic=\"true\" /\u003e;\n",
+      "valid": true
+    }
+  ]
+}

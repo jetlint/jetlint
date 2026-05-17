@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-suspicious-semicolon-in-jsx",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noSuspiciousSemicolonInJsx",
+  "cases": [
+    {
+      "code": "const Component = () =\u003e {\n    return (\n        \u003cdiv\u003e\n          \u003cdiv /\u003e;\n        \u003c/div\u003e\n    );\n}\n\nconst Component2 = () =\u003e {\n    return (\n        \u003cdiv\u003e\n          \u003cComponent\u003e\n            \u003cdiv /\u003e\n          \u003c/Component\u003e;\n        \u003c/div\u003e\n    );\n}\n\nconst Component3 = () =\u003e (\n    \u003cdiv\u003e\n        \u003cComponent /\u003e;\n    \u003c/div\u003e\n)\n\nconst Component4 = () =\u003e {\n  return (\n      \u003c\u003e\n          \u003cdiv /\u003e;\n      \u003c/\u003e\n  );\n}\n\nconst Component5 = () =\u003e {\n  return (\n      \u003c\u003e\n        \u003cComponent\u003e\n          \u003cdiv /\u003e\n        \u003c/Component\u003e;\n      \u003c/\u003e\n  );\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst Component = () =\u003e {\n    return (\n        \u003cdiv\u003e\n            \u003cdiv /\u003e\n        \u003c/div\u003e\n    );\n}\n\nconst Component2 = () =\u003e {\n    return (\n        \u003cdiv\u003e\n            \u003cdiv /\u003e\n            ;\n        \u003c/div\u003e\n    );\n}\n\nconst Component3 = () =\u003e {\n    return (\n        \u003cdiv\u003e\n          \u003cdiv /\u003e{';'}\n        \u003c/div\u003e\n    );\n}\n\nconst Component4 = () =\u003e {\n    return (\n        \u003cdiv\u003e\n          \u003cdiv /\u003e\u0026#59;\n        \u003c/div\u003e\n    );\n}\n\nconst Component5 = () =\u003e {\n    return (\n        \u003cdiv\u003e\n          \u003cspan\u003e;\u003c/span\u003e\n          \u003cspan /\u003e;\u003cspan /\u003e\n          text; text;\n          \u0026amp;\n        \u003c/div\u003e\n    );\n}\n\nconst Component6 = () =\u003e {\n    return \u003cdiv /\u003e;\n}\n\nconst Component7 = () =\u003e {\n    return (\n        \u003cdiv\u003e\n            \u003cdiv /\u003etext;\n        \u003c/div\u003e\n    );\n}\n",
+      "valid": true
+    }
+  ]
+}

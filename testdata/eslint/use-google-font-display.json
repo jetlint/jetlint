@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-google-font-display",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/useGoogleFontDisplay",
+  "cases": [
+    {
+      "code": "\u003c\u003e\n\t\u003clink href=\"https://fonts.googleapis.com/css2?family=Krona+One\" /\u003e\n\t\u003clink href=\"https://fonts.googleapis.com/css2?family=Krona+One\u0026display=auto\" /\u003e\n\t\u003clink href=\"https://fonts.googleapis.com/css2?family=Krona+One\u0026display=block\" /\u003e\n\t\u003clink href=\"https://fonts.googleapis.com/css2?family=Krona+One\u0026display=fallback\" /\u003e\n\n\t\u003clink href={\"https://fonts.googleapis.com/css2?family=Krona+One\"} /\u003e\n\t\u003clink href={\"https://fonts.googleapis.com/css2?family=Krona+One\u0026display=auto\"} /\u003e\n\t\u003clink href={\"https://fonts.googleapis.com/css2?family=Krona+One\u0026display=block\"} /\u003e\n\t\u003clink href={\"https://fonts.googleapis.com/css2?family=Krona+One\u0026display=fallback\"} /\u003e\n\n\t\u003clink href={`https://fonts.googleapis.com/css2?family=Krona+One`} /\u003e\n\t\u003clink href={`https://fonts.googleapis.com/css2?family=Krona+One\u0026display=auto`} /\u003e\n\t\u003clink href={`https://fonts.googleapis.com/css2?family=Krona+One\u0026display=block`} /\u003e\n\t\u003clink href={`https://fonts.googleapis.com/css2?family=Krona+One\u0026display=fallback`} /\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n\t\u003clink\n\t\thref=\"https://fonts.googleapis.com/css2?family=Krona+One\u0026display=optional\"\n\t\trel=\"stylesheet\"\n\t/\u003e\n\t\u003clink\n\t\thref={\"https://fonts.googleapis.com/css2?family=Krona+One\u0026display=optional\"}\n\t\trel=\"stylesheet\"\n\t/\u003e\n\t\u003clink\n\t\thref={`https://fonts.googleapis.com/css2?family=Krona+One\u0026display=optional`}\n\t\trel=\"stylesheet\"\n\t/\u003e\n\t\u003clink href=\"https://fonts.googleapis.com/css2?display=unknown\" rel=\"stylesheet\" /\u003e\n\t\u003clink href={\"https://fonts.googleapis.com/css2?display=unknown\"} rel=\"stylesheet\" /\u003e\n\t\u003clink href={`https://fonts.googleapis.com/css2?display=unknown`} rel=\"stylesheet\" /\u003e\n\t\u003clink rel=\"stylesheet\" /\u003e\n\u003c/\u003e",
+      "valid": true
+    }
+  ]
+}

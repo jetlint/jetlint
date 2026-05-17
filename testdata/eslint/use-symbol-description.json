@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-symbol-description",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useSymbolDescription",
+  "cases": [
+    {
+      "code": "Symbol()\nSymbol('')\nSymbol(\"\")\nSymbol(``)",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nSymbol('foo')\nSymbol(\"foo\")\nSymbol(`foo`)\nconst html = () =\u003e {}\nSymbol(html``)\n\nSymbol(1)\nconst symbolName = 'foo'\nSymbol(symbolName)\n\nNotASymbol()\n\n{\n    // Redeclare global Symbol\n    const Symbol = (name) =\u003e name\n    Symbol()\n}",
+      "valid": true
+    }
+  ]
+}

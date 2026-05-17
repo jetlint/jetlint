@@ -1,0 +1,59 @@
+{
+  "ruleId": "no-default-export",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noDefaultExport",
+  "cases": [
+    {
+      "code": "export default function f() {};",
+      "valid": false
+    },
+    {
+      "code": "export default class C {};",
+      "valid": false
+    },
+    {
+      "code": "export default function () {};",
+      "valid": false
+    },
+    {
+      "code": "export default class {};",
+      "valid": false
+    },
+    {
+      "code": "export default X;",
+      "valid": false
+    },
+    {
+      "code": "export default { f() {} };",
+      "valid": false
+    },
+    {
+      "code": "export { X as default };",
+      "valid": false
+    },
+    {
+      "code": "export { X as 'default' };",
+      "valid": false
+    },
+    {
+      "code": "export { default } from './module';",
+      "valid": false
+    },
+    {
+      "code": "export { X as default } from './module';",
+      "valid": false
+    },
+    {
+      "code": "export { X as 'default' } from './module';",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nmodule.exports = class {};\nexports = function () {};\nmodule.exports.A = class A {};",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport Default from \"mod\";\nexport const CONSTANT = 'foo';\nexport function f() {};\nexport class C {};\nexport { CONSTANT as DUPLICATE_CONSTANT };\nexport { default as X } from \"mod\";",
+      "valid": true
+    }
+  ]
+}

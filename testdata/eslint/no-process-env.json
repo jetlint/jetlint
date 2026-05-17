@@ -1,0 +1,31 @@
+{
+  "ruleId": "no-process-env",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noProcessEnv",
+  "cases": [
+    {
+      "code": "let a = process.env;\nlet a = process.env.ENV;\nlet a = f(process.env);\n",
+      "valid": false
+    },
+    {
+      "code": "import process from \"process\";\nprocess.env;\nprocess.env.FOO;\n",
+      "valid": false
+    },
+    {
+      "code": "import * as process from \"node:process\";\nprocess.env;\nprocess.env.BAZ;\n",
+      "valid": false
+    },
+    {
+      "code": "import process from \"node:process\";\nprocess.env;\nprocess.env.BAR;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nlet a = Process.env;\nlet a = process[env];\nlet a = process.nextTick;\nlet a = process.execArgv;\n\nconst process = {\n\tenv() {}\n};\nprocess.env;\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport process from \"some-other-module\";\nprocess.env;\n",
+      "valid": true
+    }
+  ]
+}

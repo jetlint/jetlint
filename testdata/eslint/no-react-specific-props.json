@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-react-specific-props",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noReactSpecificProps",
+  "cases": [
+    {
+      "code": "//Case with className\n\u003cdiv className=\"greeting\"\u003eHello world!\u003c/div\u003e;\n\n//Case with className with expression\n\u003cdiv className={\"greeting\"}\u003eHello world!\u003c/div\u003e;\n\n//Case with htmlFor\n\u003cdiv htmlFor=\"greeting\"\u003eHello world!\u003c/div\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003cdiv\u003eHello world!\u003c/div\u003e\n\n\u003cdiv class=\"greeting\"\u003eHello world!\u003c/div\u003e\n\n\u003cdiv class={\"greeting\"}\u003eHello world!\u003c/div\u003e\n\n\u003cdiv for=\"greeting\"\u003eHello world!\u003c/div\u003e\n",
+      "valid": true
+    }
+  ]
+}

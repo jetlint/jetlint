@@ -1,0 +1,27 @@
+{
+  "ruleId": "no-exports-in-test",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noExportsInTest",
+  "cases": [
+    {
+      "code": "export const test = \"abcdef\"\n\nif (import.meta.vitest) {\n    const { describe, expect } = import.meta.vitest\n    describe(\"a test\", () =\u003e {\n        expect(test).toEqual(\"abcdef\")\n    })\n}\n",
+      "valid": true
+    },
+    {
+      "code": "describe(\"a test\", () =\u003e { expect(1).toBe(1); })\nmodule.exports[\"invalid\"] = function () { }\nmodule.exports = function () { }\nmodule.exports.invalid = function () { }",
+      "valid": false
+    },
+    {
+      "code": "describe(\"a test\", () =\u003e { expect(1).toBe(1); })\nexport const myThing = \"invalid\";\nexport default function () { }",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\nwindow.location = \"valid\"\nmodule.somethingElse = \"foo\"\nmodule.exports = function () { }\nmodule.exports.myThing = \"valid\";\n\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\nwindow.location = \"valid\"\nexport const myThing = \"valid\"\nexport default function () { }\n\n",
+      "valid": true
+    }
+  ]
+}

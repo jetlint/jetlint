@@ -1,0 +1,531 @@
+{
+  "ruleId": "use-at-index",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useAtIndex",
+  "cases": [
+    {
+      "code": "array[array.length - 1];",
+      "valid": false
+    },
+    {
+      "code": "array[array.length -1];",
+      "valid": false
+    },
+    {
+      "code": "array[array.length - /* comment */ 1];",
+      "valid": false
+    },
+    {
+      "code": "array[array.length - 1.];",
+      "valid": false
+    },
+    {
+      "code": "array[array.length - 0b1];",
+      "valid": false
+    },
+    {
+      "code": "array[array.length - 9];",
+      "valid": false
+    },
+    {
+      "code": "array[0][array[0].length - 1];",
+      "valid": false
+    },
+    {
+      "code": "array[(( array.length )) - 1];",
+      "valid": false
+    },
+    {
+      "code": "array[array.length - (( 1 ))];",
+      "valid": false
+    },
+    {
+      "code": "array[(( array.length - 1 ))];",
+      "valid": false
+    },
+    {
+      "code": "(( array ))[array.length - 1];",
+      "valid": false
+    },
+    {
+      "code": "(( array[array.length - 1] ));",
+      "valid": false
+    },
+    {
+      "code": "array[array.length - 1].pop().shift()[0];",
+      "valid": false
+    },
+    {
+      "code": "a = array[array.length - 1]",
+      "valid": false
+    },
+    {
+      "code": "const a = array[array.length - 1]",
+      "valid": false
+    },
+    {
+      "code": "const {a = array[array.length - 1]} = {}",
+      "valid": false
+    },
+    {
+      "code": "typeof array[array.length - 1]",
+      "valid": false
+    },
+    {
+      "code": "function foo() {return arguments[arguments.length - 1]}",
+      "valid": false
+    },
+    {
+      "code": "class Foo {bar; baz() {return this.bar[this.bar.length - 1]}}",
+      "valid": false
+    },
+    {
+      "code": "class Foo {#bar; baz() {return this.#bar[this.#bar.length - 1]}}",
+      "valid": false
+    },
+    {
+      "code": "array[array.length - unknown - 1]",
+      "valid": false
+    },
+    {
+      "code": "array[array.length - (unknown + 1)]",
+      "valid": false
+    },
+    {
+      "code": "string.charAt(string.length - 1);",
+      "valid": false
+    },
+    {
+      "code": "string.charAt(string.length - 0o11);",
+      "valid": false
+    },
+    {
+      "code": "some.string.charAt(some.string.length - 1);",
+      "valid": false
+    },
+    {
+      "code": "string.charAt((( string.length )) - 0xFF);",
+      "valid": false
+    },
+    {
+      "code": "string.charAt(string.length - (( 1 )));",
+      "valid": false
+    },
+    {
+      "code": "string.charAt((( string.length - 1 )));",
+      "valid": false
+    },
+    {
+      "code": "(( string )).charAt(string.length - 1);",
+      "valid": false
+    },
+    {
+      "code": "(( string.charAt ))(string.length - 1);",
+      "valid": false
+    },
+    {
+      "code": "(( string.charAt(string.length - 1) ));",
+      "valid": false
+    },
+    {
+      "code": "string.charAt(string.length - unknown - 1 );",
+      "valid": false
+    },
+    {
+      "code": "string.charAt(string.length - (unknown + 1));",
+      "valid": false
+    },
+    {
+      "code": "array.slice(0)[0]",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-0)[0]",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-1)[0]",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-1).pop()",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-1.0).shift()",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-9)[0]",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-9).pop()",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-1.1)[0]",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-0xA)[0b000]",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-9).shift()",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-1)[(( 0 ))];",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-(( 1 )))[0];",
+      "valid": false
+    },
+    {
+      "code": "array.slice((( -1 )))[0];",
+      "valid": false
+    },
+    {
+      "code": "(( array.slice(-1) ))[0];",
+      "valid": false
+    },
+    {
+      "code": "(( array )).slice(-1)[0];",
+      "valid": false
+    },
+    {
+      "code": "(( array.slice(-1)[0] ));",
+      "valid": false
+    },
+    {
+      "code": "(( array.slice(-1) )).pop();",
+      "valid": false
+    },
+    {
+      "code": "(( array.slice(-1).pop ))();",
+      "valid": false
+    },
+    {
+      "code": "(( array.slice(-1).pop() ));",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-1)[0].pop().shift().slice(-1)",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-9, -8)[0]",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-9, -0o10)[0]",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-9, -8).pop()",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-9, -8).shift()",
+      "valid": false
+    },
+    {
+      "code": "array.slice((( -9 )), (( -8 )), ).shift()",
+      "valid": false
+    },
+    {
+      "code": "(( array.slice(-9, -8).shift ))()",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-0o11, -7)[0]",
+      "valid": false
+    },
+    {
+      "code": "array.slice(-9, 0)[0]",
+      "valid": false
+    },
+    {
+      "code": "array.slice(hoge)[0]",
+      "valid": false
+    },
+    {
+      "code": "array.slice(hoge).shift()",
+      "valid": false
+    },
+    {
+      "code": "array.at(-1)",
+      "valid": true
+    },
+    {
+      "code": "array[array.length - 0];",
+      "valid": true
+    },
+    {
+      "code": "array[array.length + 1]",
+      "valid": true
+    },
+    {
+      "code": "array[array.length + -1]",
+      "valid": true
+    },
+    {
+      "code": "foo[bar.length - 1]",
+      "valid": true
+    },
+    {
+      "code": "array?.[array.length - 1];",
+      "valid": true
+    },
+    {
+      "code": "array[array.length - 1] = 1",
+      "valid": true
+    },
+    {
+      "code": "array[array.length - 1] %= 1",
+      "valid": true
+    },
+    {
+      "code": "++ array[array.length - 1]",
+      "valid": true
+    },
+    {
+      "code": "array[array.length - 1] --",
+      "valid": true
+    },
+    {
+      "code": "delete array[array.length - 1]",
+      "valid": true
+    },
+    {
+      "code": "class Foo {bar; #bar; baz() {return this.#bar[this.bar.length - 1]}}",
+      "valid": true
+    },
+    {
+      "code": "([array[array.length - 1]] = [])",
+      "valid": true
+    },
+    {
+      "code": "({foo: array[array.length - 1] = 9} = {})",
+      "valid": true
+    },
+    {
+      "code": "string.charAt(string.length - 0);",
+      "valid": true
+    },
+    {
+      "code": "string.charAt(string.length + 1)",
+      "valid": true
+    },
+    {
+      "code": "string.charAt(string.length + -1)",
+      "valid": true
+    },
+    {
+      "code": "foo.charAt(bar.length - 1)",
+      "valid": true
+    },
+    {
+      "code": "string?.charAt?.(string.length - 1);",
+      "valid": true
+    },
+    {
+      "code": "string?.charAt(string.length - 1);",
+      "valid": true
+    },
+    {
+      "code": "string.charAt(9);",
+      "valid": true
+    },
+    {
+      "code": "string1.charAt(string2.length - 1);",
+      "valid": true
+    },
+    {
+      "code": "string.charAt(hoge.string.length - 1)",
+      "valid": true
+    },
+    {
+      "code": "string.charAt(string.length - 1 + 1)",
+      "valid": true
+    },
+    {
+      "code": "string.charAt(string.length + 1 - 1)",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-1)",
+      "valid": true
+    },
+    {
+      "code": "new array.slice(-1)",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-1)?.[0]",
+      "valid": true
+    },
+    {
+      "code": "array.slice?.(-1)[0]",
+      "valid": true
+    },
+    {
+      "code": "array?.slice(-1)[0]",
+      "valid": true
+    },
+    {
+      "code": "array.notSlice(-1)[0]",
+      "valid": true
+    },
+    {
+      "code": "array.slice()[0]",
+      "valid": true
+    },
+    {
+      "code": "array.slice(...[-1])[0]",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-1).shift?.()",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-1)?.shift()",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-1).shift(...[])",
+      "valid": true
+    },
+    {
+      "code": "new array.slice(-1).shift()",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-1)[0] += 1",
+      "valid": true
+    },
+    {
+      "code": "++ array.slice(-1)[0]",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-1)[0] --",
+      "valid": true
+    },
+    {
+      "code": "delete array.slice(-1)[0]",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-9.1, -8.1)[0]",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-unknown, -unknown2)[0]",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-9.1, unknown)[0]",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-9, unknown).pop()",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-9, ...unknown)[0]",
+      "valid": true
+    },
+    {
+      "code": "array.slice(...[-9], unknown)[0]",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-9, unknown)[0]",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-9, unknown).shift()",
+      "valid": true
+    },
+    {
+      "code": "const KNOWN = -8; array.slice(-9, KNOWN).shift()",
+      "valid": true
+    },
+    {
+      "code": "(( (( array.slice( ((-9)), ((unknown)), ).shift ))() ));",
+      "valid": true
+    },
+    {
+      "code": "array.slice(-9, (a, really, _really, complicated, second) =\u003e argument)[0]",
+      "valid": true
+    },
+    {
+      "code": "_.last(array)",
+      "valid": true
+    },
+    {
+      "code": "lodash.last(array)",
+      "valid": true
+    },
+    {
+      "code": "underscore.last(array)",
+      "valid": true
+    },
+    {
+      "code": "_.last(new Array)",
+      "valid": true
+    },
+    {
+      "code": "const foo = []; _.last([bar])",
+      "valid": true
+    },
+    {
+      "code": "const foo = []; _.last(new Array)",
+      "valid": true
+    },
+    {
+      "code": "const foo = []; _.last(((new Array)))",
+      "valid": true
+    },
+    {
+      "code": "if (foo) _.last([bar])",
+      "valid": true
+    },
+    {
+      "code": "function foo() {return _.last(arguments)}",
+      "valid": true
+    },
+    {
+      "code": "new _.last(array)",
+      "valid": true
+    },
+    {
+      "code": "_.last(array, 2)",
+      "valid": true
+    },
+    {
+      "code": "_.last(...array)",
+      "valid": true
+    },
+    {
+      "code": "_.last()",
+      "valid": true
+    },
+    {
+      "code": "other._.last(array)",
+      "valid": true
+    },
+    {
+      "code": "other.underscore.last(array)",
+      "valid": true
+    },
+    {
+      "code": "other.lodash.last(array)",
+      "valid": true
+    }
+  ]
+}

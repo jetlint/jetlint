@@ -1,0 +1,11 @@
+{
+  "ruleId": "no-arguments",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noArguments",
+  "cases": [
+    {
+      "code": "function f() {\n    console.log(arguments);\n\n    for(let i = 0;i \u003c arguments.length; ++i) {\n        console.log(arguments[i]);\n    }\n}\n\nfunction f() {\n    let arguments = 1;\n    console.log(arguments);\n}",
+      "valid": false
+    }
+  ]
+}

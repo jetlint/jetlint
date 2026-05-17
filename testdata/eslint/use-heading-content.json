@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-heading-content",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/useHeadingContent",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n\t\u003ch1 /\u003e\n\t\u003ch1\u003e\n\t\t\u003cdiv aria-hidden /\u003e\n\t\u003c/h1\u003e\n\t\u003ch1\u003e\u003c/h1\u003e\n\t\u003ch1\u003e\n\t\t\u003c\u003e\u003c/\u003e\n\t\u003c/h1\u003e\n\t\u003ch1 aria-hidden=\"true\"\u003econtent\u003c/h1\u003e\n\t\u003ch1 aria-hidden=\"true\" dangerouslySetInnerHTML={{ __html: \"heading\" }} /\u003e\n  \u003ch1 aria-label=\"Screen reader content\" aria-hidden\u003einvisible content\u003c/h1\u003e\n\t\u003ch1\u003e{undefined}\u003c/h1\u003e\n\t\u003ch1 children /\u003e\n\t\u003ch1 children={\"\"} /\u003e\n\t\u003ch1 children={null} /\u003e\n\t\u003ch1 children={undefined} /\u003e\n\t\u003ch1 {...props} aria-hidden=\"true\" /\u003e\n\u003c/\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n\t\u003cdiv /\u003e\n\t\u003ch1\u003eheading\u003c/h1\u003e\n\t\u003ch2\u003eheading\u003c/h2\u003e\n\t\u003ch3\u003eheading\u003c/h3\u003e\n\t\u003ch4\u003eheading\u003c/h4\u003e\n\t\u003ch5\u003eheading\u003c/h5\u003e\n\t\u003ch6\u003eheading\u003c/h6\u003e\n\t\u003ch1\u003e\n\t\t\u003cBar /\u003e\n\t\u003c/h1\u003e\n\t\u003ch1\u003e\n\t\t\u003cBar {...props} /\u003e\n\t\u003c/h1\u003e\n\t\u003ch1\u003e\n\t\t\u003cBar aria-hidden /\u003e\n\t\u003c/h1\u003e\n\t\u003ch1\u003e\n\t\t\u003cTypography.Heading /\u003e\n\t\u003c/h1\u003e\n\t\u003ch1\u003e{foo}\u003c/h1\u003e\n\t\u003ch1\u003e{foo.bar}\u003c/h1\u003e\n\t\u003ch1\u003e\n\t\t\u003cdiv aria-hidden=\"true\"\u003e\u003c/div\u003evisible content\n\t\u003c/h1\u003e\n\t\u003ch1\u003e\n\t\t\u003cdiv aria-hidden=\"true\" {...props}\u003e\u003c/div\u003e\n\t\u003c/h1\u003e\n\t\u003ch1\u003e\n\t\t\u003cdiv aria-hidden=\"true\" {...props} /\u003e\n\t\u003c/h1\u003e\n\t\u003ch1 dangerouslySetInnerHTML={{ __html: \"heading\" }} /\u003e\n\t\u003ch1\u003e\n\t\t\u003cdiv aria-hidden /\u003e\n\t\tvisible content\n\t\u003c/h1\u003e\n  \u003ch1 aria-label=\"Screen reader content\"\u003e\u003cdiv aria-hidden=\"true\"\u003einvisible content\u003c/div\u003e\u003c/h1\u003e\n\t\u003ch1 dangerouslySetInnerHTML={{ __html: \"heading\" }}\u003e\u003c/h1\u003e\n\t\u003ch1 children={children} /\u003e\n\t\u003ch1 children={\"heading\"} /\u003e\n\t\u003ch1 aria-hidden=\"true\" {...props} /\u003e\n\t\u003ch1 aria-hidden=\"true\" {...props} /\u003e\n\t\u003ch1 {...props} /\u003e\n\t\u003ch1\u003e\n\t\t\u003cdiv aria-hidden=\"true\"\u003e\u003c/div\u003evisible content\n\t\u003c/h1\u003e\n\t\u003ch1\u003e\n\t\t\u003c\u003eheading\u003c/\u003e\n\t\u003c/h1\u003e\n\u003c/\u003e;\n",
+      "valid": true
+    }
+  ]
+}

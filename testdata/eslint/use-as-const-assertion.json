@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-as-const-assertion",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useAsConstAssertion",
+  "cases": [
+    {
+      "code": "// ref: https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/tests/rules/prefer-as-const.test.ts\n\nlet foo = { bar: 'baz' as 'baz' };\nlet foo = { bar: 1 as 1 };\nlet []: 'bar' = 'bar';\nlet foo: 'bar' = 'bar';\nlet foo: 2 = 2;\nlet foo: 'bar' = 'bar' as 'bar';\nlet foo = \u003c'bar'\u003e'bar';\nlet foo = \u003c4\u003e4;\nlet foo = 'bar' as 'bar';\nlet foo = 5 as 5;\n\nclass foo {\n  bar: 'baz' = 'baz';\n}\n\nclass foo {\n  bar: 2 = 2;\n}\n\nclass foo {\n  foo = \u003c'bar'\u003e'bar';\n}\n\nclass foo {\n  foo = 'bar' as 'bar';\n}\n\nclass foo {\n  foo = 5 as 5;\n}\n\nclass foo {\n\tconstructor(protected prop = 1 as 1) {}\n}\n\nfunction foo(param = 1 as 1) {}\n\nclass foo {\n\tconstructor(protected prop = 'bar' as 'bar') {}\n}\n\nfunction foo(param = 'bar' as 'bar') {}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// ref: https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/tests/rules/prefer-as-const.test.ts\n\nlet foo = 'baz' as const;\nlet foo = 1 as const;\nlet foo = { bar: 'baz' as const };\nlet foo = { bar: 1 as const };\nlet foo = { bar: 'baz' };\nlet foo = { bar: 2 };\nlet foo = \u003cbar\u003e'bar';\nlet foo = \u003cstring\u003e'bar';\nlet foo = 'bar' as string;\nlet foo = `bar` as `bar`;\nlet foo = `bar` as `foo`;\nlet foo = `bar` as 'bar';\nlet foo: string = 'bar';\nlet foo: number = 1;\nlet foo: 'bar' = baz;\nlet foo = 'bar';\nlet foo: 'bar';\nlet foo = { bar };\nlet foo: 'baz' = 'baz' as const;\n\nclass foo {\n  bar = 'baz';\n}\n\nclass foo {\n  bar: 'baz';\n}\n\nclass foo {\n  bar;\n}\n\nclass foo {\n  bar = \u003cbaz\u003e'baz';\n}\n\nclass foo {\n  bar: string = 'baz';\n}\n\nclass foo {\n  bar: number = 1;\n}\n\nclass foo {\n  bar = 'baz' as const;\n}\n\nclass foo {\n  bar = 2 as const;\n}\n\nclass foo {\n  get bar(): 'bar' {}\n  set bar(bar: 'bar') {}\n}\n\nclass foo {\n  bar = () =\u003e 'bar' as const;\n}\n\ntype BazFunction = () =\u003e 'baz';\n\nclass foo {\n  bar: BazFunction = () =\u003e 'bar';\n}\n\nclass foo {\n  bar(): void {}\n}\n",
+      "valid": true
+    }
+  ]
+}

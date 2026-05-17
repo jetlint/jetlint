@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-iframe-title",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/useIframeTitle",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n\t\u003ciframe /\u003e\n\t\u003ciframe\u003e\u003c/iframe\u003e\n\t\u003ciframe title=\"\" /\u003e\n\t\u003ciframe title={\"\"} /\u003e\n\t\u003ciframe title={``} /\u003e\n\t\u003ciframe title={undefined} /\u003e\n\t\u003ciframe title={false} /\u003e\n\t\u003ciframe title={true} /\u003e\n\t\u003ciframe title={42} /\u003e\n\u003c/\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n\t\u003ciframe title=\"This is a unique title\" /\u003e\n\t\u003ciframe title={uniqueTitle} /\u003e\n\t{/* this case might contain `title` attribute */}\n\t\u003ciframe {...{ title: \"title\" }} /\u003e\n\t\u003ciframe {...props} /\u003e\n\u003c/\u003e;\n",
+      "valid": true
+    }
+  ]
+}

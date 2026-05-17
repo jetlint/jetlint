@@ -1,0 +1,43 @@
+{
+  "ruleId": "no-useless-lone-block-statements",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessLoneBlockStatements",
+  "cases": [
+    {
+      "code": "{}\n\n{\n aLabel: {\n }\n}\n\n{\n function foo() {}\n}\n\n{\n // a comment\n function foo() {}\n}\n\n\n",
+      "valid": false
+    },
+    {
+      "code": "export {}\n\n{}\n\nif (foo) {\n bar();\n {\n  baz();\n }\n}\n\nif (foo) {\n // this is bar\n bar();\n {\n  // this is baz\n  baz();\n }\n}\n\nfunction bar() {\n {\n  baz();\n }\n}\n\n{\n function foo() {}\n}\n\n{\n // a comment\n function foo() {}\n}\n\n{\n aLabel: {\n }\n}\n\nclass C {\n static {\n  {\n   foo();\n  }\n }\n}",
+      "valid": false
+    },
+    {
+      "code": "\u003c!-- should not generate diagnostics --\u003e\n---\n{\n\tconst x = 1;\n}\n---\n\n\u003cdiv\u003e{x}\u003c/div\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "\u003c!-- should not generate diagnostics --\u003e\n\u003cCollapsiblePrimitive.Content\u003e\n\t{#snippet child({ props, open })}\n\t\t{#if open}\n\t\t\t\u003cdiv {...props} transition:slide={{ duration }}\u003e\n\t\t\t\t{@render children?.()}\n\t\t\t\u003c/div\u003e\n\t\t{/if}\n\t{/snippet}\n\u003c/CollapsiblePrimitive.Content\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "\u003c!-- should not generate diagnostics --\u003e\n\u003cscript lang=\"ts\"\u003e\n// this makes it typescript\n\u003c/script\u003e\n\n\u003cdiv\n\tonclick={(e) =\u003e {\n\t\tif ((e.target as HTMLElement).closest(\"button\")) {\n\t\t\treturn;\n\t\t}\n\t\te.currentTarget.parentElement?.querySelector(\"input\")?.focus();\n\t}}\n\u003e\n\u003c/div\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "{\n\tconst x = 1;\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* @script-setup */\nconst num = 1\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nwhile (foo) {\n bar();\n}\n\nif (foo) {\n if (bar) {\n  baz();\n }\n}\n\nfunction bar() {\n baz();\n}\n\n{\n let x = 1;\n}\n\n{\n const y = 1;\n}\n\n{\n class Foo {}\n}\n\naLabel: {\n}\n\nclass C {\n static {\n  lbl: {\n   if (something) {\n    break lbl;\n   }\n\n   foo();\n  }\n }\n}\n\nif (x) {}\n\nfunction g() {\n let i;\n for(i = 0; f(i); i++) {}\n return i;\n}\n\nfunction JsTryStatement() {\n    try {\n     foo();\n    } catch (error) {\n     bar();\n    } finally {\n     baz();\n    }\n   }\n   \n\nfunction JsTryFinallyStatement() {\n try {\n  foo();\n } catch (error) {\n  bar();\n } finally {\n  baz();\n }\n}\n\nswitch (1) {\n  default: {\n    console.info(\"1\");\n    console.info(\"2\");\n    break;\n  }\n}\n\nswitch (foo) {\n  case true: {\n    console.info(\"1\");\n    console.info(\"2\");\n    break;\n  }\n}\n\n// Empty blocks with comments should not trigger diagnostics\n{\n    // TODO: add error handling\n}\n\n{\n    /*\n     * Multi-line block comment\n     * should also be preserved\n     */\n}\n\nfunction withCommentedCode() {\n    {\n        // return x + y;\n    }\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport {}\n\nwhile (foo) {\n bar();\n}\n\nif (foo) {\n if (bar) {\n  baz();\n }\n}\n\nfunction bar() {\n baz();\n}\n\n{\n let x = 1;\n}\n\n{\n const y = 1;\n}\n\n{\n class Foo {}\n}\n\naLabel: {\n}\n\nclass C {\n static {\n  lbl: {\n   if (something) {\n    break lbl;\n   }\n\n   foo();\n  }\n }\n}\n\nif (x) {}\n\nfunction g() {\n let i;\n for(i = 0; f(i); i++) {}\n return i;\n}\n\n{\n function foo() {}\n}\n\nif(x) {\n  x += 1;\n} else {\n  x += 2;\n}",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-date-now",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/useDateNow",
+  "cases": [
+    {
+      "code": "const ts = new Date().getTime();\nconst ts1 = (new Date()).getTime();\nconst ts2 = (new Date().getTime());\nconst ts3 = new Date().valueOf();\nconst ts4 = (new Date()).valueOf();\nconst ts5 = (new Date().valueOf());\n\n// `Number()` and `BigInt()`\nconst ts6 = /* 1 */ Number(/* 2 */ new /* 3 */ Date(/* 4 */) /* 5 */); /* 6 */\nconst tsBigInt = /* 1 */ BigInt(\n\t/* 2 */ new /* 3 */ Date(/* 4 */) /* 5 */\n); /* 6 */\n\n// `BinaryExpression`\nconst ts10 = new Date() - 0;\nconst bar = bar - new Date();\nconst bar1 = new Date() * bar;\nconst ts11 = new Date() / 1;\nconst ts12 = new Date() % Infinity;\nconst ts13 = new Date() ** 1;\nconst zero = new Date(/* 1 */) /* 2 */ /* 3 */ - /* 4 */ new Date();\n\n// `AssignmentExpression`\nfoo -= new Date();\nfoo *= new Date();\nfoo /= new Date();\nfoo %= new Date();\nfoo **= (new Date());\n\n\n`UnaryExpression`\nconst ts7 = +(/* 1 */ new Date());\nconst ts8 = -(/* 1 */ new Date());\n\nfunction foo() {\n\treturn +new Date();\n}\nfunction foo() {\n\treturn -new Date();\n}\nawait +new Date();\ntypeof+new Date();",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst ts = Date.now();\n// Test `new Date()`\n// Not `NewExpression`\n+Date();\n+Date;\n// Not `Date`\n+new Moments();\n// More arguments\n+new Date(0);\n+new Date(...[]);\n\n// Test `new Date().getTime()` and `new Date().valueOf()`\n// Not `CallExpression`\nnew Date.getTime();\n// Not `MemberExpression`\nvalueOf();\n// `computed`\nnew Date()[getTime]();\n// Not `Identifier`\nnew Date()[\"valueOf\"]();\n// Not listed names\nnew Date().notListed(0);\n// More arguments\nnew Date().getTime(0);\nnew Date().valueOf(...[]);\nnew Date(0).getTime()\nnew Date(0).valueOf()\n\n// Test `Number(new Date())` and `BigInt(new Date())`\n// Not `CallExpression`\nnew Number(new Date());\n// Not listed names\ntoNumber(new Date());\n// More/less arguments\nBigInt();\nNumber(new Date(), extraArgument);\nBigInt([...new Date()]);\n\n// Test `+ new Date()` / `- new Date()`\n// Not `UnaryExpression`\nthrow new Date();\n// Not `+/-`\ntypeof new Date();\n\n// Test `AssignmentExpression`\n// Not `AssignmentExpression`\nconst foo = () =\u003e {\n\treturn new Date();\n};\n// `operator` not listed\nfoo += new Date();\n\n// Test `BinaryExpression`\n// Not `BinaryExpression`\nfunction* foo() {\n\tyield new Date();\n}\n// `operator` not listed\nnew Date() + new Date();\n\n// We are not checking these cases\nfoo = new Date() | 0;\nfoo \u0026= new Date();\nfoo = new Date() \u003e\u003e 0;\n",
+      "valid": true
+    }
+  ]
+}

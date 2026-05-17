@@ -1,0 +1,19 @@
+{
+  "ruleId": "no-unused-expressions",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noUnusedExpressions",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n// Source: https://github.com/eslint/eslint/blob/main/tests/lib/rules/no-unused-expressions.js\n// Copyright OpenJS Foundation and other contributors, MIT license\n\n0;\n\na;\n\nf(), 0;\n\n{0};\n\n[];\n\na \u0026\u0026 b();\n\na() || false;\n\na || (b = c);\n\na ? b() || (c = d) : e;\n\n`untagged template literal`\n\ntag`tagged template literal`\n\na ? b() : c();\n\nfoo.bar;\n\n!a;\n\n+a;\n\n\"not a directive\";\n\nfunction foo() {\"directive one\"; f(); \"directive two\"; }\n\nif (0) { \"not a directive\"; f(); }\n\nfunction foo() { var foo = true; \"use strict\"; }\n\nvar foo = () =\u003e { var foo = true; \"use strict\"; }\n\nobj?.foo;\n\nobj?.foo.bar;\n\nobj?.foo().bar;\n\n\u003cdiv /\u003e;\n\n\u003c\u003e\u003c/\u003e;\n\nclass C { static { 'use strict'; } }\n\nclass C {\n    static {\n        'foo'\n        'bar'\n    }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// Source: https://github.com/eslint/eslint/blob/main/tests/lib/rules/no-unused-expressions.js\n// Copyright OpenJS Foundation and other contributors, MIT license\n\n\"use strict\";\nfunction f(){}\na = b;\nnew a;\n{};\nf(); g()\ni++;\na();\ndelete foo.bar;\nvoid new C;\nfunction foo() {\"use strict\"; return true; }\nvar foo = () =\u003e {\"use strict\"; return true; }\nfunction foo() {\"directive one\"; \"directive two\"; f(); }\nfunction foo() { var foo = \"use strict\"; return true; }\nfunction* foo(){ yield 0; }\nasync function foo() { await 5; }\nasync function foo() { await foo.bar; }\nimport(\"foo\");\nfunc?.(\"foo\");\nobj?.foo(\"bar\")\nvar partial = \u003cdiv /\u003e;\nvar partial = \u003c\u003e\u003c/\u003e;\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// Source: https://github.com/eslint/eslint/blob/main/tests/lib/rules/no-unused-expressions.js\n// Copyright OpenJS Foundation and other contributors, MIT license\n\n\"directive one\"; \"directive two\"; f();\n",
+      "valid": true
+    }
+  ]
+}

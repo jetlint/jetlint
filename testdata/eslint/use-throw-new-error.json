@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-throw-new-error",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useThrowNewError",
+  "cases": [
+    {
+      "code": "throw Error()\nthrow (Error)()\nthrow lib.Error()\nthrow lib.mod.Error()\nthrow lib[mod].Error()\nthrow (/**1**/lib.mod).Error()\nthrow Error('foo')\nthrow CustomError('foo')\nthrow FooBarBazError('foo')\nthrow ABCError('foo')\nthrow Abc3Error('foo')\nthrow TypeError()\nthrow EvalError()\nthrow RangeError()\nthrow ReferenceError()\nthrow /**1**/ SyntaxError() /**2**/\nthrow URIError()\nthrow /**1**/(( /**2**/URIError() ))\nthrow (( URIError ))()\nthrow getGlobalThis().Error()\nthrow utils.getGlobalThis().Error()\nthrow (( ((getGlobalThis())).Error ))()\nthrow ( getGlobalThis().Error )()\nthrow /**1**/ ( /**2**/ getGlobalThis().Error /**3 **/ )()\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nthrow new Error();\nnew Error();\nthrow new TypeError();\nthrow new EvalError();\nthrow new RangeError();\nthrow new ReferenceError();\nthrow new SyntaxError();\nthrow new URIError();\nthrow new CustomError();\nthrow new FooBarBazError();\nthrow new ABCError();\n\n// Not `FooError` like\nthrow getError();\n// Not `CallExpression`\nthrow CustomError;\n// Not `Identifier` / `MemberExpression`\nthrow getErrorConstructor()();\n// `MemberExpression.computed`\nthrow lib[Error]();\n// `MemberExpression.property` not `Identifier`\nthrow lib[\"Error\"]();\n// Not `FooError` like\nthrow lib.getError();\n",
+      "valid": true
+    }
+  ]
+}

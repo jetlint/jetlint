@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-skipped-tests",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noSkippedTests",
+  "cases": [
+    {
+      "code": "describe.skip(\"test\", () =\u003e {});\nit.skip(\"test\", () =\u003e {});\ntest.skip(\"test\", () =\u003e {});\nxdescribe('foo', () =\u003e {});\nxit('foo', () =\u003e {});\nxtest('foo', () =\u003e {});\n\n// Playwright: fixme annotations\ntest.fixme(\"needs fixing\", async () =\u003e {});\nit.fixme(\"it needs fixing\", async () =\u003e {});\ndescribe.fixme(\"fixme suite\", () =\u003e {});\n\n// Playwright: test.describe patterns\ntest.describe.skip(\"skipped suite\", () =\u003e {});\ntest.describe.fixme(\"fixme suite\", () =\u003e {});\ntest.describe.parallel.skip(\"parallel skip\", () =\u003e {});\ntest.describe.serial.skip(\"serial skip\", () =\u003e {});\ntest.describe.parallel.fixme(\"parallel fixme\", () =\u003e {});\ntest.describe.serial.fixme(\"serial fixme\", () =\u003e {});\n\n// Playwright: step patterns\ntest(\"test with skipped step\", async () =\u003e {\n    await test.step.skip(\"skipped step\", async () =\u003e {});\n    await test.step.fixme(\"fixme step\", async () =\u003e {});\n});\n\n// Bracket notation\ntest[\"skip\"](\"bracket notation\", async () =\u003e {});\n\n// Bare test.skip() with no arguments\ntest(\"bare skip\", async () =\u003e {\n    test.skip();\n});\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\ndescribe('foo', () =\u003e {});\nit('foo', () =\u003e {});\ntest('foo', () =\u003e {});\n\ndescribe.only('bar', () =\u003e {});\nit.only('bar', () =\u003e {});\ntest.only('bar', () =\u003e {});\n\n// Playwright: normal patterns\ntest.describe(\"suite\", () =\u003e {\n    test(\"test\", async () =\u003e {});\n});\n\ntest.describe.only(\"focused suite\", () =\u003e {\n    test(\"test\", async () =\u003e {});\n});\n\ntest.describe.parallel(\"parallel suite\", () =\u003e {\n    test(\"test\", async () =\u003e {});\n});\n\ntest.describe.serial(\"serial suite\", () =\u003e {\n    test(\"test\", async () =\u003e {});\n});\n\ntest(\"test with step\", async () =\u003e {\n    await test.step(\"step\", async () =\u003e {});\n});\n",
+      "valid": true
+    }
+  ]
+}

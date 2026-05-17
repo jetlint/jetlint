@@ -1,0 +1,11 @@
+{
+  "ruleId": "no-document-import-in-page",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noDocumentImportInPage",
+  "cases": [
+    {
+      "code": "/* should not generate diagnostics */\nimport Document from \"next/document\";",
+      "valid": true
+    }
+  ]
+}

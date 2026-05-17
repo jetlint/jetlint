@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-bitwise-operators",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noBitwiseOperators",
+  "cases": [
+    {
+      "code": "let x = y | z;\n\nconst x1 = y \u0026 z;\n\nconst x2 = y ^ z;\n\nconst x3 = ~ z;\n\nconst x4 = y \u003c\u003c z;\n\nconst x5 = y \u003e\u003e z;\n\nconst x6 = y \u003e\u003e\u003e z;\n\nx |= y;\n\nx \u0026= y;\n\nx ^= y;\n\nx \u003c\u003c= y;\n\nx \u003e\u003e= y;\n\nx \u003e\u003e\u003e= y;\n\n5 | 0;\n\nlet k = 4 \u0026 (3 | 5);",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nlet x = y || z;\n\nconst x1 = y \u0026\u0026 z;\n\nconst x2 = y \u003e z;\n\nconst x3 = y \u003c z;\n\nx += y;",
+      "valid": true
+    }
+  ]
+}

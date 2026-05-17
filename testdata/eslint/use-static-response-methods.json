@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-static-response-methods",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/useStaticResponseMethods",
+  "cases": [
+    {
+      "code": "// Missing the `Content-Type` header in the response,\n// very often this is a mistake so we catch it anyway.\nnew Response(JSON.stringify({ value: 0 }))\n\nnew Response(JSON.stringify({ value: 0 }), {})\n\nnew Response(JSON.stringify({ value: 0 }), {\n    headers: {}\n})\n\nnew Response(JSON.stringify({ value: 0 }), {\n    headers: {\n        'Content-Type': 'application/json',\n    }\n})\n\nnew Response(JSON.stringify({ value: 0 }), {\n    headers: {\n        'content-type': 'application/json',\n    }\n})\n\nnew Response(null, {\n    headers: {\n        Location: 'http://example.com',\n    },\n    status: 301,\n})\n\n\nnew Response(undefined, {\n    headers: {\n        location: 'https://example.com',\n    },\n    status: 302,\n})\n\nnew Response('', {\n    headers: {\n        location: 'https://example.com',\n    },\n    status: 303,\n})",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n// Empty JSON.stringify argument\nnew Response(JSON.stringify())\n\n// Using JSON replacer function\nnew Response(JSON.stringify({ value: 0 }, () =\u003e {}))\n\nnew Response(JSON)\n\nnew Response(JSON.stringify({ value: 0 }), {\n    Headers: {\n        // Non json content type\n        'Content-Type': 'application/json2',\n    },\n})\n\nnew Response(JSON.stringify({ value: 0 }), {\n    Headers: {\n        'Content-Type': 'application/json',\n        // Extra header\n        'x-foo': 'additional-header',\n    },\n})\n\nnew Response(JSON.stringify({ value: 0 }), {\n    Headers: {\n        'Content-Type': 'application/json',\n    },\n    // Additional property\n    status: 200,\n})\n\n\n{\n    class Response {}\n\n    new Response(JSON.stringify({ value: 0 }))\n}\n\n{\n    class JSON {\n        static stringify() {}\n    }\n\n    new Response(JSON.stringify({ value: 0 }))\n}\n\n\nnew Response({ nonEmptyBody: true }, {\n    headers: {\n        location: 'https://example.com',\n    },\n    status: 302,\n})\n\nnew Response('non empty', {\n    headers: {\n        location: 'https://example.com',\n    },\n    status: 302,\n})\n\nnew Response(null, {\n    headers: {\n        location: 'https://example.com',\n        'x-foo': 'extra-header',\n    },\n    status: 302,\n})\n\nnew Response(null, {\n    headers: {\n        location: '/relative/path',\n    },\n    status: 302,\n})\n\nnew Response(null, {\n    headers: {\n        location: 'https://example.com',\n    },\n    status: 302,\n    extra: 'property',\n})\n\nnew Response(null, {\n    headers: {\n        location: 'https://example.com',\n    },\n    status: 500,\n})",
+      "valid": true
+    }
+  ]
+}

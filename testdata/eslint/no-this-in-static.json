@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-this-in-static",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noThisInStatic",
+  "cases": [
+    {
+      "code": "export default class B extends A {\n    static { this.CONSTANT += super.foo(); }\n\n    static CONSTANT = this.OTHER_CONSTANT;\n    static OTHER_CONSTANT = super.ANOTHER_CONSTANT;\n\n    static get property() {\n        /*before*/this/*after*/;\n        return /*before*/super/*after*/.x;\n    }\n\n    static set property(x) {\n        () =\u003e this;\n        () =\u003e super.x = x;\n    }\n\n    static method() {\n        return this.CONSTANT + super.ANOTHER_CONSTANT;\n    }\n}\n\nclass C extends A {\n    static method() {\n        return this.CONSTANT + super.ANOTHER_CONSTANT;\n    }\n}\n\nconst D = class D extends f() {\n    static method() {\n        return this.CONSTANT + super.ANOTHER_CONSTANT;\n    }\n}\n\n\nconst E = class extends f() {\n    static method() {\n        return this.CONSTANT + super.ANOTHER_CONSTANT;\n    }\n}\n\nclass FactoryCases {\n    static method() {\n        new this(this);\n        new Foo(this);\n        new this.Factory();\n    }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction foo() { this }\n() =\u003e { this }\nclass A { constructor() { this } }\nclass A { foo() { this } }\nclass A { static foo() { function foo() { this } } }\n\nclass Base {\n    static create(name) {\n        return new this(name);\n    }\n\n    static field = new this();\n\n    static {\n        new this();\n    }\n}\n\nclass Sub extends Base {}\nSub.create(\"Alice\");\n",
+      "valid": true
+    }
+  ]
+}

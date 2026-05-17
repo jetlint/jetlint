@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-done-callback",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noDoneCallback",
+  "cases": [
+    {
+      "code": "test(\"something\", (done) =\u003e {\n    done();\n});\ntest(\"something\", (done) =\u003e {\n    done();\n});\ntest(\"something\", (finished) =\u003e {\n    finished();\n});\ntest(\"something\", (done) =\u003e {\n    done();\n});\ntest(\"something\", (done) =\u003e done());\ntest(\"something\", (done) =\u003e done());\ntest(\"something\", function (done) {\n    done();\n});\ntest(\"something\", function (done) {\n    done();\n});\ntest(\"something\", async (done) =\u003e {\n    done();\n});\ntest(\"something\", async (done) =\u003e done());\ntest(\"something\", async function (done) {\n    done();\n});\ntest(\"something\", (done) =\u003e {\n    done();\n});\nbeforeAll((done) =\u003e {\n    done();\n});\nbeforeAll((finished) =\u003e {\n    finished();\n});\nbeforeEach((done) =\u003e {\n    done();\n});\nafterAll((done) =\u003e done());\nafterEach((done) =\u003e done());\nbeforeAll(function (done) {\n    done();\n});\nafterEach(function (done) {\n    done();\n});\nbeforeAll(async (done) =\u003e {\n    done();\n});\nbeforeAll(async (done) =\u003e done());\nbeforeAll(async function (done) {\n    done();\n});\nbeforeEach((done) =\u003e {\n    done();\n});\nbeforeEach((done) =\u003e {\n    done();\n});\nit.each``(\"something\", ({ a, b }, done) =\u003e {});\ntest.each``(\"something\", ({ a, b }, done) =\u003e {});\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\ntest(\"something\", () =\u003e {});\ntest(\"something\", async () =\u003e {});\ntest(\"something\", function () {});\ntest.each``(\"something\", ({ a, b }) =\u003e {});\ntest.each()(\"something\", ({ a, b }) =\u003e {});\nit.each()(\"something\", ({ a, b }) =\u003e {});\nit.each([])(\"something\", (a, b) =\u003e {});\nit.each``(\"something\", ({ a, b }) =\u003e {});\nit.each([])(\"something\", (a, b) =\u003e {\n    a();\n    b();\n});\nit.each``(\"something\", ({ a, b }) =\u003e {\n    a();\n    b();\n});\ntest(\"something\", async function () {});\ntest(\"something\", someArg);\nbeforeEach(() =\u003e {});\nbeforeAll(async () =\u003e {});\nafterAll(() =\u003e {});\nafterAll(async function () {});\nafterAll(async function () {}, 5);\nconst before = [];\nconst after = [];\nbefore.find((b) =\u003e true);\nafter.filter((a) =\u003e false);\n",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-consistent-array-type",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useConsistentArrayType",
+  "cases": [
+    {
+      "code": "let valid: Array\u003cfoo\u003e;\nlet invalid1: Array\u003cfoo, Array\u003cstring\u003e\u003e;\nlet invalid2: Promise\u003cArray\u003cstring\u003e\u003e;\nlet invalid3: Array\u003cFoo\u003cBar\u003e\u003e;\nlet invalid4: Array\u003c[number, number]\u003e;\n\nlet readonlyInvalid1: ReadonlyArray\u003cfoo\u003e;\nlet readonlyInvalid2: Promise\u003cReadonlyArray\u003cstring\u003e\u003e;\nlet readonlyInvalid3: ReadonlyArray\u003cFoo\u003cBar\u003e\u003e;\nlet readonlyInvalid4: ReadonlyArray\u003c[number, number]\u003e;\nlet readonlyInvalid5: ReadonlyArray\u003cReadonlyArray\u003cnumber\u003e\u003e;\nlet readonlyInvalid6: ReadonlyArray\u003cReadonlyArray\u003cReadonlyArray\u003cnumber\u003e\u003e\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nlet valid: Array\u003cFoo | Bar\u003e;\nlet valid: Array\u003ckeyof Bar\u003e;\nlet valid: Array\u003cfoo | bar\u003e;\n\nlet valid5: Array\u003cstring \u0026 number\u003e;\nlet valid6: Array\u003c() =\u003e string\u003e;\ntype valid7\u003cT\u003e = Array\u003cT extends string ? string : number\u003e;\ntype valid8 = Array\u003cnew (string, number) =\u003e string\u003e;\n\n//parenthesized type\nlet valid8: Array\u003cstring \u0026 number\u003e;\n// infer type\ntype valid9\u003cT\u003e = T extends Array\u003cinfer R\u003e ? R : any;\n// mapped type\ntype valid10\u003cT\u003e = { [K in keyof T]: T[K] };\n// object type\ntype valid11 = Array\u003c{ value: string; label: string }\u003e;\n\nlet readonlyValid1: ReadonlyArray\u003cFoo | Bar\u003e;\nlet readonlyValid2: ReadonlyArray\u003ckeyof Bar\u003e;\nlet readonlyValid3: ReadonlyArray\u003cfoo | bar\u003e;\nlet readonlyValid4: ReadonlyArray\u003cstring \u0026 number\u003e;\nlet readonlyValid5: ReadonlyArray\u003c() =\u003e string\u003e;\ntype readonlyValid6\u003cT\u003e = ReadonlyArray\u003cT extends string ? string : number\u003e;\ntype readonlyValid7 = ReadonlyArray\u003cnew (string, number) =\u003e string\u003e;\nlet readonlyValid8: ReadonlyArray\u003cstring \u0026 number\u003e;\ntype readonlyValid9\u003cT\u003e = T extends ReadonlyArray\u003cinfer R\u003e ? R : any;\ntype readonlyValid10\u003cT\u003e = { [K in keyof T]: T[K] };\n\ninterface Args extends Array\u003cstring\u003e {}\nclass Args2 extends (Array\u003cstring\u003e) implements Array\u003cstring\u003e {}",
+      "valid": true
+    }
+  ]
+}

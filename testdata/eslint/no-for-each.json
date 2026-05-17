@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-for-each",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noForEach",
+  "cases": [
+    {
+      "code": "els.forEach((el) =\u003e {});\n\nels.forEach(el =\u003e {});\n\nels.forEach(() =\u003e {});\n\n(els.forEach)((el) =\u003e {});\n\nels['forEach']((el) =\u003e {});\n\n(els['forEach'])((el) =\u003e {});\n\nels.forEach(function(el) {}, thisArg);\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfor (const el of els) {}\n\nels.forEach((el, i) =\u003e {});\n\nels.forEach((el, i, array) =\u003e {});\n\nels.forEach(function(el, i) {});\n\nels.forEach(function (el, i, array) {});\n\nels.forEach(f);\n\nels.forEach(function(el) {}, thisArg, unexpectedExtraParam);\n",
+      "valid": true
+    }
+  ]
+}

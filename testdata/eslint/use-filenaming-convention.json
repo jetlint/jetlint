@@ -1,0 +1,47 @@
+{
+  "ruleId": "use-filenaming-convention",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useFilenamingConvention",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n",
+      "valid": true
+    },
+    {
+      "code": "",
+      "valid": true
+    },
+    {
+      "code": "/* should generate diagnostics */\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */",
+      "valid": true
+    },
+    {
+      "code": "export const PascalCase = {};",
+      "valid": false
+    },
+    {
+      "code": "class Invalid_Renamed_Export {}\nexport { Invalid_Renamed_Export as A }",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport class ValidMyClass {}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nclass A {}\nexport { A as Valid_Renamed_Export }",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-while",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/useWhile",
+  "cases": [
+    {
+      "code": "for (; true; ) {}\n\nlet i =0;\nfor (; i \u003c 10; ) {\n    i++;\n}\n\n// Comment\nfor /*a*/ ( /*init*/; /*test before*/ true /*test after*/; /*update*/ ) /*b*/ {\n    // body\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfor (let i = 0; i \u003c 16; ++i) {}\n\nlet i = 0;\nfor (; i \u003c 16; ++i) {}\n\nfor (let i = 0; i \u003c 16;) {\n    i++;\n}\n\nlet j = 0;\nfor(;;) {\n    if (j \u003e= 10) {\n        break;\n    }\n    j++\n}\n\nfor(x of [0]) {}\n\nlet k = 0;\nwhile(k \u003c 10) {\n    k++;\n}\n",
+      "valid": true
+    }
+  ]
+}

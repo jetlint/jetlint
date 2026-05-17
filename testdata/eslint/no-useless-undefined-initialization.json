@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-useless-undefined-initialization",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessUndefinedInitialization",
+  "cases": [
+    {
+      "code": "let test1,\n\ttest2 = undefined;\nvar c = undefined,\n\to = undefined;\n\nfor (let i = 0; i \u003c 100; i++) {\n\tlet i = undefined;\n}\n\nlet x = 1, y = undefined /* comment here */, z = 40\n\nlet /* comment */d = undefined;\n\nlet e = undefined/**/ ;\nlet f = /**/undefined/**/ ;\nlet g \n  /**/= /**/undefined/**/ ;",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst foo = undefined;\n\nconst { bar = undefined } = baz;\n\n[quux = undefined] = quuux;\n\n(foo = undefined) =\u003e {};\n\nclass Foo {\n\tbar = undefined;\n}\n\n// Exported variables should not be flagged.\n// In frameworks like Svelte 4, exported variables with undefined initialization\n// are used to declare optional props.\n\n// Direct export\nexport let directExport = undefined;\n\n// Named export\nlet namedExport = undefined;\nexport { namedExport };\n\n// Renamed export (Svelte 4 pattern for reserved words like \"class\")\nlet className = undefined;\nexport { className as class };\n\n// Export default\nlet defaultExport = undefined;\nexport default defaultExport;\n",
+      "valid": true
+    }
+  ]
+}

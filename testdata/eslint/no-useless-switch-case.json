@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-useless-switch-case",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessSwitchCase",
+  "cases": [
+    {
+      "code": "switch (foo) {\n\tcase 0:\n\tdefault:\n\t\tbreak;\n\tcase 3:\n\t\tbreak;\n}\n\nswitch (foo) {\n\t/* before */case 0:/* after */\n\t// comment for default\n\tdefault:\n\tcase 1:\n\tcase 2:/* statements */\n\t\tbreak;\n\tcase 3:\n\t\tbreak;\n}",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nswitch (foo) {\n\tcase 0:\n\tcase 1:\n\t\tbreak;\n}\n\nswitch (foo) {\n\tcase 0:\n\t\tbreak;\n\tdefault:\n\t\tbreak;\n}\n\nswitch (foo) {\n\tcase 1:\n\t\tf();\n\t\t// Fallthrough\n\tdefault:\n\t\tg();\n\t\tbreak;\n}\n\nswitch (foo) {\n\tcase 1:\n\t\tf();\n\t\t// Fallthrough\n\tdefault:\n\t\tg();\n\t\t// Fallthrough\n    case 2:\n        break;\n}",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-consistent-builtin-instantiation",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useConsistentBuiltinInstantiation",
+  "cases": [
+    {
+      "code": "Object()\nArray()\nDate()\nError()\nFunction()\nPromise()\nRegExp()\nwindow.Object({})\nglobalThis.Object()\nfunction foo() {\n    return /** Start */ globalThis.Object({ foo: 'bar' }) /** End */\n}\n\nnew Boolean()\nnew Number()\nnew String()\nnew window.String(123)\nnew globalThis.String()\nfunction foo() {\n    return /** Start */ new globalThis.String(\"foo\") /** End */\n}",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nnew Object()\nnew Array()\nnew ArrayBuffer()\nnew BigInt64Array()\nnew BigUint64Array()\nnew DataView()\nnew Date()\nnew Error()\nnew Float32Array()\nnew Float64Array()\nnew Function()\nnew Int8Array()\nnew Int16Array()\nnew Int32Array()\nnew Map()\nnew WeakMap()\nnew Set()\nnew WeakSet()\nnew Promise()\nnew RegExp()\nnew Uint8Array()\nnew Uint16Array()\nnew Uint32Array()\nnew Uint8ClampedArray()\nnew SharedArrayBuffer()\nnew Proxy()\nnew WeakRef()\nnew FinalizationRegistry()\nnew window.Object({})\nnew globalThis.Object()\nfunction foo() {\n    return new globalThis.Object()\n}\n\nBoolean()\nBigInt()\nNumber()\nString()\nSymbol()\nwindow.String()\nglobalThis.String(123)\nfunction foo() {\n    return globalThis.String()\n}\n\nfunction varCheck() {\n    {\n        var String = class {}\n    }\n    // This should not be reported\n    return new String()\n}",
+      "valid": true
+    }
+  ]
+}

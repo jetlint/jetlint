@@ -1,0 +1,127 @@
+{
+  "ruleId": "no-comma-operator",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noCommaOperator",
+  "cases": [
+    {
+      "code": "\u003c!-- should generate diagnostics --\u003e\n\u003cscript\u003e\n  let x = 1;\n\u003c/script\u003e\n\n\u003c!-- Comma operator in template expression - should be flagged --\u003e\n\u003cp\u003e{(console.log(\"side effect\"), x)}\u003c/p\u003e\n\u003cp class={a, b}\u003ereal comma operator\u003c/p\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "a = 1, 2",
+      "valid": false
+    },
+    {
+      "code": "do {} while (doSomething(), !!test);",
+      "valid": false
+    },
+    {
+      "code": "for (; doSomething(), !!test; );",
+      "valid": false
+    },
+    {
+      "code": "if (doSomething(), !!test);",
+      "valid": false
+    },
+    {
+      "code": "switch (doSomething(), val) {}",
+      "valid": false
+    },
+    {
+      "code": "while (doSomething(), !!test);",
+      "valid": false
+    },
+    {
+      "code": "with (doSomething(), val) {}",
+      "valid": false
+    },
+    {
+      "code": "a =\u003e (doSomething(), a)",
+      "valid": false
+    },
+    {
+      "code": "(1), 2",
+      "valid": false
+    },
+    {
+      "code": "((1)) , (2)",
+      "valid": false
+    },
+    {
+      "code": "while((1) , 2);",
+      "valid": false
+    },
+    {
+      "code": "var foo = (1, 2);",
+      "valid": false
+    },
+    {
+      "code": "(0,eval)(\"foo()\");",
+      "valid": false
+    },
+    {
+      "code": "foo(a, (b, c), d);",
+      "valid": false
+    },
+    {
+      "code": "do {} while ((doSomething(), !!test));",
+      "valid": false
+    },
+    {
+      "code": "for (; (doSomething(), !!test); );",
+      "valid": false
+    },
+    {
+      "code": "if ((doSomething(), !!test));",
+      "valid": false
+    },
+    {
+      "code": "switch ((doSomething(), val)) {}",
+      "valid": false
+    },
+    {
+      "code": "while ((doSomething(), !!test));",
+      "valid": false
+    },
+    {
+      "code": "with ((doSomething(), val)) {}",
+      "valid": false
+    },
+    {
+      "code": "a =\u003e ((doSomething(), a))",
+      "valid": false
+    },
+    {
+      "code": "\u003c!-- should not generate diagnostics --\u003e\n\n\u003cscript\u003e\n\tlet value = \"\";\n\tconst getToggled = () =\u003e true;\n\tconst setToggled = (value) =\u003e value;\n\tconst a = 1;\n\tconst b = 2;\n\tconst set = (value) =\u003e value;\n\u003c/script\u003e\n\n\u003cToggle bind:pressed={getToggled, setToggled} /\u003e\n\u003cinput bind:value={() =\u003e value, (v) =\u003e value = v.toLowerCase()} /\u003e\n\u003cinput bind:value={() =\u003e [a, b], (v) =\u003e set(v)} /\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "let arr = [1, 2];",
+      "valid": true
+    },
+    {
+      "code": "let obj = {a: 1, b: 2};",
+      "valid": true
+    },
+    {
+      "code": "let a = 1, b = 2;",
+      "valid": true
+    },
+    {
+      "code": "foo(a, b, d);",
+      "valid": true
+    },
+    {
+      "code": "for (i = 0, j = 0; test; );",
+      "valid": true
+    },
+    {
+      "code": "for (; test; i++, j++);",
+      "valid": true
+    },
+    {
+      "code": "for (let i = 0, j = 1, k = 2; i \u003c 100; i++, j++, k++) {}",
+      "valid": true
+    }
+  ]
+}

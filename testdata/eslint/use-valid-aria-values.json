@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-valid-aria-values",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/useValidAriaValues",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\nvar a = \u003cspan role=\"checkbox\" aria-checked=\"test\"\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-autocomplete=\"test\"\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-invalid=\"foo\"\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-invalid={`foo`}\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-invalid={\"foo\"}\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-errormessage=\"\"\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-relevant=\"fancy\"\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-labelledby=\"\"\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-labelledby={``}\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-labelledby={\"\"}\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-details=\"\"\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-setsize=\"hey\"\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-valuemax=\"hey\"\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-dropeffect=\"hey\"\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-orientation=\"hey\"\u003e\u003c/span\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nvar a = \u003cspan role=\"checkbox\" aria-checked={checked} \u003e\u003c/span\u003e;\nvar a = \u003cspan role=\"checkbox\" aria-checked=\"true\" \u003e\u003c/span\u003e;\nvar a = \u003cspan role=\"checkbox\" aria-checked={true} \u003e\u003c/span\u003e;\nvar a = \u003cspan role=\"checkbox\" aria-checked=\"false\" \u003e\u003c/span\u003e;\nvar a = \u003cspan role=\"checkbox\" aria-checked=\"mixed\" \u003e\u003c/span\u003e;\nvar a = \u003cspan role=\"checkbox\" aria-autocomplete=\"both\" \u003e\u003c/span\u003e;\nvar a = \u003cspan role=\"checkbox\" aria-autocomplete=\"inline\" \u003e\u003c/span\u003e;\nvar a = \u003cspan role=\"checkbox\" aria-autocomplete=\"list\" \u003e\u003c/span\u003e;\nvar a = \u003cspan role=\"checkbox\" aria-autocomplete=\"none\" \u003e\u003c/span\u003e;\nvar a = \u003cspan aria-invalid=\"true\"\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-invalid=\"grammar\"\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-invalid=\"false\"\u003e\u003c/span\u003e;\nvar a = \u003cspan aria-invalid={false}\u003e\u003c/span\u003e;\nvar a = \u003cspan role=\"checkbox\" aria-errormessage=\"someid\" \u003e\u003c/span\u003e;\nvar a = \u003cspan role=\"checkbox\" aria-relevant=\"additions\" \u003e\u003c/span\u003e;\nvar a = \u003cspan role=\"checkbox\" aria-relevant=\"additions all\" \u003e\u003c/span\u003e;\nvar a = \u003cspan role=\"checkbox\" aria-relevant=\" additions   all \" \u003e\u003c/span\u003e;\nvar a = \u003cspan aria-labelledby=\"id\" \u003e\u003c/span\u003e;\nvar a = \u003cspan aria-labelledby=\"fooId barId\" \u003e\u003c/span\u003e;\nvar a = \u003cspan aria-details=\"someid\" \u003e\u003c/span\u003e;\nvar a = \u003cbutton type=\"button\" aria-keyshortcuts=\"1\"\u003eClick Me\u003c/button\u003e;\n",
+      "valid": true
+    }
+  ]
+}

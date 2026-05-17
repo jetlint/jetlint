@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-valid-aria-role",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/useValidAriaRole",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n\t\u003cdiv role=\"range\"\u003e\u003c/div\u003e\n\t\u003cdiv role=\"datepicker\"\u003e\u003c/div\u003e\n\t\u003cdiv role=\"\"\u003e\u003c/div\u003e\n\t\u003cFoo role=\"Button\" /\u003e\n\t\u003cFoo role=\"datepicker\" /\u003e\n\t\u003cdiv role=\"unknown-invalid-role\" /\u003e\n\t\u003cdiv role=\"tabpanel row foobar\"\u003e\u003c/div\u003e\n\t\u003cdiv role=\"doc-endnotes range\"\u003e\u003c/div\u003e\n\t\u003cdiv role={null}\u003e\u003c/div\u003e\n\t\u003cFoo role=\"datepicker\" /\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n  \u003cdiv role=\"button\"\u003e\u003c/div\u003e\n  \u003cdiv role={role}\u003e\u003c/div\u003e\n  \u003cdiv role=\"switch\" /\u003e\n  \u003cdiv role\u003e\u003c/div\u003e\n  \u003cdiv\u003e\u003c/div\u003e\n  \u003cdiv role={role || \"button\"} /\u003e\n  \u003cBar baz /\u003e\n  \u003cFoo role=\"button\" /\u003e\n  \u003cdiv role={role || \"foobar\"} /\u003e\n  \u003cdiv role=\"switch row\" /\u003e\n  \u003cdiv /\u003e\n  \u003cdiv role=\"tabpanel row\" /\u003e\n\u003c/\u003e",
+      "valid": true
+    }
+  ]
+}

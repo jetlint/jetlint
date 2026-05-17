@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-useless-string-concat",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessStringConcat",
+  "cases": [
+    {
+      "code": "const a = /*1*/ 'a' + 'b' // comment\nconst a = 'a' + 'b' + 'c'\nconst a = 'a' + ('b' + 'c')\nconst a = ('a' + 'b') + 'c'\nconst a = foo + 'a' + 'b' + 'c'\nconst a = (foo + 'a') + ('b' + 'c')\nconst a = ((foo + 'a') + ('b' + 'c') + 1)\nconst a = 'a' + `b`\nconst a = `a` + 'b'\nconst a = `a` + `b`\nconst a = 'a' + 1\nconst a = 1 + '1'\nconst a = 1 + `1`\nconst a = `1` + 1\nconst a = 1 + 1 + \"\"\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst a = 1 + 1\nconst a = 1 * '2'\nconst a = 1 - 2\nconst a = foo + bar\nconst a = 'foo' + bar\nconst a = foo + 'a' + 'b'\nconst a = foo + `a` + `b`\nconst a = (number + 1) + 'px'\nconst a = (1 + +2) + `b`\nconst stylisticConcat = 'foo' + // formatting\n                        'bar'\nconst stylisticConcat = `foo` +\n                        'bar' +\n                        `baz`\nconst stylisticConcatLeading = 'foo' // formatting\n                        + 'bar'\nconst stylisticConcatLeading = `foo`\n                        + 'bar'\n                        + `baz`\n// Tagged templates should not be treated as plain strings\nconst a = t`translate-me` + \"!\"\nconst a = \"prefix\" + sql`query`\nconst a = tag`a` + tag`b`\n",
+      "valid": true
+    }
+  ]
+}

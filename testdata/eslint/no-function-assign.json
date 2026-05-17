@@ -1,0 +1,59 @@
+{
+  "ruleId": "no-function-assign",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noFunctionAssign",
+  "cases": [
+    {
+      "code": "function foo() { }; foo = bar;",
+      "valid": false
+    },
+    {
+      "code": "function foo2() { foo2 = bar; }",
+      "valid": false
+    },
+    {
+      "code": "foo3 = bar; function foo3() { };",
+      "valid": false
+    },
+    {
+      "code": "[foo4] = bar; function foo4() { };",
+      "valid": false
+    },
+    {
+      "code": "({ x: foo5 = 0 } = bar); function foo5() { };",
+      "valid": false
+    },
+    {
+      "code": "function foo6() { [foo6] = bar; }",
+      "valid": false
+    },
+    {
+      "code": "(function () { ({ x: foo7 = 0 } = bar); function foo7() { }; })();",
+      "valid": false
+    },
+    {
+      "code": "function foo8() { var foo8 = bar; }",
+      "valid": true
+    },
+    {
+      "code": "function foo9(foo9) { foo9 = bar; }",
+      "valid": true
+    },
+    {
+      "code": "function foo10() { var foo10; foo10 = bar; }",
+      "valid": true
+    },
+    {
+      "code": "var foo11 = () =\u003e { }; foo11 = bar;",
+      "valid": true
+    },
+    {
+      "code": "var foo12 = function () { }; foo12 = bar;",
+      "valid": true
+    },
+    {
+      "code": "var foo13 = function () { foo13 = bar; };",
+      "valid": true
+    }
+  ]
+}

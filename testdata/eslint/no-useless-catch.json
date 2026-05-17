@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-useless-catch",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessCatch",
+  "cases": [
+    {
+      "code": "function foo () {\n\tf();\n\ttry {\n\t\tdoSomethingThatMightThrowA();\n\t\tdoSomethingThatMightThrowB();\n\t} catch (e) {\n\t\tthrow e;\n\t}\n\tg();\n}\n\nfor(let i = 0; i \u003c 5; i++) {\n\ttry {\n\t\tdoSomethingThatMightThrowA();\n\t\tif (true) {\n\t\t\tdoSomethingThatMightThrowB();\n\t\t}\n\t} catch (e) {\n\t\tthrow e;\n\t}\n}\n\ntry {\n\tdoSomethingThatMightThrow();\n} catch (e) {\n\tthrow e;\n} finally {\n\tcleanUp();\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\ntry {\n\tdoSomethingThatMightThrow();\n} catch (e) {\n\tdoSomethingBeforeRethrow();\n\tthrow e;\n}\n",
+      "valid": true
+    }
+  ]
+}

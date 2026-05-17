@@ -1,0 +1,63 @@
+{
+  "ruleId": "use-exports-last",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useExportsLast",
+  "cases": [
+    {
+      "code": "export const a = 1;\n\nconst b = 2;\n",
+      "valid": false
+    },
+    {
+      "code": "export const greet = (name) =\u003e {\n\treturn `Hello, ${name}!`;\n};\n\nconst foo = 1;\n",
+      "valid": false
+    },
+    {
+      "code": "const foo = 1;\nconst bar = 2;\n\nexport const foobar = () =\u003e foo + bar;\n\nexport { foo, bar };\nexport default (x) = x ** 2;\n\nconst baz = 3;\n",
+      "valid": false
+    },
+    {
+      "code": "export const foo = 1;\n\nconst bar = 2;\n",
+      "valid": false
+    },
+    {
+      "code": "export * from \"./foo\";\n\nconst foo = 1;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst a = 1;\nconst b = 2;\n\nexport { a };\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst foo = 1;\nconst bar = 2;\n\nexport { foo, bar };\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport const greet = (name) =\u003e {\n\treturn `Hello, ${name}!`;\n};\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst foo = 1;\nconst bar = 2;\n\nexport const foobar = () =\u003e foo + bar;\n\nexport { foo, bar };\nexport default (x) = x ** 2;\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport const foo = 1;\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst foo = 1;\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport const foo = 1;\nexport default (x) = x ** 2;\nexport const bar = 2;\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport * from './foo';\n",
+      "valid": true
+    }
+  ]
+}

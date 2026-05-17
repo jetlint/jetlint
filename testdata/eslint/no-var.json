@@ -1,0 +1,63 @@
+{
+  "ruleId": "no-var",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noVar",
+  "cases": [
+    {
+      "code": "export function f(x) {\n    if(x) {\n        // assign 'y'\n        var /* @type number */ y /*: number */ = 2*x;\n        // assign 'y' to 'x'\n        x = y;\n    }\n    return x;\n}",
+      "valid": false
+    },
+    {
+      "code": "var x = 1;\nexport const y = x;",
+      "valid": false
+    },
+    {
+      "code": "var x = 1; foo(x);",
+      "valid": false
+    },
+    {
+      "code": "var x = 1; x = 5;",
+      "valid": false
+    },
+    {
+      "code": "for (var i in [1,2,3]) { foo(i); }",
+      "valid": false
+    },
+    {
+      "code": "for (var x of [1,2,3]) { foo(x); }",
+      "valid": false
+    },
+    {
+      "code": "var [x = -1, y] = [1,2]; y = 0;",
+      "valid": false
+    },
+    {
+      "code": "var {a: x = -1, b: y} = {a:1,b:2}; y = 0;",
+      "valid": false
+    },
+    {
+      "code": "function f() { const x = 1; return x; }",
+      "valid": true
+    },
+    {
+      "code": "let x = 0;",
+      "valid": true
+    },
+    {
+      "code": "const x = 0;",
+      "valid": true
+    },
+    {
+      "code": "for (let x of xs) {}",
+      "valid": true
+    },
+    {
+      "code": "for (const x of xs) {}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\ndeclare global {\n    var Txt: CustomWindow['Txt'];\n}",
+      "valid": true
+    }
+  ]
+}

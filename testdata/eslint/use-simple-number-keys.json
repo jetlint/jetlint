@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-simple-number-keys",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/useSimpleNumberKeys",
+  "cases": [
+    {
+      "code": "({ 1n: 1 });\n({ 0x1: 1 });\n({\n\t0x1: 1\n});\n({ 0o12: 1 });\n({ 0b1: 1 });\n({ 0o1: 1 });\n({ 1_0: 1 });\n({ 0.1e1_2: \"ed\" });\n({ 11_1.11: \"ee\" });\n({ 0x1() {} });\n({ [0x1]() {} });\n({ get 0x1() { return this.a } });\n({ set 0x1(a) { this.a = a } });\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n({ 0: \"zero\" });\n({ 1: \"one\" });\n({ 1.2: \"12\" });\n({ 3.1e12: \"12\" });\n({ 0.1e12: \"ee\" });\n({\n\t// n\n\t20: \"20\"\n});\n({ a });\n({ ...a });\n",
+      "valid": true
+    }
+  ]
+}

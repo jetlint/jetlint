@@ -1,0 +1,211 @@
+{
+  "ruleId": "no-redeclare",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noRedeclare",
+  "cases": [
+    {
+      "code": "// Type and value merging\nexport type Order = -1 | 0 | 1;\n\ninterface Order {\n\tf(): void;\n}\n\nclass Order {\n\tprop: number;\n}\n\nenum Order {\n\tLower = -1,\n\tEqual = 0,\n\tUpper = 1,\n}\n",
+      "valid": false
+    },
+    {
+      "code": "// should not generate diagnostics\n\nexport class Foo\u003cO extends Record\u003cstring, any\u003e\u003e {\n\tname: string;\n\toptions: O;\n\n\tconstructor(name: string, opts?: 0);\n\tconstructor(options: O)\n\tconstructor(nameOrOptions: string | O, opts?: O) {\n\t\tthis.name = typeof nameOrOptions === 'string' ? nameOrOptions : 'unknown';\n\t\tthis.options = opts ?? {} as O;\n\t}\n}\n",
+      "valid": true
+    },
+    {
+      "code": "switch (x) {\n\tcase 0: {\n\t\tfunction foo() {}\n\t\tbreak;\n\t}\n\tdefault: {\n\t\tfunction foo() {}\n\t\tbreak;\n\t}\n}\n\nfunction f() {\n\tswitch (x) {\n\t\tcase 0: {\n\t\t\tfunction foo() {}\n\t\t\tbreak;\n\t\t}\n\t\tdefault: {\n\t\t\tfunction foo() {}\n\t\t\tbreak;\n\t\t}\n\t}\n}",
+      "valid": false
+    },
+    {
+      "code": "var a = 3; var a = 10;",
+      "valid": false
+    },
+    {
+      "code": "var c; { var a; var a;} ",
+      "valid": false
+    },
+    {
+      "code": "var a; { function a(){} }",
+      "valid": false
+    },
+    {
+      "code": "switch(foo) { case a: var b = 3;\ncase b: var b = 4}",
+      "valid": false
+    },
+    {
+      "code": "var a = {}; var a = [];",
+      "valid": false
+    },
+    {
+      "code": "var a; function a() {}",
+      "valid": false
+    },
+    {
+      "code": "function a() {} function a() {}",
+      "valid": false
+    },
+    {
+      "code": "var a = function() { }; var a = function() { }",
+      "valid": false
+    },
+    {
+      "code": "var a = function() { }; var a = new Date();",
+      "valid": false
+    },
+    {
+      "code": "var a = 3; var a = 10; var a = 15;",
+      "valid": false
+    },
+    {
+      "code": "var a; var a;",
+      "valid": false
+    },
+    {
+      "code": "export var a; var a;",
+      "valid": false
+    },
+    {
+      "code": "class C { static { var a; var a; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { var a; { var a; } } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { { var a; } var a; } }",
+      "valid": false
+    },
+    {
+      "code": "class C { static { { var a; } { var a; } } }",
+      "valid": false
+    },
+    {
+      "code": "var a; var {a = 0, b: Object = 0} = {};",
+      "valid": false
+    },
+    {
+      "code": "var a; var {a = 0, b: globalThis = 0} = {};",
+      "valid": false
+    },
+    {
+      "code": "function f() { var a; var a; }",
+      "valid": false
+    },
+    {
+      "code": "function f() { var a; if (test) { var a; } }",
+      "valid": false
+    },
+    {
+      "code": "for (var a, a;;);",
+      "valid": false
+    },
+    {
+      "code": "for (;;){ var a, a,;}",
+      "valid": false
+    },
+    {
+      "code": "function f(x) { var x = 5; }",
+      "valid": false
+    },
+    {
+      "code": "class C {\n\tstatic {\n\t\tvar a;\n\t\tvar a;\n\t}\n}\n\nfunction f\u003cT, T\u003e() {}\n\nfunction g\u003cT\u003e() {\n    type T = number;\n}\n\nimport * as Ns1 from \"\"\nnamespace Ns1 {}\n\nimport type * as Ns2 from \"\"\nnamespace Ns2 {}\n",
+      "valid": false
+    },
+    {
+      "code": "export interface EventMap {\n  'article-viewed': { id: string };\n  'chat-started': { name: string; email: string; subject: string };\n}\n\nexport interface SomeFunc {\n  \u003cK extends keyof EventMap\u003e(cmd: 'on', event: K, cb: (data: EventMap[K]) =\u003e void): void;\n  \u003cK extends keyof EventMap\u003e(cmd: 'once', event: K, cb: (data: EventMap[K]) =\u003e void): void;\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// Issue https://github.com/biomejs/biome/issues/2659\ntype Test\u003cT\u003e = T extends Array\u003cinfer U\u003e ? true : false\n\ntype TestMultipleInfer\u003cT extends readonly string[]\u003e = T[number] extends\n  | `-${infer Base}`\n  | infer Base\n  ? Base\n  : never\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// Type and value merging\nexport type Order = -1 | 0 | 1;\nexport const Order = {\n\tLOWER: -1,\n\tEQUAL: 0,\n\tUPPER: 1,\n} as const;\n\nexport type Direction = \"Up\" | \"Down\";\nexport namespace Direction {\n\texport const Up = \"Up\";\n\texport type Up = \"Up\";\n\texport const Down = \"Down\";\n\texport type Down = \"Down\";\n}\n\nexport type Person = {\n\treadonly name: string;\n};\nexport function Person(name: string): Person {\n\treturn { name };\n}\n\ninterface Organization {\n\treadonly name: string;\n}\nexport function Organization(name: string): Organization {\n\treturn { name };\n}\n\n// Interface merging\nexport interface Split {\n\tf(): void;\n}\nexport interface Split {\n\tg(): void;\n}\n\n// interface, class, and namespace merging\nexport interface MoralPerson {\n\tphantom(): void;\n}\nexport class MoralPerson {\n\tname: string;\n\tconstructor(name: string) {\n\t\tthis.name = name;\n\t}\n}\nexport namespace MoralPerson {\n\texport function from(name: string) {\n\t\treturn new MoralPerson(name);\n\t}\n}\n\n// function and namespace merging\nexport function mod(): void {}\nexport namespace MoralPerson {\n\texport function f(): void {}\n}\n\n// enum and namespace merging\nexport enum Orientation {\n\tNorth,\n\tEast,\n\tSouth,\n\tWest,\n}\nexport namespace Orientation {\n\texport function f(): void {}\n}\n\n// variable and namespace merging\ndeclare namespace bodyParser {\n\tinterface BodyParser {\n\t\t/** @deprecated */\n\t\t(): void\n\t}\n\tinterface Options {\n\t\tinflate?: boolean | undefined\n\t}\n}\ndeclare const bodyParser: bodyParser.BodyParser\n\nnamespace ConcreteNamespaceMergeVar {\n    export interface Foo {\n        foo: string\n    }\n}\n\nexport const ConcreteNamespaceMergeVar = { foo: 'bar' }\nConcreteNamespaceMergeVar.foo = 'baz'\ntype Bar = ConcreteNamespaceMergeVar.Foo\n\n// namespace merging\nexport namespace X {\n\texport function f(): void {}\n}\nexport namespace X {\n\texport function g(): void {}\n}\n\n// enum merging\nexport enum Orientation2 {\n\tNorth = 0,\n\tSouth = 1,\n}\nexport enum Orientation2 {\n\tEast = 2,\n\tWest = 3,\n}\n\n// overloads\nfunction f(a: boolean): boolean;\nfunction f(a: number): number;\nfunction f(a: number | boolean): number | boolean {\n\treturn a;\n}\n\nexport default function(a: boolean): boolean;\nexport default function(a: number): number;\nexport default function(a: number | boolean): number | boolean {\n\treturn a;\n}\n\nfunction g(A, { B }) {\n\tinterface A {}\n\tinterface B {}\n}\n\nexport function h\u003ca\u003e(a: a) {\n\treturn a;\n}\n\n// Issue https://github.com/biomejs/biome/issues/2608\ntype Overloads = {\n\t(e: \"change-kind\", { kind }: { kind: \"a\" }): void;\n\t(e: \"change-kind\", { kind, extra }: { kind: \"b\"; extra: number }): void;\n};\n\n// Issue https://github.com/biomejs/biome/issues/2372\ntype F = number\nexport default function F() {}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst obj = {\n\ta: 1,\n\ta: 2,\n};\n\nfunction f(x: number, x: number): void {}\n\nclass A {\n\tg(x: number): number;\n\tg(x: string): string;\n\tg(x: number | string): number | string {\n\t\treturn x;\n\t}\n\n\tf(): void {}\n\tf(): void {}\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction f() {\n\t\"use strict\"\n\tswitch (x) {\n\t\tcase 0: {\n\t\t\tfunction foo() {}\n\t\t\tbreak;\n\t\t}\n\t\tdefault: {\n\t\t\tfunction foo() {}\n\t\t\tbreak;\n\t\t}\n\t}\n}\n\nclass C {\n\tmethod() {\n\t\tswitch (x) {\n\t\t\tcase 0: {\n\t\t\t\tfunction foo() {}\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tdefault: {\n\t\t\t\tfunction foo() {}\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t}\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\ntype ValidIndexSignatures = {\n\ta: {\n\t\t[index: string]: string;\n\t};\n\tb: {\n\t\t[index: string]: string;\n\t};\n};\n\ninterface I {\n\t[index: number]: string;\n\t[index: string]: string;\n}\n\n// See https://github.com/biomejs/biome/issues/175\nconst x: { [key: string]: string } = {};\nlet key;\n\nlet a: { [key: string]: string };\nlet b: { [key: string]: string };\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// See https://github.com/biomejs/biome/issues/953\ntype X = never;\ntype Y = never;\nexport const MyMappingPbToGql: {\n    [key in X]: never;\n} = {};\nexport const MyOtherMappingPbToGql: {\n    [key in Y]: never;\n} = {};\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\ndeclare module '*.gif' {\n\tconst src: string\n}\n\ndeclare module '*.bmp' {\n\tconst src: string\n}\n\ndeclare module a {\n\tconst src: string\n}\n\ndeclare module b {\n\tconst src: string\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\"use strict\"\nswitch (x) {\n\tcase 0: {\n\t\tfunction foo() {}\n\t\tbreak;\n\t}\n\tdefault: {\n\t\tfunction foo() {}\n\t\tbreak;\n\t}\n}",
+      "valid": true
+    },
+    {
+      "code": "var a = 3; var b = function() { var a = 10; };",
+      "valid": true
+    },
+    {
+      "code": "var a = 3; a = 10;",
+      "valid": true
+    },
+    {
+      "code": "if (true) {\n    let b = 2;\n} else {    \nlet b = 3;\n}",
+      "valid": true
+    },
+    {
+      "code": "var a; class C { static { var a; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { var a; } } var a; ",
+      "valid": true
+    },
+    {
+      "code": "function a(){} class C { static { var a; } }",
+      "valid": true
+    },
+    {
+      "code": "var a; class C { static { function a(){} } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { var a; } static { var a; } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { function a(){} } static { function a(){} } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { var a; { let a; } } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { let a; { let a; } } }",
+      "valid": true
+    },
+    {
+      "code": "class C { static { { let a; } { let a; } } }",
+      "valid": true
+    },
+    {
+      "code": "interface A { [index: string]: string; [index: number]: string; }",
+      "valid": true
+    },
+    {
+      "code": "const foo = function foo() { const foo = 0; }",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\ninterface I {\n\tget\u003cT\u003e(f: T): T;\n\tpost\u003cT\u003e(g: T): T;\n}\n\ntype A = {\n\tget\u003cT\u003e(f: T): T;\n\tpost\u003cT\u003e(g: T): T;\n}\n\ndeclare class C {\n\tget\u003cT\u003e(f: T): T;\n\tpost\u003cT\u003e(g: T): T;\n}\n",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "ruleId": "no-useless-fragments",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessFragments",
+  "cases": [
+    {
+      "code": "arr = \u003c\u003eError\u003c/\u003e;\nerr = \u003cFragment\u003eError\u003c/Fragment\u003e;\nerr = \u003cReact.Fragment\u003eError\u003c/React.Fragment\u003e;\n",
+      "valid": true
+    },
+    {
+      "code": "import { Suspense } from \"react\";\nimport { Comp } from \"./components/Comp\";\n\nexport function Component() {\n  return (\n    \u003cdiv\u003e\n      \u003cSuspense fallback={\u003c\u003e\u003c/\u003e}\u003e\n        \u003ch1\u003eHi\u003c/h1\u003e\n      \u003c/Suspense\u003e\n\n      \u003cComp prop={\u003c\u003e\u003c/\u003e} /\u003e\n      \u003cComp prop={\u003cFragment\u003e\u003c/Fragment\u003e} /\u003e\n      \u003cComp prop={\u003cReact.Fragment\u003e\u003c/React.Fragment\u003e} /\u003e\n    \u003c/div\u003e\n  );\n}\n",
+      "valid": false
+    },
+    {
+      "code": "import React, { Fragment } from \"react\";\n\n\u003c\u003e\n    \u003cFragment\u003e\u003c/Fragment\u003e\n    \u003cReact.Fragment\u003e\u003c/React.Fragment\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "import * as AwesomeReact from \"react\";\n\n\u003c\u003e\n    \u003cAwesomeReact.Fragment\u003efoo\u003c/AwesomeReact.Fragment\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "import AwesomeReact, { Fragment as AwesomeFragment } from \"react\";\n\n\u003c\u003e\n    \u003cAwesomeFragment\u003e\u003c/AwesomeFragment\u003e\n    \u003cAwesomeReact.Fragment\u003efoo\u003c/AwesomeReact.Fragment\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport AwesomeNoReact, { Fragment as AwesomeFragment } from \"noReact\";\nimport AwesomeReact, { StrictMode as AwesomeStrictMode } from \"react\";\n\n\u003c\u003e\n    \u003cAwesomeFragment\u003e\u003c/AwesomeFragment\u003e\n    \u003cAwesomeNoReact.Fragment\u003efoo\u003c/AwesomeNoReact.Fragment\u003e\n    \u003cAwesomeStrictMode\u003e\u003c/AwesomeStrictMode\u003e\n    \u003cAwesomeReact.StrictMode\u003efoo\u003c/AwesomeReact.StrictMode\u003e\n\u003c/\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport React, {Fragment} from \"notReact\";\n\n\u003c\u003e\n    \u003cFragment\u003e\u003c/Fragment\u003e\n    \u003cReact.Fragment\u003e\u003c/React.Fragment\u003e\n\u003c/\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "function Component() {\n  return (\u003c\u003e\n    {/** biome-ignore lint/complexity/noUselessFragments: \u003cexplanation\u003e */}\n    \u003c\u003e\u003c/\u003e\n    {/**     biome-ignore lint/complexity/noUselessFragments: \u003cexplanation\u003e */}\n    \u003c\u003e\u003c/\u003e\n    {/** biome-ignore     lint/complexity/noUselessFragments: \u003cexplanation\u003e */}\n    \u003c\u003e\u003c/\u003e\n    {/** biome-ignore lint/complexity/noUselessFragments:       \u003cexplanation\u003e */}\n    \u003c\u003e\u003c/\u003e\n    {/** biome-ignore lint/complexity/noUselessFragments: \u003cexplanation\u003e     */}\n    \u003c\u003e\u003c/\u003e\n  \u003c/\u003e)\n}",
+      "valid": false
+    },
+    {
+      "code": "// https://github.com/biomejs/biome/issues/1514\nconst SomeComponent = () =\u003e {\n    return (\n        \u003cReact.Fragment\u003e\n            Your Data Dispute Request was sent to your current Employer\n        \u003c/React.Fragment\u003e\n    );\n}",
+      "valid": true
+    },
+    {
+      "code": "\u003c\u003e\n    \u003cHello leftIcon={\u003c\u003e{provider?.icon}\u003c/\u003e} /\u003e\n    {\u003c\u003e{provider?.icon}\u003c/\u003e}\n    \u003c\u003e{provider?.icon}\u003c/\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "callFunction(\u003c\u003e{bar}\u003c/\u003e)\n",
+      "valid": false
+    },
+    {
+      "code": "function fn(member) {\n  fn(\u003c\u003e{member.expression}\u003c/\u003e);\n  fn(\u003c\u003e{member.expression()}\u003c/\u003e);\n  (\u003c\u003e{1}\u003c/\u003e).toString();\n}\n",
+      "valid": false
+    },
+    {
+      "code": "// https://github.com/biomejs/biome/issues/3545\n\u003c\u003e\n\t\u003cComponent /\u003e\n\u003c/\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction Component2() {\n    const str = 'str';\n    return (\u003c\u003e{str}\u003c/\u003e);\n}\n\nconst obj = {\n    element: \u003c\u003etest\u003c/\u003e,\n    element2: \u003cFragment\u003etest\u003c/Fragment\u003e,\n    element3: \u003cReact.Fragment\u003etest\u003c/React.Fragment\u003e,\n};\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport function Panic() {\n  return \u003cdiv\u003e{foo \u0026\u0026 \u003c\u003e{`(${bar})`}\u003c/\u003e}\u003c/div\u003e;\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction MyComponent() {\n    return (\n        \u003cdiv key={index}\u003e{line || \u003c\u003e\u0026nbsp;\u003c/\u003e}\u003c/div\u003e\n    )\n}\n\nfunction MyComponent2() {\n    return (\n        \u003cdiv key={index}\u003e{\u003c\u003e\u0026nbsp;\u003c/\u003e}\u003c/div\u003e\n    )\n}\n\nfunction MyComponent3() {\n    return (\n        \u003cdiv key={index}\u003e{value ?? \u003c\u003e\u0026nbsp;\u003c/\u003e}\u003c/div\u003e\n    )\n}\n\nfunction MyComponent4() {\n    return (\n        \u003cdiv key={index}\u003e{line || \u003cFragment\u003e\u0026nbsp;\u003c/Fragment\u003e}\u003c/div\u003e\n    )\n}\n\nfunction MyComponent5() {\n    return (\n        \u003cdiv key={index}\u003e{\u003cFragment\u003e\u0026nbsp;\u003c/Fragment\u003e}\u003c/div\u003e\n    )\n}\n\nfunction MyComponent6() {\n    return (\n        \u003cdiv key={index}\u003e{value ?? \u003cFragment\u003e\u0026nbsp;\u003c/Fragment\u003e}\u003c/div\u003e\n    )\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003cA b=\u003c\u003e\u003c/\u003e /\u003e",
+      "valid": true
+    },
+    {
+      "code": "\u003cSuspense\n    fallback={\n        \u003c\u003e\n            \u003cspan\u003eLoading...\u003c/span\u003e\n        \u003c/\u003e\n    }\n\u003e\n    {children}\n\u003c/Suspense\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "{'' != null \u0026\u0026 \u003c\u003estuff\u003c/\u003e}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport function SomeComponent() {\n\treturn \u003cdiv x-some-prop={\u003c\u003eFoo\u003c/\u003e} x-another-prop={\u003cFragment\u003efoo\u003c/Fragment\u003e} /\u003e;\n}\n",
+      "valid": true
+    },
+    {
+      "code": "\u003csection\u003e\n  \u003c\u003e\n    \u003cdiv /\u003e\n    \u003cdiv /\u003e\n  \u003c/\u003e\n\u003c/section\u003e;\n\nshowFullName ? \u003c\u003e{fullName}\u003c/\u003e : \u003c\u003e{firstName}\u003c/\u003e;",
+      "valid": false
+    },
+    {
+      "code": "export const ChatSettings: Component\u003cChatProps\u003e = (props) =\u003e {\n  return (\n    \u003cdiv {...stylex.attrs(styles.base)}\u003e\n      \u003c\u003esystem prompt:{' '}\u003c/\u003e\n      \u003cBlockArray blockArray={props.chat.state.system_prompt} processMarkdown={false} /\u003e\n      \u003cModelSelector chat={props.chat} /\u003e\n    \u003c/div\u003e\n  )\n}\n",
+      "valid": false
+    },
+    {
+      "code": "appendToLastRow(rows, \u003c\u003e {character.leftBracket}\u003c/\u003e);\nappendToLastRow(rows, \u003cFragment\u003e {character.leftBracket}\u003c/Fragment\u003e);\nappendToLastRow(rows, \u003cReact.Fragment\u003e {character.leftBracket}\u003c/React.Fragment\u003e);\n",
+      "valid": true
+    },
+    {
+      "code": "\u003c\u003e\u0026#9650;\u003c/\u003e\n\u003cFragment\u003e\u0026#9650;\u003c/Fragment\u003e\n\u003cReact.Fragment\u003e\u0026#9650;\u003c/React.Fragment\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n  Multi-line\n  text\n\u003c/\u003e",
+      "valid": true
+    },
+    {
+      "code": "// invalid\n\n\u003c\u003e\n    \u003c\u003e\u003c/\u003e\n    \u003cReact.Fragment\u003e\u003c/React.Fragment\u003e\n    \u003cFragment\u003e\u003c/Fragment\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport React, { StrictMode } from \"react\";\n\n\u003c\u003e\n    \u003cStrictMode\u003e\u003c/StrictMode\u003e\n    \u003cReact.StrictMode\u003e\u003c/React.StrictMode\u003e\n\u003c/\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction Fragment() {}\nlet React = { Fragment };\n\u003c\u003e\n    \u003cFragment\u003etest\u003c/Fragment\u003e\n    \u003cReact.Fragment\u003etest\u003c/React.Fragment\u003e\n\u003c/\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport React, {Fragment} from \"react\";\n\n\u003c\u003e\n    \u003cReact.Fragment key=\"1\"\u003e\u003c/React.Fragment\u003e\n    \u003cFragment key=\"1\"\u003e\u003c/Fragment\u003e\n\u003c/\u003e\n\n\u003cFragment\u003e\n\t\u003cFragment key=\"1\"\u003e\u003c/Fragment\u003e\n\u003c/Fragment\u003e\n\n\u003cReact.Fragment\u003e\n\t\u003cReact.Fragment key=\"1\"\u003e\u003c/React.Fragment\u003e\n\u003c/React.Fragment\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "\u003c\u003e\n    \u003c\u003efoo\u003c/\u003e\n    \u003cReact.Fragment\u003efoo\u003c/React.Fragment\u003e\n    \u003cFragment\u003efoo\u003c/Fragment\u003e\n    {/*  valid   */}\n    \u003cReact.StrictMode\u003e\u003cApp /\u003e\u003c/React.StrictMode\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "\u003c\u003e\n    \u003c/* test */\u003eempty\u003c/\u003e\n    \u003c\u003eempty\u003c/* comment */ /\u003e\n    \u003c\u003eempty\u003c/ /* comment */\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "\u003c\u003e\u003cComponent /\u003e\u003c/\u003e;\n\u003cFragment\u003e\u003cComponent /\u003e\u003c/Fragment\u003e;\n\u003cReact.Fragment\u003e\u003cComponent /\u003e\u003c/React.Fragment\u003e;\n\nfunction jsxElement() {\n\treturn \u003c\u003e\u003cJsxElement /\u003e\u003c/\u003e;\n}\n\nfunction jsxElement() {\n\treturn (\u003c\u003e\u003cJsxElement /\u003e\u003c/\u003e);\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction jsxExpressionChild() {\n    return \u003c\u003e{foo}\u003c/\u003e\n}\n\nfunction jsxExpressionChildFragment() {\n\treturn \u003cFragment\u003e{foo}\u003c/Fragment\u003e\n}\n\nfunction jsxExpressionChildReactFragment() {\n\treturn \u003cReact.Fragment\u003e{foo}\u003c/React.Fragment\u003e\n}\n\n",
+      "valid": true
+    },
+    {
+      "code": "\u003c\u003efoo\u003c/\u003e\n\u003cFragment\u003efoo\u003c/Fragment\u003e\n\u003cReact.Fragment\u003efoo\u003c/React.Fragment\u003e\n",
+      "valid": true
+    }
+  ]
+}

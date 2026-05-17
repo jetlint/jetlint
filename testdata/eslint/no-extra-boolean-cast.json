@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-extra-boolean-cast",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noExtraBooleanCast",
+  "cases": [
+    {
+      "code": "if (Boolean(foo)) {\n}\n\nif (!!Boolean(foo)) {\n}\n\nif (!Boolean(foo)) {\n}\n\nwhile (!!foo) {}\n\nlet x = 1;\ndo {\n\t1 + 1;\n} while (Boolean(x));\n\nfor (; !!foo; ) {}\n\nnew Boolean(!!x);\n\n!!!x;\n\n!Boolean(x);\n\n// Test case for issue #7225 - should preserve parentheses\nconst b0 = false;\nconst b1 = false;\nconst boolean = !Boolean(b0 \u0026\u0026 b1);",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nBoolean(!x);\n\n!x;\n\n!!x;\n\nBoolean(!!x, b);;\n",
+      "valid": true
+    }
+  ]
+}

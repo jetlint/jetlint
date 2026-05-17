@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-duplicate-jsx-props",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noDuplicateJsxProps",
+  "cases": [
+    {
+      "code": "//Duplicate `name` property\n\u003cHello name=\"John\" name=\"John\" /\u003e;\n\n//Case where property is repeated more than twice\n\u003cHello name=\"John\" name=\"John\" name=\"John\" /\u003e;\n\n//Case with two duplicates\n\u003cHello name=\"John\" name=\"John\" lastname=\"Doe\" lastname=\"Doe\" /\u003e;\n\n\u003clabel xml:lang=\"en-US\" xml:lang=\"en-US\"\u003e\u003c/label\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003cHello firstname=\"John\" lastname=\"Doe\" /\u003e;\n\n\u003clabel xml:lang=\"en-US\" lang=\"en-US\"\u003e\u003c/label\u003e\n\n//Case insensitive case\n\u003cHello name=\"John\" Name=\"John\" /\u003e;\n",
+      "valid": true
+    }
+  ]
+}

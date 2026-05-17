@@ -1,0 +1,23 @@
+{
+  "ruleId": "use-array-literals",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useArrayLiterals",
+  "cases": [
+    {
+      "code": "var xs = Array();\n\nvar xs = Array(0, 1, 2);\n\nvar xs = Array(...args);\n\nvar xs = new Array;\n\nvar xs = new Array();\n\nvar xs = new Array(0, 1, 2);\n\nvar xs = new Array(...args);\n\nvar xs = /**A*/ new /**B*/ Array /**C*/ ( /**D*/ 0 /**E*/, /**F*/ 1 /**G*/) /**H*/;\n\nvar xs = (Array)(\n    /* foo */ a,\n    b = c() // bar\n);\n\nvar xs = Array?.();\n\n// ASI\nfoo\nnew Array\n\nvar xs = globalThis.Array();\n\nvar xs = window.Array();\n",
+      "valid": false
+    },
+    {
+      "code": "var xs = new Array\u003cstring\u003e();\n\nvar xs = new Array\u003cnumber\u003e(0, 1, 2);\n\n// comments kept after fix should be: I J A B N\nvar xs\n/* A */ = /* B */\n/* C */ new /* D */\n/* E */ Array /* F */\n/* G */ \u003c /* H */\n/* I */ number /* J */\n/* K */ \u003e /* L */\n/* M */ () /* N */\n;\n\nvoid new Array\u003cnumber\u003e();\n\nvoid new Array\u003cnumber\u003e(1, 2, 3);\n\nvoid new Array\u003cReferenceType\u003e(1, 2, 3);\n\nvoid new Array\u003cGenericReferenceType\u003cT\u003e\u003e(1, 2, 3);\n\nconst xs = new Array\u003cGenericReferenceType\u003cT\u003e\u003e(1, 2, 3);\n\nconst xs = new Array\u003cimport(\"a\")\u003e(1, 2, 3);\n\nconst xs = new Array\u003ctypeof xs\u003e(1, 2, 3);\n\nvoid new Array\u003c1 | 2 | 3 | 4\u003e(1, 2, 3);\n\n// it already has a type annotation, it should still trigger a diagnostic but the fix should not change the existing type\nvar xs: string[] = new Array\u003cnumber\u003e();\n\nvar xs = new Array\u003cBase\u003e(new Concrete(), new Concrete());\n\nvar xs = new Array\u003cHTMLElement\u003e(document.createElement(\"div\"), document.createElement(\"span\"));\n\nvar xs, ys, zs = new Array\u003cstring\u003e(\"a\", \"b\", \"c\");\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nArray(500);\n\nArray(someOtherArray.length);\n\nnew Array(500);\n\nnew Array(someOtherArray.length);\n\n[0, 1, 2];\n\nconst createArray = (Array) =\u003e new Array();\n\nArray.foo();\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nlet xs = Array\u003cnumber\u003e(500);\n\nlet xs = new Array\u003cnumber\u003e(500);\n\nlet xs = Array\u003cnumber\u003e(n);\n\nlet xs = \u003cnumber\u003e[1, 2, 3];\n\nlet xs: number[] = new Array(5);\n\nlet xs: number[] = new Array\u003cnumber\u003e(5);\n\nlet xs = \u003cnumber[]\u003eArray(5);\n\nlet xs = window.Array\u003cnumber\u003e(5);\n",
+      "valid": true
+    }
+  ]
+}

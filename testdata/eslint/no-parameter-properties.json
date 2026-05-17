@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-parameter-properties",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noParameterProperties",
+  "cases": [
+    {
+      "code": "export class Foo1 {\n  constructor(readonly name: string) {}\n}\n\nexport class Foo2 {\n  constructor(private name: string) {}\n}\n\nexport class Foo3 {\n  constructor(protected name: string) {}\n}\n\nexport class Foo4 {\n  constructor(public name: string) {}\n}\n\nexport class Foo5 {\n  constructor(private readonly name: string) {}\n}\n\nexport class Foo6 {\n  constructor(protected readonly name: string) {}\n}\n\nexport class Foo7 {\n  constructor(public readonly name: string) {}\n}",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport class Foo {\n  constructor(name: string) {}\n}",
+      "valid": true
+    }
+  ]
+}

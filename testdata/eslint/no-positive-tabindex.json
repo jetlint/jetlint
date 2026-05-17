@@ -1,0 +1,23 @@
+{
+  "ruleId": "no-positive-tabindex",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/noPositiveTabindex",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n\t\u003cdiv tabIndex={1} /\u003e\n\t\u003cdiv tabIndex={\"1\"} /\u003e\n\t\u003cdiv tabIndex={'5'} /\u003e\n\t\u003cdiv tabIndex=\"1\" /\u003e\n\t\u003cdiv tabIndex={1}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={\"1\"}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={'5'}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={+5}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={+0o5}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex=\"1\"\u003efoo\u003c/div\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "/* should generate diagnostics */\nReact.createElement(\"div\", { tabIndex: '1' })\nReact.createElement(\"div\", { tabIndex: 1 })\nReact.createElement(\"div\", { tabIndex: +1 })\nReact.createElement(\"div\", { tabIndex: +0o1 })\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nReact.createElement(\"div\", { tabIndex: '0' })\nReact.createElement(\"div\", { tabIndex: '-1' })\nReact.createElement(\"div\", { tabIndex: dynamic })\nReact.createElement(\"div\", { tabIndex: 0 })\nReact.createElement(\"div\", { tabIndex: +0 })\nReact.createElement(\"div\", { tabIndex: -0 })\nReact.createElement(\"div\", { tabIndex: -5 })\nReact.createElement(\"div\", { tabIndex: -5.5 })\nReact.createElement(\"div\", { tabIndex: .5 })\nReact.createElement(\"div\", { tabIndex: `1` })\nReact.createElement(\"div\", { tabIndex: func() })\nReact.createElement(\"div\", { tabIndex: null })\nReact.createElement(\"div\", { tabIndex: undefined })\nReact.createElement(\"div\", { tabIndex: typeof e })\nReact.createElement(\"div\", { ...props })\nReact.createElement(\"div\", props)\nReact.createElement(\"div\", {})\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n\t\u003cdiv /\u003e\n\t\u003cdiv {...props} /\u003e\n\t\u003cdiv tabIndex={func} /\u003e\n\t\u003cdiv tabIndex={func()} /\u003e\n\t\u003cdiv tabIndex={null} /\u003e\n\t\u003cdiv tabIndex={undefined} /\u003e\n\t\u003cdiv tabIndex={\"abc\"} /\u003e\n\t\u003cdiv tabIndex={0} /\u003e\n\t\u003cdiv tabIndex={+0} /\u003e\n\t\u003cdiv tabIndex={-0} /\u003e\n\t\u003cdiv tabIndex={-1} /\u003e\n\t\u003cdiv tabIndex={\"0\"} /\u003e\n\t\u003cdiv tabIndex={'-5'} /\u003e\n\t\u003cdiv tabIndex={.5} /\u003e\n\t\u003cdiv tabIndex={-5.5} /\u003e\n\t\u003cdiv tabIndex={`-1`} /\u003e\n\t\u003cdiv tabIndex={`1`} /\u003e\n\t\u003cdiv tabIndex=\"-1\" /\u003e\n\t\u003cdiv tabIndex=\"abc\" /\u003e\n\t\u003cdiv tabIndex={typeof e} /\u003e\n\t\u003cdiv\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={-1}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={\"-1\"}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={'-5'}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex=\"-1\"\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={`-1`}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={`1`}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={`abc`}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={null}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={undefined}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={func()}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={func}\u003efoo\u003c/div\u003e\n\t\u003cdiv tabIndex={typeof e}\u003efoo\u003c/div\u003e\n\t\u003cdiv {...props}\u003efoo\u003c/div\u003e\n\u003c/\u003e\n",
+      "valid": true
+    }
+  ]
+}

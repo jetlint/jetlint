@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-nested-ternary",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noNestedTernary",
+  "cases": [
+    {
+      "code": "var thing = foo ? bar : baz === qux ? quxx : foobar;\n\nfoo ? baz === qux ? quxx() : foobar() : bar();\n\nvar thing1 = foo ? (bar ? 1 : 2) : 3;\n\nvar thing2 = foo ? 1 : (bar ? 2 : 3);\n\nvar thing3 = foo ? ((bar ? 1 : 2)) : 3;\n\nvar thing4 = foo ? 1 : ((bar ? 2 : 3));\n\nvar thing5 = foo ? (baz === qux ? quxx : foobar) : bar;\n\nconst case1 = val ? (Math.random() ? 1 : 2) : 3;\n\nconst case2 = val ? 1 : Math.random() ? 2 : 3;\n\nconst case3 = (val ? (Math.random() ? 1 : 2) : 3);\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst thing1 = foo ? bar : foobar;\n\nlet thing2;\n\nif (foo) {\n  thing2 = bar;\n} else if (baz === qux) {\n  thing2 = quxx;\n} else {\n  thing2 = foobar;\n}\n\nconst thing3 = (foo ? bar : baz);\n\nconst thing4 = foo ? (bar) : (baz);\n\nconst thing5 = ((foo ? bar : baz));\n",
+      "valid": true
+    }
+  ]
+}

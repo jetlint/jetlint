@@ -1,0 +1,35 @@
+{
+  "ruleId": "no-double-equals",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noDoubleEquals",
+  "cases": [
+    {
+      "code": "const foo = `\ntext\n${a == b}\n`;\n\n// existing comment\na == b;\n\nif (a == b) {\n    false;\n}\n\nif (/** some weird comment\n    **/ a == b) {\n\n    }\n\nlet a = `Output of \"biome rage\":\n  formatter enabled: ${formatter == true}\n  linter: ${linter}\n`;",
+      "valid": false
+    },
+    {
+      "code": "const isZero = a == 0;",
+      "valid": false
+    },
+    {
+      "code": "const isNonZero = a != 0;",
+      "valid": false
+    },
+    {
+      "code": "let a = \u003cbutton\n    className=\"SomeManyClasses\"\n    onClick={(event) =\u003e console.log(event.ctrlKey == true)}\n    style=\"color: red\"\n\u003e\n    Some content\n\u003c/button\u003e;",
+      "valid": false
+    },
+    {
+      "code": "/* biome-ignore lint/suspicious/noDoubleEquals: \u003cexplanation\u003e */\n1 == 'a'\n\n/** biome-ignore lint/suspicious/noDoubleEquals: \u003cexplanation\u003e */\n1 == 'a'\n\n/**     biome-ignore lint/suspicious/noDoubleEquals: \u003cexplanation\u003e */\n1 == 'a'\n\n/** biome-ignore     lint/suspicious/noDoubleEquals: \u003cexplanation\u003e */\n1 == 'a'\n\n/** biome-ignore lint/suspicious/noDoubleEquals:    \u003cexplanation\u003e */\n1 == 'a'\n\n//     biome-ignore lint/suspicious/noDoubleEquals: \u003cexplanation\u003e\n1 == 'a'\n\n// biome-ignore     lint/suspicious/noDoubleEquals: \u003cexplanation\u003e\n1 == 'a'\n\n// biome-ignore lint/suspicious/noDoubleEquals:    \u003cexplanation\u003e\n1 == 'a'\n",
+      "valid": false
+    },
+    {
+      "code": "const isNull = a == null;",
+      "valid": true
+    },
+    {
+      "code": "const isNonNull = a != null;",
+      "valid": true
+    }
+  ]
+}

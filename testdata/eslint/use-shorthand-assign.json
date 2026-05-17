@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-shorthand-assign",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useShorthandAssign",
+  "cases": [
+    {
+      "code": "a = a + 1;\na = a - 1;\na = a * 1;\na = 1 * a;\na = a / 1;\na = a % 1;\na = a \u003c\u003c 1;\na = a \u003e\u003e 1;\na = a \u003e\u003e\u003e 1;\na = a \u0026 1;\na = 1 \u0026 a;\na = a ^ 1;\na = 1 ^ a;\na = a | 1;\na = 1 | a;\na = a ** 1;\nthis.a = this.a + 1;\nthis.a = this.a + b\nthis.a = this.a + this.b\na = (a) + 1;\nx = (x + y);\nx[0] = x[0] - y\nwindow.a = window.a + 1;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\na += 1;\na -= 1;\na *= 1;\na /= 1;\na %= 1;\na \u003c\u003c= 1;\na \u003e\u003e= 1;\na \u003e\u003e\u003e= 1;\na \u0026= 1;\na ^= 1;\na |= 1;\na **= 1;\nthis.a += 1;\nx[0] -= x[0]\nwindow.a += window.a;\n",
+      "valid": true
+    }
+  ]
+}

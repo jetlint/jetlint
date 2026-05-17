@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-misrefactored-shorthand-assign",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noMisrefactoredShorthandAssign",
+  "cases": [
+    {
+      "code": "a += (a + b)\n\nobject.a += object.a + b;\n\na -= a - b\n\na *= a * b\n\na *= b * a\n\na /= a / b\n\na %= a % b\n\na **= a ** b\n\na \u003e\u003e= a \u003e\u003e b\n\na \u003c\u003c= a \u003c\u003c b\n\na \u003e\u003e\u003e= a \u003e\u003e\u003e b\n\na \u0026= a \u0026 b\n\na \u0026= b \u0026 a\n\na |= a | b\n\na |= b | a\n\na ^= a ^ b\n\na ^= b ^ a\n\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\na += b\n\na += b + a\n\na -= b - a\n\na *= b\n\na /= b\n\na /= b / a\n\na %= b\n\na %= b % a\n\na **= b ** a\n\na \u003e\u003e= b \u003e\u003e a\n\na \u003c\u003c= b \u003c\u003c a\n\na \u003e\u003e\u003e= b \u003e\u003e\u003e a\n\na \u0026= b\n\na |= b\n\na ^= b\n",
+      "valid": true
+    }
+  ]
+}

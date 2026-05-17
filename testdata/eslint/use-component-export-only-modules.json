@@ -1,0 +1,95 @@
+{
+  "ruleId": "use-component-export-only-modules",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useComponentExportOnlyModules",
+  "cases": [
+    {
+      "code": "export const CONSTANT = 3\nexport const Foo = () =\u003e {}\n",
+      "valid": true
+    },
+    {
+      "code": "export const SampleComponent = () =\u003e \u003c\u003e\u003c/\u003e\nexport default class hoge {\n}",
+      "valid": false
+    },
+    {
+      "code": "export const SampleComponent = () =\u003e \u003c\u003e\u003c/\u003e\nexport default function hoge () {\n  return 100\n} \n",
+      "valid": false
+    },
+    {
+      "code": "export const SampleComponent = () =\u003e \u003c\u003e\u003c/\u003e\nconst hoge = 100\nexport default hoge",
+      "valid": false
+    },
+    {
+      "code": "export const SampleComponent = () =\u003e \u003c\u003e\u003c/\u003e\nexport enum SampleEnum {\n  A,\n  B,\n  C,\n}\n",
+      "valid": false
+    },
+    {
+      "code": "export const foo = () =\u003e {}\nexport const Bar = () =\u003e {}",
+      "valid": false
+    },
+    {
+      "code": "const foo = 4;\nconst Bar = () =\u003e {};\nconst baz = 4;\nexport { foo, Bar, baz as qux }\n",
+      "valid": false
+    },
+    {
+      "code": "const Fuga = () =\u003e \u003c\u003e\u003c/\u003e\nexport default hoge(Fuga)\n",
+      "valid": false
+    },
+    {
+      "code": "const App = () =\u003e {}\ncreateRoot(document.getElementById(\"root\")).render(\u003cApp /\u003e);",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport const SampleComponent = () =\u003e \u003c\u003e\u003c/\u003e\nexport type SampleType = string\nexport type sampleType = string\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n// TanStack Router pattern - component referenced in exported object\nimport { createFileRoute } from '@tanstack/react-router'\n\nexport const Route = createFileRoute('/')({\n  component: HomeComponent,\n})\n\nfunction HomeComponent() {\n  return \u003cdiv\u003eHome\u003c/div\u003e\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n// Shorthand property pattern - component referenced via shorthand syntax\nexport const config = {\n  HomeComponent,\n}\n\nfunction HomeComponent() {\n  return \u003cdiv\u003eHome\u003c/div\u003e\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport const SampleComponent = () =\u003e \u003c\u003e\u003c/\u003e\nexport interface SampleInterfafce {\n  hoge: number\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport const SampleComponentA = () =\u003e \u003c\u003e\u003c/\u003e\nexport const SampleComponentB = () =\u003e \u003c\u003e\u003c/\u003e\nexport function Hoge () {\n  return \u003c\u003e\u003c/\u003e\n} \nexport class Fuga extends React.Component {\n  render() {\n    return \u003c\u003e\u003c/\u003e\n  }\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst SampleComponentA = () =\u003e \u003c\u003e\u003c/\u003e\nconst SampleComponentB = () =\u003e \u003c\u003e\u003c/\u003e\nfunction Hoge () {\n  return \u003c\u003e\u003c/\u003e\n}\nclass Fuga extends React.Component {\n  render() {\n    return \u003c\u003e\u003c/\u003e\n  }\n}\nexport {SampleComponentA, SampleComponentB, Hoge, Fuga}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default class Fuga extends React.Component {\n  render() {\n    return \u003c\u003e\u003c/\u003e\n  }\n};\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst Component1 = () =\u003e \u003c\u003e\u003c/\u003e\nexport default Component1;\nexport const Component2 = () =\u003e \u003c\u003e\u003c/\u003e;\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst App = () =\u003e \u003c\u003eTest\u003c/\u003e;\nexport { App as default };",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default function Hoge () {\n  return \u003c\u003e\u003c/\u003e\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport { memo } from 'react';\n\nconst Component = () =\u003e \u003c\u003e\u003c/\u003e\n\nexport default memo(Component);",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport const sampleConst = 100\nexport function hoge () {\n  return 100\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport type SampleType = string\nexport type sampleType = string\nexport const hoge = 100\n",
+      "valid": true
+    }
+  ]
+}

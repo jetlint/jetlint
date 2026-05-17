@@ -1,0 +1,27 @@
+{
+  "ruleId": "use-object-spread",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useObjectSpread",
+  "cases": [
+    {
+      "code": "Object.assign({}, foo);\nObject.assign  ({}, foo);\nObject  .assign  ({}, foo);\nObject.assign({}, {foo: 'bar'});\nObject.assign({ foo: 'bar'}, baz);\nObject.assign({}, baz, { foo: 'bar' });\nObject.assign({}, { foo: 'bar', baz: 'foo' });\nObject.assign({}, { ...baz });\nObject.assign({});\nObject.assign({ foo: bar });\nObject.assign({ foo: 'bar' }, cats, dogs, trees, birds);\nObject.assign({ foo: 'bar' }, Object.assign({ bar: 'foo' }, baz));\n({foo: 'bar', ...Object.assign({ bar: 'foo' }, baz)});\nObject.assign({ foo: 'bar' }, Object.assign({ bar: 'foo' }, Object.assign({}, { superNested: 'butwhy' })));\nObject.assign({foo: 'bar', ...bar}, baz);\nObject.assign({}, { foo, bar, baz });\nObject.assign({}, { [bar]: 'foo' });\nObject.assign({ ...bar }, { ...baz });\nObject.assign({ ...bar }, {\n    // this is a bar\n    foo: 'bar',\n    baz: \"cats\"\n});\nObject.assign({\n    boo: \"lol\",\n    // I'm a comment\n    dog: \"cat\"\n}, {\n    // this is a bar\n    foo: 'bar',\n    baz: \"cats\"\n});\nconst test1 = Object.assign({ ...bar }, {\n    foo: 'bar', // inline comment\n    baz: \"cats\"\n});\nconst test2 = Object.assign({ ...bar }, {\n    /**\n     * foo\n     */\n    foo: 'bar',\n    baz: \"cats\"\n});\nglobalThis.Object.assign({}, foo);\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nObject.assign();\nlet a = Object.assign(a, b);\nObject.assign(a, b);\nlet c = Object.assign(b, { c: 1 });\nconst bar = { ...foo };\nObject.assign(...foo);\nObject.assign(foo, { bar: baz });\nObject.assign({}, ...objects);\nfoo({ foo: 'bar' });\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst Object = {};\nObject.assign({}, foo);\nObject.assign({}, foo);\nObject.assign({ foo: 'bar' });\nObject.assign({ foo: 'bar' });\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport Object from 'foo';\nObject.assign({ foo: 'bar' });\nObject.assign({ foo: 'bar' });\nObject.assign({ foo: 'bar' });\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst Object = require('foo');\nObject.assign({ foo: 'bar' });\n",
+      "valid": true
+    }
+  ]
+}

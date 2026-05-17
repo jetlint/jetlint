@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-key-with-click-events",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/useKeyWithClickEvents",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n    \u003cdiv onClick={() =\u003e {}} /\u003e\n    \u003cdiv  {...spread} onClick={() =\u003e {}} /\u003e\n    \u003cdiv  {...spread} onClick={() =\u003e {}}\u003efoo\u003c/div\u003e\n    \u003cdiv onClick={() =\u003e void 0} role={undefined} /\u003e\n    \u003cdiv onClick={() =\u003e void 0} {...props} /\u003e\n    \u003csection onClick={() =\u003e void 0} /\u003e\n    \u003cmain onClick={() =\u003e void 0} /\u003e\n    \u003carticle onClick={() =\u003e void 0} /\u003e\n    \u003cheader onClick={() =\u003e void 0} /\u003e\n    \u003cfooter onClick={() =\u003e void 0} /\u003e\n    \u003cdiv onClick={() =\u003e void 0} aria-hidden={false} /\u003e\n    {/* TODO:  */}\n    {/* \u003ca onClick={() =\u003e void 0} /\u003e */}\n    {/* \u003ca tabIndex=\"0\" onClick={() =\u003e void 0} /\u003e */}\n\u003c/\u003e",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n    \u003cdiv onClick={() =\u003e {}} onKeyUp={handleKeyUp} /\u003e\n    \u003cdiv onClick={() =\u003e {}} onKeyDown={handleKeyDown} /\u003e\n    \u003cdiv onClick={() =\u003e {}} onKeyPress={handleKeyPress} /\u003e\n\n    \u003cdiv onClick={() =\u003e void 0} onKeyDown={foo}/\u003e;\n    \u003cdiv onClick={() =\u003e void 0} onKeyUp={foo} /\u003e;\n    \u003cdiv onClick={() =\u003e void 0} onKeyPress={foo}/\u003e;\n    \u003cdiv onClick={() =\u003e void 0} onKeyDown={foo} onKeyUp={bar} /\u003e;\n    \u003cdiv onClick={() =\u003e void 0} onKeyDown={foo} {...props} /\u003e;\n    \u003cdiv className=\"foo\" /\u003e;\n    \u003cdiv onClick={() =\u003e void 0} aria-hidden /\u003e;\n    \u003cdiv onClick={() =\u003e void 0} aria-hidden={true} /\u003e;\n    \u003cdiv onClick={() =\u003e void 0} aria-hidden={false} onKeyDown={foo} /\u003e;\n    \u003cdiv onClick={() =\u003e void 0} onKeyDown={foo} aria-hidden={undefined} /\u003e;\n    \u003cinput type=\"text\" onClick={() =\u003e void 0} /\u003e\n    \u003cinput onClick={() =\u003e void 0} /\u003e\n    \u003cbutton onClick={() =\u003e void 0} className=\"foo\" /\u003e\n    \u003coption onClick={() =\u003e void 0} className=\"foo\" /\u003e\n    \u003cselect onClick={() =\u003e void 0} className=\"foo\" /\u003e\n    \u003ctextarea onClick={() =\u003e void 0} className=\"foo\" /\u003e\n    \u003ca onClick={() =\u003e void 0} href=\"http://x.y.z\" /\u003e\n    \u003ca onClick={() =\u003e void 0} href=\"http://x.y.z\" tabIndex=\"0\" /\u003e\n    \u003cinput onClick={() =\u003e void 0} type=\"hidden\" /\u003e;\n    \u003cdiv onClick={() =\u003e void 0} role=\"presentation\" /\u003e;\n    \u003cdiv onClick={() =\u003e void 0} role=\"none\" /\u003e;\n    \u003cTestComponent onClick={doFoo} /\u003e\n    \u003cButton onClick={doFoo} /\u003e\n    \u003cFooter onClick={doFoo} /\u003e\n\u003c/\u003e",
+      "valid": true
+    }
+  ]
+}

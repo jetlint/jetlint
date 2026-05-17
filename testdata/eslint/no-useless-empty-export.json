@@ -1,0 +1,39 @@
+{
+  "ruleId": "no-useless-empty-export",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessEmptyExport",
+  "cases": [
+    {
+      "code": "export default {};\nexport {}",
+      "valid": false
+    },
+    {
+      "code": "export {}\nexport {}",
+      "valid": false
+    },
+    {
+      "code": "function f() { return 0 }\nexport const A = f();\nexport {}",
+      "valid": false
+    },
+    {
+      "code": "export * from \"mod\";\nexport {}",
+      "valid": false
+    },
+    {
+      "code": "import { A } from \"mod\"\nfunction f() { return 0 }\nexport {}",
+      "valid": false
+    },
+    {
+      "code": "import \"mod\"\nfunction f() { return 0 }\nexport {}",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction f() {}\nf();\nexport {}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport const A = 0;",
+      "valid": true
+    }
+  ]
+}

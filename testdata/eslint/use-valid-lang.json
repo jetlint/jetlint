@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-valid-lang",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/useValidLang",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\nlet a = \u003chtml lang=\"lorem\" /\u003e;\nlet a = \u003chtml lang=\"en-babab\" /\u003e;\nlet a = \u003chtml lang=\"en-GB-something\" /\u003e;\nlet a = \u003chtml lang=\"zh-Xxxx\" /\u003e;\nlet a = \u003chtml lang=\"zh-Hans-ZZ\" /\u003e;\nlet a = \u003chtml lang=\"en-US-GB-Extra\" /\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nlet a = \u003cHtml lang=\"en-babab\" /\u003e;\nlet a = \u003chtml lang=\"en-US\"\u003e\u003c/html\u003e;\nlet a = \u003chtml lang=\"en\"\u003e\u003c/html\u003e;\nlet a = \u003chtml lang={lang}\u003e\u003c/html\u003e;\nlet a = \u003chtml lang=\"nb\"\u003e\u003c/html\u003e;\nlet a = \u003chtml lang=\"nn\"\u003e\u003c/html\u003e;\nlet a = \u003chtml lang=\"zh-Hant\"\u003e\u003c/html\u003e;\nlet a = \u003chtml lang=\"zh-Hans-CN\"\u003e\u003c/html\u003e;\n",
+      "valid": true
+    }
+  ]
+}

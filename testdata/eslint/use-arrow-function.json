@@ -1,0 +1,23 @@
+{
+  "ruleId": "use-arrow-function",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/useArrowFunction",
+  "cases": [
+    {
+      "code": "const withBoundArguments = function() {\n\tconst arguments = 10;\n\treturn arguments;\n}\n",
+      "valid": false
+    },
+    {
+      "code": "const f1 = async function\u003cT\u003e (x: T): Promise\u003cT\u003e {\n    return x;\n}\n\nconst f2 = async function\u003cT\u003e (x: T): Promise\u003cobject\u003e {\n    return {};\n}\n\nconst f3 = /*a*/ async /*b*/ function /*c*/ \u003cT\u003e /*d*/ (x: T /*e*/)/*f*/: Promise\u003cT\u003e/*g*/ {\n    return x;\n} /* end */\n\nconst f4 = async function\u003cT\u003e (x: T): Promise\u003cT\u003e {\n    return x;\n} // Trailing comment\n\nconst f5 = async function\u003cT\u003e (x: T): Promise\u003cT\u003e {\n    return x; // Comment\n}\n\nconst f6 = function() {\n    function inner () {\n        return this;\n    }\n    return 0;\n}\n\nfunction f7() {\n    const self = this;\n    return function() {\n        if (self instanceof Number) {\n            return self;\n        } else {\n            return null;\n        }\n    };\n}\n\nconst f10 = function(x) {\n    return 0, 1;\n}\n\nconst as = function () {} as () =\u003e void;\nconst satisfies = function () {} satisfies () =\u003e void;\nconst unary = +function () {};\nconst conditionalTest = function () {} ? true : false;\nclass ExtendsClause extends function() {} {};\nconst non_null_assertion = function () {}!;\nconst call = function () {}();\nconst staticMember = function(a) {}.bind(null, 0);\nconst computedMember = function(a) {}[\"bind\"](null, 0);\nconst logical = false || function () {};\nconst binary = false + function () {};\n\nconst withDirective = function () {\n\t\"use server\";\n\treturn 0;\n}\n\n// https://github.com/biomejs/biome/issues/4967\nconst needsParentheses1 = function () {\n\treturn { foo: \"bar\" }[\"foo\"];\n}\n\nconst needsParentheses2 = function () {\n\treturn { foo: \"bar\" }.foo;\n}\n",
+      "valid": false
+    },
+    {
+      "code": "const f1 = function\u003cT\u003e (x: T): T {\n\treturn x;\n}\n\nconst f2 = async function\u003cT\u003e (x: T): Promise\u003cT\u003e {\n\treturn x;\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction functionDeclaration() {\n    return 0;\n}\n\nconst usingThis = function() {\n    return this;\n}\n\nconst generatorExpression = function* (this: Number) {\n    return 0;\n}\n\nconst named = function named (this: Number) {\n    return 0;\n}\n\nconst withArguments = function () {\n    return arguments[0];\n}\n\nconst withThisParameter = function(this: Number) {\n    return 0;\n}\n\nconst g = function(a) {\n    if (a != null) {\n        return () =\u003e this;\n    }\n    return () =\u003e {};\n}\n\nexport class Counter {\n    static {\n        // do nothings\n    }\n\n    constructor() {\n        this.count = 0;\n    }\n\n    get count() {\n        return this.count;\n    }\n\n    set count(val) {\n        this.count = val;\n    }\n\n    increment() {\n        this.count++;\n    }\n\n    get initial() {\n        return 0;\n    }\n\n    initial_value() {\n        return 0;\n    }\n}\n\nexport const DEFAULT_COUNTER = {\n    get count() {\n        return this.count;\n    },\n\n    set count(val) {\n        this.count = val;\n    },\n\n    increment() {\n        this.count++;\n    },\n\n    get initial() {\n        return 0;\n    },\n\n    initial_value() {\n        return 0;\n    },\n}\n\nexport default function() {\n    return 0;\n}\n\nconst usingNewTarget = function () {\n    return new.target;\n}\n\nclass ExtendsClause extends (function() {}) {}\n",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "ruleId": "no-ts-ignore",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noTsIgnore",
+  "cases": [
+    {
+      "code": "\n// @ts-ignore\nlet found;\n\n/**\n * @ts-ignore\n * more comments\n */\nlet foo;\n\n\n// Some comment\n// @ts-ignore\n// Some other comment\nlet bar;\n\n\n// Some comment\n// @ts-ignore Some other comment\nlet someTextAfter;\n",
+      "valid": false
+    }
+  ]
+}

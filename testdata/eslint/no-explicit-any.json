@@ -1,0 +1,31 @@
+{
+  "ruleId": "no-explicit-any",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noExplicitAny",
+  "cases": [
+    {
+      "code": "class Greeter {\n\tconstructor(param: Array\u003cany\u003e) {}\n}\n\nclass Greeter {\n\tmessage: any;\n}\n\nclass Greeter {\n\tmessage: Array\u003cany\u003e;\n}\n\nclass Greeter {\n\tmessage: any[];\n}\n\nclass Greeter {\n\tmessage: Array\u003cArray\u003cany\u003e\u003e;\n}\n\nclass Greeter {\n\tmessage: Array\u003cany[]\u003e;\n}\n\nclass Foo\u003ct = any\u003e extends Bar\u003cany\u003e {}\n\nabstract class Foo\u003ct = any\u003e extends Bar\u003cany\u003e {}\n\nabstract class Foo\u003ct = any\u003e implements Bar\u003cany\u003e, Baz\u003cany\u003e {}\n\nnew Foo\u003cany\u003e()\n\nFoo\u003cany\u003e()\n",
+      "valid": false
+    },
+    {
+      "code": "function generic(): any {}\n\nfunction generic2(): Array\u003cany\u003e {}\n\nfunction generic3(): any[] {}\n\nfunction generic4(param: Array\u003cany\u003e): number {}\n\nfunction generic5(param: any[]): number {}\n\nfunction generic6(param: Array\u003cany\u003e): Array\u003cany\u003e {}\n\nfunction generic7(): Array\u003cArray\u003cany\u003e\u003e {}\n\nfunction generic8(): Array\u003cany[]\u003e {}\n\nfunction test\u003cT extends Partial\u003cany\u003e\u003e() {}\n\nfunction foo(a: number, ...rest: any[]): void {\n\treturn;\n}\n\nfunction foo5(...args: any) {}\n\nfunction quux5(fn: (...args: any) =\u003e void): void {}\n\nfunction quuz5(): ((...args: any) =\u003e void) {}\n\ndeclare function waldo5(...args: any): void;\n",
+      "valid": false
+    },
+    {
+      "code": "interface Greeter {\n\tmessage: any;\n}\n\ninterface Greeter2 {\n\tmessage: Array\u003cany\u003e;\n}\n\ninterface Greeter3 {\n\tmessage: any[];\n}\n\ninterface Greeter4 {\n\tmessage: Array\u003cArray\u003cany\u003e\u003e;\n}\n\ninterface Greeter5 {\n\tmessage: Array\u003cany[]\u003e;\n}\n\ninterface Qux5 { (...args: any): void; }\n\ninterface Grault5 { new (...args: any): void; }\n\ninterface Garply5 { f(...args: any): void; }\n\ntype obj = {\n\tmessage: any;\n}\n\ntype obj2 = {\n\tmessage: Array\u003cany\u003e;\n}\n\ntype obj3 = {\n\tmessage: any[];\n}\n\ntype obj4 = {\n\tmessage: Array\u003cArray\u003cany\u003e\u003e;\n}\n\ntype obj5 = {\n\tmessage: Array\u003cany[]\u003e;\n}\n\ntype obj6 = {\n\tmessage: string | any;\n}\n\ntype obj7 = {\n\tmessage: string | Array\u003cany\u003e;\n}\n\ntype obj8 = {\n\tmessage: string | any[];\n}\n\ntype obj9 = {\n\tmessage: string | Array\u003cArray\u003cany\u003e\u003e;\n}\n\ntype obj10 = {\n\tmessage: string | Array\u003cany[]\u003e;\n}\n\ntype obj11 = {\n\tmessage: string \u0026 any;\n}\n\ntype obj12 = {\n\tmessage: string \u0026 Array\u003cany\u003e;\n}\n\ntype obj13 = {\n\tmessage: string \u0026 any[];\n}\n\ntype obj14 = {\n\tmessage: string \u0026 Array\u003cArray\u003cany\u003e\u003e;\n}\n\ntype obj15 = {\n\tmessage: string \u0026 Array\u003cany[]\u003e;\n}\n\ntype Any = any;\n\ntype Fred5 = (...args: any) =\u003e void;\n\ntype Corge5 = new (...args: any) =\u003e void;\n",
+      "valid": false
+    },
+    {
+      "code": "const number: any = 1\n\nconst anyArray: any[] = []\n\nconst anyMatrix: any[][] = []\n\nconst anyArray2: Array\u003cany\u003e = []\n\nconst anyMatrix2: Array\u003cArray\u003cany\u003e\u003e = []\n\nconst anyGenerics: T\u003cany, Array\u003cany\u003e\u003e = []\n\nconst bar5 = function (...args: any) {}\n\nconst baz5 = (...args: any) =\u003e {}\n\nconst test = \u003cT extends Partial\u003cany\u003e\u003e() =\u003e {};\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst number: number = 1;\n\nfunction greet(): string {}\n\nfunction greet2(): Array\u003cstring\u003e {}\n\nfunction greet3(): string[] {}\n\nfunction greet4(): Array\u003cArray\u003cstring\u003e\u003e {}\n\nfunction greet5(): Array\u003cstring[]\u003e {}\n\nfunction greet6(param: Array\u003cstring\u003e): Array\u003cstring\u003e {}\n\nclass Greeter {\n  message: string;\n}\n\nclass Greeter2 {\n  message: Array\u003cstring\u003e;\n}\n\nclass Greeter3 {\n  message: string[];\n}\n\nclass Greeter4 {\n  message: Array\u003cArray\u003cstring\u003e\u003e;\n}\n\nclass Greeter5 {\n  message: Array\u003cstring[]\u003e;\n}\n\ninterface Greeter6 {\n  message: string;\n}\n\ninterface Greeter7 {\n  message: Array\u003cstring\u003e;\n}\n\ninterface Greeter8 {\n  message: string[];\n}\n\ninterface Greeter9 {\n  message: Array\u003cArray\u003cstring\u003e\u003e;\n}\n\ninterface Greeter10 {\n  message: Array\u003cstring[]\u003e;\n}\n\ntype obj = {\n  message: string;\n};\n\ntype obj2 = {\n  message: Array\u003cstring\u003e;\n};\n\ntype obj3 = {\n  message: string[];\n};\n\ntype obj4 = {\n  message: Array\u003cArray\u003cstring\u003e\u003e;\n};\n\ntype obj5 = {\n  message: Array\u003cstring[]\u003e;\n};\n\ntype obj6 = {\n  message: string | number;\n};\n\ntype obj7 = {\n  message: string | Array\u003cstring\u003e;\n};\n\ntype obj8 = {\n  message: string | string[];\n};\n\ntype obj9 = {\n  message: string | Array\u003cArray\u003cstring\u003e\u003e;\n};\n\ntype obj10 = {\n  message: string \u0026 number;\n};\n\ntype obj11 = {\n  message: string \u0026 Array\u003cstring\u003e;\n};\n\ntype obj12 = {\n  message: string \u0026 string[];\n};\n\ntype obj13 = {\n  message: string \u0026 Array\u003cArray\u003cstring\u003e\u003e;\n};\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction f\u003cT extends any\u003e() {}",
+      "valid": true
+    }
+  ]
+}

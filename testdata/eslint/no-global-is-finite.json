@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-global-is-finite",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noGlobalIsFinite",
+  "cases": [
+    {
+      "code": "isFinite({});\n\n(isFinite)({});\n\nglobalThis.isFinite({});\n\n(globalThis).isFinite({});\n\nglobalThis.globalThis.window.isFinite({});\n\nglobalThis[\"isFinite\"]({});\n\n(globalThis)[(\"isFinite\")]({});\n\nfunction localIsNaN(isFinite) {\n    globalThis.isFinite({});\n}\n\nlocalIsNaN(isFinite);\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nNumber.isFinite(Number.NaN);\n\nglobalThis.Number.isFinite(Number.NaN);\n\nfunction localIsFinite(isFinite) {\n    isFinite({});\n}\n\nfunction localVar() {\n    var isFinite;\n    isFinite()\n}\n\nlocalIsFinite(Number.isFinite);\n",
+      "valid": true
+    }
+  ]
+}

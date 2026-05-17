@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-consistent-type-definitions",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useConsistentTypeDefinitions",
+  "cases": [
+    {
+      "code": "// Default: prefer interface\ntype Foo = {\n    prop: string;\n};\n\ntype Bar = {\n    method(): void;\n};\n\ntype Point = { x: number; y: number; };\n\ntype Nested = { x: {one: string; two: number}; y: {one: string; two: number}; };\n\ntype User = {\n    name: string;\n    age: number;\n};\n\ntype Config = {\n    apiUrl: string;\n    timeout: number;\n    retries: number;\n};\n\ntype Comments /* comment 1 */ = /* comment 2 */ { /* comment 3 */\n    /* comment 4 */ lorem: /* comment 5 */ boolean; /* comment 6 */\n/* comment 7 */ };\n\n// These should be valid and not trigger errors\ntype Union = { a: string } | { b: number };\ntype Intersection = { a: string } \u0026 { b: number };\ntype Conditional\u003cT\u003e = T extends string ? { a: string } : { b: number };\ninterface ValidInterface {\n    prop: string;\n}",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// Default: prefer interface\ninterface Foo {\n    prop: string;\n}\n\ninterface Bar {\n    method(): void;\n}\n\ninterface Point {\n    x: number;\n    y: number;\n}\n\ninterface User {\n    name: string;\n    age: number;\n}\n\ninterface Config {\n    apiUrl: string;\n    timeout: number;\n    retries: number;\n}\n\n// Type aliases should be used for these cases\ntype Union = { a: string } | { b: number };\ntype Intersection = { a: string } \u0026 { b: number };\ntype Conditional\u003cT\u003e = T extends string ? { a: string } : { b: number };\ntype StringAlias = string;\ntype NumberAlias = number;\ntype FunctionType = (x: number) =\u003e string;\ntype TupleType = [string, number];\ntype MappedType\u003cT\u003e = { [K in keyof T]: string };\ntype Nullable\u003cT\u003e = T | null;\n\n// Interfaces can extend\ninterface ExtendedInterface extends Foo {\n    extra: boolean;\n}\n\n// Empty types will be left as-is\ntype AnyObject = {};\n",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-jsx-literals",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noJsxLiterals",
+  "cases": [
+    {
+      "code": "// should generate diagnostics\n\u003c\u003e\n  \u003cdiv\u003etest\u003c/div\u003e\n\t\u003c\u003etest\u003c/\u003e\n\t\u003c\u003e\n\t\t\u003cdiv\u003e\n\t\t\tasdjfl\n\t\t\ttest\n\t\t\tfoo\n\t\t\u003c/div\u003e\n\t\u003c/\u003e\n\u003c/\u003e\n\n\nclass Comp1 extends Component {\n\trender() {\n\t\tconst varObjectTest = { testKey : (\u003cdiv\u003etest\u003c/div\u003e) };\n\t\treturn varObjectTest.testKey;\n\t}\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n\t\u003cdiv\u003e\n\t\t{'asdjfl'}\n\t\t{'test'}\n\t\t{'foo'}\n\t\u003c/div\u003e\n\t\u003cFoo bar={\"bar\"} /\u003e\n\t\u003cFoo bar=\"test\"\u003e\n\t\t{'Test' + name}\n\t\u003c/Foo\u003e\n\t\u003cFoo bar={`${baz} test`} /\u003e\n\t\u003cdiv\u003e{translate('my.translation.key')}\u003c/div\u003e\n\u003c/\u003e\n",
+      "valid": true
+    }
+  ]
+}

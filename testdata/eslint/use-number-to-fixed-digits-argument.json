@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-number-to-fixed-digits-argument",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/useNumberToFixedDigitsArgument",
+  "cases": [
+    {
+      "code": "const string1 = number.toFixed();\nconst string2 = number.toFixed(/* comment */);\nNumber(1).toFixed();\n\n// False positive cases\nconst bigNumber = new BigNumber(1); const string3 = bigNumber.toFixed();\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nnumber.toFixed(0);\nnumber.toFixed(...[]);\nnumber.toFixed(2);\nnumber.toFixed(1, 2, 3);\nnumber[toFixed]();\nnumber[\"toFixed\"]();\nnumber?.toFixed();\nnumber.toFixed?.();\nnumber.notToFixed();\n\n// `callee` is a `NewExpression`\nnew BigNumber(1).toFixed();\nnew Number(1).toFixed();\n",
+      "valid": true
+    }
+  ]
+}

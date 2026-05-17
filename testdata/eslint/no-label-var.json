@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-label-var",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noLabelVar",
+  "cases": [
+    {
+      "code": "const x1 = \"test\";\nx1: expr;\n\n// nested scope\nfunction test() {\n  {\n    x1: for (let i = 0; i \u003c 10; i++) {\n    }\n  }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst x = \"test\";\nz: expr;\n",
+      "valid": true
+    }
+  ]
+}

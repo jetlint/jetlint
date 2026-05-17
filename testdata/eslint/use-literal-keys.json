@@ -1,0 +1,23 @@
+{
+  "ruleId": "use-literal-keys",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/useLiteralKeys",
+  "cases": [
+    {
+      "code": "a[\"b\"];\na.b[\"c\"];\na.b[\"c\"].d.e[\"f\"];\na.b[`c`];\na.b[c[\"d\"]];\na[\"b\"] = \"something\";\na.b[\"c\"] = \"something\";\na.b[\"c\"].d.e[\"f\"] = \"something\";\na.b[`c`] = \"something\";\na.b[c[\"d\"]] = \"something\";\na = {\n\t['b']: d\n};\na = {\n\t[`b`]: d\n};\na.b[`$c`];\na.b[\"_d\"];\nclass C { [\"a\"] = 0 }\nclass C { [\"a\"](){} }\nclass C { get [\"a\"](){} }\nclass C { set [\"a\"](x){} }\na = {\n\t[\"1+1\"]: 2\n}\na = {\n\t[`1+1`]: 2\n}\na = {\n\t[\"\"]: 2\n}\n\n// optional chain\na?.[\"b\"]?.['c']?.d?.e?.[\"f\"]\na = {\n  [\"line1\\\n  line2\"]: true,\n};\na = {\n  [`line1\\\n  line2`]: true,\n};\na = {\n  [\"line1\\nline2\"]: true,\n};\na = {\n  [`line1\\nline2`]: true,\n};\na = {\n  [0]: 0,\n};",
+      "valid": false
+    },
+    {
+      "code": "export interface I {\n\t[\"p1\"]: number\n\n\tget [\"p2\"](): number\n\n\tset [\"p2\"](x: number)\n\n\t[\"m1\"](): void\n\n\t[\"\"]: number\n}\n\nexport type T = {\n\t[\"p1\"]: number\n\n\tget [\"p2\"](): number\n\n\tset [\"p2\"](x: number)\n\n\t[\"m1\"](): void\n\n\t[\"\"]: number\n}\n\nexport enum E {\n\t[\"A\"],\n\t[\"B\"],\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\na[\"\"];\na[\"b\" + 1];\na[\"c\" + \"d\"];\na[\"c\" + \"d\"];\na = {\n\t[\"c\" + \"d\"]: d\n};\na = {\n\t\"\": d\n};\na[\"00\"]\na[`0`]\na[\"a-b\"]\na[`a-b`]\na[`time range`];\na[`time${range}`];\nclass C { a = 0 }\nclass C { a(){} }\nclass C { get a(){} }\nclass C { set a(x){} }\na = {\n\t\"b\": d\n};\nclass C { \"a\" = 0 }\nclass C { \"a\"(){} }\nclass C { get \"a\"(){} }\nclass C { set \"a\"(x){} }\na = {\n\t\"__proto__\": null,\n}\n// Exception\na = {\n\t[\"__proto__\"]: null,\n}\na = {\n  [`line1\n  line2`]: true,\n};\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport interface I {\n\tp1: number\n\n\tget p2(): number\n\n\tset p2(x: number)\n\n\tm1(): void\n\n\t\"p3\": number\n\n\tget \"p4\"(): number\n\n\tset \"p4\"(x: number)\n\n\t\"m2\"(): void\n}\n\nexport type T = {\n\tp1: number\n\n\tget p2(): number\n\n\tset p2(x: number)\n\n\tm1(): void\n\n\t\"p3\": number\n\n\tget \"p4\"(): number\n\n\tset \"p4\"(x: number)\n\n\t\"m2\"(): void\n}\n",
+      "valid": true
+    }
+  ]
+}

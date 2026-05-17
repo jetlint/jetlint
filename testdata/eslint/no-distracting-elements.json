@@ -1,0 +1,11 @@
+{
+  "ruleId": "no-distracting-elements",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/noDistractingElements",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003cdiv\u003e\n    \u003cdiv /\u003e\n    \u003cmarquee /\u003e\n    \u003cblink /\u003e\n\u003c/div\u003e\n",
+      "valid": false
+    }
+  ]
+}

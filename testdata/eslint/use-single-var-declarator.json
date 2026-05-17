@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-single-var-declarator",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useSingleVarDeclarator",
+  "cases": [
+    {
+      "code": "var x, y\n\nfunction test() {\n\t// Comment\n\tlet foo, bar;\n}\n\nvar x = 1,\n\t// comment\n    y = 2\n\nlet\n\ta = 0,\n\tb = 1;\n\nlet // comment\n\tc = 0, // trailing comment\n\t/*0*/d;\n\nwhile(true) var v = 0, u = 1;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nlet a = 0;\nlet b = 1;\nlet c;\n\nfor(let x, y;;) {}\n\nfor(const v of vs) {}\n",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-collapsed-if",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useCollapsedIf",
+  "cases": [
+    {
+      "code": "/**\n * Safe fixes:\n */\n\nif (condition) {\n\tif (anotherCondition) {\n\t\t// ...\n\t}\n}\n\nif (condition) {\n\tif (anotherCondition) {\n\t\t// ...\n\t}\n} else {\n\t// ...\n}\n\nif (condition) // Comment\n\tif (anotherCondition)\n\t\tdoSomething();\n\n// Inner one is `JsBlockStatement`\nif (condition) if (anotherCondition) {\n\t// ...\n}\n\n// Outer one is `JsBlockStatement`\nif (condition) {\n\tif (anotherCondition) doSomething();\n}\n\n// No `JsBlockStatement`\nif (condition) if (anotherCondition) doSomething();\n\n// `JsEmptyStatement`\nif (condition) if (anotherCondition);\n\n// Nested\nif (a) {\n\tif (b) {\n\t\t// ...\n\t}\n} else if (c) {\n\tif (d) {\n\t\t// ...\n\t}\n}\n\n// Need parenthesis\nfunction* foo() {\n\tif (a || b)\n\t\tif (a ?? b)\n\t\t\tif (a ? b : c)\n\t\t\t\tif (a = b)\n\t\t\t\t\tif (a += b)\n\t\t\t\t\t\tif (a -= b)\n\t\t\t\t\t\t\tif (a \u0026\u0026= b)\n\t\t\t\t\t\t\t\tif (yield a)\n\t\t\t\t\t\t\t\t\tif (a, b);\n}\n\n// Should not add parenthesis\nasync function foo() {\n\tif (a)\n\t\tif (await a)\n\t\t\tif (a.b)\n\t\t\t\tif (a \u0026\u0026 b);\n}\n\n// Don't case parenthesis in outer test\nif (((a || b))) if (((c || d)));\n\n// Semicolon\nif (a)\n\tif (b) foo()\n\t;[].forEach(bar)\n\nif (a) {\n\tif (b) foo()\n}\n;[].forEach(bar)\n\n/**\n * Suggested fixes:\n */\n\nif (condition) { // Comment\n\tif (anotherCondition) {\n\t\t// ...\n\t}\n}\n\nif (condition) {\n\t// Comment\n\tif (anotherCondition) {\n\t\t// ...\n\t}\n}\n\nif (condition) {\n\tif (anotherCondition) {\n\t\t// ...\n\t} // Comment\n}\n\nif (condition) {\n\tif (anotherCondition) {\n\t\t// ...\n\t}\n\t// Comment\n}\n\nif (condition)\n\tif (anotherCondition) // Comment\n\t\tdoSomething();\n\n// Semicolon\nif (a) {\n\tif (b) foo()\n}\n[].forEach(bar)\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nif (condition \u0026\u0026 anotherCondition) {\n\t// ...\n}\n\nif (condition) {\n  if (anotherCondition) {\n\t\t// ...\n  }\n  doSomething();\n}\n\nif (condition) {\n\tif (anotherCondition) {\n\t\t// ...\n\t} else {\n\t\t// ...\n\t}\n}\n\nif (condition) {\n\tif (anotherCondition) {\n\t\t// ...\n\t}\n\tdoSomething();\n} else {\n\t// ...\n}\n\nif (condition) {\n\tanotherCondition ? c() : d()\n}\n\n// Covered by `useCollapsedElseIf`\nif (condition) {\n\t// ...\n} else {\n\tif (anotherCondition) {\n\t\t// ...\n\t}\n}\n\n// Ignore `if` with an `else` clause\nif (condition) { // Comment\n\tif (anotherCondition) {\n\t\t// ...\n\t}\n} else {\n\t// ...\n}\nif (condition) { // Comment\n\tif (anotherCondition) {\n\t\t// ...\n\t}\n} else if(condition) {\n\t// ...\n}\n",
+      "valid": true
+    }
+  ]
+}

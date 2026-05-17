@@ -1,0 +1,11 @@
+{
+  "ruleId": "no-catch-assign",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noCatchAssign",
+  "cases": [
+    {
+      "code": "try { } catch (e) { e; e = 10; }\ntry {\n\n} catch (error) {\n  error = 100;\n  {\n    error = 10;\n  }\n}",
+      "valid": false
+    }
+  ]
+}

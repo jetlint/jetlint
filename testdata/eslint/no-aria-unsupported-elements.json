@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-aria-unsupported-elements",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/noAriaUnsupportedElements",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n\t\u003cmeta charset=\"UTF-8\" aria-hidden=\"false\" /\u003e\n\t\u003cmeta charset=\"UTF-8\" role=\"meta\" /\u003e\n\t\u003chtml aria-required=\"true\" /\u003e\n\t\u003chtml role=\"html\"\u003e\u003c/html\u003e\n\t\u003cscript aria-label=\"script\"\u003e\u003c/script\u003e\n\t\u003cscript role=\"script\"\u003e\u003c/script\u003e\n\t\u003cstyle aria-labelledby\u003e\u003c/style\u003e\n\t\u003cstyle role=\"style\"\u003e\u003c/style\u003e\n\u003c/\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n\t\u003cmeta charset=\"UTF-8\" /\u003e\n\t\u003chtml maria=\"text\"\u003e\u003c/html\u003e\n\t\u003cscript\u003e\u003c/script\u003e\n\t\u003cstyle parole\u003e\u003c/style\u003e\n\u003c/\u003e;\n",
+      "valid": true
+    }
+  ]
+}
