@@ -72,6 +72,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nodupekeys"
 	"github.com/jetlint/jetlint/internal/rules/noduplicatecase"
 	"github.com/jetlint/jetlint/internal/rules/noduplicateimports"
+	"github.com/jetlint/jetlint/internal/rules/noduplicatejsxprops"
 	"github.com/jetlint/jetlint/internal/rules/noduplicateprivateclassmembers"
 	"github.com/jetlint/jetlint/internal/rules/noduplicatetypeconstituents"
 	"github.com/jetlint/jetlint/internal/rules/noempty"
@@ -752,6 +753,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nodupekeys.New(),
 		noduplicatecase.New(),
 		noduplicateimports.New(),
+		noduplicatejsxprops.New(),
 		noduplicateprivateclassmembers.New(),
 		noduplicatetypeconstituents.New(),
 		noforinarray.New(),
