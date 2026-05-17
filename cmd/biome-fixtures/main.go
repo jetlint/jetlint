@@ -34,6 +34,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -126,6 +127,51 @@ func toCamelCase(kebab string) string {
 		b.WriteString(p[1:])
 	}
 	return b.String()
+}
+
+// vueScriptOpenPattern matches the opening tag of a `<script>` or
+// `<script setup ...>` block. Captured group 1 is the attributes
+// (non-empty when the block uses `setup`).
+var vueScriptOpenPattern = regexp.MustCompile(`<script([^>]*)>`)
+
+var vueScriptClosePattern = regexp.MustCompile(`</script>`)
+
+// extractVueScript pulls the contents of the first `<script>` /
+// `<script setup>` block out of a Vue Single-File Component. When
+// the block uses `setup`, the returned text is prefixed with the
+// `/* @script-setup */` marker the noVueDuplicateKeys /
+// noVueReservedKeys rules look for to decide they're operating on
+// composition-API code. Returns ok=false when no script block is
+// present (e.g., template-only SFCs).
+func extractVueScript(body []byte) (string, bool) {
+	openMatch := vueScriptOpenPattern.FindSubmatchIndex(body)
+	if openMatch == nil {
+		return "", false
+	}
+	attrs := strings.TrimSpace(string(body[openMatch[2]:openMatch[3]]))
+	bodyStart := openMatch[1]
+	closeMatch := vueScriptClosePattern.FindIndex(body[bodyStart:])
+	if closeMatch == nil {
+		return "", false
+	}
+	script := string(body[bodyStart : bodyStart+closeMatch[0]])
+	script = strings.TrimLeft(script, "\n")
+	if isVueScriptSetup(attrs) {
+		return "/* @script-setup */\n" + script, true
+	}
+	return script, true
+}
+
+// isVueScriptSetup reports whether the attribute string from a
+// `<script ...>` opening tag contains the `setup` flag (with or
+// without `lang="ts"` neighbors).
+func isVueScriptSetup(attrs string) bool {
+	for _, field := range strings.Fields(attrs) {
+		if field == "setup" || strings.HasPrefix(field, "setup=") {
+			return true
+		}
+	}
+	return false
 }
 
 // classifyValidity reports whether biome's snapshot file for this
@@ -245,6 +291,19 @@ func extractRule(biomePath, outDir, ruleID, category string) error {
 			continue
 		}
 		code := string(body)
+		// Vue SFC files have multiple sections (<template>, <script>,
+		// <style>). The rule walks the script content as if it were
+		// a standalone .ts file, so extract just that section. When
+		// the script is `<script setup>`, prepend a `/* @script-setup */`
+		// marker so the rule's heuristic for composition-API
+		// detection fires.
+		if strings.HasSuffix(name, ".vue") {
+			c, ok := extractVueScript(body)
+			if !ok {
+				continue
+			}
+			code = c
+		}
 		if _, dup := seen[code]; dup {
 			continue
 		}
