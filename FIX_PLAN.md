@@ -22,6 +22,24 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-global-is-finite
+(suspicious)` (commit `f800aaab`, change `sztspwrq`). Package
+`internal/rules/noglobalisfinite/` already existed and its
+`EslintCompatibility` harness passed; this commit added the import +
+buildRules entry in `cli.go` (alphabetically between
+`noglobaldirnamefilename` and `noheadimportindocument`), the
+`CategorySuspicious` Metadata in `registry.go`, and the snapshot line
+in `registry_test.go`. Closed #470. `go test ./internal/rules/
+./internal/cli/ ./internal/rules/noglobalisfinite/` all green.
+Recovery note: the local bookmark had a divergent `rpxxuzns` (local
+`85bca96e` vs remote `9e6b3dcd` for #469 no-global-assign) inherited
+from the previous loop. Resolution: rebase the new change onto
+`feat/big-batch@origin`, then `jj bookmark forget feat/big-batch` +
+`jj bookmark track feat/big-batch@origin` to drop the local
+divergent copy, then move the bookmark forward. Lesson: avoid
+`--allow-backwards` (hook-blocked); forget+retrack is the clean
+recovery for divergent bookmark/change pairs._
+
 _2026-05-17: Loop landed `feat(rules): wire no-alert (suspicious)`
 (commit `c3ab766e`, change `lzsurksp`). Package `internal/rules/noalert/`
 already existed and its `EslintCompatibility` harness passed; this
@@ -155,7 +173,9 @@ tests pass):_
 - _#465 no-extra-non-null-assertion → `noextranonnullassertion` (LANDED 2026-05-17)_
 - _#467 no-focused-tests → `nofocusedtests` (LANDED 2026-05-17)_
 - _#468 no-function-assign → `nofunctionassign` (LANDED 2026-05-17)_
-- _#469/#470/#471 no-global-assign/-global-is-finite/-global-is-nan_
+- _#469 no-global-assign → `noglobalassign` (LANDED 2026-05-17, commit `9e6b3dcd`)_
+- _#470 no-global-is-finite → `noglobalisfinite` (LANDED 2026-05-17, commit `f800aaab`)_
+- _#471 no-global-is-nan → `noglobalisnan`_
 - _#472 no-head-import-in-document → `noheadimportindocument` (LANDED 2026-05-17)_
 - _#473 no-implicit-any-let → `noimplicitanylet`_
 - _#478 no-label-var → `nolabelvar`_
