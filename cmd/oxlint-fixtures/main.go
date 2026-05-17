@@ -44,6 +44,7 @@ func run(args []string) error {
 	fs := flag.NewFlagSet("oxlint-fixtures", flag.ContinueOnError)
 	oxcPath := fs.String("oxc", "", "path to oxc checkout (required)")
 	outDir := fs.String("out", "testdata/eslint", "directory to write JSON fixture files into")
+	plugin := fs.String("plugin", "eslint", "oxc plugin subdirectory under crates/oxc_linter/src/rules (e.g. eslint, unicorn, typescript)")
 	var rules multiFlag
 	fs.Var(&rules, "rule", "ESLint rule ID to extract (repeatable; required at least once)")
 	if err := fs.Parse(args); err != nil {
@@ -59,7 +60,7 @@ func run(args []string) error {
 		return fmt.Errorf("create out dir: %w", err)
 	}
 	for _, rule := range rules {
-		if err := extractRule(*oxcPath, *outDir, rule); err != nil {
+		if err := extractRule(*oxcPath, *outDir, *plugin, rule); err != nil {
 			return fmt.Errorf("rule %s: %w", rule, err)
 		}
 	}
@@ -90,13 +91,13 @@ type Case struct {
 	Settings map[string]any `json:"settings,omitempty"`
 }
 
-func extractRule(oxcPath, outDir, ruleID string) error {
+func extractRule(oxcPath, outDir, plugin, ruleID string) error {
 	snake := strings.ReplaceAll(ruleID, "-", "_")
 	// oxc stores most rules as `<rule>.rs`, but rules with multi-file
 	// implementations live in `<rule>/mod.rs`. Check both.
 	candidates := []string{
-		filepath.Join(oxcPath, "crates", "oxc_linter", "src", "rules", "eslint", snake+".rs"),
-		filepath.Join(oxcPath, "crates", "oxc_linter", "src", "rules", "eslint", snake, "mod.rs"),
+		filepath.Join(oxcPath, "crates", "oxc_linter", "src", "rules", plugin, snake+".rs"),
+		filepath.Join(oxcPath, "crates", "oxc_linter", "src", "rules", plugin, snake, "mod.rs"),
 	}
 	var (
 		src string

@@ -317,6 +317,7 @@ func additionalRulesSnapshot() []string {
 		"no-void-elements-with-children",
 		"no-void-type-return",
 		"no-with",
+		"no-instanceof-array",
 		"no-useless-default-assignment",
 		"non-nullable-type-assertion-style",
 		"only-throw-error",

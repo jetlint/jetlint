@@ -134,7 +134,12 @@ Landed this batch (prior loops):
 4. #504 no-useless-regex-backrefs
 5. #497 no-unassigned-variables
 6. #482 no-misused-new
-7. #476 no-instanceof-array
+7. ~~#476 no-instanceof-array~~ **landed 2026-05-17** — pure AST, 17/17 oxlint
+   unicorn cases pass. Flags `x instanceof Array` (right operand
+   identifier `Array` after stripping parens). Operator extracted via
+   source-span helper (`KindInstanceOfKeyword` not exposed). Required a
+   `--plugin` flag added to `cmd/oxlint-fixtures` so unicorn rules
+   extract.
 8. #475 no-import-cycles
 9. #464 no-exports-in-test
 10. #448 no-deprecated-imports

@@ -36,7 +36,7 @@ Terse, factual. Update via subagent when a new command or workflow is learned.
 
 ## Fixture regeneration
 
-- oxlint/eslint JSON fixtures: `go run ./cmd/oxlint-fixtures --oxc /tmp/oxc --out testdata/eslint --rule <id>` (clone oxc first: `git clone https://github.com/oxc-project/oxc /tmp/oxc`).
+- oxlint/eslint JSON fixtures: `go run ./cmd/oxlint-fixtures --oxc /tmp/oxc --out testdata/eslint --rule <id>` (clone oxc first: `git clone https://github.com/oxc-project/oxc /tmp/oxc`). Add `--plugin unicorn` (or `typescript`, etc.) for rules under `crates/oxc_linter/src/rules/<plugin>/` — default plugin is `eslint`.
 - Biome fixtures: see `./biome-fixtures` binary at repo root; ingestion scaffolding lives in `cmd/biome-fixtures`. Biome is cloned at `/tmp/biome`. Usage: `./biome-fixtures --biome /tmp/biome --out testdata/eslint --rule <kebab-id> --category <suspicious|complexity|style|...>`. Output lands at `testdata/eslint/<rule>.json` with a `biomeSHA` field for reproducibility. The kebab → camelCase conversion is direct (`no-confusing-void-type` → `noConfusingVoidType`), so rules biome names differently (e.g. `no-misused-new` lives as `noMisleadingInstantiator`) won't extract by their kebab id.
 
 ## Scripts

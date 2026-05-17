@@ -60,8 +60,9 @@ on 100%; the score is a baseline that improves as rules sharpen.
 | no-unused-expressions | 110/110 (100%) |
 | guard-for-in | 12/12 (100%) |
 | no-with | 12/12 (100%) |
+| no-instanceof-array | 17/17 (100%) |
 
-**Aggregate: 669/669 cases pass (100%)** across all option
+**Aggregate: 686/686 cases pass (100%)** across all option
 combinations the upstream fixtures exercise.
 
 The five rules with options (\`valid-typeof\`, \`use-isnan\`,

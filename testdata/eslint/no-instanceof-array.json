@@ -1,0 +1,75 @@
+{
+  "ruleId": "no-instanceof-array",
+  "oxcSHA": "625758ab25657c0fc13555c890aeca979be8ebdf",
+  "oxcSource": "crates/oxc_linter/src/rules/unicorn/no_instanceof_array.rs",
+  "cases": [
+    {
+      "code": "Array.isArray(arr)",
+      "valid": true
+    },
+    {
+      "code": "arr instanceof Object",
+      "valid": true
+    },
+    {
+      "code": "arr instanceof array",
+      "valid": true
+    },
+    {
+      "code": "a instanceof 'array'",
+      "valid": true
+    },
+    {
+      "code": "a instanceof ArrayA",
+      "valid": true
+    },
+    {
+      "code": "a.x[2] instanceof foo()",
+      "valid": true
+    },
+    {
+      "code": "Array.isArray([1,2,3]) === true",
+      "valid": true
+    },
+    {
+      "code": "\"arr instanceof Array\"",
+      "valid": true
+    },
+    {
+      "code": "arr instanceof Array",
+      "valid": false
+    },
+    {
+      "code": "[] instanceof Array",
+      "valid": false
+    },
+    {
+      "code": "[] instanceof (Array)",
+      "valid": false
+    },
+    {
+      "code": "[1,2,3] instanceof Array === true",
+      "valid": false
+    },
+    {
+      "code": "fun.call(1, 2, 3) instanceof Array",
+      "valid": false
+    },
+    {
+      "code": "obj.arr instanceof Array",
+      "valid": false
+    },
+    {
+      "code": "foo.bar[2] instanceof Array",
+      "valid": false
+    },
+    {
+      "code": "(0, array) instanceof Array",
+      "valid": false
+    },
+    {
+      "code": "function foo(){return [] instanceof Array}",
+      "valid": false
+    }
+  ]
+}
