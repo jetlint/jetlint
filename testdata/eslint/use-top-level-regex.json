@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-top-level-regex",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/performance/useTopLevelRegex",
+  "cases": [
+    {
+      "code": "function foo(someString) {\n\treturn /[a-Z]*/.test(someString)\n}\n\nfunction foo(someString) {\n\tconst r = /[a-Z]*/;\n\treturn r.test(someString)\n}\n\nconst foo = (someString) =\u003e {\n\treturn /[a-Z]*/.test(someString)\n}\n\nclass Foo {\n\tconstructor() {\n\t\tthis.regex = /[a-Z]*/;\n\t}\n}\n\nclass Foo {\n\tregex = /[a-Z]*/;\n}\n\nclass Foo {\n\tget regex() {\n\t\treturn /[a-Z]*/;\n\t}\n}\n\nclass Foo {\n\tset apply(s) {\n\t\tthis.value = /[a-Z]*/.test(s);\n\t}\n}\n\nconst foo = {\n\tregex() {\n\t\treturn /[a-Z]*/;\n\t}\n}\n\nconst foo = {\n\tget regex() {\n\t\treturn /[a-Z]*/;\n\t}\n}\n\nconst foo = {\n\tset apply(s) {\n\t\tthis.value = /[a-Z]*/.test(s);\n\t}\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n/[a-Z]*/.test(\"foo\");\n\nconst REGEX = /[a-Z]*/;\n\nfunction foo(someString) {\n\treturn REGEX.test(someString)\n}\n\nconst foo = {\n\tregex: /[a-Z]*/\n}\n\nclass Foo {\n\tstatic regex = /[a-Z]*/;\n}\n\nfunction foo(str) {\n\treturn /[a-Z]*/g.exec(str)\n}\n\nfunction foo(str) {\n\treturn /[a-Z]*/y.exec(str)\n}\n",
+      "valid": true
+    }
+  ]
+}

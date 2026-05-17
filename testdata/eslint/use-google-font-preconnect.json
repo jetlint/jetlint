@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-google-font-preconnect",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/performance/useGoogleFontPreconnect",
+  "cases": [
+    {
+      "code": "\u003c\u003e\n\t\u003clink href=\"https://fonts.gstatic.com\"/\u003e\n\t\u003clink rel=\"preload\" href=\"https://fonts.gstatic.com\"/\u003e\n\t\u003clink\n\t\trel=\"preload\"\n\t\thref=\"https://fonts.gstatic.com\"\n\t/\u003e\n\t\u003clink\n\t\thref=\"https://fonts.gstatic.com\"\n\t/\u003e\n\u003c/\u003e",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n\t\u003clink /\u003e\n\t\u003clink href /\u003e\n\t\u003clink rel=\"preconnect\" href=\"https://fonts.gstatic.com\" /\u003e\n\u003c/\u003e",
+      "valid": true
+    }
+  ]
+}

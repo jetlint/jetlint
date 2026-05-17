@@ -1,0 +1,19 @@
+{
+  "ruleId": "no-re-export-all",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/performance/noReExportAll",
+  "cases": [
+    {
+      "code": "export * from 'foo';\nexport * as foo from 'foo';",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport { foo } from \"foo\";",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport type * from 'foo';\nexport type * as foo from 'foo';",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "ruleId": "no-accumulating-spread",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/performance/noAccumulatingSpread",
+  "cases": [
+    {
+      "code": "foo.reduce((acc, bar) =\u003e [...acc, bar], [])",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight((acc, bar) =\u003e [...acc, bar], [])",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce((acc, bar) =\u003e {return [...acc, bar];}, [])",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight((acc, bar) =\u003e {return [...acc, bar];}, [])",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce((acc, bar) =\u003e [...acc, ...bar], [])",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight((acc, bar) =\u003e [...acc, ...bar], [])",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce((acc, bar) =\u003e {return [...acc, ...bar];}, [])",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight((acc, bar) =\u003e {return [...acc, ...bar];}, [])",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce((acc, bar) =\u003e ({...acc, [bar.key]: bar.value}), {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight((acc, bar) =\u003e ({...acc, [bar.key]: bar.value}), {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce((acc, bar) =\u003e {return {...acc, [bar.key]: bar.value};}, {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight((acc, bar) =\u003e {return {...acc, [bar.key]: bar.value};}, {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce((acc, bar) =\u003e ({...acc, ...bar}), {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight((acc, bar) =\u003e ({...acc, ...bar}), {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce((acc, bar) =\u003e {return {...acc, ...bar};}, {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight((acc, bar) =\u003e {return {...acc, ...bar};}, {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce((acc, bar) =\u003e Object.assign({}, acc, bar), [])",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight((acc, bar) =\u003e Object.assign({}, acc, bar), [])",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce((acc, bar) =\u003e { return Object.assign([], acc, bar) }, [])",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight((acc, bar) =\u003e { return Object.assign([], acc, bar) }, [])",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce((acc, bar) =\u003e Object.assign([], acc, bar), {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight((acc, bar) =\u003e Object.assign([], acc, bar), {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce((acc, bar) =\u003e { return Object.assign([], acc, bar) }, {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight((acc, bar) =\u003e { return Object.assign([], acc, bar) }, {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce((acc, bar) =\u003e { return Object.assign(new Array(1), acc, bar) }, [])",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight((acc, bar) =\u003e { return Object.assign(new Array(1), acc, bar) }, [])",
+      "valid": false
+    },
+    {
+      "code": "foo.reduce((acc, bar) =\u003e Object.assign(new Array(1), acc, bar), {})",
+      "valid": false
+    },
+    {
+      "code": "foo.reduceRight((acc, bar) =\u003e Object.assign(new Array(1), acc, bar), {})",
+      "valid": false
+    }
+  ]
+}

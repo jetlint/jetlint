@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-dynamic-namespace-import-access",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/performance/noDynamicNamespaceImportAccess",
+  "cases": [
+    {
+      "code": "import * as foo from \"foo\"\n\nfoo[\"bar\"]\nfoo[1]\nconst key = \"bar\"\nfoo[key]",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport * as foo from \"foo\"\n\nfoo.bar\nconst key = \"bar\"\nfoo[key] = \"bar\"",
+      "valid": true
+    }
+  ]
+}

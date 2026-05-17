@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-namespace-import",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/performance/noNamespaceImport",
+  "cases": [
+    {
+      "code": "import * as foo from \"foo\"\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport { foo } from \"foo\"\nimport type { bar } from \"bar\"\nimport type * as baz from \"baz\"\n",
+      "valid": true
+    }
+  ]
+}
