@@ -124,27 +124,43 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 14 remaining (top-leverage first)
+### #2 suspicious — 12 remaining (top-leverage first)
 
 1. #488 no-redeclare — **needs scope/binding analysis**; previously
    skipped on `feat/big-batch` (commit `wip(rules): more +6 (...,
    redeclare-skip)`). Defer until scope-symbol helpers land.
-2. #502 no-unused-expressions
-3. #428 guard-for-in
-4. #518 use-iterable-callback-return
-5. #507 prefer-namespace-keyword
-6. #504 no-useless-regex-backrefs
-7. #497 no-unassigned-variables
-8. #482 no-misused-new
-9. #476 no-instanceof-array
-10. #475 no-import-cycles
-11. #464 no-exports-in-test
-12. #448 no-deprecated-imports
-13. #441 no-confusing-void-type
-14. #425 adjacent-overload-signatures
-15. (ambiguous) #512 `strict` — needs manual title triage
+2. #518 use-iterable-callback-return
+3. #507 prefer-namespace-keyword
+4. #504 no-useless-regex-backrefs
+5. #497 no-unassigned-variables
+6. #482 no-misused-new
+7. #476 no-instanceof-array
+8. #475 no-import-cycles
+9. #464 no-exports-in-test
+10. #448 no-deprecated-imports
+11. #441 no-confusing-void-type
+12. #425 adjacent-overload-signatures
+13. (ambiguous) #512 `strict` — needs manual title triage
 
 _Landed 2026-05-17 in this batch:_
+- #428 `guard-for-in` — `internal/rules/guardforin/`, 12/12 oxlint cases
+  pass. Pure AST: reports a `for-in` loop whose body is not guarded.
+  Accepts EmptyStatement, IfStatement (direct), empty Block, Block with
+  exactly one IfStatement, and Block whose first statement is
+  `if (...) continue;` (raw or `{ continue; }`). No options.
+- #502 `no-unused-expressions` — `internal/rules/nounusedexpressions/`,
+  110/110 oxlint cases pass. Flags ExpressionStatements whose expression
+  has no observable side effect (literals, identifiers, member access,
+  comparisons, untagged templates). Recognises TS wrappers (`as`,
+  `satisfies`, `<T>e`, `e!`, `e<T>`), unwraps Parenthesized and
+  NonNullExpression, and treats Call/New/Await/Yield/Update/Delete/Void
+  as side-effecting. Skips directive prologues in SourceFile, function
+  bodies, and ModuleBlock — but not class static blocks, IfStatement
+  bodies, or other free-standing blocks (matches oxlint). Options:
+  allowShortCircuit, allowTernary, allowTaggedTemplates, enforceForJSX.
+  Required wrapper bump: typescript-go v0.2.8 exposes KindJsxElement,
+  KindJsxFragment, KindClassStaticBlockDeclaration, KindMetaProperty
+  (commit cfbb0648a on jetlint/typescript-go).
 - #426 `default-case-last` — `internal/rules/defaultcaselast/`, 37/37
   oxlint cases pass. Pure AST: reports any non-last `default` clause
   in a `switch` statement. No options.

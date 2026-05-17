@@ -1,0 +1,55 @@
+{
+  "ruleId": "guard-for-in",
+  "oxcSHA": "625758ab25657c0fc13555c890aeca979be8ebdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/guard_for_in.rs",
+  "cases": [
+    {
+      "code": "for (var x in o);",
+      "valid": true
+    },
+    {
+      "code": "for (var x in o) {}",
+      "valid": true
+    },
+    {
+      "code": "for (var x in o) if (x) f();",
+      "valid": true
+    },
+    {
+      "code": "for (var x in o) { if (x) { f(); } }",
+      "valid": true
+    },
+    {
+      "code": "for (var x in o) { if (x) continue; f(); }",
+      "valid": true
+    },
+    {
+      "code": "for (var x in o) { if (x) { continue; } f(); }",
+      "valid": true
+    },
+    {
+      "code": "for (var x in o) { if (x) { f(); continue; } g(); }",
+      "valid": false
+    },
+    {
+      "code": "for (var x in o) { if (x) { continue; f(); } g(); }",
+      "valid": false
+    },
+    {
+      "code": "for (var x in o) { if (x) { f(); } g(); }",
+      "valid": false
+    },
+    {
+      "code": "for (var x in o) { if (x) f(); g(); }",
+      "valid": false
+    },
+    {
+      "code": "for (var x in o) { foo() }",
+      "valid": false
+    },
+    {
+      "code": "for (var x in o) foo();",
+      "valid": false
+    }
+  ]
+}

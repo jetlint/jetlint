@@ -36,6 +36,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/dotnotation"
 	"github.com/jetlint/jetlint/internal/rules/fordirection"
 	"github.com/jetlint/jetlint/internal/rules/getterreturn"
+	"github.com/jetlint/jetlint/internal/rules/guardforin"
 	"github.com/jetlint/jetlint/internal/rules/namingconvention"
 	"github.com/jetlint/jetlint/internal/rules/noarraydelete"
 	"github.com/jetlint/jetlint/internal/rules/noasyncpromiseexecutor"
@@ -140,6 +141,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounsafereturn"
 	"github.com/jetlint/jetlint/internal/rules/nounsafetypeassertion"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeunaryminus"
+	"github.com/jetlint/jetlint/internal/rules/nounusedexpressions"
 	"github.com/jetlint/jetlint/internal/rules/nounusedfunctionparameters"
 	"github.com/jetlint/jetlint/internal/rules/nounusedimports"
 	"github.com/jetlint/jetlint/internal/rules/nounusedlabels"
@@ -655,6 +657,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		dotnotation.New(),
 		fordirection.New(),
 		getterreturn.New(),
+		guardforin.New(),
 		namingconvention.New(),
 		noarraydelete.New(),
 		noasyncpromiseexecutor.New(),
@@ -759,6 +762,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nounsafetypeassertion.New(),
 		nounsafeunaryminus.New(),
 		nounmodifiedloopcondition.New(),
+		nounusedexpressions.New(),
 		nounusedfunctionparameters.New(),
 		nounusedimports.New(),
 		nounusedlabels.New(),

@@ -57,12 +57,14 @@ on 100%; the score is a baseline that improves as rules sharpen.
 | no-self-assign | 92/92 (100%) |
 | no-empty | 34/34 (100%) |
 | default-case-last | 37/37 (100%) |
+| no-unused-expressions | 110/110 (100%) |
+| guard-for-in | 12/12 (100%) |
 
-**Aggregate: 535/535 cases pass (100%)** across all option
+**Aggregate: 657/657 cases pass (100%)** across all option
 combinations the upstream fixtures exercise.
 
-The four rules with options (\`valid-typeof\`, \`use-isnan\`,
-\`no-self-assign\`, \`no-empty\`) expose the standard \`Options\` /
+The five rules with options (\`valid-typeof\`, \`use-isnan\`,
+\`no-self-assign\`, \`no-empty\`, \`no-unused-expressions\`) expose the standard \`Options\` /
 \`DefaultOptions\` / \`OptionsFromJSON\` / \`NewWithOptions\` surface
 so user-supplied config in \`.jetlintrc.json\` is plumbed through.
 
