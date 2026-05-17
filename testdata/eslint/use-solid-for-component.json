@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-solid-for-component",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/performance/useSolidForComponent",
+  "cases": [
+    {
+      "code": "let Component = (props) =\u003e \u003col\u003e{props.data.map(d =\u003e \u003cli\u003e{d.text}\u003c/li\u003e)}\u003c/ol\u003e;\n\nlet Component = (props) =\u003e \u003c\u003e{props.data.map(d =\u003e \u003cli\u003e{d.text}\u003c/li\u003e)}\u003c/\u003e;\n\nlet Component = (props) =\u003e \u003col\u003e{props.data.map(d =\u003e \u003cli key={d.id}\u003e{d.text}\u003c/li\u003e)}\u003c/ol\u003e;\n\nfunction Component(props) {\n  return \u003col\u003e{props.data.map(d =\u003e \u003cli\u003e{d.text}\u003c/li\u003e)}\u003c/ol\u003e;\n}\n\nfunction Component(props) {\n  return \u003col\u003e{props.data?.map(d =\u003e \u003cli\u003e{d.text}\u003c/li\u003e)}\u003c/ol\u003e;\n}\n\nlet Component = (props) =\u003e \u003col\u003e{props.data.map(() =\u003e \u003cli /\u003e)}\u003c/ol\u003e;\n\nlet Component = (props) =\u003e \u003col\u003e{props.data.map((...args) =\u003e \u003cli\u003e{args[0].text}\u003c/li\u003e)}\u003c/ol\u003e;",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nlet Component = (props) =\u003e \u003col\u003e\u003cFor each={props.data}\u003e{d =\u003e \u003cli\u003e{d.text}\u003c/li\u003e}\u003c/For\u003e\u003c/ol\u003e;\n\nlet abc = x.map(y =\u003e y + z);\n\nlet Component = (props) =\u003e {\n  let abc = x.map(y =\u003e y + z);\n  return \u003cdiv\u003eHello, world!\u003c/div\u003e;\n}",
+      "valid": true
+    }
+  ]
+}

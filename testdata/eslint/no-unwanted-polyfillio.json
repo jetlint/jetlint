@@ -1,0 +1,19 @@
+{
+  "ruleId": "no-unwanted-polyfillio",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/performance/noUnwantedPolyfillio",
+  "cases": [
+    {
+      "code": "import NextScript from 'next/script'\n\nexport function MyApp({ Component, pageProps }) {\n  return (\n    \u003cdiv\u003e\n      \u003cComponent {...pageProps} /\u003e\n      \u003cNextScript src='https://polyfill.io/v3/polyfill.min.js?features=Array.prototype.copyWithin' /\u003e\n    \u003c/div\u003e\n  );\n}\n",
+      "valid": false
+    },
+    {
+      "code": "import {Head} from 'next/document';\n\nexport class Blah extends Head {\n    render() {\n      return (\n        \u003cdiv\u003e\n          \u003ch1\u003eHello title\u003c/h1\u003e\n          \u003cscript src='https://polyfill.io/v3/polyfill.min.js?features=WeakSet%2CPromise%2CPromise.prototype.finally%2Ces2015%2Ces5%2Ces6'\u003e\u003c/script\u003e\n          \u003cscript src='https://polyfill.io/v3/polyfill.min.js?features=Array.prototype.copyWithin'\u003e\u003c/script\u003e\n          \u003cscript src='https://polyfill.io/v3/polyfill.min.js?features=Object.fromEntries'\u003e\u003c/script\u003e\n          \u003cscript src='https://polyfill.io/v3/polyfill.min.js?features=AbortController,Object.fromEntries'\u003e\u003c/script\u003e\n        \u003c/div\u003e\n      );\n    }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport Script from 'next/script';\n\nexport function MyApp({ Component, pageProps }) {\n  return (\n    \u003cdiv\u003e\n        \u003cComponent {...pageProps} /\u003e\n        \u003cscript src='https://polyfill.io/v3/polyfill.min.js?features=AbortController'\u003e\u003c/script\u003e\n        \u003cscript src='https://polyfill.io/v3/polyfill.min.js?features=IntersectionObserver'\u003e\u003c/script\u003e\n        \u003cScript src='https://polyfill.io/v3/polyfill.min.js?features=IntersectionObserver' /\u003e\n        \u003cScript src='https://polyfill-fastly.io/v3/polyfill.min.js?features=IntersectionObserver' /\u003e\n    \u003c/div\u003e\n  );\n}\n",
+      "valid": true
+    }
+  ]
+}

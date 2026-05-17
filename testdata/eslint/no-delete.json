@@ -1,0 +1,83 @@
+{
+  "ruleId": "no-delete",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/performance/noDelete",
+  "cases": [
+    {
+      "code": "delete a.b;",
+      "valid": false
+    },
+    {
+      "code": "delete a?.b;",
+      "valid": false
+    },
+    {
+      "code": "delete a['b'];",
+      "valid": false
+    },
+    {
+      "code": "delete a?.['b'];",
+      "valid": false
+    },
+    {
+      "code": "delete a.b.c;",
+      "valid": false
+    },
+    {
+      "code": "delete a.b?.c;",
+      "valid": false
+    },
+    {
+      "code": "delete a.b['c'];",
+      "valid": false
+    },
+    {
+      "code": "delete a.b?.['c'];",
+      "valid": false
+    },
+    {
+      "code": "delete a?.b.c;",
+      "valid": false
+    },
+    {
+      "code": "delete a?.b?.c;",
+      "valid": false
+    },
+    {
+      "code": "delete a?.b['c'];",
+      "valid": false
+    },
+    {
+      "code": "delete a?.b?.['c'];",
+      "valid": false
+    },
+    {
+      "code": "delete a[x];",
+      "valid": true
+    },
+    {
+      "code": "delete a['k' + 'ey'];",
+      "valid": true
+    },
+    {
+      "code": "delete a.b[x];",
+      "valid": true
+    },
+    {
+      "code": "delete x",
+      "valid": true
+    },
+    {
+      "code": "delete f()",
+      "valid": true
+    },
+    {
+      "code": "delete el.dataset.something",
+      "valid": true
+    },
+    {
+      "code": "delete process.env.FOO",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "ruleId": "no-global-eval",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/security/noGlobalEval",
+  "cases": [
+    {
+      "code": "var foo = \"foo\";\neval(foo);\n\neval(\"foo\");\n\n(0, eval)(\"foo\");\n\n(0, window.eval)(\"foo\");\n\n(0, window[\"eval\"])(\"foo\");\n\nvar EVAL = eval;\nEVAL(\"foo\");\n\nvar EVAL = this.eval;\nEVAL(\"foo\");\n\n(\"use strict\");\nvar EVAL = this.eval;\nEVAL(\"foo\");\n\n() =\u003e {\n\tthis.eval(\"foo\");\n};\n\n() =\u003e {\n\t\"use strict\";\n\tthis.eval(\"foo\");\n};\n\n(\"use strict\");\n() =\u003e {\n\tthis.eval(\"foo\");\n};\n\n() =\u003e {\n\t\"use strict\";\n\t() =\u003e {\n\t\tthis.eval(\"foo\");\n\t};\n};\n\n(function (exe) {\n\texe(\"foo\");\n})(eval);\n\nwindow.eval(\"foo\");\n\nwindow.window.eval(\"foo\");\n\nwindow.window[\"eval\"](\"foo\");\n\nthis.eval(\"foo\");\n\n(\"use strict\");\nthis.eval(\"foo\");\n\nfunction foo() {\n\tthis.eval(\"foo\");\n}\n\nvar EVAL = globalThis.eval;\nEVAL(\"foo\");\n\nglobalThis.eval(\"foo\");\n\nglobalThis.globalThis.eval(\"foo\");\n\nglobalThis.globalThis[\"eval\"](\"foo\");\n\n(0, globalThis.eval)(\"foo\");\n\n(0, globalThis[\"eval\"])(\"foo\");\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nvar foo = \"foo\";\nEval(foo);\n\nsetTimeout(\"foo\");\n\nsetInterval(\"foo\");\n\nwindow.setTimeout(\"foo\");\n\nwindow.setInterval(\"foo\");\n\nwindow.noeval(\"foo\");\n\nglobal.noeval(\"foo\");\n\nglobalThis.noeval(\"foo\");\n\nthis.noeval(\"foo\");\n\nfunction foo() {\n\t\"use strict\";\n\tthis.eval(\"foo\");\n}\n\n(\"use strict\");\nthis.eval(\"foo\");\n\nfunction foo() {\n\tthis.eval(\"foo\");\n}\n\nvar obj = {\n\tfoo: function () {\n\t\tthis.eval(\"foo\");\n\t},\n};\n\nvar obj = {};\nobj.foo = function () {\n\tthis.eval(\"foo\");\n};\n\n() =\u003e {\n\tthis.eval(\"foo\");\n};\n\nfunction f() {\n\t\"use strict\";\n\t() =\u003e {\n\t\tthis.eval(\"foo\");\n\t};\n}\n\n(function f() {\n\t\"use strict\";\n\t() =\u003e {\n\t\tthis.eval(\"foo\");\n\t};\n});\n\nclass A {\n\tfoo() {\n\t\tthis.eval(\"foo\");\n\t}\n}\n\nclass A {\n\tstatic foo() {\n\t\tthis.eval();\n\t}\n}\n\nclass A {\n\tfield = this.eval();\n}\n\nclass A {\n\tfield = () =\u003e this.eval();\n}\n\nclass A {\n\tstatic {\n\t\tthis.eval();\n\t}\n}\n\nArray.findLast(\n\tfunction (x) {\n\t\treturn this.eval.includes(x);\n\t},\n\t{ eval: [\"foo\", \"bar\"] },\n);\n\ncallbacks.findLastIndex(function (cb) {\n\treturn cb(this.eval);\n}, this);\n\n[\"1+1\"].flatMap(function (str) {\n\treturn this.eval(str);\n}, new Evaluator());\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction foo() {\n\tvar eval = \"foo\";\n\twindow[eval](\"foo\");\n}\n\nfunction foo() {\n\tvar eval = \"foo\";\n\tglobal[eval](\"foo\");\n}\n\nfunction foo() {\n\tvar eval = \"foo\";\n\tglobalThis[eval](\"foo\");\n}\n\nfunction foo(eval) {\n\teval(\"var a = 0\");\n}\n",
+      "valid": true
+    }
+  ]
+}

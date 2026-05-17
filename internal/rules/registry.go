@@ -210,6 +210,11 @@ var All = []Metadata{
 
 	// security — injection, eval, prototype pollution, unsafe deserialization.
 	{ID: "no-implied-eval", Category: CategorySecurity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-blank-target", Category: CategorySecurity, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-dangerously-set-inner-html", Category: CategorySecurity, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-dangerously-set-inner-html-with-children", Category: CategorySecurity, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-global-eval", Category: CategorySecurity, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-secrets", Category: CategorySecurity, Fix: FixNone, Stability: StabilityStable},
 
 	// performance — known-slow patterns with a faster equivalent.
 	{ID: "no-await-in-loop", Category: CategoryPerformance, Fix: FixNone, Stability: StabilityStable},
@@ -217,6 +222,17 @@ var All = []Metadata{
 	{ID: "prefer-includes", Category: CategoryPerformance, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "prefer-regexp-exec", Category: CategoryPerformance, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "prefer-string-starts-ends-with", Category: CategoryPerformance, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-accumulating-spread", Category: CategoryPerformance, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-barrel-file", Category: CategoryPerformance, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-delete", Category: CategoryPerformance, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-dynamic-namespace-import-access", Category: CategoryPerformance, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-img-element", Category: CategoryPerformance, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-namespace-import", Category: CategoryPerformance, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-re-export-all", Category: CategoryPerformance, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-unwanted-polyfillio", Category: CategoryPerformance, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-google-font-preconnect", Category: CategoryPerformance, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-solid-for-component", Category: CategoryPerformance, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-top-level-regex", Category: CategoryPerformance, Fix: FixNone, Stability: StabilityStable},
 
 	// complexity — needless complication with a simpler equivalent.
 	{ID: "no-duplicate-type-constituents", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},

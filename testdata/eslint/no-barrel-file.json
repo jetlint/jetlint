@@ -1,0 +1,35 @@
+{
+  "ruleId": "no-barrel-file",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/performance/noBarrelFile",
+  "cases": [
+    {
+      "code": "export { foo, type Bar } from \"foo\";",
+      "valid": false
+    },
+    {
+      "code": "export { default as module2 } from \"./module2\";",
+      "valid": false
+    },
+    {
+      "code": "export { module as module1 } from \"./module1\";\n",
+      "valid": false
+    },
+    {
+      "code": "export { baz, qux } from \"foobar\";\n",
+      "valid": false
+    },
+    {
+      "code": "export * as bar from \"foo\";\n",
+      "valid": false
+    },
+    {
+      "code": "export * from \"foo\";\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport type * from \"foo\";\nexport type * as bar from \"foo\";\nexport type { foo } from \"foo\";\nexport type { baz, qux } from \"foobar\";\nexport type { moduleType as moduleType1 } from \"module1\";\nexport type { default as moduleType2 } from \"module2\";\n\nexport const A = 0;\n",
+      "valid": true
+    }
+  ]
+}

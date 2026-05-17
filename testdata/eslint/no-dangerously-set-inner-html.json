@@ -1,0 +1,23 @@
+{
+  "ruleId": "no-dangerously-set-inner-html",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/security/noDangerouslySetInnerHtml",
+  "cases": [
+    {
+      "code": "import React, { createElement } from \"react\";\n\nReact.createElement('div', {\n    dangerouslySetInnerHTML: { __html: 'child' }\n});\n\ncreateElement('div', {\n    dangerouslySetInnerHTML: { __html: 'child' }\n});",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport React, { createElement } from \"noReact\";\n\nReact.createElement('div', {\n    dangerouslySetInnerHTML: { __html: 'child' }\n});\n\ncreateElement('div', {\n    dangerouslySetInnerHTML: { __html: 'child' }\n});",
+      "valid": true
+    },
+    {
+      "code": "// invalid\nlet a = \u003cdiv dangerouslySetInnerHTML={{ __html: 'child' }} /\u003e\n\n// valid\nlet b = \u003cdiv foo=\"\" /\u003e",
+      "valid": false
+    },
+    {
+      "code": "React.createElement('div', {\n    dangerouslySetInnerHTML: { __html: 'child' }\n});\n",
+      "valid": false
+    }
+  ]
+}
