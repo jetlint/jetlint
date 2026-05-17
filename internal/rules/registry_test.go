@@ -310,6 +310,7 @@ func additionalRulesSnapshot() []string {
 		"no-unnecessary-type-parameters",
 		"no-unsafe-argument",
 		"no-unsafe-call",
+		"no-unsafe-declaration-merging",
 		"no-unsafe-enum-comparison",
 		"no-unsafe-finally",
 		"no-unsafe-member-access",

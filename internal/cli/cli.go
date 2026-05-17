@@ -164,6 +164,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounsafeargument"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeassignment"
 	"github.com/jetlint/jetlint/internal/rules/nounsafecall"
+	"github.com/jetlint/jetlint/internal/rules/nounsafedeclarationmerging"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeenumcomparison"
 	"github.com/jetlint/jetlint/internal/rules/nounsafefinally"
 	"github.com/jetlint/jetlint/internal/rules/nounsafememberaccess"
@@ -828,6 +829,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nounnecessarytypeparameters.New(),
 		nounsafeargument.New(),
 		nounsafecall.New(),
+		nounsafedeclarationmerging.New(),
 		nounsafeenumcomparison.New(),
 		nounsafememberaccess.New(),
 		nounsafenegation.New(),

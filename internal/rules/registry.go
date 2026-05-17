@@ -201,6 +201,7 @@ var All = []Metadata{
 	{ID: "no-unsafe-argument", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-assignment", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-call", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-unsafe-declaration-merging", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-enum-comparison", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-member-access", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-finally", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
