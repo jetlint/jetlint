@@ -156,7 +156,7 @@ tests pass):_
 - _#467 no-focused-tests → `nofocusedtests` (LANDED 2026-05-17)_
 - _#468 no-function-assign → `nofunctionassign` (LANDED 2026-05-17)_
 - _#469/#470/#471 no-global-assign/-global-is-finite/-global-is-nan_
-- _#472 no-head-import-in-document → `noheadimportindocument`_
+- _#472 no-head-import-in-document → `noheadimportindocument` (LANDED 2026-05-17)_
 - _#473 no-implicit-any-let → `noimplicitanylet`_
 - _#478 no-label-var → `nolabelvar`_
 - _#480/#481 no-misplaced-assertion/-misrefactored-shorthand-assign_
