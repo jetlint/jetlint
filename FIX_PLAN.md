@@ -194,7 +194,7 @@ tests pass):_
 - _#484 no-octal-escape → `nooctalescape` (LANDED 2026-05-17)_
 - _#486/#487 no-react-forward-ref/-react-specific-props_
 - _#490 no-shadow-restricted-names → `noshadowrestrictednames` (LANDED 2026-05-17, commit `62791e66`)_
-- _#491 no-skipped-tests → `noskippedtests`_
+- _#491 no-skipped-tests → `noskippedtests` (LANDED 2026-05-17, commit `cce0597b`)_
 - _#493 no-suspicious-semicolon-in-jsx → `nosuspicioussemicoloninjsx`_
 - _#495/#496 no-then-property/-ts-ignore_
 - _#499 no-unsafe-declaration-merging → `nounsafedeclarationmerging`_
