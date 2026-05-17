@@ -318,6 +318,7 @@ func additionalRulesSnapshot() []string {
 		"no-void-type-return",
 		"no-with",
 		"no-instanceof-array",
+		"no-confusing-void-type",
 		"prefer-namespace-keyword",
 		"use-iterable-callback-return",
 		"no-useless-default-assignment",

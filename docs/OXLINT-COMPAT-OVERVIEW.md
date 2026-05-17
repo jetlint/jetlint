@@ -63,8 +63,9 @@ on 100%; the score is a baseline that improves as rules sharpen.
 | no-instanceof-array | 17/17 (100%) |
 | prefer-namespace-keyword | 10/10 (100%) |
 | use-iterable-callback-return (biome) | 2/2 (100%) |
+| no-confusing-void-type (biome) | 2/2 (100%) |
 
-**Aggregate: 698/698 cases pass (100%)** across all option
+**Aggregate: 700/700 cases pass (100%)** across all option
 combinations the upstream fixtures exercise.
 
 The five rules with options (\`valid-typeof\`, \`use-isnan\`,

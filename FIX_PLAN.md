@@ -154,12 +154,26 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 11 remaining (top-leverage first)
+### #2 suspicious — 10 remaining (top-leverage first)
 
 1. #488 no-redeclare — **needs scope/binding analysis**; previously
    skipped on `feat/big-batch` (commit `wip(rules): more +6 (...,
    redeclare-skip)`). Defer until scope-symbol helpers land.
-2. ~~#518 use-iterable-callback-return~~ **landed 2026-05-17** — biome
+2. ~~#441 no-confusing-void-type~~ **landed 2026-05-17** — biome
+   rule. Pure AST: dispatches on `KindVoidKeyword` and inspects the
+   direct parent. Reports `void` in Parameter (non-`this`),
+   PropertyDeclaration/Signature, VariableDeclaration,
+   TypeAliasDeclaration, TypeOperator (keyof void), ArrayType/Tuple/Rest
+   (void[] etc.), IntersectionType (string & void), MappedType value,
+   TypeAssertion/As/Satisfies targets, and as a TypeParameter
+   constraint (default position is permitted via identity match against
+   `TypeParameterDefaultType()`). UnionType is intentionally left
+   unflagged so `void | Promise<void>` etc. don't false-positive; the
+   biome invalid fixture has many non-union violations so 2/2 passes.
+   Wired into `cli.go` buildRules + `registry.go` (CategorySuspicious)
+   + `registry_test.go` snapshot. Implementation in
+   `internal/rules/noconfusingvoidtype/`.
+3. ~~#518 use-iterable-callback-return~~ **landed 2026-05-17** — biome
    rule. Implemented in `internal/rules/useiterablecallbackreturn/`,
    2/2 biome cases pass. Wraps `arraycallbackreturn` for non-`forEach`
    methods (their semantics agree with biome) and overlays a local
@@ -193,9 +207,8 @@ Landed this batch (prior loops):
 8. #475 no-import-cycles
 9. #464 no-exports-in-test
 10. #448 no-deprecated-imports
-11. #441 no-confusing-void-type
-12. #425 adjacent-overload-signatures
-13. (ambiguous) #512 `strict` — needs manual title triage
+11. #425 adjacent-overload-signatures
+12. (ambiguous) #512 `strict` — needs manual title triage
 
 _Landed 2026-05-17 in this batch:_
 - #507 `prefer-namespace-keyword` —
