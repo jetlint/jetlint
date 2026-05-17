@@ -2,156 +2,169 @@
   "ruleId": "no-private-imports",
   "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
   "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noPrivateImports",
-  "_note": "Multi-file fixtures derived from biome's noPrivateImports/{invalid,valid,default_package}.js plus the sibling foo.js and sub/foo.js. Cases that depend on biome's @package re-export widening through index files are not yet covered.",
+  "_note": "Cases derived from biome's invalid.js + valid.js + default_package.js + sub/importPrivate.js. Each case represents one import statement from the original biome file, plus the supporting foo.ts / sub/foo.ts / sub/index.ts files that mirror biome's layout.",
   "cases": [
     {
+      "_origin": "invalid.js:2 — @package fooPackageVariable imported from outside sub/",
       "valid": false,
-      "main": "main.ts",
+      "main": "invalid.ts",
       "files": [
-        {"path": "main.ts", "content": "import { secret } from \"./other\";\n"},
-        {"path": "other.ts", "content": "/** @private */\nexport const secret = 1;\n"}
+        {"path": "invalid.ts", "content": "import { fooPackageVariable as subPackage } from \"./sub/foo\";\n"},
+        {"path": "sub/foo.ts", "content": "/** @private */\nexport const fooPrivateVariable = {};\n/** @package */\nexport const fooPackageVariable = {};\n/** @public */\nexport const fooPublicVariable = {};\nexport const fooDefaultVariable = {};\n"}
       ]
     },
     {
+      "_origin": "invalid.js:5 — @private fooPrivateVariable imported from outside its file",
       "valid": false,
-      "main": "main.ts",
+      "main": "invalid.ts",
       "files": [
-        {"path": "main.ts", "content": "import { secret } from \"./other\";\n"},
-        {"path": "other.ts", "content": "/**\n * @access private\n */\nexport const secret = 1;\n"}
+        {"path": "invalid.ts", "content": "import { fooPrivateVariable as subPrivate } from \"./sub/foo\";\n"},
+        {"path": "sub/foo.ts", "content": "/** @private */\nexport const fooPrivateVariable = {};\n"}
       ]
     },
     {
+      "_origin": "invalid.js:6 — @private fooPrivateVariable re-exported through sub/index doesn't widen private scope",
       "valid": false,
-      "main": "outer/main.ts",
+      "main": "invalid.ts",
       "files": [
-        {"path": "outer/main.ts", "content": "import { pkgVar } from \"../inner/foo\";\n"},
-        {"path": "inner/foo.ts", "content": "/** @package */\nexport const pkgVar = 1;\n"}
+        {"path": "invalid.ts", "content": "import { fooPrivateVariable as subPrivate2 } from \"./sub\";\n"},
+        {"path": "sub/index.ts", "content": "export { fooPrivateVariable } from \"./foo\";\n"},
+        {"path": "sub/foo.ts", "content": "/** @private */\nexport const fooPrivateVariable = {};\n"}
       ]
     },
     {
+      "_origin": "invalid.js:9 — @private symbol from sibling foo.js (not the same file)",
       "valid": false,
-      "main": "main.ts",
-      "options": [{"defaultVisibility": "package"}],
+      "main": "invalid.ts",
       "files": [
-        {"path": "main.ts", "content": "import { plain } from \"./inner/foo\";\n"},
-        {"path": "inner/foo.ts", "content": "export const plain = 1;\n"}
+        {"path": "invalid.ts", "content": "import { fooPrivateVariable } from \"./foo\";\n"},
+        {"path": "foo.ts", "content": "/** @private */\nexport const fooPrivateVariable = {};\n"}
       ]
     },
     {
+      "_origin": "invalid.js:12 — default-imported @private function",
       "valid": false,
-      "main": "main.ts",
+      "main": "invalid.ts",
       "files": [
-        {"path": "main.ts", "content": "import { fooPackageVariable as subPackage } from \"./sub/foo.ts\";\nimport { fooPrivateVariable as subPrivate } from \"./sub/foo.ts\";\nimport { fooPrivateVariable } from \"./foo.ts\";\n"},
-        {"path": "foo.ts", "content": "/** @private */\nexport const fooPrivateVariable = {};\n/** @package */\nexport const fooPackageVariable = {};\n/** @public */\nexport const fooPublicVariable = {};\n"},
-        {"path": "sub/foo.ts", "content": "/** @private */\nexport const fooPrivateVariable = {};\n/** @package */\nexport const fooPackageVariable = {};\n/** @public */\nexport const fooPublicVariable = {};\n"}
-      ]
-    },
-    {
-      "valid": false,
-      "main": "main.ts",
-      "files": [
-        {"path": "main.ts", "content": "import privateFunction from \"./foo.ts\";\n"},
+        {"path": "invalid.ts", "content": "import privateFunction from \"./foo\";\n"},
         {"path": "foo.ts", "content": "/**\n * @access private\n */\nexport default function privateFunction(a) {}\n"}
       ]
     },
     {
-      "valid": true,
-      "main": "main.ts",
+      "_origin": "invalid.js:13 — combined default+named import where both halves are @private",
+      "valid": false,
+      "main": "invalid.ts",
       "files": [
-        {"path": "main.ts", "content": "import { ok } from \"./other\";\n"},
-        {"path": "other.ts", "content": "/** @public */\nexport const ok = 1;\n"}
+        {"path": "invalid.ts", "content": "import privateFunction2, { fooPrivateVariable as subPrivate2 } from \"./sub/foo\";\n"},
+        {"path": "sub/foo.ts", "content": "/** @private */\nexport const fooPrivateVariable = {};\n/** @private */\nexport default function privateFunction() {}\n"}
       ]
     },
     {
+      "_origin": "valid.js:7 — @package within same package",
       "valid": true,
-      "main": "main.ts",
+      "main": "valid.ts",
       "files": [
-        {"path": "main.ts", "content": "import { plain } from \"./other\";\n"},
-        {"path": "other.ts", "content": "export const plain = 1;\n"}
+        {"path": "valid.ts", "content": "import { fooPackageVariable } from \"./foo\";\n"},
+        {"path": "foo.ts", "content": "/** @package */\nexport const fooPackageVariable = {};\n"}
       ]
     },
     {
+      "_origin": "valid.js:8 — @package re-exported through sibling-package index file (widening)",
       "valid": true,
-      "main": "inner/main.ts",
+      "main": "valid.ts",
       "files": [
-        {"path": "inner/main.ts", "content": "import { pkgVar } from \"./foo\";\n"},
-        {"path": "inner/foo.ts", "content": "/** @package */\nexport const pkgVar = 1;\n"}
+        {"path": "valid.ts", "content": "import { fooPackageVariable as fooPackage2 } from \"./sub\";\n"},
+        {"path": "sub/index.ts", "content": "export { fooPackageVariable } from \"./foo\";\n"},
+        {"path": "sub/foo.ts", "content": "/** @package */\nexport const fooPackageVariable = {};\n"}
       ]
     },
     {
+      "_origin": "valid.js:11 — @public is always allowed",
       "valid": true,
-      "main": "inner/sub/main.ts",
+      "main": "valid.ts",
       "files": [
-        {"path": "inner/sub/main.ts", "content": "import { pkgVar } from \"../foo\";\n"},
-        {"path": "inner/foo.ts", "content": "/** @package */\nexport const pkgVar = 1;\n"}
-      ]
-    },
-    {
-      "valid": true,
-      "main": "main.ts",
-      "options": [{"defaultVisibility": "public"}],
-      "files": [
-        {"path": "main.ts", "content": "import { plain } from \"./inner/foo\";\n"},
-        {"path": "inner/foo.ts", "content": "export const plain = 1;\n"}
-      ]
-    },
-    {
-      "valid": true,
-      "main": "main.ts",
-      "files": [
-        {"path": "main.ts", "content": "import { explicit } from \"./inner/foo\";\n"},
-        {"path": "inner/foo.ts", "content": "/** @public */\nexport const explicit = 1;\n"}
-      ]
-    },
-    {
-      "valid": true,
-      "main": "main.ts",
-      "files": [
-        {"path": "main.ts", "content": "import { fooPublicVariable } from \"./foo.ts\";\nimport { fooPublicVariable as subPublic } from \"./sub/foo.ts\";\n"},
+        {"path": "valid.ts", "content": "import { fooPublicVariable } from \"./foo\";\nimport { fooPublicVariable as fooPublic2 } from \"./sub/foo\";\n"},
         {"path": "foo.ts", "content": "/** @public */\nexport const fooPublicVariable = {};\n"},
         {"path": "sub/foo.ts", "content": "/** @public */\nexport const fooPublicVariable = {};\n"}
       ]
     },
     {
+      "_origin": "valid.js:16 — un-annotated export defaults to public",
       "valid": true,
-      "main": "main.ts",
-      "options": [{"defaultVisibility": "public"}],
+      "main": "valid.ts",
       "files": [
-        {"path": "main.ts", "content": "import { fooPackageVariable } from \"./foo.ts\";\n"},
-        {"path": "foo.ts", "content": "/** @package */\nexport const fooPackageVariable = {};\n"}
-      ]
-    },
-    {
-      "valid": true,
-      "main": "main.ts",
-      "files": [
-        {"path": "main.ts", "content": "import { fooDefaultVariable } from \"./foo.ts\";\n"},
+        {"path": "valid.ts", "content": "import { fooDefaultVariable } from \"./foo\";\n"},
         {"path": "foo.ts", "content": "export const fooDefaultVariable = {};\n"}
       ]
     },
     {
+      "_origin": "valid.js:20 — extensive @access public JSDoc still detected",
+      "valid": true,
+      "main": "valid.ts",
+      "files": [
+        {"path": "valid.ts", "content": "import { fooPublicFunction } from \"./foo\";\n"},
+        {"path": "foo.ts", "content": "/**\n * @param {string} a A parameter.\n * @access public\n */\nexport function fooPublicFunction(a) {}\n"}
+      ]
+    },
+    {
+      "_origin": "default_package.js:4 — un-annotated, defaultVisibility=package, import from outside package",
       "valid": false,
-      "main": "outer/main.ts",
+      "main": "default_package.ts",
       "options": [{"defaultVisibility": "package"}],
       "files": [
-        {"path": "outer/main.ts", "content": "import { fooDefaultVariable } from \"../sub/foo.ts\";\n"},
+        {"path": "default_package.ts", "content": "import { fooDefaultVariable } from \"./sub/foo\";\n"},
         {"path": "sub/foo.ts", "content": "export const fooDefaultVariable = {};\n"}
       ]
     },
     {
-      "valid": false,
-      "main": "main.ts",
+      "_origin": "default_package.js:7 — un-annotated, defaultVisibility=package, re-exported through sub/index widens scope",
+      "valid": true,
+      "main": "default_package.ts",
+      "options": [{"defaultVisibility": "package"}],
       "files": [
-        {"path": "main.ts", "content": "import { fooPrivateFn } from \"./foo.ts\";\n"},
-        {"path": "foo.ts", "content": "/**\n * @private\n * Private function.\n */\nexport function fooPrivateFn() {}\n"}
+        {"path": "default_package.ts", "content": "import { fooDefaultVariable as fooDefault2 } from \"./sub\";\n"},
+        {"path": "sub/index.ts", "content": "export { fooDefaultVariable } from \"./foo\";\n"},
+        {"path": "sub/foo.ts", "content": "export const fooDefaultVariable = {};\n"}
       ]
     },
     {
+      "_origin": "default_package.js:10 — @package explicit beats defaultVisibility=package (still package)",
       "valid": true,
-      "main": "main.ts",
+      "main": "default_package.ts",
+      "options": [{"defaultVisibility": "package"}],
       "files": [
-        {"path": "main.ts", "content": "import { fooPublicFn } from \"./foo.ts\";\n"},
-        {"path": "foo.ts", "content": "/**\n * @access public\n */\nexport function fooPublicFn() {}\n"}
+        {"path": "default_package.ts", "content": "import { fooPackageVariable } from \"./foo\";\n"},
+        {"path": "foo.ts", "content": "/** @package */\nexport const fooPackageVariable = {};\n"}
+      ]
+    },
+    {
+      "_origin": "default_package.js:15 — @package import from outside package still invalid under defaultVisibility=package",
+      "valid": false,
+      "main": "default_package.ts",
+      "options": [{"defaultVisibility": "package"}],
+      "files": [
+        {"path": "default_package.ts", "content": "import { fooPackageVariable as subPackage } from \"./sub/foo\";\n"},
+        {"path": "sub/foo.ts", "content": "/** @package */\nexport const fooPackageVariable = {};\n"}
+      ]
+    },
+    {
+      "_origin": "default_package.js:16 — @private even under defaultVisibility=package is still private",
+      "valid": false,
+      "main": "default_package.ts",
+      "options": [{"defaultVisibility": "package"}],
+      "files": [
+        {"path": "default_package.ts", "content": "import { fooPrivateVariable as subPrivate } from \"./sub/foo\";\n"},
+        {"path": "sub/foo.ts", "content": "/** @private */\nexport const fooPrivateVariable = {};\n"}
+      ]
+    },
+    {
+      "_origin": "sub/importPrivate.js — same-folder index re-exporting @private symbol is importable from that folder",
+      "valid": true,
+      "main": "sub/importPrivate.ts",
+      "files": [
+        {"path": "sub/importPrivate.ts", "content": "import { fooPrivateVariable } from \"./index\";\n"},
+        {"path": "sub/index.ts", "content": "export { fooPrivateVariable } from \"./foo\";\n"},
+        {"path": "sub/foo.ts", "content": "/** @private */\nexport const fooPrivateVariable = {};\n"}
       ]
     }
   ]

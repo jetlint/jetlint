@@ -2,9 +2,15 @@
 // `@private`, `@package`, and `@public` tags (or `@access X`) on an
 // `export` declare the visibility scope of that symbol. Importing a
 // `@private` symbol from a different file or a `@package` symbol
-// from outside its package directory is flagged. The default
-// visibility for un-annotated exports is configurable
-// (defaultVisibility option, `"public"` or `"package"`).
+// from outside its package directory is flagged. Re-exports follow
+// the original definition's visibility, with the wrinkle that a
+// `@package` symbol gains a new permitted-import directory each time
+// it's re-exported — so `import { x } from "./sub"` (where `./sub`
+// is `./sub/index.ts` re-exporting from `./sub/foo.ts`) widens the
+// allowed boundary from `./sub/` to also include the directory
+// containing `./sub/index.ts`. The default visibility for
+// un-annotated exports is configurable (defaultVisibility option,
+// `"public"` or `"package"`).
 package noprivateimports
 
 import (
@@ -48,6 +54,17 @@ const (
 	visPrivate
 )
 
+// visInfo is the resolved visibility for a symbol as seen from a
+// particular import. For @package symbols, allowedDirs holds every
+// directory subtree from which the symbol may be imported — the
+// original definition's directory, plus one entry per re-export
+// site reached on the way to it.
+type visInfo struct {
+	vis         visibility
+	defFile     string
+	allowedDirs []string
+}
+
 func visitImport(ctx *engine.Context, imp *wrapperchecker.Node) {
 	specifier := imp.ModuleSpecifier()
 	if specifier == nil {
@@ -58,18 +75,14 @@ func visitImport(ctx *engine.Context, imp *wrapperchecker.Node) {
 		return
 	}
 	defaultVis := defaultVisibility(ctx)
-	exportVis := loadExportVisibility(res.File, defaultVis)
-	if exportVis == nil {
-		return
-	}
 	importerFile := importerFilePath(imp)
 	for _, b := range importedBindings(imp) {
-		vis, ok := exportVis[b.imported]
-		if !ok {
+		info := resolveVisibility(res.File, b.imported, defaultVis, map[string]bool{})
+		if info == nil {
 			continue
 		}
-		if !canSee(vis, importerFile, res.File) {
-			ctx.Report(b.node, visibilityMessage(vis))
+		if !canSee(info, importerFile) {
+			ctx.Report(b.node, visibilityMessage(info.vis))
 		}
 	}
 }
@@ -98,30 +111,146 @@ func visibilityMessage(v visibility) string {
 	return "You may not import this symbol from here."
 }
 
-func canSee(v visibility, importer, target string) bool {
-	switch v {
-	case visPublic:
+func canSee(info *visInfo, importer string) bool {
+	if info.vis == visPublic {
 		return true
-	case visPrivate:
-		return importer == target
-	case visPackage:
-		return inSameOrSubPackage(importer, target)
 	}
-	return true
+	if importer == info.defFile {
+		return true
+	}
+	importerDir := filepath.Dir(importer)
+	for _, dir := range info.allowedDirs {
+		rel, err := filepath.Rel(dir, importerDir)
+		if err == nil && !strings.HasPrefix(rel, "..") {
+			return true
+		}
+	}
+	return false
 }
 
-// inSameOrSubPackage returns true when importer is in the same
-// directory as target or in any subdirectory. Package boundaries are
-// directories; an importer inside the package's tree may freely
-// import @package symbols defined at the package root.
-func inSameOrSubPackage(importer, target string) bool {
-	targetDir := filepath.Dir(target)
-	importerDir := filepath.Dir(importer)
-	rel, err := filepath.Rel(targetDir, importerDir)
-	if err != nil {
-		return false
+// resolveVisibility looks up the visibility of `name` as exported by
+// `file`, following re-export chains. Returns nil when neither a
+// direct definition nor a re-export of `name` exists in `file` (the
+// rule simply has no opinion in that case). The `seen` set guards
+// against import cycles.
+func resolveVisibility(file, name string, defaultVis visibility, seen map[string]bool) *visInfo {
+	if file == "" || seen[file] {
+		return nil
 	}
-	return !strings.HasPrefix(rel, "..")
+	seen[file] = true
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return nil
+	}
+	src := string(data)
+	if info := directDefinitionVisibility(file, src, name, defaultVis); info != nil {
+		return info
+	}
+	for _, r := range reExportsOf(src, name) {
+		targetFile := resolveRelative(file, r.fromModule)
+		if targetFile == "" {
+			continue
+		}
+		// Pass a shallow copy of seen so sibling re-exports don't
+		// interfere with each other's traversal.
+		nestedSeen := make(map[string]bool, len(seen))
+		for k, v := range seen {
+			nestedSeen[k] = v
+		}
+		info := resolveVisibility(targetFile, r.originalName, defaultVis, nestedSeen)
+		if info == nil {
+			continue
+		}
+		// Re-exporting widens the import boundary, but the size of
+		// the widening depends on the symbol's visibility:
+		//
+		//   @package: the re-export brings the symbol into the
+		//   package containing the re-export file, so importers
+		//   anywhere in that *parent* directory can resolve it
+		//   via `from "./<pkg>"`.
+		//
+		//   @private: looser only insofar as the importer is in
+		//   the same folder as the index file (or descended into
+		//   it) — biome treats `import ... from "./index"` from
+		//   within the package as an allowed shortcut for the
+		//   private symbol.
+		switch info.vis {
+		case visPackage:
+			info.allowedDirs = append(info.allowedDirs, filepath.Dir(filepath.Dir(file)))
+		case visPrivate:
+			info.allowedDirs = append(info.allowedDirs, filepath.Dir(file))
+		}
+		return info
+	}
+	return nil
+}
+
+// directDefinitionVisibility returns a visInfo when `name` is
+// directly defined and exported in `src`, otherwise nil.
+func directDefinitionVisibility(file, src, name string, defaultVis visibility) *visInfo {
+	for _, e := range scanExports(src) {
+		if e.name != name {
+			continue
+		}
+		vis := jsdocVisibility(src[:e.start], defaultVis)
+		info := &visInfo{vis: vis, defFile: file}
+		if vis == visPackage {
+			info.allowedDirs = []string{filepath.Dir(file)}
+		}
+		return info
+	}
+	return nil
+}
+
+// resolveRelative resolves a relative module specifier (`./foo`,
+// `../bar`) from `fromFile` to an on-disk file path. Tries common
+// TypeScript / JavaScript extensions and `<dir>/index.<ext>` fall-
+// backs so `from "./sub"` resolves to `./sub/index.ts`.
+func resolveRelative(fromFile, spec string) string {
+	if !strings.HasPrefix(spec, ".") {
+		return ""
+	}
+	base := filepath.Dir(fromFile)
+	candidate := filepath.Join(base, spec)
+	// Strip a trailing .js / .ts so we can try our own extension
+	// list — biome's fixtures use `.js` even from `.ts` files.
+	for _, ext := range []string{".js", ".ts", ".jsx", ".tsx", ".mjs", ".cjs"} {
+		if strings.HasSuffix(candidate, ext) {
+			stem := strings.TrimSuffix(candidate, ext)
+			if p := firstExistingFile(stem); p != "" {
+				return p
+			}
+		}
+	}
+	if p := firstExistingFile(candidate); p != "" {
+		return p
+	}
+	// Try as a directory with an index file.
+	for _, ext := range []string{".ts", ".tsx", ".js", ".jsx", ".d.ts", ".mjs", ".cjs"} {
+		p := filepath.Join(candidate, "index"+ext)
+		if fileExists(p) {
+			return p
+		}
+	}
+	return ""
+}
+
+func firstExistingFile(stem string) string {
+	for _, ext := range []string{".ts", ".tsx", ".js", ".jsx", ".d.ts", ".mjs", ".cjs"} {
+		p := stem + ext
+		if fileExists(p) {
+			return p
+		}
+	}
+	if fileExists(stem) {
+		return stem
+	}
+	return ""
+}
+
+func fileExists(p string) bool {
+	st, err := os.Stat(p)
+	return err == nil && !st.IsDir()
 }
 
 type importedBinding struct {
@@ -176,7 +305,6 @@ func importSpecifierImportedName(spec *wrapperchecker.Node) (string, *wrapperche
 	if len(names) == 0 {
 		return "", nil
 	}
-	// `a as b` → [a, b]; imported = a. `a` alone → imported = a.
 	first := names[0]
 	return first.LiteralText(), first
 }
@@ -193,34 +321,14 @@ func importerFilePath(n *wrapperchecker.Node) string {
 	return file
 }
 
-// loadExportVisibility reads the target file from disk and returns
-// a name→visibility map for every named export. Reads the file once
-// per call; the program is small enough that we don't bother caching
-// across rule invocations.
-func loadExportVisibility(path string, defaultVis visibility) map[string]visibility {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil
-	}
-	src := string(data)
-	out := map[string]visibility{}
-	for _, e := range scanExports(src) {
-		vis := jsdocVisibility(src[:e.start], defaultVis)
-		out[e.name] = vis
-	}
-	return out
-}
-
 type exportInfo struct {
 	name  string
 	start int
 }
 
-// exportPattern matches the various forms of named exports we care
-// about. Captured group 1 is the exported name. Spans we don't try
-// to handle: `export *`, re-exports (`export { x } from`), default
-// exports (their visibility is keyed off "default" by the import
-// side anyway).
+// exportPattern matches the various forms of named direct-definition
+// exports. Captured group 1 is the exported name. Re-exports are
+// handled separately by reExportsOf below.
 var exportPatterns = []*regexp.Regexp{
 	regexp.MustCompile(`(?m)^\s*export\s+(?:default\s+)?(?:async\s+)?function\s+([A-Za-z_$][A-Za-z0-9_$]*)`),
 	regexp.MustCompile(`(?m)^\s*export\s+class\s+([A-Za-z_$][A-Za-z0-9_$]*)`),
@@ -250,13 +358,47 @@ func scanExports(src string) []exportInfo {
 			add(src[m[2]:m[3]], m[0])
 		}
 	}
-	// Default-exported declarations get an additional "default"
-	// entry so `import X from "..."` can be matched against the
-	// export's visibility annotation. A single declaration like
-	// `export default function fooFn() {}` therefore appears under
-	// both `fooFn` and `default`.
 	for _, m := range defaultExportPattern.FindAllStringIndex(src, -1) {
 		add("default", m[0])
+	}
+	return out
+}
+
+// reExport is one entry in an `export { ... } from "module"` clause.
+type reExport struct {
+	originalName string // the name as exported by `fromModule`
+	fromModule   string // the source module specifier (without quotes)
+}
+
+// reExportPattern matches `export { ... } from "module"`. Captured
+// groups: 1 = inner specifier list, 2 = module specifier text.
+var reExportPattern = regexp.MustCompile(`(?s)export\s*\{([^}]*)\}\s*from\s*["']([^"']+)["']`)
+
+// reExportSpecifierPattern matches one specifier inside a re-export's
+// `{ ... }` clause: `name` or `name as alias`. Captured groups:
+// 1 = original name, 2 = local/alias name (or empty when there's no `as`).
+var reExportSpecifierPattern = regexp.MustCompile(`([A-Za-z_$][A-Za-z0-9_$]*)(?:\s+as\s+([A-Za-z_$][A-Za-z0-9_$]*))?`)
+
+// reExportsOf returns every re-export of `name` from `src`. A
+// re-export contributes when its locally-exported name (the name
+// after `as`, or the raw name if there's no `as`) equals `name`.
+// The returned originalName is the name as known to the source
+// module being re-exported from.
+func reExportsOf(src, name string) []reExport {
+	var out []reExport
+	for _, m := range reExportPattern.FindAllStringSubmatch(src, -1) {
+		inner := m[1]
+		module := m[2]
+		for _, sm := range reExportSpecifierPattern.FindAllStringSubmatch(inner, -1) {
+			orig := sm[1]
+			local := sm[2]
+			if local == "" {
+				local = orig
+			}
+			if local == name {
+				out = append(out, reExport{originalName: orig, fromModule: module})
+			}
+		}
 	}
 	return out
 }
