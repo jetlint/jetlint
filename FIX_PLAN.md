@@ -76,6 +76,16 @@ in `registry_test.go`. Closed #443.
 `go test ./internal/rules/ ./internal/cli/ ./internal/rules/noconstenum/`
 all green._
 
+_2026-05-17: Loop landed `feat(rules): wire no-document-cookie
+(suspicious)` (commit `39dca067`, change `luwooqkk`). Package
+`internal/rules/nodocumentcookie/` already existed and its
+`EslintCompatibility` harness passed; this commit added the import +
+buildRules entry in `cli.go` (alphabetically between `nodeprecated`
+and `nodupeargs`), the `CategorySuspicious` Metadata in `registry.go`,
+and the snapshot line in `registry_test.go`. Closed #449.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/nodocumentcookie/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-array-index-key
 (suspicious)` (commit `9c536c4f`, change `rrllysov`). Package
 `internal/rules/noarrayindexkey/` already existed and its
@@ -99,7 +109,8 @@ tests pass):_
 - _#437 no-comment-text → `nocommenttext` (LANDED 2026-05-17)_
 - _#442 no-console → `noconsole` (LANDED 2026-05-17)_
 - _#443 no-const-enum → `noconstenum` (LANDED 2026-05-17)_
-- _#449/#450 no-document-cookie/-import-in-page → `nodocumentcookie`/`nodocumentimportinpage`_
+- _#449 no-document-cookie → `nodocumentcookie` (LANDED 2026-05-17)_
+- _#450 no-document-import-in-page → `nodocumentimportinpage`_
 - _#451 no-double-equals → `nodoubleequals`_
 - _#457/#458 no-duplicate-jsx-props/-test-hooks → `noduplicatejsxprops`/`noduplicatetesthooks`_
 - _#460/#461 no-empty-interface/-source → `noemptyinterface`/`noemptysource`_
