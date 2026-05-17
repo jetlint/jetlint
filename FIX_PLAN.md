@@ -96,6 +96,16 @@ and the snapshot line in `registry_test.go`. Closed #463.
 `go test ./internal/cli/ ./internal/rules/ ./internal/rules/noexplicitany/`
 all green._
 
+_2026-05-17: Loop landed `feat(rules): wire no-extra-non-null-assertion
+(suspicious)` (commit `8901620b`, change `wllrzxkr`). Package
+`internal/rules/noextranonnullassertion/` already existed and its
+`EslintCompatibility` harness passed; this commit added the import +
+buildRules entry in `cli.go` (alphabetically between `noexplicitany`
+and `nofallthrough`), the `CategorySuspicious` Metadata in `registry.go`,
+and the snapshot line in `registry_test.go`. Closed #465.
+`go test ./internal/cli/ ./internal/rules/ ./internal/rules/noextranonnullassertion/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-array-index-key
 (suspicious)` (commit `9c536c4f`, change `rrllysov`). Package
 `internal/rules/noarrayindexkey/` already existed and its
@@ -126,7 +136,7 @@ tests pass):_
 - _#458 no-duplicate-test-hooks → `noduplicatetesthooks` (LANDED 2026-05-17)_
 - _#460/#461 no-empty-interface/-source → `noemptyinterface`/`noemptysource`_
 - _#463 no-explicit-any → `noexplicitany` (LANDED 2026-05-17)_
-- _#465 no-extra-non-null-assertion → `noextranonnullassertion`_
+- _#465 no-extra-non-null-assertion → `noextranonnullassertion` (LANDED 2026-05-17)_
 - _#467 no-focused-tests → `nofocusedtests`_
 - _#468/#469/#470/#471 no-function-assign/-global-assign/-global-is-finite/-global-is-nan_
 - _#472 no-head-import-in-document → `noheadimportindocument`_
