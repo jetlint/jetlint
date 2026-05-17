@@ -245,6 +245,7 @@ func additionalRulesSnapshot() []string {
 		"no-global-is-nan",
 		"no-for-in-array",
 		"no-img-element",
+		"no-implicit-any-let",
 		"no-implied-eval",
 		"no-import-assign",
 		"no-initializer-with-definite",
