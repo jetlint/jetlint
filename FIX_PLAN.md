@@ -191,7 +191,7 @@ tests pass):_
 - _#478 no-label-var → `nolabelvar` (LANDED 2026-05-17)_
 - _#480/#481 no-misplaced-assertion/-misrefactored-shorthand-assign_
 - _#483 no-non-null-asserted-optional-chain → `nononnullassertedoptionalchain` (LANDED 2026-05-17)_
-- _#484 no-octal-escape → `nooctalescape`_
+- _#484 no-octal-escape → `nooctalescape` (LANDED 2026-05-17)_
 - _#486/#487 no-react-forward-ref/-react-specific-props_
 - _#490 no-shadow-restricted-names → `noshadowrestrictednames`_
 - _#491 no-skipped-tests → `noskippedtests`_

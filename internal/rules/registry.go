@@ -126,6 +126,7 @@ var All = []Metadata{
 	{ID: "no-nodejs-modules", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-non-null-asserted-optional-chain", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-obj-calls", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-octal-escape", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-process-global", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-precision-loss", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-promise-executor-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

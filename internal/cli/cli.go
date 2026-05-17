@@ -121,6 +121,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nononnullassertedoptionalchain"
 	"github.com/jetlint/jetlint/internal/rules/nononoctaldecimalescape"
 	"github.com/jetlint/jetlint/internal/rules/noobjcalls"
+	"github.com/jetlint/jetlint/internal/rules/nooctalescape"
 	"github.com/jetlint/jetlint/internal/rules/noprecisionloss"
 	"github.com/jetlint/jetlint/internal/rules/noprivateimports"
 	"github.com/jetlint/jetlint/internal/rules/noprocessglobal"
@@ -800,6 +801,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nononnullassertedoptionalchain.New(),
 		nononoctaldecimalescape.New(),
 		noobjcalls.New(),
+		nooctalescape.New(),
 		nonnullabletypeassertionstyle.New(),
 		noredundanttypeconstituents.New(),
 		noselfassign.New(),

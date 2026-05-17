@@ -267,6 +267,7 @@ func additionalRulesSnapshot() []string {
 		"no-non-null-asserted-optional-chain",
 		"no-nonoctal-decimal-escape",
 		"no-obj-calls",
+		"no-octal-escape",
 		"no-precision-loss",
 		"no-private-imports",
 		"no-process-global",
