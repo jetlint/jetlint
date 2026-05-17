@@ -22,6 +22,57 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-alert (suspicious)`
+(commit `c3ab766e`, change `lzsurksp`). Package `internal/rules/noalert/`
+already existed and its `EslintCompatibility` harness passed; this
+commit added the import + buildRules entry in `cli.go`, the
+`CategorySuspicious` Metadata in `registry.go`, and the snapshot line
+in `registry_test.go`. Closed #429. `go test ./...` green except the
+two pre-existing `internal/format` non-TTY failures noted below._
+
+_2026-05-17: Surveyed wiring-only opportunities. **80+ open issues**
+across the four milestones map to existing `internal/rules/<pkg>/`
+packages that are NOT wired into `cli.go` or registered in
+`registry.go`. Confirmed wiring-only candidates (package exists +
+tests pass):_
+
+- _#429 no-alert → `noalert` (LANDED this loop)_
+- _#431 no-array-index-key → `noarrayindexkey`_
+- _#434 no-bitwise-operators → `nobitwiseoperators`_
+- _#435 no-catch-assign → `nocatchassign`_
+- _#437 no-comment-text → `nocommenttext`_
+- _#442 no-console → `noconsole`_
+- _#443 no-const-enum → `noconstenum`_
+- _#449/#450 no-document-cookie/-import-in-page → `nodocumentcookie`/`nodocumentimportinpage`_
+- _#451 no-double-equals → `nodoubleequals`_
+- _#457/#458 no-duplicate-jsx-props/-test-hooks → `noduplicatejsxprops`/`noduplicatetesthooks`_
+- _#460/#461 no-empty-interface/-source → `noemptyinterface`/`noemptysource`_
+- _#463 no-explicit-any → `noexplicitany`_
+- _#465 no-extra-non-null-assertion → `noextranonnullassertion`_
+- _#467 no-focused-tests → `nofocusedtests`_
+- _#468/#469/#470/#471 no-function-assign/-global-assign/-global-is-finite/-global-is-nan_
+- _#472 no-head-import-in-document → `noheadimportindocument`_
+- _#473 no-implicit-any-let → `noimplicitanylet`_
+- _#478 no-label-var → `nolabelvar`_
+- _#480/#481 no-misplaced-assertion/-misrefactored-shorthand-assign_
+- _#483 no-non-null-asserted-optional-chain → `nononnullassertedoptionalchain`_
+- _#484 no-octal-escape → `nooctalescape`_
+- _#486/#487 no-react-forward-ref/-react-specific-props_
+- _#490 no-shadow-restricted-names → `noshadowrestrictednames`_
+- _#491 no-skipped-tests → `noskippedtests`_
+- _#493 no-suspicious-semicolon-in-jsx → `nosuspicioussemicoloninjsx`_
+- _#495/#496 no-then-property/-ts-ignore_
+- _#499 no-unsafe-declaration-merging → `nounsafedeclarationmerging`_
+- _#503 no-useless-escape-in-string → `nouselessescapeinstring`_
+- _#505 no-var → `novar`_
+- _#515/#516/#517/#519/#520/#521 use-await/-error-message/-google-font-display/-number-to-fixed-digits-argument/-static-response-methods/-strict-mode_
+- _Plus 30+ open in milestones #5 (complexity) and #6 (style)._
+
+_Future loops should clear this wiring-only queue before tackling
+from-scratch ports. The per-rule cost is ~3 file edits + 1 test run
+(see the no-alert loop). Verify each candidate has a passing
+EslintCompatibility/BiomeCompatibility test first._
+
 _2026-05-17: Loop landed `feat(rules): wire use-self-closing-elements
 (style)` (commit `29a2045ef5e2`, change `lxytozmn`). Rule package
 `useselfclosingelements/` was already implemented and passing its
