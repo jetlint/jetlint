@@ -6,7 +6,7 @@ Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
 | Milestone | Open | Close-ready (impl exists) | Still missing |
 |---|---:|---:|---:|
-| #2 suspicious | 66 | 48 | 17 (+1 ambiguous #512 `strict`) |
+| #2 suspicious | 65 | 49 | 15 (+1 ambiguous #512 `strict`) |
 | #5 complexity | 45 | 35 | 10 |
 | #6 style | 69 | 53 | 16 |
 | #7 a11y | 34 | 34 | 0 (wiring + closure only) |
@@ -31,15 +31,19 @@ should be reconciled to 33/36 in a follow-up bookkeeping pass.
 
 ## Notes carried over (not regressions)
 
-- _Resolved 2026-05-17:_ the `internal/format` failures
-  (`TestHumanFormatter_HeaderHasTrailingSeparatorBar`,
-  `TestHumanFormatter_ColorAlwaysProducesANSIEscapes`) no longer
-  reproduce. `go test ./...` is fully green on the current head of
-  `feat/big-batch`.
-- `cli.go:430` carries a `errors.As(err, &te)` call that the linter
+- `internal/format` tests `TestHumanFormatter_HeaderHasTrailingSeparatorBar`
+  and `TestHumanFormatter_ColorAlwaysProducesANSIEscapes` are
+  environment-dependent and fail under non-TTY sandboxes (NO_COLOR /
+  isatty detection strips the `━` separator and ANSI escapes the
+  tests expect unconditionally). They pass on local TTY runs but
+  CI/sandbox runs see the failure. Pre-existing, orthogonal to rule
+  work; the prior "resolved 2026-05-17" claim only held under a TTY.
+  Real fix: make the formatter color-decision injectable so the tests
+  set the desired mode directly rather than relying on env detection.
+- `cli.go:432` carries a `errors.As(err, &te)` call that the linter
   suggests rewriting as `errors.AsType[*toolerr.Error]` (Go 1.26
   generics helper). Pre-existing; refactor in a separate commit so the
-  a11y wiring diff stays focused.
+  current diff stays rule-scoped.
 
 ## Next-up queue (highest leverage first)
 
@@ -120,7 +124,7 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 16 remaining (top-leverage first)
+### #2 suspicious — 15 remaining (top-leverage first)
 
 1. #488 no-redeclare
 2. #502 no-unused-expressions
@@ -134,13 +138,17 @@ Landed this batch (prior loops):
 10. #476 no-instanceof-array
 11. #475 no-import-cycles
 12. #464 no-exports-in-test
-13. #462 no-evolving-types
-14. #448 no-deprecated-imports
-15. #441 no-confusing-void-type
-16. #425 adjacent-overload-signatures
-17. (ambiguous) #512 `strict` — needs manual title triage
+13. #448 no-deprecated-imports
+14. #441 no-confusing-void-type
+15. #425 adjacent-overload-signatures
+16. (ambiguous) #512 `strict` — needs manual title triage
 
 _Landed 2026-05-17 in this batch:_
+- #462 `no-evolving-types` — `internal/rules/noevolvingtypes/`, 2/2
+  biome cases pass. Flags `let`/`var`/`const` decls with no annotation
+  whose initializer is missing, `null`, or `[]` (TypeScript would
+  infer an evolving any). Skips for-in/for-of bindings and
+  destructuring patterns.
 - #459 `no-empty` — `internal/rules/noempty/`, 34/34 oxlint cases pass.
   Filters function/method bodies; comment-aware for blocks; switch
   reports unconditionally; `allowEmptyCatch` option supported.

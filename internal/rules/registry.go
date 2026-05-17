@@ -100,6 +100,7 @@ var All = []Metadata{
 	{ID: "no-empty", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-empty-character-class", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-empty-pattern", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-evolving-types", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-ex-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-fallthrough", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-func-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

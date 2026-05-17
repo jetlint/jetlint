@@ -227,6 +227,7 @@ func additionalRulesSnapshot() []string {
 		"no-empty",
 		"no-empty-character-class",
 		"no-empty-pattern",
+		"no-evolving-types",
 		"no-ex-assign",
 		"no-fallthrough",
 		"no-func-assign",
