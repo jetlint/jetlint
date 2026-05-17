@@ -65,6 +65,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nodeprecated"
 	"github.com/jetlint/jetlint/internal/rules/nodocumentcookie"
 	"github.com/jetlint/jetlint/internal/rules/nodocumentimportinpage"
+	"github.com/jetlint/jetlint/internal/rules/nodoubleequals"
 	"github.com/jetlint/jetlint/internal/rules/nodupeargs"
 	"github.com/jetlint/jetlint/internal/rules/nodupeclassmembers"
 	"github.com/jetlint/jetlint/internal/rules/nodupeelseif"
@@ -707,6 +708,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nodeprecated.New(),
 		nodocumentcookie.New(),
 		nodocumentimportinpage.New(),
+		nodoubleequals.New(),
 		nodupeargs.New(),
 		nodupeclassmembers.New(),
 		nodupeelseif.New(),

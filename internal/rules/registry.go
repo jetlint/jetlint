@@ -161,6 +161,7 @@ var All = []Metadata{
 	{ID: "no-const-enum", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-document-cookie", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-document-import-in-page", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-double-equals", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-floating-promises", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-for-in-array", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-misleading-character-class", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
