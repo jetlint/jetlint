@@ -32,6 +32,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/consistentreturn"
 	"github.com/jetlint/jetlint/internal/rules/consistenttypeexports"
 	"github.com/jetlint/jetlint/internal/rules/constructorsuper"
+	"github.com/jetlint/jetlint/internal/rules/defaultcaselast"
 	"github.com/jetlint/jetlint/internal/rules/dotnotation"
 	"github.com/jetlint/jetlint/internal/rules/fordirection"
 	"github.com/jetlint/jetlint/internal/rules/getterreturn"
@@ -650,6 +651,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		consistentreturn.New(),
 		consistenttypeexports.New(),
 		constructorsuper.New(),
+		defaultcaselast.New(),
 		dotnotation.New(),
 		fordirection.New(),
 		getterreturn.New(),

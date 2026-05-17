@@ -1,0 +1,155 @@
+{
+  "ruleId": "default-case-last",
+  "oxcSHA": "625758ab25657c0fc13555c890aeca979be8ebdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/default_case_last.rs",
+  "cases": [
+    {
+      "code": "switch (foo) {}",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: bar(); break; }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: bar(); break; case 2: baz(); break; }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: break; case 2: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: case 2: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: case 2: }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { default: bar(); break; }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { default: bar(); }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { default: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { default: }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: break; default: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: break; default: }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: default: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: default: }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: baz(); break; case 2: quux(); break; default: quuux(); break; }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: break; case 2: break; default: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: break; case 2: break; default: }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: case 2: break; default: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: break; case 2: default: break; }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: break; case 2: default: }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { case 1: case 2: default: }",
+      "valid": true
+    },
+    {
+      "code": "switch (foo) { default: bar(); break; case 1: baz(); break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (foo) { default: break; case 1: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (foo) { default: break; case 1: }",
+      "valid": false
+    },
+    {
+      "code": "switch (foo) { default: case 1: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (foo) { default: case 1: }",
+      "valid": false
+    },
+    {
+      "code": "switch (foo) { default: break; case 1: break; case 2: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (foo) { default: case 1: break; case 2: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (foo) { default: case 1: case 2: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (foo) { default: case 1: case 2: }",
+      "valid": false
+    },
+    {
+      "code": "switch (foo) { case 1: break; default: break; case 2: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (foo) { case 1: default: break; case 2: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (foo) { case 1: break; default: case 2: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (foo) { case 1: default: case 2: break; }",
+      "valid": false
+    },
+    {
+      "code": "switch (foo) { case 1: default: case 2: }",
+      "valid": false
+    }
+  ]
+}

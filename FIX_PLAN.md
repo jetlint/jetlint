@@ -124,26 +124,30 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 15 remaining (top-leverage first)
+### #2 suspicious — 14 remaining (top-leverage first)
 
-1. #488 no-redeclare
+1. #488 no-redeclare — **needs scope/binding analysis**; previously
+   skipped on `feat/big-batch` (commit `wip(rules): more +6 (...,
+   redeclare-skip)`). Defer until scope-symbol helpers land.
 2. #502 no-unused-expressions
 3. #428 guard-for-in
-4. #426 default-case-last
-5. #518 use-iterable-callback-return
-6. #507 prefer-namespace-keyword
-7. #504 no-useless-regex-backrefs
-8. #497 no-unassigned-variables
-9. #482 no-misused-new
-10. #476 no-instanceof-array
-11. #475 no-import-cycles
-12. #464 no-exports-in-test
-13. #448 no-deprecated-imports
-14. #441 no-confusing-void-type
-15. #425 adjacent-overload-signatures
-16. (ambiguous) #512 `strict` — needs manual title triage
+4. #518 use-iterable-callback-return
+5. #507 prefer-namespace-keyword
+6. #504 no-useless-regex-backrefs
+7. #497 no-unassigned-variables
+8. #482 no-misused-new
+9. #476 no-instanceof-array
+10. #475 no-import-cycles
+11. #464 no-exports-in-test
+12. #448 no-deprecated-imports
+13. #441 no-confusing-void-type
+14. #425 adjacent-overload-signatures
+15. (ambiguous) #512 `strict` — needs manual title triage
 
 _Landed 2026-05-17 in this batch:_
+- #426 `default-case-last` — `internal/rules/defaultcaselast/`, 37/37
+  oxlint cases pass. Pure AST: reports any non-last `default` clause
+  in a `switch` statement. No options.
 - #462 `no-evolving-types` — `internal/rules/noevolvingtypes/`, 2/2
   biome cases pass. Flags `let`/`var`/`const` decls with no annotation
   whose initializer is missing, `null`, or `[]` (TypeScript would

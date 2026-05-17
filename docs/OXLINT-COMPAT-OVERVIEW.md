@@ -56,8 +56,9 @@ on 100%; the score is a baseline that improves as rules sharpen.
 | use-isnan | 208/208 (100%) |
 | no-self-assign | 92/92 (100%) |
 | no-empty | 34/34 (100%) |
+| default-case-last | 37/37 (100%) |
 
-**Aggregate: 498/498 cases pass (100%)** across all option
+**Aggregate: 535/535 cases pass (100%)** across all option
 combinations the upstream fixtures exercise.
 
 The four rules with options (\`valid-typeof\`, \`use-isnan\`,

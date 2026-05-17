@@ -189,6 +189,7 @@ func additionalRulesSnapshot() []string {
 		"consistent-return",
 		"consistent-type-exports",
 		"constructor-super",
+		"default-case-last",
 		"dot-notation",
 		"for-direction",
 		"getter-return",
