@@ -418,6 +418,7 @@ func additionalRulesSnapshot() []string {
 		"no-redundant-alt",
 		"no-redundant-roles",
 		"no-static-element-interactions",
+		"no-suspicious-semicolon-in-jsx",
 		"no-svg-without-title",
 		"use-alt-text",
 		"use-anchor-content",

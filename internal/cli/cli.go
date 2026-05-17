@@ -249,6 +249,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noredundantalt"
 	"github.com/jetlint/jetlint/internal/rules/noredundantroles"
 	"github.com/jetlint/jetlint/internal/rules/nostaticelementinteractions"
+	"github.com/jetlint/jetlint/internal/rules/nosuspicioussemicoloninjsx"
 	"github.com/jetlint/jetlint/internal/rules/nosvgwithouttitle"
 	"github.com/jetlint/jetlint/internal/rules/usealttext"
 	"github.com/jetlint/jetlint/internal/rules/useanchorcontent"
@@ -904,6 +905,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noredundantalt.New(),
 		noredundantroles.New(),
 		nostaticelementinteractions.New(),
+		nosuspicioussemicoloninjsx.New(),
 		nosvgwithouttitle.New(),
 		usealttext.New(),
 		useanchorcontent.New(),
