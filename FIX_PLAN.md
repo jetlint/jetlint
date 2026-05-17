@@ -106,6 +106,21 @@ and the snapshot line in `registry_test.go`. Closed #465.
 `go test ./internal/cli/ ./internal/rules/ ./internal/rules/noextranonnullassertion/`
 all green._
 
+_2026-05-17: Loop landed `feat(rules): wire no-function-assign
+(suspicious)` (commit `a249d5ea`, change `zpyuxuxk`). Package
+`internal/rules/nofunctionassign/` already existed and its
+`EslintCompatibility` harness passed (13/13 oxlint cases); this commit
+added the import + buildRules entry in `cli.go` (between `nofuncassign`
+and `noglobaldirnamefilename`), the `CategorySuspicious` Metadata in
+`registry.go`, and the snapshot line in `registry_test.go`. Closed #468.
+`go test ./internal/cli/ ./internal/rules/ ./internal/rules/nofunctionassign/`
+all green. Note: `no-func-assign` (`nofuncassign`, `CategoryCorrectness`)
+is a separate, pre-existing oxlint-named rule and was not affected. Also
+considered #461 no-empty-source first but its fixture has 0 cases (the
+package ships with empty Handlers) — wiring it would close the issue
+with a no-op, so skipped. Flag in plan: noemptysource needs a real
+implementation before #461 should close._
+
 _2026-05-17: Loop landed `feat(rules): wire no-array-index-key
 (suspicious)` (commit `9c536c4f`, change `rrllysov`). Package
 `internal/rules/noarrayindexkey/` already existed and its
@@ -139,7 +154,8 @@ tests pass):_
 - _#463 no-explicit-any → `noexplicitany` (LANDED 2026-05-17)_
 - _#465 no-extra-non-null-assertion → `noextranonnullassertion` (LANDED 2026-05-17)_
 - _#467 no-focused-tests → `nofocusedtests`_
-- _#468/#469/#470/#471 no-function-assign/-global-assign/-global-is-finite/-global-is-nan_
+- _#468 no-function-assign → `nofunctionassign` (LANDED 2026-05-17)_
+- _#469/#470/#471 no-global-assign/-global-is-finite/-global-is-nan_
 - _#472 no-head-import-in-document → `noheadimportindocument`_
 - _#473 no-implicit-any-let → `noimplicitanylet`_
 - _#478 no-label-var → `nolabelvar`_
