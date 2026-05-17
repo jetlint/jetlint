@@ -195,7 +195,7 @@ tests pass):_
 - _#486/#487 no-react-forward-ref/-react-specific-props_
 - _#490 no-shadow-restricted-names → `noshadowrestrictednames` (LANDED 2026-05-17, commit `62791e66`)_
 - _#491 no-skipped-tests → `noskippedtests` (LANDED 2026-05-17, commit `cce0597b`)_
-- _#493 no-suspicious-semicolon-in-jsx → `nosuspicioussemicoloninjsx`_
+- _#493 no-suspicious-semicolon-in-jsx → `nosuspicioussemicoloninjsx` (LANDED 2026-05-17, commit `b169cb9d`)_
 - _#495/#496 no-then-property/-ts-ignore_
 - _#499 no-unsafe-declaration-merging → `nounsafedeclarationmerging`_
 - _#503 no-useless-escape-in-string → `nouselessescapeinstring`_
@@ -346,7 +346,7 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 5 remaining (top-leverage first)
+### #2 suspicious — 5 remaining (top-leverage first; #493 wiring landed this loop, see Active work)
 
 1. #504 no-useless-regex-backrefs — biome rule. Reports backreferences
    inside a regex literal that can only ever match the empty string.
