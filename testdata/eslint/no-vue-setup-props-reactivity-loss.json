@@ -1,0 +1,23 @@
+{
+  "ruleId": "no-vue-setup-props-reactivity-loss",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noVueSetupPropsReactivityLoss",
+  "cases": [
+    {
+      "code": "// Parameter destructuring patterns that lose reactivity\n\n// Basic parameter destructuring\nexport default {\n  setup({ foo, bar }) {\n    return () =\u003e h('div', foo + bar)\n  }\n}\n\n// Destructuring with default values  \nexport default {\n  setup({ foo = 'default', bar }) {\n    return () =\u003e h('div', foo + bar)\n  }\n}\n\n// Destructuring with renaming\nexport default {\n  setup({ foo: renamedFoo, bar }) {\n    return () =\u003e h('div', renamedFoo + bar)\n  }\n}\n\n// Destructuring with rest pattern\nexport default {\n  setup({ foo, ...rest }) {\n    return () =\u003e h('div', foo + rest.bar)\n  }\n}\n\n// defineComponent with parameter destructuring\nexport default defineComponent({\n  setup({ foo, bar }) {\n    return () =\u003e h('div', foo + bar)\n  }\n})\n\n// Named export with parameter destructuring  \nexport const MyComponent = {\n  setup({ foo, bar }) {\n    return () =\u003e h('div', foo + bar)\n  }\n}",
+      "valid": false
+    },
+    {
+      "code": "// Invalid: basic parameter destructuring\nexport default {\n  setup({ count }) {\n    return () =\u003e h('div', count);\n  }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n// Valid cases for non-Vue contexts that should be ignored\n\n// Non-setup function should be ignored\nexport default {\n  notSetup({ foo }) {\n    return () =\u003e h('div', foo)\n  }\n}\n\n// Regular object (not Vue component) should be ignored\nconst regularObject = {\n  setup({ foo }) {\n    return () =\u003e h('div', foo)\n  }\n};\n\n// Function not in Vue component context\nfunction regularFunction({ foo }) {\n  const { bar } = foo;\n  return bar;\n}\n\n// Class method\nclass MyClass {\n  setup({ foo }) {\n    const { bar } = foo;\n    return bar;\n  }\n}\n\n// Standalone arrow function\nconst myFunc = ({ foo }) =\u003e {\n  const { bar } = foo;\n  return bar;\n};",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n// Valid: using props parameter directly\nexport default {\n  setup(props) {\n    return () =\u003e h('div', props.count)\n  }\n}\n",
+      "valid": true
+    }
+  ]
+}

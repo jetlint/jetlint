@@ -1,0 +1,91 @@
+{
+  "ruleId": "use-import-extensions",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/useImportExtensions",
+  "cases": [
+    {
+      "valid": false,
+      "main": "invalid.ts",
+      "files": [
+        {
+          "path": "invalid.ts",
+          "content": "import \"./sub/foo\";\nimport \"./sub/bar/\";\nimport \"./sub/index\";\n\n// Guaranteed resolve to 'index.js' file\nimport './sub/bar/../'\nimport './sub/bar/..'\nimport './sub/.'\nimport './sub/./'\nimport './sub/'\nimport './sub'\n\nimport  /** A **/'./sub' /** B **/\n\n// Query and hash\nimport './sub?worker'\nimport './sub#hash'\nimport './sub?query=string\u0026query2#hash'\n\n// Dynamic imports\nimport('./sub/foo')\nimport( /** A **/'./sub/foo'/** B **/ )\nrequire(\"./sub/foo\")\n\nimport \"./sub/styles.css\"\nimport \"./sub/component.svg.svelte\";\nimport \"./sub/component.svg.svelte?query=string\u0026query2#hash\";\n\n// Invalid extension\nimport \"./sub/foo.js\";\nimport \"./sub/bar/index.js\";\n"
+        },
+        {
+          "path": "sub/bar/index.ts",
+          "content": "/* should not generate diagnostics */\n"
+        },
+        {
+          "path": "sub/component.svg.svelte.ts",
+          "content": "/* should not generate diagnostics */\n"
+        },
+        {
+          "path": "sub/foo.ts",
+          "content": "/* should not generate diagnostics */\n"
+        },
+        {
+          "path": "sub/generated/index.d.ts",
+          "content": "/* should not generate diagnostics */\n"
+        },
+        {
+          "path": "sub/generated/index.js",
+          "content": "/* should not generate diagnostics */\n"
+        },
+        {
+          "path": "sub/index.js",
+          "content": "/* should not generate diagnostics */\n"
+        },
+        {
+          "path": "sub/styles.css.ts",
+          "content": "/* should not generate diagnostics */\n"
+        },
+        {
+          "path": "sub/theme.css",
+          "content": "/* should not generate diagnostics */\n"
+        }
+      ]
+    },
+    {
+      "valid": true,
+      "main": "valid.js",
+      "files": [
+        {
+          "path": "valid.js",
+          "content": "/* should not generate diagnostics */\n\n// Not relative\nimport \"sub/foo\";\nimport \"~/sub/foo\";\nimport \"@foo\";\nimport \"foo\";\nimport('foo');\nrequire('foo');\n\n// Have extension\nimport './sub/bar/index.ts';\nimport './sub/foo.ts';\nimport './sub/index.js';\nimport('./sub/foo.ts');\nrequire('./sub/foo.ts');\n\n// Have sub extension\nimport \"./sub/styles.css.ts\"\nimport \"./sub/component.svg.svelte.ts\";\nimport \"./sub/component.svg.svelte.ts?query=string\u0026query2#hash\";\nimport style from './sub/theme.css?inline'\n\n// If the import doesn't resolve at all, we don't report a diagnostic:\n// It means the import is broken beyond missing an extension.\nimport './sub/baz';\nimport './sub/baz.css';\nimport './sub/baz.css.com';\n\nimport \"./sub/generated/index.js\";\n"
+        },
+        {
+          "path": "sub/bar/index.ts",
+          "content": "/* should not generate diagnostics */\n"
+        },
+        {
+          "path": "sub/component.svg.svelte.ts",
+          "content": "/* should not generate diagnostics */\n"
+        },
+        {
+          "path": "sub/foo.ts",
+          "content": "/* should not generate diagnostics */\n"
+        },
+        {
+          "path": "sub/generated/index.d.ts",
+          "content": "/* should not generate diagnostics */\n"
+        },
+        {
+          "path": "sub/generated/index.js",
+          "content": "/* should not generate diagnostics */\n"
+        },
+        {
+          "path": "sub/index.js",
+          "content": "/* should not generate diagnostics */\n"
+        },
+        {
+          "path": "sub/styles.css.ts",
+          "content": "/* should not generate diagnostics */\n"
+        },
+        {
+          "path": "sub/theme.css",
+          "content": "/* should not generate diagnostics */\n"
+        }
+      ]
+    }
+  ]
+}

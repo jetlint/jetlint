@@ -1,0 +1,19 @@
+{
+  "ruleId": "use-single-js-doc-asterisk",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/useSingleJsDocAsterisk",
+  "cases": [
+    {
+      "code": "/**\n * End of comment double asterisk\n **/\n\n/**\n *\n ** Middle\n */\n\n/**\n *\n **\n *\n */\n\n/**\n *\n * *Asterisk right next to the text\n */\n\n/**\n * Desc.\n *\n abc * **/\n\n/** @someTag SameLine2 Double **/\n\n/** SameLine DoubleWithSpace * */\n",
+      "valid": false
+    },
+    {
+      "code": "/**\n * End of comment double asterisk\n **/\n\n/**\n * \n ** Middle\n */\n\n/**\n * \n **\n *\n */\n\n/**\n * \n * *Asterisk right next to the text\n */\n\n/**\n * Desc.\n *\n abc * **/\n\n/** @someTag SameLine Double **/\n\n/** SameLine DoubleWithSpace * */\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n/**\n * **bold**\n */\n\n/**\n * ** *** ** Not checked after double asterisk\n */\n\n/**\n * Valid end, single asterisk at the start */\n\n/**\n ** * Valid end, double asterisk at the start */\n\n/**\n Asterisk after text * *\n*/",
+      "valid": true
+    }
+  ]
+}

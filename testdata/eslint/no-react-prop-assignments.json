@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-react-prop-assignments",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noReactPropAssignments",
+  "cases": [
+    {
+      "code": "function Foo(props) {\n\tprops.bar = `Hello ${props.bar}`;\n\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e;\n}\n\nexport function Foo(props) {\n\tprops.bar = `Hello ${props.bar}`;\n\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e;\n}\n\nconst Foo = (props) =\u003e {\n\tprops.bar = `Hello ${props.bar}`;\n\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e;\n}\n\nconst Foo = (props) =\u003e {\n\tconst baz = props.baz;\n\n\tuseEffect(() =\u003e {\n\t\tprops.bar = `Hello ${props.bar}`;\n\t}, [props.bar]);\n\n\tprops.bar = `Hello ${props.bar}`;\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e;\n}\n\nconst Foo = memo((props) =\u003e {\n\tprops.bar = `Hello ${props.bar}`;\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e;\n});\n\nconst Foo = forwardRef(function (props, ref) {\n\tprops.bar = `Hello ${props.bar}`;\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e;\n});\n\nconst Foo = (props) =\u003e {\n\tconst baz = props.baz;\n\n\tuseEffect(() =\u003e {\n\t\tprops.bar = `Hello ${props.bar}`;\n\t}, [props.bar]);\n\n\tprops.bar = `Hello ${props.bar}`;\n\tprops.baz = `Hello ${props.baz}`;\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e\n};\n\n\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\nexport function Foo(props) {\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e\n}\n\nfunction Foo(props) {\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e;\n}\n\nmemo(function Foo(props) {\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e;\n});\n\nforwardRef(function Foo(props, ref) {\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e;\n});\n\nfunction Foo({bar, baz}) {\n\tbar = `Hello ${bar}`;\n\treturn \u003cdiv\u003e{bar}\u003c/div\u003e;\n}\n\nfunction Foo({bar}) {\n\tbar = `Hello ${bar}`;\n\treturn \u003cdiv\u003e{bar}\u003c/div\u003e;\n}\n\nmemo(function Foo({bar}) {\n\tbar = `Hello ${bar}`;\n\treturn \u003cdiv\u003e{bar}\u003c/div\u003e;\n});\n\nforwardRef(function Foo({bar}, ref) {\n\tbar = `Hello ${bar}`;\n\treturn \u003cdiv\u003e{bar}\u003c/div\u003e;\n});\n\nconst Foo = function ({bar}) {\n\tbar = `Hello ${bar}`;\n\treturn \u003cdiv\u003e{bar}\u003c/div\u003e;\n}\n\nconst Foo = memo((props) =\u003e {\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e;\n});\n\nconst Foo = memo(({bar}) =\u003e {\n\tbar = `Hello ${bar}`;\n\treturn \u003cdiv\u003e{bar}\u003c/div\u003e;\n});\n\nconst Foo = forwardRef(function (props, ref) {\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e;\n});\n\nconst Foo = forwardRef((props, ref) =\u003e {\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e;\n});\n\nfunction Foo(props) {\n\tprops = somethingElse;\n\tprops.bar = 1;\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e;\n}\n\nfunction Foo(props) {\n\tconst callback = (props) =\u003e {\n\t\tprops.bar = 1;\n\t};\n\n\treturn \u003cdiv\u003e{props.bar}\u003c/div\u003e;\n}\n\n",
+      "valid": true
+    }
+  ]
+}

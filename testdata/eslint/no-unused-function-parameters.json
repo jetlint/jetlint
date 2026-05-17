@@ -1,0 +1,31 @@
+{
+  "ruleId": "no-unused-function-parameters",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noUnusedFunctionParameters",
+  "cases": [
+    {
+      "code": "function foo(myVar) {\n    console.log('foo');\n}\n\nconst data = [[1, 1], [2, 4], [3, 9], [4, 16], [5, 25]];\ndata.filter(([k, v]) =\u003e v \u003e 10);\n\n[{ a: 1, b: 2, c: 3 }].map(({a, b, c}) =\u003e a + c);\n\nnew Promise((accept, reject) =\u003e {\n    window.setTimeout(accept, 1000);\n});\n\n// parameter a is not used\n{(function (a) { })}\n{(function ({a}) { })}\n{(function ([a]) { })}\n(function (a, b) {\n    console.log(b);\n})\n\n// parameter b is not used\n(function (a, b) {\n    console.log(a);\n})\n\nfunction withSpread({ a: { x }, ...rest }) {\n    return rest;\n}\n\nfunction withArraySpread([a, ...rest]) {\n    return rest;\n}\n",
+      "valid": false
+    },
+    {
+      "code": "class D {\n\tf(a: D): D | undefined { return; }\n}\n\nfunction withOneUnused({ a, b }): unknown {\n\treturn b\n}\n\nfunction withTwoUnused({ a, b, c }): unknown {\n\treturn b\n}\n",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n    bar(name: string, _class: new (name: string) =\u003e any) {\n        return name\n    }\n}",
+      "valid": true
+    },
+    {
+      "code": "function _A(A) {}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction foo(myVar) {\n    console.log(myVar);\n}\n\nfunction foo(_unused) {\n    console.log('not using the parameter');\n}\n\nObject.fromEntries(Object.entries({a: 'A', b: 'B', c: 'C'}).map(([k, v]) =\u003e [v, k]));\n\nnew Promise((accept, _reject) =\u003e {\n    window.setTimeout(accept, 1000);\n});\n\ndata.filter(([_k, v]) =\u003e v \u003e 10);\n\nfunction withObjectSpread({ a, ...rest }) {\n    return rest;\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\ntype Classlike = new (arg: unknown) =\u003e string;\n",
+      "valid": true
+    }
+  ]
+}

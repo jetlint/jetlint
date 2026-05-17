@@ -11,12 +11,22 @@ import (
 type Engine struct {
 	rules      []Rule
 	severities map[string]wrapperlint.Severity
+	options    map[string]any
 }
 
 // New creates an Engine with the given rules and per-rule severities.
 // Rules whose ID is absent from severities are skipped (treated as off).
 func New(rules []Rule, severities map[string]wrapperlint.Severity) *Engine {
 	return &Engine{rules: rules, severities: severities}
+}
+
+// WithOptions returns the same Engine instance with rule-specific
+// options attached. The options map is keyed by rule ID; the shape
+// of the value is agreed between the rule and the caller. Rules
+// without an entry in the map see Context.Options() == nil.
+func (e *Engine) WithOptions(options map[string]any) *Engine {
+	e.options = options
+	return e
 }
 
 // Lint runs every active rule against every user source file in the
@@ -62,6 +72,7 @@ func (e *Engine) Lint(program *wrapperchecker.Program) []wrapperlint.Diagnostic 
 					checker:     chk,
 					ruleID:      ent.ruleID,
 					severity:    ent.severity,
+					options:     e.options[ent.ruleID],
 					diagnostics: &diagnostics,
 				}
 				dispatchSafely(ctx, ent.handler, n, file.Path(), ent.ruleID, &diagnostics)

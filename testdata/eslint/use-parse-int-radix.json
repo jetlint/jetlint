@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-parse-int-radix",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/useParseIntRadix",
+  "cases": [
+    {
+      "code": "var num = parseInt(\"071\");\n\nvar num = parseInt(someValue);\n\nvar num = parseInt(\"071\", \"abc\");\n\nvar num = parseInt(\"071\", \"8\");\n\nvar num = parseInt(\"071\", 37);\n\nvar num = parseInt(\"071\", 1);\n\nvar num = parseInt(\"071\", undefined);\n\nvar num = parseInt();\n\nvar num = Number.parseInt(\"10\");\n\nvar num = parseInt(\"0xF\", 16n);\n\nvar num = parseInt(\"071\", \"abc\", 3);\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nvar num = parseInt(\"071\", 10);\n\nvar num = parseInt(\"071\", 8);\n\nvar num = parseFloat(someValue);\n\nvar num = Number.parseInt(\"10\", 10);\n\nvar num = parseInt(\"0xF\", 1_6);\n",
+      "valid": true
+    }
+  ]
+}

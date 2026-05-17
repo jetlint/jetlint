@@ -34,8 +34,15 @@ type Context struct {
 	checker     *wrapperchecker.Checker
 	ruleID      string
 	severity    wrapperlint.Severity
+	options     any
 	diagnostics *[]wrapperlint.Diagnostic
 }
+
+// Options returns the rule-specific options blob the engine was
+// configured with for this rule, or nil if none. The shape is
+// agreed between the rule and its caller; the engine treats it
+// opaquely.
+func (c *Context) Options() any { return c.options }
 
 // Program returns the wrapper-layer Program for the current file.
 func (c *Context) Program() *wrapperchecker.Program { return c.program }

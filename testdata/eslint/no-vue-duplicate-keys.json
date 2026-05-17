@@ -1,0 +1,91 @@
+{
+  "ruleId": "no-vue-duplicate-keys",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noVueDuplicateKeys",
+  "cases": [
+    {
+      "code": "export default {\n  asyncData() {\n    return {\n      foo: 'async'\n    }\n  },\n  data() {\n    return {\n      foo: 'data'\n    }\n  }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "export default {\n  asyncData() {\n    return {\n      handleClick: 'data'\n    }\n  },\n  methods: {\n    handleClick() {\n      console.log('method');\n    }\n  }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    props: ['foo'],\n    computed: {\n        foo () {}\n    },\n    data () {\n        return {\n            foo: null\n        }\n    },\n    methods: {\n        foo () {}\n    }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    computed: {\n        count() {\n            return this.value * 2;\n        }\n    },\n    methods: {\n        count() {\n            this.value++;\n        }\n    }\n};\n",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    data() {\n        return {\n            message: 'hello'\n        };\n    },\n    methods: {\n        message() {\n            console.log('duplicate key');\n        }\n    }\n};\n",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    data: {\n        foo: null,\n        foo: null\n    }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    props: {\n        bar: String\n    },\n    data () {\n        return {\n            bar: null\n        }\n    }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* @script-setup */\nimport { toRefs, reactive } from 'vue';\ndefineProps\u003c{ toast: string; number?: number }\u003e();\nconst obj = reactive({ toast: 'toast' });\nconst { toast } = toRefs(obj)\n",
+      "valid": false
+    },
+    {
+      "code": "export default {\n  props: ['foo'],\n  computed: {\n    foo () {}\n  },\n  data () {\n    return {\n      foo: null\n    }\n  },\n  methods: {\n    foo () {}\n  },\n  setup () {\n    const foo = ref(1)\n\n    return {\n      foo\n    }\n  }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "export default {\n  asyncData() {\n    return {\n      foo: 'bar'\n    }\n  },\n  data() {\n    return {\n      baz: 'qux'\n    }\n  },\n  methods: {\n    handleClick() {\n      console.log('click');\n    }\n  }\n}\n",
+      "valid": true
+    },
+    {
+      "code": "export default {\n  ...foo(),\n  props: {\n    ...foo(),\n    foo: String\n  },\n  computed: {\n    ...mapGetters({\n      test: 'getTest'\n    }),\n    bar: {\n      get () {}\n    }\n  },\n  data: {\n    ...foo(),\n    dat: null\n  },\n  methods: {\n    ...foo(),\n    test () {}\n  },\n  data () {\n    return {\n      ...dat\n    }\n  }\n}\n",
+      "valid": true
+    },
+    {
+      "code": "export default {\n  props: ['foo'],\n  computed: {\n    bar () {}\n  },\n  data () {\n    return {\n      dat: null\n    }\n  },\n  data () {\n    return\n  },\n  methods: {\n    _foo () {},\n    test () {}\n  }\n}\n",
+      "valid": true
+    },
+    {
+      "code": "export default {\n  computed: {\n    foo: {\n      get () {},\n      set () {}\n    }\n  }\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* @script-setup */\ndefineProps({\n  foo: String,\n  bar: Number\n})\n\nconst baz = ref('hello')\nconst qux = computed(() =\u003e 'world')\n\nfunction handleClick() {\n  console.log('clicked')\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* @script-setup */\nconst { foo, bar } = defineProps(['foo', 'bar'])\n\nconst localVar = ref('local')\nconst computedValue = computed(() =\u003e foo + bar)\n",
+      "valid": true
+    },
+    {
+      "code": "/* @script-setup */\nconst message = ref('Hello Vue 3!')\nconst count = ref(0)\n\nconst doubleCount = computed(() =\u003e count.value * 2)\n\nfunction increment() {\n  count.value++\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* @script-setup */\nimport { toRefs } from 'vue';\ninterface Props {\n    videoUrl: string;\n    thumbnail?: string;\n}\nconst props = defineProps\u003cProps\u003e()\nconst { videoUrl, thumbnail } = toRefs(props)\n",
+      "valid": true
+    },
+    {
+      "code": "/* @script-setup */\nimport { toRefs } from 'vue';\nconst props = defineProps\u003c{ toast: string; number?: number }\u003e()\nconst { toast } = toRefs(props)\n",
+      "valid": true
+    },
+    {
+      "code": "export default {\n    props: ['foo'],\n    computed: {\n        bar () {}\n    },\n    data () {\n        return {\n            dat: null\n        }\n    },\n    methods: {\n        _foo () {},\n        test () {}\n    }\n}\n",
+      "valid": true
+    },
+    {
+      "code": "\texport default {\n\t\tname: 'QFormContainer',\n\t\tprops: {\n\t\t\tformData: {\n\t\t\t\ttype: Object,\n\t\t\t\tdefault: () =\u003e ({}),\n\t\t\t\tvalidator: (val) =\u003e true\n\t\t\t},\n\t\t},\n\t\twatch: {\n\t\t\tformData: {\n\t\t\t\thandler(newValue)\n\t\t\t\t{\n\t\t\t\t\t//do things\n\t\t\t\t},\n\t\t\t\tdeep: true\n\t\t\t}\n\t\t}\n\t}\n",
+      "valid": true
+    },
+    {
+      "code": "export default {\n    ...foo(),\n    props: {\n        ...foo(),\n        foo: String\n    },\n    computed: {\n        ...mapGetters({\n            test: 'getTest'\n        }),\n        bar: {\n            get () {}\n        }\n    }\n}\n",
+      "valid": true
+    }
+  ]
+}

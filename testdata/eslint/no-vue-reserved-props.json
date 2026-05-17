@@ -1,0 +1,87 @@
+{
+  "ruleId": "no-vue-reserved-props",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noVueReservedProps",
+  "cases": [
+    {
+      "code": "import {createApp} from 'vue';\n\ncreateApp({\n    props: [\n        'ref',\n        'key',\n        'foo'\n    ]\n}).mount('#app');\n",
+      "valid": false
+    },
+    {
+      "code": "import {defineComponent} from 'vue';\n\nexport default defineComponent((props) =\u003e {}, {\n    props: [\n        'ref',\n        'key',\n        'foo',\n    ]\n});\n",
+      "valid": false
+    },
+    {
+      "code": "import {defineComponent} from 'vue';\n\nexport default defineComponent({\n    props: [\n        'ref',\n        'key',\n        'foo',\n    ]\n});\n",
+      "valid": false
+    },
+    {
+      "code": "/* @script-setup */\ndefineProps([\n    'ref',\n    'key',\n    \"foo\",\n]);\n",
+      "valid": false
+    },
+    {
+      "code": "/* @script-setup */\n; // this is a hack because vue files are still parsed as js/ts files.\ninterface Props {\n    ref: string,\n    key: string,\n    foo: string,\n}\ndefineProps\u003cProps\u003e();\n",
+      "valid": false
+    },
+    {
+      "code": "/* @script-setup */\ndefineProps({\n    ref: String,\n    key: String,\n    foo: String,\n});\n",
+      "valid": false
+    },
+    {
+      "code": "/* @script-setup */\n; // this is a hack because vue files are still parsed as js/ts files.\ntype Props = {\n    ref: string,\n    key: string,\n    foo: string,\n};\ndefineProps\u003cProps\u003e();\n",
+      "valid": false
+    },
+    {
+      "code": "/* @script-setup */\ndefineProps\u003c{\n    ref: string,\n    key: string,\n    foo: string,\n}\u003e();\n",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    props: [\n        'ref',\n        'key',\n        'foo',\n    ]\n};\n",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    props: {\n        ref: String,\n        key: String,\n        foo: String,\n    }\n};\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport {createApp} from 'vue';\nimport MyComponent from './MyComponent.vue';\n\ncreateApp(MyComponent).mount('#app');\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport {defineComponent} from 'vue';\n\nexport default defineComponent({\n    props: ['foo']\n});\n",
+      "valid": true
+    },
+    {
+      "code": "/* @script-setup */\ndefineProps(['foo']);\n",
+      "valid": true
+    },
+    {
+      "code": "/* @script-setup */\n// These are Vue v.2 reserved props, but they are not reserved in Vue v.3.\ninterface Props {\n    is: string;\n    slot: string;\n    \"slot-scope\": string;\n}\ndefineProps\u003cProps\u003e();\n",
+      "valid": true
+    },
+    {
+      "code": "/* @script-setup */\ndefineProps({ foo: String });\n",
+      "valid": true
+    },
+    {
+      "code": "/* @script-setup */\ntype Props = {\n    foo: String;\n};\ndefineProps\u003cProps\u003e();\n",
+      "valid": true
+    },
+    {
+      "code": "/* @script-setup */\ndefineProps\u003c{\n    foo: String;\n}\u003e();\n",
+      "valid": true
+    },
+    {
+      "code": "export default {\n    data: {\n        ref: ''\n    }\n};\n",
+      "valid": true
+    },
+    {
+      "code": "export default {\n    props: ['foo']\n};\n",
+      "valid": true
+    },
+    {
+      "code": "export default {\n    props: {\n        foo: String\n    }\n};\n",
+      "valid": true
+    }
+  ]
+}

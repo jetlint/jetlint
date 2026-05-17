@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-duplicate-private-class-members",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noDuplicatePrivateClassMembers",
+  "cases": [
+    {
+      "code": "class A { #foo; #foo; }\nclass A { #foo() {}; #foo; }\nclass A { #foo; get #foo() {} }\nclass A { #foo; set #foo(value) {} }\nclass A { get #foo() {} get #foo() {} }\nclass A { get #foo() {}; #foo; }\nclass A { set #foo(value) {} #foo; }\nclass A { get #foo() {} set #foo(value) {} #foo; }\nclass A { #foo; #foo; #bar; #bar; }\nclass A { #foo; get #foo() {} get #foo() {} }\nclass A { foo; foo; #bar; #bar; }\nclass A { #foo; static #foo; }\nclass A { #foo; accessor #foo; }\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nclass A { foo; foo; }\nclass A { foo; #foo; }\nclass A { #foo; #bar; }\nclass A { #foo; #bar() {} }\nclass A { get #foo() {} set #foo(value) {} }\nclass A { get #foo() {} set #bar(value) {} }\n",
+      "valid": true
+    }
+  ]
+}

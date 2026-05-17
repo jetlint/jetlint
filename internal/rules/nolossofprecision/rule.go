@@ -92,87 +92,94 @@ func isNonBaseTen(s string) bool {
 	return len(s) > 1
 }
 
-// nonBaseTenLiteralIsExact mirrors oxlint's bit-counting check: walk
-// each significand digit of a binary/octal/hex literal, accumulate the
-// effective bit length, and return false as soon as it exceeds 53.
+// nonBaseTenLiteralIsExact reports whether a binary/octal/hex literal
+// is exactly representable as a 64-bit float. Two constraints apply:
+// (1) the span from the highest set bit to the lowest set bit must
+// fit in the 53-bit mantissa (so trailing-zero "powers of N" like
+// 0x20000000000000 are exact even though their digit width exceeds
+// 13); and (2) the highest-bit position must fit in the 11-bit
+// exponent range (so multi-thousand-digit hex literals don't
+// silently round up to Infinity).
 func nonBaseTenLiteralIsExact(raw string) bool {
 	r := strings.TrimLeft(raw, "+-")
 	var digits string
-	var radix int
+	var bitsPerDigit int
 	switch {
 	case strings.HasPrefix(r, "0b") || strings.HasPrefix(r, "0B"):
 		digits = r[2:]
-		radix = 2
+		bitsPerDigit = 1
 	case strings.HasPrefix(r, "0o") || strings.HasPrefix(r, "0O"):
 		digits = r[2:]
-		radix = 8
+		bitsPerDigit = 3
 	case strings.HasPrefix(r, "0x") || strings.HasPrefix(r, "0X"):
 		digits = r[2:]
-		radix = 16
+		bitsPerDigit = 4
 	default:
 		digits = strings.TrimLeft(r, "0")
-		radix = 8
+		bitsPerDigit = 3
 	}
-	bitLen := 0
-	for i := 0; i < len(digits); i++ {
-		b := digits[i]
-		if b == '_' {
-			continue
-		}
-		var d byte
-		switch {
-		case b >= '0' && b <= '9':
-			d = b - '0'
-		case b >= 'a' && b <= 'f':
-			d = b - 'a' + 10
-		case b >= 'A' && b <= 'F':
-			d = b - 'A' + 10
-		default:
+	clean := strings.ReplaceAll(digits, "_", "")
+	first, last := -1, -1
+	for i := 0; i < len(clean); i++ {
+		v, ok := digitValue(clean[i])
+		if !ok {
 			return false
 		}
-		if bitLen == 0 {
-			if d == 0 {
-				continue
+		if v != 0 {
+			if first == -1 {
+				first = i
 			}
-			switch radix {
-			case 2:
-				bitLen = 1
-			case 8:
-				switch d {
-				case 1:
-					bitLen = 1
-				case 2, 3:
-					bitLen = 2
-				default:
-					bitLen = 3
-				}
-			default:
-				switch {
-				case d == 1:
-					bitLen = 1
-				case d <= 3:
-					bitLen = 2
-				case d <= 7:
-					bitLen = 3
-				default:
-					bitLen = 4
-				}
-			}
-		} else {
-			switch radix {
-			case 2:
-				bitLen++
-			case 8:
-				bitLen += 3
-			default:
-				bitLen += 4
-			}
-		}
-		if bitLen > 53 {
-			return false
+			last = i
 		}
 	}
-	return true
+	if first == -1 {
+		return true
+	}
+	highBitInLeading := highestSetBit(mustDigitValue(clean[first]))
+	lowBitInTrailing := lowestSetBit(mustDigitValue(clean[last]))
+	span := (last-first)*bitsPerDigit + (highBitInLeading - lowBitInTrailing) + 1
+	if span > 53 {
+		return false
+	}
+	highestBitPos := (len(clean)-first-1)*bitsPerDigit + highBitInLeading
+	return highestBitPos <= 1023
+}
+
+func digitValue(b byte) (int, bool) {
+	switch {
+	case b >= '0' && b <= '9':
+		return int(b - '0'), true
+	case b >= 'a' && b <= 'f':
+		return int(b - 'a' + 10), true
+	case b >= 'A' && b <= 'F':
+		return int(b - 'A' + 10), true
+	}
+	return 0, false
+}
+
+func mustDigitValue(b byte) int {
+	v, _ := digitValue(b)
+	return v
+}
+
+func highestSetBit(v int) int {
+	h := 0
+	for x := v >> 1; x != 0; x >>= 1 {
+		h++
+	}
+	return h
+}
+
+func lowestSetBit(v int) int {
+	if v == 0 {
+		return 0
+	}
+	l := 0
+	for v&1 == 0 {
+		l++
+		v >>= 1
+	}
+	return l
 }
 
 // notBaseTenLosesPrecision compares the source's digit string to a

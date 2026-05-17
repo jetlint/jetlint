@@ -1,0 +1,44 @@
+{
+  "ruleId": "no-undeclared-dependencies",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noUndeclaredDependencies",
+  "cases": [
+    {
+      "valid": false,
+      "main": "invalid.js",
+      "options": [{"devDependencies": false}],
+      "files": [
+        {"path": "invalid.js", "content": "import \"notInstalled\";\nimport(\"notInstalled\");\nrequire(\"notInstalled\")\n\nimport \"@testing-library/react\";\nimport(\"@testing-library/react\");\nrequire(\"@testing-library/react\");\n"},
+        {"path": "package.json", "content": "{\n\t\"dependencies\": {\n\t\t\"react\": \"1.0.0\"\n\t},\n  \"devDependencies\": {\n    \"@testing-library/react\": \"1.0.0\"\n  }\n}\n"}
+      ]
+    },
+    {
+      "valid": false,
+      "main": "invalid.test.js",
+      "options": [{"devDependencies": false}],
+      "files": [
+        {"path": "invalid.test.js", "content": "import \"notInstalled\";\nimport(\"notInstalled\");\nrequire(\"notInstalled\")\n\nimport \"@testing-library/react\";\nimport(\"@testing-library/react\");\nrequire(\"@testing-library/react\");\n"},
+        {"path": "package.json", "content": "{\n\t\"dependencies\": {\n\t\t\"react\": \"1.0.0\"\n\t},\n  \"devDependencies\": {\n    \"@testing-library/react\": \"1.0.0\"\n  }\n}\n"}
+      ]
+    },
+    {
+      "valid": true,
+      "main": "valid.ts",
+      "options": [{"devDependencies": true}],
+      "files": [
+        {"path": "valid.ts", "content": "/* should not generate diagnostics */\nimport \"./other\";\nimport \"react\";\nimport \"@testing-library/react\";\nimport(\"./other\");\nimport(\"react\");\nimport(\"@testing-library/react\");\nrequire(\"./other\");\nrequire(\"react\");\nrequire(\"@testing-library/react\");\n\nimport \"node:assert\";\nrequire(\"node:assert\");\n\nimport \"bun:test\";\n\nimport Button from \"@mui/material/Button\";\nimport { fontFamily } from \"tailwindcss/defaultTheme\";\n\nimport \"peer-dep\";\nimport \"optional-dep\";\n\nimport \"my-package\"\n\nimport \"@/internal\";\nimport \"#internal\";\n\nimport type * as jest from \"lodash\";\n\nimport \"bun\";\n\nimport \"fs\";\nimport \"os\";\nimport \"path\";\nimport \"process\";\n\nimport \"dep.js\"\n\nimport type {} from \"type-fest\";\n"},
+        {"path": "other.ts", "content": "export {};\n"},
+        {"path": "package.json", "content": "{\n\t\"name\": \"my-package\",\n\t\"dependencies\": {\n\t\t\"react\": \"1.0.0\",\n\t\t\"@mui/material\": \"5.15.12\",\n\t\t\"tailwindcss\": \"3.4.1\",\n\t\t\"dep.js\": \"1.0.0\"\n\t},\n\t\"devDependencies\": {\n\t\t\"@testing-library/react\": \"1.0.0\",\n\t\t\"@types/lodash\": \"1.0.0\",\n    \"type-fest\": \"1.0.0\"\n\t},\n\t\"peerDependencies\": {\n\t\t\"peer-dep\": \"1.0.0\"\n\t},\n\t\"optionalDependencies\": {\n\t\t\"optional-dep\": \"1.0.0\"\n\t}\n}\n"}
+      ]
+    },
+    {
+      "valid": true,
+      "main": "valid.test.js",
+      "options": [{"devDependencies": true}],
+      "files": [
+        {"path": "valid.test.js", "content": "/* should not generate diagnostics */\nimport \"@testing-library/react\";\nimport(\"@testing-library/react\");\nrequire(\"@testing-library/react\");\n"},
+        {"path": "package.json", "content": "{\n\t\"dependencies\": {\n\t\t\"react\": \"1.0.0\"\n\t},\n  \"devDependencies\": {\n    \"@testing-library/react\": \"1.0.0\"\n  }\n}\n"}
+      ]
+    }
+  ]
+}

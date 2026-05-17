@@ -1,0 +1,131 @@
+{
+  "ruleId": "no-unused-labels",
+  "oxcSHA": "625758ab25657c0fc13555c890aeca979be8ebdf",
+  "oxcSource": "crates/oxc_linter/src/rules/eslint/no_unused_labels.rs",
+  "cases": [
+    {
+      "code": "A: break A;",
+      "valid": true
+    },
+    {
+      "code": "A: { foo(); break A; bar(); }",
+      "valid": true
+    },
+    {
+      "code": "A: if (a) { foo(); if (b) break A; bar(); }",
+      "valid": true
+    },
+    {
+      "code": "A: for (var i = 0; i \u003c 10; ++i) { foo(); if (a) break A; bar(); }",
+      "valid": true
+    },
+    {
+      "code": "A: for (var i = 0; i \u003c 10; ++i) { foo(); if (a) continue A; bar(); }",
+      "valid": true
+    },
+    {
+      "code": "A: { B: break B; C: for (var i = 0; i \u003c 10; ++i) { foo(); if (a) break A; if (c) continue C; bar(); } }",
+      "valid": true
+    },
+    {
+      "code": "A: { var A = 0; console.log(A); break A; console.log(A); }",
+      "valid": true
+    },
+    {
+      "code": "label: while (true) { f = function() { label: while (true) { break label; } }; break label; }",
+      "valid": true
+    },
+    {
+      "code": "outer: { function f() { inner: { break inner; } } break outer; }",
+      "valid": true
+    },
+    {
+      "code": "A: { const f = () =\u003e { B: { break B; } }; break A; }",
+      "valid": true
+    },
+    {
+      "code": "A: var foo = 0;",
+      "valid": false
+    },
+    {
+      "code": "A: { foo(); bar(); }",
+      "valid": false
+    },
+    {
+      "code": "A: if (a) { foo(); bar(); }",
+      "valid": false
+    },
+    {
+      "code": "A: for (var i = 0; i \u003c 10; ++i) { foo(); if (a) break; bar(); }",
+      "valid": false
+    },
+    {
+      "code": "A: for (var i = 0; i \u003c 10; ++i) { foo(); if (a) continue; bar(); }",
+      "valid": false
+    },
+    {
+      "code": "A: for (var i = 0; i \u003c 10; ++i) { B: break A; }",
+      "valid": false
+    },
+    {
+      "code": "A: { var A = 0; console.log(A); }",
+      "valid": false
+    },
+    {
+      "code": "A: /* comment */ foo",
+      "valid": false
+    },
+    {
+      "code": "A /* comment */: foo",
+      "valid": false
+    },
+    {
+      "code": "A: \"use strict\"",
+      "valid": false
+    },
+    {
+      "code": "\"use strict\"; foo: \"bar\"",
+      "valid": false
+    },
+    {
+      "code": "A: (\"use strict\")",
+      "valid": false
+    },
+    {
+      "code": "A: `use strict`",
+      "valid": false
+    },
+    {
+      "code": "if (foo) { bar: 'baz' }",
+      "valid": false
+    },
+    {
+      "code": "A: B: 'foo'",
+      "valid": false
+    },
+    {
+      "code": "A: B: C: 'foo'",
+      "valid": false
+    },
+    {
+      "code": "A: B: C: D: 'foo'",
+      "valid": false
+    },
+    {
+      "code": "A: B: C: D: E: 'foo'",
+      "valid": false
+    },
+    {
+      "code": "A: 42",
+      "valid": false
+    },
+    {
+      "code": "A: { function f() { B: { } } break A; }",
+      "valid": false
+    },
+    {
+      "code": "label: while (true) { (() =\u003e { label: while (false) {} })(); }",
+      "valid": false
+    }
+  ]
+}

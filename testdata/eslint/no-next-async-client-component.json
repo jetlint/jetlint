@@ -1,0 +1,19 @@
+{
+  "ruleId": "no-next-async-client-component",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noNextAsyncClientComponent",
+  "cases": [
+    {
+      "code": "\"use client\";\n\nexport default async function MyComponent() {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n}\n\nasync function MyComponent2() {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n}\n\nconst MyComponent3 = async () =\u003e {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n};\n\nconst MyComponent4 = async function() {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n};\n\nlet MyComponent5;\nMyComponent5 = async () =\u003e {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n};\n\nlet MyComponent6;\nMyComponent6 = async function() {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n};\n\nconst components = {\n  async MyComponent() {\n    return \u003cdiv\u003eHello\u003c/div\u003e;\n  }\n};\n\nconst components2 = {\n  MyComponent: async () =\u003e {\n    return \u003cdiv\u003eHello\u003c/div\u003e;\n  }\n};\n\nconst components3 = {\n  MyComponent: async function() {\n    return \u003cdiv\u003eHello\u003c/div\u003e;\n  }\n};\n\nclass ComponentClass {\n  async MyComponent() {\n    return \u003cdiv\u003eHello\u003c/div\u003e;\n  }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default async function ServerComponent() {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n}\n\nconst ServerComponent2 = async () =\u003e {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n};\n\nlet ServerComponent3;\nServerComponent3 = async function() {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n};\n\nconst serverComponents = {\n  async ServerComponent() {\n    return \u003cdiv\u003eHello\u003c/div\u003e;\n  }\n};\n\nconst serverComponents2 = {\n  ServerComponent: async () =\u003e {\n    return \u003cdiv\u003eHello\u003c/div\u003e;\n  }\n};\n\nclass ServerComponentClass {\n  async ServerComponent() {\n    return \u003cdiv\u003eHello\u003c/div\u003e;\n  }\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\"use client\";\nexport default function ClientComponent() {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n}\n\nfunction ClientComponent2() {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n}\n\nconst ClientComponent3 = () =\u003e {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n};\n\nconst ClientComponent4 = function() {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n};\n\nlet ClientComponent5;\nClientComponent5 = () =\u003e {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n};\n\nlet ClientComponent6;\nClientComponent6 = function() {\n  return \u003cdiv\u003eHello\u003c/div\u003e;\n};\n\nconst components = {\n  MyComponent() {\n    return \u003cdiv\u003eHello\u003c/div\u003e;\n  }\n};\n\nconst components2 = {\n  MyComponent: () =\u003e {\n    return \u003cdiv\u003eHello\u003c/div\u003e;\n  }\n};\n\nconst components3 = {\n  MyComponent: function() {\n    return \u003cdiv\u003eHello\u003c/div\u003e;\n  }\n};\n\nclass ComponentClass {\n  MyComponent() {\n    return \u003cdiv\u003eHello\u003c/div\u003e;\n  }\n}\n",
+      "valid": true
+    }
+  ]
+}

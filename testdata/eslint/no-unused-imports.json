@@ -1,0 +1,127 @@
+{
+  "ruleId": "no-unused-imports",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noUnusedImports",
+  "cases": [
+    {
+      "code": "// Header comment\nimport A from \"mod\";\n\n// Header comment\nimport * as B from \"mod\"; // Import comment\n\n// Header comment\nimport { C } from \"mod\"; // Import comment\n\n// Header comment\nimport /*a*/ D /*b*/, /*c*/{ E }/*d*/ from \"mod\"; // Import comment\n\nimport /*a*/ F /*b*/, /*c*/ * as G /*d*/ from \"mod\";\n\nimport {\n    // Comment\n    H,\n    I,\n} from \"mod\";\n\nimport {/*a*/J/*b*/, /*c*/K/*d*/} from \"mod\";\n\n// Header comment\nimport { L as M, } from \"mod\"; // Import comment\n\n// See https://github.com/biomejs/biome/issues/653\nimport {a} from 'a'\nimport {d} from 'd'\nimport {b} from 'b'\nexport const bb = a + b\n\nimport {} from \"mod\"\n",
+      "valid": false
+    },
+    {
+      "code": "import X from \"react\"\nimport * as X from \"react\"\nimport { default as X } from \"react\"\n\nimport React from \"x\"\nimport * as React from \"x\"\nimport { default as React } from \"x\"\nimport React, { useEffect } from \"x\"\n\n// unsupported patterns\nimport X, { default as React } from \"react\"\nimport X, * as React from \"react\"\n\n// React import (no exception)\nimport React from \"react\"\nimport * as React from \"react\"\nimport { default as React } from \"react\"\nimport React, { useEffect } from \"react\"\n",
+      "valid": false
+    },
+    {
+      "code": "// Header comment\nimport type A from \"mod\";\n\n// Header comment\nimport type * as B from \"mod\"; // Import comment\n\n// Header comment\nimport type { C } from \"mod\"; // Import comment\n\n// Orphan comment\n\n// Header comment\nimport /*a*/ D /*b*/, /*c*/{ type E }/*d*/ from \"mod\"; // Import comment\n\nimport /*a*/ F /*b*/, /*c*/ * as G /*d*/ from \"mod\";\n\nimport {\n    // Comment\n    type H,\n    type I,\n} from \"mod\";\n\nimport {/*a*/type J/*b*/, /*c*/type K/*d*/} from \"mod\";\n\n// Header comment\nimport type { L as M, } from \"mod\"; // Import comment\n\n",
+      "valid": false
+    },
+    {
+      "code": "import Used, { NotUsed } from 'foo';\n\nUsed();\n",
+      "valid": false
+    },
+    {
+      "code": "// See https://github.com/biomejs/biome/issues/557\nimport type Type from \"mod\";\nexport const a: typeof Type = {};",
+      "valid": true
+    },
+    {
+      "code": "import type name0 from \"mod\";\nimport type name1 from \"mod\";\nimport type name2 from \"mod\";\nimport type name3 from \"mod\";\nimport type name4 from \"mod\";\nimport other0 from \"mod\";\nimport other1 from \"mod\";\nimport other2 from \"mod\";\nimport other3 from \"mod\";\nimport other4 from \"mod\";\n\nconst f0 = (name0: name0.T): void =\u003e {};\n\nfunction f1(name1: name1.T): void {};\n\nfunction f2(...name2: name2.U): void {};\n\nconst f3 = (other0: other0.T): void =\u003e {};\n\nfunction f4(other1: other1.T): void {};\n\nfunction f5(...other2: other2.U): void {};\n\nclass C0 {\n    constructor(readonly name3: name3.T, readonly other3: other3.T) {}\n}\n\ntry {} catch(name4: name4.T) {}\ntry {} catch(other4: other4.T) {}\n",
+      "valid": true
+    },
+    {
+      "code": "// See https://github.com/biomejs/biome/issues/4677\n\n// some types for the different locations\nimport TypeOnFunctionParam from \"mod\";\nimport TypeOnClassMethodParam from \"mod\";\nimport TypeOnClassConstructorParam from \"mod\";\nimport TypeOnClassField from \"mod\";\nimport TypeOnGlobalVariable from \"mod\";\nimport TypeOnFunctionVariable from \"mod\";\nimport TypeOnTypeDef from \"mod\";\nimport TypeOnExportedFunction from \"mod\";\nimport TypeOnObjectProperty from \"mod\";\n\n/**\n * @typedef {TypeOnTypeDef} TestTypeOnTypeDef \n */\n\n/**\n * @param {TypeOnFunctionParam} param\n */\nfunction testTypeOnFunction(param) {}\n\n/**\n * @param {TypeOnExportedFunction} param\n */\nexport function testTypeOnExportedFunction(param) {}\n\nclass TestTypeOnClassMethodParam {\n\t/**\n\t * @param {TypeOnClassMethodParam} param\n\t */\n\tmethod(param) {}\n}\n\nclass TestTypeOnClassConstructorParam {\n\t/**\n\t * @param {TypeOnClassConstructorParam} param\n\t */\n\tconstructor(param) {}\n}\n\nclass TestTypeOnClassField {\n\tconstructor(param) {\n        /**\n         * @type {TypeOnClassField}\n         */\n        this.var = 10;\n    }\n}\n\n/**\n * @type {TypeOnGlobalVariable}\n */\nlet testTypeOnGlobalVariable;\n\nfunction testTypeOnFunctionVariable() {\n\t/**\n\t * @type {TypeOnFunctionVariable}\n\t */\n\tlet testTypeOnFunctionVariable;\n}\n\nconst testTypeOnObjectProperty = {\n\t/**\n\t * @type {TypeOnObjectProperty}\n\t */\n\tproperty: 0,\n};\n",
+      "valid": true
+    },
+    {
+      "code": "// See https://github.com/biomejs/biome/issues/4677\n\n// https://jsdoc.app/tags-type\n\nimport SymbolName from \"mod\";\nimport MultipleTypes from \"mod\";\nimport ArraysGeneric from \"mod\";\nimport ArraysBrackets from \"mod\";\nimport AnyGenerics from \"mod\";\nimport ObjectProperties from \"mod\";\nimport Nullable from \"mod\";\nimport NonNullable from \"mod\";\nimport VarArgs from \"mod\";\nimport OptionalParameter from \"mod\";\n\n/**\n * @type {SymbolName}\n */\nlet testSymbolName;\n\n/**\n * @type {(number|MultipleTypes)}\n */\nlet testMultipleTypes;\n\n/**\n * @type {Array.\u003cArraysGeneric\u003e}\n */\nlet testArraysGeneric;\n\n/**\n * @type {ArraysBrackets[]}\n */\nlet testArraysBrackets;\n\n/**\n * @type {Object.\u003cstring, AnyGenerics\u003e}\n */\nlet testAnyGenerics;\n\n/**\n * @type {{a:number, b:ObjectProperties}}\n */\nlet testObjectProperties;\n\n/**\n * @type {?Nullable}\n */\nlet testNullable;\n\n/**\n * @type {!NonNullable}\n */\nlet testNonNullable;\n\n/**\n * @param {...VarArgs} params\n */\nfunction testVarArgs(params) {}\n\n/**\n * @param {OptionalParameter=} optional\n */\nfunction testOptionalParameter(optional) {}",
+      "valid": true
+    },
+    {
+      "code": "// See https://github.com/biomejs/biome/issues/4677\n\n// some types for the different locations\nimport type LinkOnFunction from \"mod\";\n\nimport type LinkOnVariable from \"mod\";\nimport type LinkOnClass from \"mod\";\n\nimport type LinkOnClassField from \"mod\";\nimport type LinkOnClassMethod from \"mod\";\nimport type LinkOnClassConstructor from \"mod\";\nimport type LinkOnClassAccessor from \"mod\";\nimport type LinkOnClassIndexer from \"mod\";\n\nimport type LinkOnInterface from \"mod\";\nimport type LinkOnInterfaceField from \"mod\";\nimport type LinkOnInterfaceMethod from \"mod\";\nimport type LinkOnInterfaceIndexer from \"mod\";\n\nimport type LinkOnEnum from \"mod\";\nimport type LinkOnEnumMember from \"mod\";\n\nimport type LinkOnObjectProperty from \"mod\";\n\n\n/**\n * {@link LinkOnFunction}\n */\nfunction testLinkOnFunction() { }\n\n/**\n * {@link LinkOnVariable}\n */\nconst testLinkOnVariable = 3;\n\n/**\n * {@link LinkOnClass}\n */\nclass TestLinkOnClass { }\n\nclass TestLinkOnClassField {\n    /**\n     * {@link LinkOnClassField}\n     */\n    field: number;\n}\n\nclass TestLinkOnClassMethod {\n    /**\n     * {@link LinkOnClassMethod}\n     */\n    method(): void { }\n}\n\nclass TestLinkOnClassConstructor {\n    /**\n     * {@link LinkOnClassConstructor}\n     */\n    constructor() { }\n}\n\nclass TestLinkOnClassAccessor {\n    /**\n     * {@link LinkOnClassAccessor}\n     */\n    get accessor(): number { return 0 }\n}\n\nclass TestLinkOnClassIndexer {\n    /**\n     * {@link LinkOnClassIndexer}\n     */\n    [index: number]: string;\n}\n\n/**\n * {@link LinkOnInterface}\n */\ninterface TestLinkOnInterface { }\n\ninterface TestLinkOnInterfaceField {\n    /**\n     * {@link LinkOnInterfaceField}\n     */\n    field: string;\n}\n\ninterface TestLinkOnInterfaceMethod {\n    /**\n     * {@link LinkOnInterfaceMethod}\n     */\n    method(): string;\n}\n\ninterface TestLinkOnInterfaceIndexer {\n    /**\n     * {@link LinkOnInterfaceIndexer}\n     */\n    [index: number]: string;\n}\n\n/**\n * {@link LinkOnEnum}\n */\nenum TestLinkOnEnum {\n}\n\nenum TestLinkOnEnumMember {\n    /**\n     * {@link LinkOnEnumMember}\n     */\n    member\n}\n\nconst testLinkOnObjectProperty = {\n\t/**\n\t * {@link LinkOnObjectProperty}\n\t */\n\tproperty: 0,\n};\n",
+      "valid": true
+    },
+    {
+      "code": "// See https://github.com/biomejs/biome/issues/4677\n\nimport type SyntaxNormal from \"mod\";\nimport type SyntaxWithDotMember from \"mod\";\nimport type SyntaxWithHashMember from \"mod\";\nimport type SyntaxWithDotMemberAndPipeDescription from \"mod\";\nimport type SyntaxWithHashMemberAndPipeDescription from \"mod\";\nimport type SyntaxWithDotMemberAnSpaceDescription from \"mod\";\nimport type SyntaxWithHashMemberAndSpaceDescription from \"mod\";\n\n/**\n * {@link SyntaxNormal}\n */\nfunction testSyntaxNormal() { }\n\n/**\n * {@link SyntaxWithDotMember.member}\n */\nfunction testSyntaxWithDotMember() { }\n\n/**\n * {@link SyntaxWithHashMember#member}\n */\nfunction testSyntaxWithHashMember() { }\n\n/**\n * {@link SyntaxWithDotMemberAndPipeDescription.member|Description}\n */\nfunction testSyntaxWithDotMemberAndPipeDescription() { }\n\n/**\n * {@link SyntaxWithHashMemberAndPipeDescription#member|Description}\n */\nfunction testSyntaxWithHashMemberAndPipeDescription() { }\n\n/**\n * {@link SyntaxWithDotMemberAnSpaceDescription.member Description}\n */\nfunction testSyntaxWithDotMemberAnSpaceDescription() { }\n\n/**\n * {@link SyntaxWithHashMemberAndSpaceDescription#member Description}\n */\nfunction testSyntaxWithHashMemberAndSpaceDescription() { }\n\n",
+      "valid": true
+    },
+    {
+      "code": "// Removing the last import should add `export {}` to preserve module context\n\nimport {foo as _foo} from \"foo\";\n\nfunction foo():number {\n  return 0;\n}\n\ndeclare module \"react\" {\n  interface ImgHTMLAttributes\u003cT\u003e extends HTMLAttributes\u003cT\u003e {\n    fetchpriority?: \"high\" | \"low\" | \"auto\";\n  }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/*\n * This program is free software: you can redistribute it and/or modify\n */\n\nimport x from \"jquery\";\n",
+      "valid": false
+    },
+    {
+      "code": "import * as postcssModules from \"postcss-modules\"\n\ntype PostcssOptions = Parameters\u003cpostcssModules\u003e[0]\n\nexport function f(options: PostcssOptions) {\n\tconsole.log(options)\n}\n",
+      "valid": true
+    },
+    {
+      "code": "// See https://github.com/biomejs/biome/issues/7876\n\n// some types for the different locations\nimport type LinkOnFunction from \"mod\";\n\nimport type LinkOnVariable from \"mod\";\nimport type LinkOnClass from \"mod\";\n\nimport type LinkOnClassField from \"mod\";\nimport type LinkOnClassMethod from \"mod\";\nimport type LinkOnClassConstructor from \"mod\";\nimport type LinkOnClassAccessor from \"mod\";\nimport type LinkOnClassIndexer from \"mod\";\n\nimport type LinkOnInterface from \"mod\";\nimport type LinkOnInterfaceField from \"mod\";\nimport type LinkOnInterfaceMethod from \"mod\";\nimport type LinkOnInterfaceIndexer from \"mod\";\n\nimport type LinkOnEnum from \"mod\";\nimport type LinkOnEnumMember from \"mod\";\n\nimport type LinkOnObjectProperty from \"mod\";\n\n\n/**\n * {@linkcode LinkOnFunction}\n */\nfunction testLinkOnFunction() { }\n\n/**\n * {@linkcode LinkOnVariable}\n */\nconst testLinkOnVariable = 3;\n\n/**\n * {@linkcode LinkOnClass}\n */\nclass TestLinkOnClass { }\n\nclass TestLinkOnClassField {\n    /**\n     * {@linkcode LinkOnClassField}\n     */\n    field: number;\n}\n\nclass TestLinkOnClassMethod {\n    /**\n     * {@linkcode LinkOnClassMethod}\n     */\n    method(): void { }\n}\n\nclass TestLinkOnClassConstructor {\n    /**\n     * {@linkcode LinkOnClassConstructor}\n     */\n    constructor() { }\n}\n\nclass TestLinkOnClassAccessor {\n    /**\n     * {@linkcode LinkOnClassAccessor}\n     */\n    get accessor(): number { return 0 }\n}\n\nclass TestLinkOnClassIndexer {\n    /**\n     * {@linkcode LinkOnClassIndexer}\n     */\n    [index: number]: string;\n}\n\n/**\n * {@linkcode LinkOnInterface}\n */\ninterface TestLinkOnInterface { }\n\ninterface TestLinkOnInterfaceField {\n    /**\n     * {@linkcode LinkOnInterfaceField}\n     */\n    field: string;\n}\n\ninterface TestLinkOnInterfaceMethod {\n    /**\n     * {@linkcode LinkOnInterfaceMethod}\n     */\n    method(): string;\n}\n\ninterface TestLinkOnInterfaceIndexer {\n    /**\n     * {@linkcode LinkOnInterfaceIndexer}\n     */\n    [index: number]: string;\n}\n\n/**\n * {@linkcode LinkOnEnum}\n */\nenum TestLinkOnEnum {\n}\n\nenum TestLinkOnEnumMember {\n    /**\n     * {@linkcode LinkOnEnumMember}\n     */\n    member\n}\n\nconst testLinkOnObjectProperty = {\n\t/**\n\t * {@linkcode LinkOnObjectProperty}\n\t */\n\tproperty: 0,\n};\n",
+      "valid": true
+    },
+    {
+      "code": "// See https://github.com/biomejs/biome/issues/7876\n\n// some types for the different locations\nimport type LinkOnFunction from \"mod\";\n\nimport type LinkOnVariable from \"mod\";\nimport type LinkOnClass from \"mod\";\n\nimport type LinkOnClassField from \"mod\";\nimport type LinkOnClassMethod from \"mod\";\nimport type LinkOnClassConstructor from \"mod\";\nimport type LinkOnClassAccessor from \"mod\";\nimport type LinkOnClassIndexer from \"mod\";\n\nimport type LinkOnInterface from \"mod\";\nimport type LinkOnInterfaceField from \"mod\";\nimport type LinkOnInterfaceMethod from \"mod\";\nimport type LinkOnInterfaceIndexer from \"mod\";\n\nimport type LinkOnEnum from \"mod\";\nimport type LinkOnEnumMember from \"mod\";\n\nimport type LinkOnObjectProperty from \"mod\";\n\n\n/**\n * {@linkplain LinkOnFunction}\n */\nfunction testLinkOnFunction() { }\n\n/**\n * {@linkplain LinkOnVariable}\n */\nconst testLinkOnVariable = 3;\n\n/**\n * {@linkplain LinkOnClass}\n */\nclass TestLinkOnClass { }\n\nclass TestLinkOnClassField {\n    /**\n     * {@linkplain LinkOnClassField}\n     */\n    field: number;\n}\n\nclass TestLinkOnClassMethod {\n    /**\n     * {@linkplain LinkOnClassMethod}\n     */\n    method(): void { }\n}\n\nclass TestLinkOnClassConstructor {\n    /**\n     * {@linkplain LinkOnClassConstructor}\n     */\n    constructor() { }\n}\n\nclass TestLinkOnClassAccessor {\n    /**\n     * {@linkplain LinkOnClassAccessor}\n     */\n    get accessor(): number { return 0 }\n}\n\nclass TestLinkOnClassIndexer {\n    /**\n     * {@linkplain LinkOnClassIndexer}\n     */\n    [index: number]: string;\n}\n\n/**\n * {@linkplain LinkOnInterface}\n */\ninterface TestLinkOnInterface { }\n\ninterface TestLinkOnInterfaceField {\n    /**\n     * {@linkplain LinkOnInterfaceField}\n     */\n    field: string;\n}\n\ninterface TestLinkOnInterfaceMethod {\n    /**\n     * {@linkplain LinkOnInterfaceMethod}\n     */\n    method(): string;\n}\n\ninterface TestLinkOnInterfaceIndexer {\n    /**\n     * {@linkplain LinkOnInterfaceIndexer}\n     */\n    [index: number]: string;\n}\n\n/**\n * {@linkplain LinkOnEnum}\n */\nenum TestLinkOnEnum {\n}\n\nenum TestLinkOnEnumMember {\n    /**\n     * {@linkplain LinkOnEnumMember}\n     */\n    member\n}\n\nconst testLinkOnObjectProperty = {\n\t/**\n\t * {@linkplain LinkOnObjectProperty}\n\t */\n\tproperty: 0,\n};\n",
+      "valid": true
+    },
+    {
+      "code": "\u003c!-- should not generate diagnostics --\u003e\n---\nimport Component from \"./Component.vue\"\n---\n\n\u003cComponent /\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "// should not generate diagnostics\nimport * as Ns1 from \"\"\nexport type T1 = Ns1;\n\nimport type * as Ns2 from \"\"\nexport type T2 = Ns2;\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\ndeclare module \"mod\" {\n    import type { Ns } from \"other\";\n    export const C: { prop: Ns.prop };\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n// Issue #7516: const variable shadows import type namespace\nimport type * as mdast from \"mdast\"\nconst _f = () =\u003e {\n    const mdast: mdast.Node = {} as any\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n// Issue #7516: let variable shadows import type namespace\nimport type * as hast from \"hast\"\nconst _f = () =\u003e {\n    let hast: hast.Root\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n// Issue #7516: nested function scope with variable shadowing import type namespace\nimport type * as vfile from \"vfile\"\nconst _f = () =\u003e {\n    const inner = () =\u003e {\n        let vfile: vfile.Value\n    }\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n// Issue #7516: non-type namespace import, variable shadows it\nimport * as unist from \"unist\"\nconst _f = () =\u003e {\n    let unist: unist.Node\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n// Issue #7516: var variable shadows import type namespace\nimport type * as estree from \"estree\"\nconst _f = () =\u003e {\n    var estree: estree.Program\n}\n",
+      "valid": true
+    },
+    {
+      "code": "\u003c!-- should not generate diagnostics --\u003e\n\u003cscript\u003e\nimport Component from \"./Component.vue\"\n\u003c/script\u003e\n\n\u003cComponent /\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n// See: https://github.com/biomejs/biome/issues/6669\n\nimport type {} from \"@mui/lab/themeAugmentation\";\n",
+      "valid": true
+    },
+    {
+      "code": "\u003c!-- should not generate diagnostics --\u003e\n\u003cscript\u003e\nimport Component from \"./Component.vue\"\n\u003c/script\u003e\n\n\u003ctemplate\u003e\n    \u003cComponent /\u003e\n\u003c/template\u003e\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport A from \"mod\";\nimport * as B from \"mod\";\nimport { C } from \"mod\";\nimport D, { E } from \"mod\";\nimport F, * as G from \"mod\";\nimport { H, I } from \"mod\";\nimport { J, K } from \"mod\";\nimport { L, } from \"mod\";\n\nexport { A, B, C, D, E, F, G, H, I, J, K, L };\n",
+      "valid": true
+    },
+    {
+      "code": "\u003c!-- should not generate diagnostics --\u003e\n---\nimport MyElement, {\n\ttype MyElementShape,\n\t} from './my-element.astro';\n\nlet myElement: MyElementShape =  {};\n---\n\n\u003ctemplate\u003e\n\t\u003cMyElement /\u003e\n\u003c/template\u003e\n\n",
+      "valid": true
+    },
+    {
+      "code": "\u003c!-- should not generate diagnostics --\u003e\n\u003cscript lang=\"ts\"\u003e\n\timport MyElement, {\n\t\ttype MyElementShape,\n\t} from './my-element.svelte';\n\n\tlet myElement = $state\u003cMyElementShape\u003e();\n\u003c/script\u003e\n\n\u003cMyElement bind:this={myElement} /\u003e\n\n",
+      "valid": true
+    },
+    {
+      "code": "\u003c!-- should not generate diagnostics --\u003e\n\u003cscript lang=\"ts\"\u003e\n\timport MyElement, {\n\t\ttype MyElementShape,\n\t} from './my-element.vue';\n\n\tlet myElement: MyElementShape =  {};\n\u003c/script\u003e\n\n\u003ctemplate\u003e\n\t\u003cMyElement /\u003e\n\u003c/template\u003e\n\n",
+      "valid": true
+    }
+  ]
+}

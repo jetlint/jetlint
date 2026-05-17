@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-void-elements-with-children",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/correctness/noVoidElementsWithChildren",
+  "cases": [
+    {
+      "code": "\n\nReact.createElement('img', {\n    someProp: \"bar\"\n}, 'child')\n\nReact.createElement('img', {\n    dangerouslySetInnerHTML: \"text\"\n})\n",
+      "valid": false
+    },
+    {
+      "code": "\u003c\u003e\n    \u003cbr\u003einvalid child\u003c/br\u003e\n    \u003cimg alt=\"some text\"\u003einvalid child\u003c/img\u003e\n    \u003cimg alt=\"some text\" dangerouslySetInnerHTML={{ __html: \"text\" }}\u003e\u003c/img\u003e\n    \u003cimg alt=\"some text\" children={\"some child\"}\u003e\u003c/img\u003e\n    \u003cimg alt=\"some text\" children={\"some child\"} /\u003e\n    \u003cimg alt=\"some text\" dangerouslySetInnerHTML={{ __html: \"text\" }} \u003einvalid child\u003c/img\u003e\n\u003c/\u003e\n",
+      "valid": false
+    }
+  ]
+}
