@@ -320,6 +320,7 @@ func additionalRulesSnapshot() []string {
 		"no-instanceof-array",
 		"no-confusing-void-type",
 		"no-misused-new",
+		"adjacent-overload-signatures",
 		"prefer-namespace-keyword",
 		"use-iterable-callback-return",
 		"no-useless-default-assignment",

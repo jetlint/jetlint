@@ -79,6 +79,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noinitializerwithdefinite"
 	"github.com/jetlint/jetlint/internal/rules/noinnerdeclarations"
 	"github.com/jetlint/jetlint/internal/rules/noinstanceofarray"
+	"github.com/jetlint/jetlint/internal/rules/adjacentoverloadsignatures"
 	"github.com/jetlint/jetlint/internal/rules/nomisusednew"
 	"github.com/jetlint/jetlint/internal/rules/noinvalidbuiltininstantiation"
 	"github.com/jetlint/jetlint/internal/rules/noinvalidregexp"
@@ -723,6 +724,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nowith.New(),
 		noinstanceofarray.New(),
 		nomisusednew.New(),
+		adjacentoverloadsignatures.New(),
 		prefernamespacekeyword.New(),
 		useiterablecallbackreturn.NewWithOptions(uicrOpts),
 		noundef.New(),

@@ -84,12 +84,12 @@ checker and rely on syntactic helpers like [Node.SourceText][srctext],
 [pan]: https://pkg.go.dev/github.com/microsoft/typescript-go/pkg/checker#Node.PropertyAccessName
 [lit]: https://pkg.go.dev/github.com/microsoft/typescript-go/pkg/checker#Node.LiteralText
 
-### suspicious (9)
+### suspicious (10)
 
-`no-confusing-void-expression`, `no-deprecated`, `no-unsafe-type-assertion`,
-`promise-function-async`, `restrict-plus-operands`,
-`restrict-template-expressions`, `return-await`, `strict-boolean-expressions`,
-`unbound-method`
+`adjacent-overload-signatures`, `no-confusing-void-expression`,
+`no-deprecated`, `no-unsafe-type-assertion`, `promise-function-async`,
+`restrict-plus-operands`, `restrict-template-expressions`,
+`return-await`, `strict-boolean-expressions`, `unbound-method`
 
 ### complexity (17)
 

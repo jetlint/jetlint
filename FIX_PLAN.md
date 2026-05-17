@@ -6,7 +6,7 @@ Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
 | Milestone | Open | Close-ready (impl exists) | Still missing |
 |---|---:|---:|---:|
-| #2 suspicious | 62 | 51 | 11 (+1 ambiguous #512 `strict`) |
+| #2 suspicious | 61 | 52 | 10 (+1 ambiguous #512 `strict`) |
 | #5 complexity | 45 | 35 | 10 |
 | #6 style | 69 | 53 | 16 |
 | #7 a11y | 33 | 33 | 0 (wiring + closure only) |
@@ -129,21 +129,17 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 6 remaining (top-leverage first)
+### #2 suspicious — 5 remaining (top-leverage first)
 
 1. #504 no-useless-regex-backrefs — biome rule. Reports backreferences
    inside a regex literal that can only ever match the empty string.
 2. #497 no-unassigned-variables — biome rule. `let`/`var` declarations
    without an initializer that are never assigned later in scope.
-3. #425 adjacent-overload-signatures — typescript-eslint. Walks function
-   / method declarations in a scope and groups overloads by name; reports
-   when overload signatures of the same name are interleaved with other
-   members.
-4. #475 no-import-cycles — biome rule. Cross-file analysis (needs
+3. #475 no-import-cycles — biome rule. Cross-file analysis (needs
    module-graph plumbing); higher cost.
-5. #464 no-exports-in-test — biome rule. Reports `export` statements in
+4. #464 no-exports-in-test — biome rule. Reports `export` statements in
    files matched by a test glob. Needs a test-file matcher.
-6. #448 no-deprecated-imports — biome rule. Detects imports of symbols
+5. #448 no-deprecated-imports — biome rule. Detects imports of symbols
    annotated `@deprecated` in their declaration site (type-aware).
 
 Deferred:
@@ -154,6 +150,21 @@ Deferred:
   obvious kebab match.
 
 _Landed 2026-05-17 in this batch:_
+- #425 `adjacent-overload-signatures` —
+  `internal/rules/adjacentoverloadsignatures/`, 64/64 oxlint cases pass.
+  Pure AST. Registers KindSourceFile, KindBlock, KindModuleBlock,
+  KindClassDeclaration/Expression, KindInterfaceDeclaration, and
+  KindTypeLiteral. For each container, walks ForEachChild and
+  classifies every direct child as a `*method` (or nil) by name+
+  static-ness+call-signature+name-kind, then reports when a
+  same-identity method appears with anything between it and the
+  previous same-identity occurrence. Computed keys whose inner
+  expression is a literal (`['foo']`, `[42]`) are unwrapped so they
+  collide with their bare-name siblings — matches oxc's `static_name`
+  semantics. Required an extractor fix in `cmd/oxlint-fixtures`: the
+  tokenizer treated Rust raw identifiers like `r#static` as the start
+  of a raw string `r#"..."#`; new `isRawStringStart` helper peeks past
+  the `#` run and only enters raw-string mode when a `"` follows.
 - #482 `no-misused-new` — `internal/rules/nomisusednew/`, 19/19 oxlint
   cases pass. Pure AST: hooks `KindInterfaceDeclaration` (reports
   `KindConstructSignature` whose return TypeReference name matches the
