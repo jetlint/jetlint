@@ -323,6 +323,7 @@ func additionalRulesSnapshot() []string {
 		"adjacent-overload-signatures",
 		"prefer-namespace-keyword",
 		"use-iterable-callback-return",
+		"no-alert",
 		"no-useless-default-assignment",
 		"non-nullable-type-assertion-style",
 		"only-throw-error",
