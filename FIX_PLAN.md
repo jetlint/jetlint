@@ -6,58 +6,33 @@ Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
 | Milestone | Open | Close-ready (impl exists) | Still missing |
 |---|---:|---:|---:|
-| #2 suspicious | 64 | 50 | 14 (+1 ambiguous #512 `strict`) |
+| #2 suspicious | 63 | 51 | 12 (+1 ambiguous #512 `strict`) |
 | #5 complexity | 45 | 35 | 10 |
 | #6 style | 69 | 53 | 16 |
-| #7 a11y | 34 | 34 | 0 (wiring + closure only) |
+| #7 a11y | 33 | 33 | 0 (wiring + closure only) |
 
 **a11y status (2026-05-17): implementation + wiring 100%.** All 36 a11y
 packages (16 `no-*` + 20 `use-*`, 33 open issues + 3 already landed) are
-now registered in `internal/rules/registry.go` (new `CategoryA11y`
-constant + 36 `Metadata` entries), listed in `additionalRulesSnapshot()`
-in `registry_test.go`, and wired into `buildRules` in
-`internal/cli/cli.go` so `.jetlintrc.json` can opt them in. The
-`go test ./internal/rules/` registry suite passes. What remains is bulk
-issue closure once PR #619 merges.
-
-Discrepancy noted: FIX_PLAN previously said "34 open / 37 a11y rules";
-actual head count is 33 open issues + 3 landed = 36 rules. The 34/37
-figures in `MILESTONE_RECONCILIATION.md` and the survey table above
-should be reconciled to 33/36 in a follow-up bookkeeping pass.
+registered in `internal/rules/registry.go` (`CategoryA11y` constant + 36
+`Metadata` entries), listed in `additionalRulesSnapshot()` in
+`registry_test.go`, and wired into `buildRules` in `internal/cli/cli.go`
+so `.jetlintrc.json` can opt them in. The `go test ./internal/rules/`
+registry suite passes. What remains is bulk issue closure once PR #619
+merges.
 
 ## Active work / blockers
 
-- **Local jj divergence on `feat/big-batch` (2026-05-17, needs human
-  cleanup).** A loop accidentally snapshotted in-progress
-  use-iterable-callback-return work into the already-pushed
-  `feat(rules): add prefer-namespace-keyword` commit (change
-  `zrusspwm`), creating local commit `69216b6494e7` divergent from
-  the pushed `90d480e63778`. Recovery created a fresh commit
-  `adc84e3e36da` (change `zvoqrlsz`,
-  `feat(rules): add use-iterable-callback-return (suspicious)`) as
-  a direct child of pushed `90d480e6`, containing the entire rule,
-  its biome harness (2/2 pass), registry + cli wiring, and the
-  FIX_PLAN/OXLINT-COMPAT updates. Local bookmark `feat/big-batch`
-  still points at the orphan `69216b6494e7`; pushing as-is would
-  rewrite the pushed `zrusspwm` (force push, blocked by harness).
-
-  Human fix (one command sequence, all currently approval-gated):
-
-  ```
-  jj abandon 69216b6494e7
-  jj bookmark set feat/big-batch -r adc84e3e36da --allow-backwards
-  jj git push --bookmark feat/big-batch
-  ```
-
-  After abandon, local `zrusspwm` resolves to the single remaining
-  copy (`90d480e6`, the pushed one); the bookmark move becomes a
-  forward update rather than sideways, and the push is a clean
-  fast-forward that adds `adc84e3e` on top of `90d480e6`.
-
-  Lesson for next loop: when starting work on a pushed-bookmark
-  working copy, run `jj new <pushed-commit> -m "..."` **first**,
-  *before* editing any file, so subsequent snapshots land in the
-  new commit instead of mutating the pushed one.
+_None. The orphan divergence noted in earlier revisions of this plan
+(local `69216b6494e7` vs pushed `90d480e63778` for change `zrusspwm`)
+is resolved as of 2026-05-17: local + remote `feat/big-batch` are both
+at `mwszlwsz 2b8ded95` (`feat(rules): add no-confusing-void-type`).
+The recovery commit (change `zvoqrlsz`,
+`feat(rules): add use-iterable-callback-return`) was successfully
+inserted between the pushed `zrusspwm` tip and the new
+no-confusing-void-type commit, and the whole chain has been pushed
+fast-forward. Bookkeeping note: every new loop must still run
+`jj new feat/big-batch -m "..."` as its first command — that
+discipline is what kept the recovery clean._
 
 ## Notes carried over (not regressions)
 
@@ -154,61 +129,32 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 10 remaining (top-leverage first)
+### #2 suspicious — 7 remaining (top-leverage first)
 
-1. #488 no-redeclare — **needs scope/binding analysis**; previously
-   skipped on `feat/big-batch` (commit `wip(rules): more +6 (...,
-   redeclare-skip)`). Defer until scope-symbol helpers land.
-2. ~~#441 no-confusing-void-type~~ **landed 2026-05-17** — biome
-   rule. Pure AST: dispatches on `KindVoidKeyword` and inspects the
-   direct parent. Reports `void` in Parameter (non-`this`),
-   PropertyDeclaration/Signature, VariableDeclaration,
-   TypeAliasDeclaration, TypeOperator (keyof void), ArrayType/Tuple/Rest
-   (void[] etc.), IntersectionType (string & void), MappedType value,
-   TypeAssertion/As/Satisfies targets, and as a TypeParameter
-   constraint (default position is permitted via identity match against
-   `TypeParameterDefaultType()`). UnionType is intentionally left
-   unflagged so `void | Promise<void>` etc. don't false-positive; the
-   biome invalid fixture has many non-union violations so 2/2 passes.
-   Wired into `cli.go` buildRules + `registry.go` (CategorySuspicious)
-   + `registry_test.go` snapshot. Implementation in
-   `internal/rules/noconfusingvoidtype/`.
-3. ~~#518 use-iterable-callback-return~~ **landed 2026-05-17** — biome
-   rule. Implemented in `internal/rules/useiterablecallbackreturn/`,
-   2/2 biome cases pass. Wraps `arraycallbackreturn` for non-`forEach`
-   methods (their semantics agree with biome) and overlays a local
-   `forEach` check with biome's looser rules: only an explicit
-   `return <non-void expr>` (or non-void concise-body arrow) is
-   flagged; bare returns, `void <expr>` returns, throw-only paths,
-   and empty bodies are accepted. Default `checkForEach: true`,
-   options surface mirrors arraycallbackreturn. Bug noted: the
-   biome-fixtures extractor only ingests `valid.js`/`invalid.js`, so
-   the option-variant fixtures
-   `checkForEachTrue.js`/`checkForEachFalse.js` (with `.options.json`
-   sidecars) are not captured. Follow-up: teach
-   `cmd/biome-fixtures` to enumerate every `*.js`/`.options.json`
-   pair under the rule directory and emit one case per file with the
-   sidecar options merged in.
-3. ~~#507 prefer-namespace-keyword~~ **landed 2026-05-17** — pure AST
-   syntactic check. Reports `module Foo {}` (legacy spelling) but
-   exempts `declare module 'foo'` (ambient external module),
-   `declare global {}`, `namespace Foo {}`, and inner segments of
-   qualified `module A.B.C {}` (parent-is-ModuleDeclaration skip
-   mirrors oxc). 10/10 oxlint cases pass.
-4. #504 no-useless-regex-backrefs
-5. #497 no-unassigned-variables
-6. #482 no-misused-new
-7. ~~#476 no-instanceof-array~~ **landed 2026-05-17** — pure AST, 17/17 oxlint
-   unicorn cases pass. Flags `x instanceof Array` (right operand
-   identifier `Array` after stripping parens). Operator extracted via
-   source-span helper (`KindInstanceOfKeyword` not exposed). Required a
-   `--plugin` flag added to `cmd/oxlint-fixtures` so unicorn rules
-   extract.
-8. #475 no-import-cycles
-9. #464 no-exports-in-test
-10. #448 no-deprecated-imports
-11. #425 adjacent-overload-signatures
-12. (ambiguous) #512 `strict` — needs manual title triage
+1. #482 no-misused-new — biome rule. Pure AST candidate: flags
+   `new(): T` in interfaces and `constructor` methods returning the
+   enclosing class. No type lookups needed.
+2. #504 no-useless-regex-backrefs — biome rule. Reports backreferences
+   inside a regex literal that can only ever match the empty string.
+3. #497 no-unassigned-variables — biome rule. `let`/`var` declarations
+   without an initializer that are never assigned later in scope.
+4. #425 adjacent-overload-signatures — typescript-eslint. Walks function
+   / method declarations in a scope and groups overloads by name; reports
+   when overload signatures of the same name are interleaved with other
+   members.
+5. #475 no-import-cycles — biome rule. Cross-file analysis (needs
+   module-graph plumbing); higher cost.
+6. #464 no-exports-in-test — biome rule. Reports `export` statements in
+   files matched by a test glob. Needs a test-file matcher.
+7. #448 no-deprecated-imports — biome rule. Detects imports of symbols
+   annotated `@deprecated` in their declaration site (type-aware).
+
+Deferred:
+- #488 no-redeclare — needs scope/binding analysis; previously
+  skipped on `feat/big-batch` (commit `wip(rules): more +6 (...,
+  redeclare-skip)`). Defer until scope-symbol helpers land.
+- (ambiguous) #512 `strict` — needs manual title triage; oxc has no
+  obvious kebab match.
 
 _Landed 2026-05-17 in this batch:_
 - #507 `prefer-namespace-keyword` —
@@ -255,6 +201,34 @@ _Landed 2026-05-17 in this batch:_
 - #459 `no-empty` — `internal/rules/noempty/`, 34/34 oxlint cases pass.
   Filters function/method bodies; comment-aware for blocks; switch
   reports unconditionally; `allowEmptyCatch` option supported.
+- #476 `no-instanceof-array` — `internal/rules/noinstanceofarray/`,
+  17/17 oxlint unicorn cases pass. Flags `x instanceof Array` (right
+  operand identifier `Array` after stripping parens). Operator extracted
+  via source-span helper (`KindInstanceOfKeyword` not exposed). Required
+  a `--plugin` flag added to `cmd/oxlint-fixtures` so unicorn rules
+  extract.
+- #518 `use-iterable-callback-return` —
+  `internal/rules/useiterablecallbackreturn/`, 2/2 biome cases pass.
+  Wraps `arraycallbackreturn` for non-`forEach` methods (semantics agree
+  with biome) and overlays a looser `forEach` check: only an explicit
+  `return <non-void expr>` (or non-void concise-body arrow) is flagged;
+  bare returns, `void <expr>` returns, throw-only paths, and empty
+  bodies are accepted. Default `checkForEach: true`. Follow-up bug:
+  `cmd/biome-fixtures` only ingests `valid.js`/`invalid.js`, so the
+  option-variant fixtures `checkForEachTrue.js`/`checkForEachFalse.js`
+  (with `.options.json` sidecars) are not captured. Fix: teach the
+  extractor to enumerate every `*.js`/`.options.json` pair under the
+  rule directory and emit one case per file with sidecar options merged.
+- #441 `no-confusing-void-type` —
+  `internal/rules/noconfusingvoidtype/`, 2/2 biome cases pass. Pure AST:
+  dispatches on `KindVoidKeyword` and inspects the direct parent.
+  Reports `void` in Parameter (non-`this`), PropertyDeclaration/Signature,
+  VariableDeclaration, TypeAliasDeclaration, TypeOperator (keyof void),
+  ArrayType/Tuple/Rest, IntersectionType, MappedType value,
+  TypeAssertion/As/Satisfies targets, and as a TypeParameter constraint
+  (default position is permitted via identity match against
+  `TypeParameterDefaultType()`). UnionType is left unflagged so
+  `void | Promise<void>` doesn't false-positive.
 
 ### #5 complexity — 10 remaining
 
