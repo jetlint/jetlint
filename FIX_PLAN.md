@@ -110,7 +110,7 @@ tests pass):_
 - _#442 no-console → `noconsole` (LANDED 2026-05-17)_
 - _#443 no-const-enum → `noconstenum` (LANDED 2026-05-17)_
 - _#449 no-document-cookie → `nodocumentcookie` (LANDED 2026-05-17)_
-- _#450 no-document-import-in-page → `nodocumentimportinpage`_
+- _#450 no-document-import-in-page → `nodocumentimportinpage` (LANDED 2026-05-17)_
 - _#451 no-double-equals → `nodoubleequals`_
 - _#457/#458 no-duplicate-jsx-props/-test-hooks → `noduplicatejsxprops`/`noduplicatetesthooks`_
 - _#460/#461 no-empty-interface/-source → `noemptyinterface`/`noemptysource`_
