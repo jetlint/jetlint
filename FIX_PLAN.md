@@ -22,7 +22,38 @@ merges.
 
 ## Active work / blockers
 
-_None. The orphan divergence noted in earlier revisions of this plan
+_2026-05-17: Loop landed `feat(rules): wire use-self-closing-elements
+(style)` (commit `29a2045ef5e2`, change `lxytozmn`). Rule package
+`useselfclosingelements/` was already implemented and passing its
+EslintCompatibility harness; this commit added the import + buildRules
+entry in `cli.go`, the `CategoryStyle` Metadata in `registry.go`, and
+the snapshot line in `registry_test.go`. Closed #416. `go test ./...`
+green (zero new failures; pre-existing `internal/format` non-TTY notes
+unchanged).
+
+**Repeatable pattern discovered:** many open issues in the four
+milestones map to packages that already exist under
+`internal/rules/<pkg>/` but are not yet wired into `cli.go`'s
+`buildRules` or registered in `registry.go`. Future loops should
+prioritise these wiring-only closes (one Metadata entry + one import
++ one `pkg.New()` call + one snapshot line) over from-scratch ports.
+Candidate sweep query: `ls internal/rules/` and diff against
+`grep -E "rules/[a-z]+" cli.go | sort -u`._
+
+**Recovery note (this loop):** the FIX_PLAN edit was initially made
+in the same `@` as the just-pushed wiring commit, which rewrote the
+pushed commit_id (29a2045 → 0682774f) and made push refuse with a
+sideways-push error. Recovery: `jj restore --from @-` on FIX_PLAN.md
+to revert the doc edit out of the pushed change, then
+`jj new feat/big-batch@origin -m "docs(plan): ..."` to start a
+fresh child commit, then `jj bookmark set feat/big-batch -r <remote>
+--allow-backwards` to align the local bookmark with the remote
+commit_id. The local divergent commit_id (0682774f) is harmless once
+the bookmark no longer points at it. **Lesson for future loops:**
+treat each rule/feature commit as immediately frozen after push;
+plan-update commits MUST live in a separate `jj new` change.
+
+_None blocking. The orphan divergence noted in earlier revisions of this plan
 (local `69216b6494e7` vs pushed `90d480e63778` for change `zrusspwm`)
 is resolved as of 2026-05-17: local + remote `feat/big-batch` are both
 at `mwszlwsz 2b8ded95` (`feat(rules): add no-confusing-void-type`).
