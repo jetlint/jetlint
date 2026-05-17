@@ -136,6 +136,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noselfcompare"
 	"github.com/jetlint/jetlint/internal/rules/nosetterreturn"
 	"github.com/jetlint/jetlint/internal/rules/noshadowrestrictednames"
+	"github.com/jetlint/jetlint/internal/rules/noskippedtests"
 	"github.com/jetlint/jetlint/internal/rules/nosoliddestructuredprops"
 	"github.com/jetlint/jetlint/internal/rules/nosparsearrays"
 	"github.com/jetlint/jetlint/internal/rules/nostringcasemismatch"
@@ -745,6 +746,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noglobalisfinite.New(),
 		noglobalisnan.New(),
 		noheadimportindocument.New(),
+		noskippedtests.New(),
 		nosparsearrays.New(),
 		nostringcasemismatch.New(),
 		nosuperwithoutextends.New(),
