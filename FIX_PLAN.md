@@ -9,7 +9,7 @@ Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 | #2 suspicious | 66 | 48 | 17 (+1 ambiguous #512 `strict`) |
 | #5 complexity | 45 | 35 | 10 |
 | #6 style | 69 | 53 | 16 |
-| #7 a11y | 36 | 33 | 3 |
+| #7 a11y | 36 | 34 | 2 |
 
 ## Active work / blockers
 
@@ -22,11 +22,14 @@ complexity → style. Each entry resolves one rule via the
 `docs/RULE-LOOP.md` 14-step procedure and one rule-scoped commit on
 `feat/big-batch`.
 
-### #7 a11y — 3 remaining
+### #7 a11y — 2 remaining
 
-1. #145 use-anchor-content
-2. #151 use-heading-content
-3. #146 use-aria-activedescendant-with-tabindex
+1. #151 use-heading-content
+2. #146 use-aria-activedescendant-with-tabindex
+
+Landed this batch:
+- #145 use-anchor-content — biome a11y fixture 2/2 passes; rule at
+  `internal/rules/useanchorcontent/`.
 
 ### #2 suspicious — 17 remaining (top-leverage first)
 
