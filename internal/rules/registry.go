@@ -101,6 +101,7 @@ var All = []Metadata{
 	{ID: "no-duplicate-imports", Category: CategoryStyle, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-empty", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-empty-character-class", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-empty-interface", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-empty-pattern", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-evolving-types", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-ex-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

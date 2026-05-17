@@ -228,6 +228,7 @@ func additionalRulesSnapshot() []string {
 		"no-dynamic-namespace-import-access",
 		"no-empty",
 		"no-empty-character-class",
+		"no-empty-interface",
 		"no-empty-pattern",
 		"no-evolving-types",
 		"no-ex-assign",
