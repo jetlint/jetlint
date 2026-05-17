@@ -328,6 +328,7 @@ func additionalRulesSnapshot() []string {
 		"no-bitwise-operators",
 		"no-catch-assign",
 		"no-comment-text",
+		"no-console",
 		"no-useless-default-assignment",
 		"non-nullable-type-assertion-style",
 		"only-throw-error",
