@@ -330,6 +330,7 @@ func additionalRulesSnapshot() []string {
 		"no-comment-text",
 		"no-console",
 		"no-const-enum",
+		"no-document-cookie",
 		"no-useless-default-assignment",
 		"non-nullable-type-assertion-style",
 		"only-throw-error",
