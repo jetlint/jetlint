@@ -30,14 +30,24 @@ commit added the import + buildRules entry in `cli.go`, the
 in `registry_test.go`. Closed #429. `go test ./...` green except the
 two pre-existing `internal/format` non-TTY failures noted below._
 
+_2026-05-17: Loop landed `feat(rules): wire no-array-index-key
+(suspicious)` (commit `9c536c4f`, change `rrllysov`). Package
+`internal/rules/noarrayindexkey/` already existed and its
+`EslintCompatibility` harness passed; this commit added the import +
+buildRules entry in `cli.go`, the `CategorySuspicious` Metadata in
+`registry.go`, and the snapshot line in `registry_test.go`. Closed
+#431. `go test ./...` fully green (no failures observed under the
+current sandbox; the `internal/format` non-TTY failures noted earlier
+did not surface this run — likely TTY/env-dependent as documented)._
+
 _2026-05-17: Surveyed wiring-only opportunities. **80+ open issues**
 across the four milestones map to existing `internal/rules/<pkg>/`
 packages that are NOT wired into `cli.go` or registered in
 `registry.go`. Confirmed wiring-only candidates (package exists +
 tests pass):_
 
-- _#429 no-alert → `noalert` (LANDED this loop)_
-- _#431 no-array-index-key → `noarrayindexkey`_
+- _#429 no-alert → `noalert` (LANDED 2026-05-17)_
+- _#431 no-array-index-key → `noarrayindexkey` (LANDED 2026-05-17)_
 - _#434 no-bitwise-operators → `nobitwiseoperators`_
 - _#435 no-catch-assign → `nocatchassign`_
 - _#437 no-comment-text → `nocommenttext`_
