@@ -39,6 +39,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/guardforin"
 	"github.com/jetlint/jetlint/internal/rules/namingconvention"
 	"github.com/jetlint/jetlint/internal/rules/noalert"
+	"github.com/jetlint/jetlint/internal/rules/noarrayindexkey"
 	"github.com/jetlint/jetlint/internal/rules/noarraydelete"
 	"github.com/jetlint/jetlint/internal/rules/noasyncpromiseexecutor"
 	"github.com/jetlint/jetlint/internal/rules/noawaitinloop"
@@ -674,6 +675,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		guardforin.New(),
 		namingconvention.New(),
 		noalert.New(),
+		noarrayindexkey.New(),
 		noarraydelete.New(),
 		noasyncpromiseexecutor.New(),
 		noawaitinloop.New(),
