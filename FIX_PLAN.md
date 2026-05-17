@@ -66,6 +66,16 @@ and `noconstantbinaryexpression`), the `CategorySuspicious` Metadata in
 `go test ./internal/rules/ ./internal/cli/ ./internal/rules/noconsole/`
 all green._
 
+_2026-05-17: Loop landed `feat(rules): wire no-const-enum (suspicious)`
+(commit `a4603006`, change `quukzoxk`). Package `internal/rules/noconstenum/`
+already existed and its `EslintCompatibility` harness passed; this
+commit added the import + buildRules entry in `cli.go` (alphabetically
+between `noconstassign` and `noconstructorreturn`), the
+`CategorySuspicious` Metadata in `registry.go`, and the snapshot line
+in `registry_test.go`. Closed #443.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/noconstenum/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-array-index-key
 (suspicious)` (commit `9c536c4f`, change `rrllysov`). Package
 `internal/rules/noarrayindexkey/` already existed and its
@@ -88,7 +98,7 @@ tests pass):_
 - _#435 no-catch-assign → `nocatchassign` (LANDED 2026-05-17)_
 - _#437 no-comment-text → `nocommenttext` (LANDED 2026-05-17)_
 - _#442 no-console → `noconsole` (LANDED 2026-05-17)_
-- _#443 no-const-enum → `noconstenum`_
+- _#443 no-const-enum → `noconstenum` (LANDED 2026-05-17)_
 - _#449/#450 no-document-cookie/-import-in-page → `nodocumentcookie`/`nodocumentimportinpage`_
 - _#451 no-double-equals → `nodoubleequals`_
 - _#457/#458 no-duplicate-jsx-props/-test-hooks → `noduplicatejsxprops`/`noduplicatetesthooks`_
