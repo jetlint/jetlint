@@ -92,6 +92,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nofunctionassign"
 	"github.com/jetlint/jetlint/internal/rules/noglobalassign"
 	"github.com/jetlint/jetlint/internal/rules/noglobaldirnamefilename"
+	"github.com/jetlint/jetlint/internal/rules/noglobalisfinite"
 	"github.com/jetlint/jetlint/internal/rules/noheadimportindocument"
 	"github.com/jetlint/jetlint/internal/rules/noimpliedeval"
 	"github.com/jetlint/jetlint/internal/rules/noimportassign"
@@ -735,6 +736,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nofunctionassign.New(),
 		noglobalassign.New(),
 		noglobaldirnamefilename.New(),
+		noglobalisfinite.New(),
 		noheadimportindocument.New(),
 		nosparsearrays.New(),
 		nostringcasemismatch.New(),

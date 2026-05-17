@@ -113,6 +113,7 @@ var All = []Metadata{
 	{ID: "no-function-assign", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-global-assign", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-global-dirname-filename", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-global-is-finite", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-head-import-in-document", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-sparse-arrays", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-string-case-mismatch", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
