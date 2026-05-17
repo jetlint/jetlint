@@ -97,6 +97,7 @@ var All = []Metadata{
 	{ID: "no-dupe-keys", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-duplicate-case", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-duplicate-imports", Category: CategoryStyle, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-empty", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-empty-character-class", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-empty-pattern", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-ex-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

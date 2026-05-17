@@ -31,12 +31,11 @@ should be reconciled to 33/36 in a follow-up bookkeeping pass.
 
 ## Notes carried over (not regressions)
 
-- `internal/format` tests `TestHumanFormatter_HeaderHasTrailingSeparatorBar`
-  and `TestHumanFormatter_ColorAlwaysProducesANSIEscapes` fail on the
-  current `feat/big-batch` head (and on the parent commit). They are
-  pre-existing failures unrelated to rule work — the human formatter is
-  not emitting the `━` header separator or ANSI escapes the tests expect.
-  Track as a separate fix (the format package, not a rule).
+- _Resolved 2026-05-17:_ the `internal/format` failures
+  (`TestHumanFormatter_HeaderHasTrailingSeparatorBar`,
+  `TestHumanFormatter_ColorAlwaysProducesANSIEscapes`) no longer
+  reproduce. `go test ./...` is fully green on the current head of
+  `feat/big-batch`.
 - `cli.go:430` carries a `errors.As(err, &te)` call that the linter
   suggests rewriting as `errors.AsType[*toolerr.Error]` (Go 1.26
   generics helper). Pre-existing; refactor in a separate commit so the
@@ -121,26 +120,30 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 17 remaining (top-leverage first)
+### #2 suspicious — 16 remaining (top-leverage first)
 
-1. #459 no-empty
-2. #488 no-redeclare
-3. #502 no-unused-expressions
-4. #428 guard-for-in
-5. #426 default-case-last
-6. #518 use-iterable-callback-return
-7. #507 prefer-namespace-keyword
-8. #504 no-useless-regex-backrefs
-9. #497 no-unassigned-variables
-10. #482 no-misused-new
-11. #476 no-instanceof-array
-12. #475 no-import-cycles
-13. #464 no-exports-in-test
-14. #462 no-evolving-types
-15. #448 no-deprecated-imports
-16. #441 no-confusing-void-type
-17. #425 adjacent-overload-signatures
-18. (ambiguous) #512 `strict` — needs manual title triage
+1. #488 no-redeclare
+2. #502 no-unused-expressions
+3. #428 guard-for-in
+4. #426 default-case-last
+5. #518 use-iterable-callback-return
+6. #507 prefer-namespace-keyword
+7. #504 no-useless-regex-backrefs
+8. #497 no-unassigned-variables
+9. #482 no-misused-new
+10. #476 no-instanceof-array
+11. #475 no-import-cycles
+12. #464 no-exports-in-test
+13. #462 no-evolving-types
+14. #448 no-deprecated-imports
+15. #441 no-confusing-void-type
+16. #425 adjacent-overload-signatures
+17. (ambiguous) #512 `strict` — needs manual title triage
+
+_Landed 2026-05-17 in this batch:_
+- #459 `no-empty` — `internal/rules/noempty/`, 34/34 oxlint cases pass.
+  Filters function/method bodies; comment-aware for blocks; switch
+  reports unconditionally; `allowEmptyCatch` option supported.
 
 ### #5 complexity — 10 remaining
 

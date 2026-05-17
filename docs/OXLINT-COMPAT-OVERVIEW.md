@@ -55,12 +55,13 @@ on 100%; the score is a baseline that improves as rules sharpen.
 | valid-typeof | 60/60 (100%) |
 | use-isnan | 208/208 (100%) |
 | no-self-assign | 92/92 (100%) |
+| no-empty | 34/34 (100%) |
 
-**Aggregate: 464/464 cases pass (100%)** across all option
+**Aggregate: 498/498 cases pass (100%)** across all option
 combinations the upstream fixtures exercise.
 
-The three rules with options (\`valid-typeof\`, \`use-isnan\`,
-\`no-self-assign\`) expose the standard \`Options\` /
+The four rules with options (\`valid-typeof\`, \`use-isnan\`,
+\`no-self-assign\`, \`no-empty\`) expose the standard \`Options\` /
 \`DefaultOptions\` / \`OptionsFromJSON\` / \`NewWithOptions\` surface
 so user-supplied config in \`.jetlintrc.json\` is plumbed through.
 

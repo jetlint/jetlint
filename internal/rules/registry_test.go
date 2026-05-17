@@ -224,6 +224,7 @@ func additionalRulesSnapshot() []string {
 		"no-duplicate-imports",
 		"no-duplicate-type-constituents",
 		"no-dynamic-namespace-import-access",
+		"no-empty",
 		"no-empty-character-class",
 		"no-empty-pattern",
 		"no-ex-assign",
