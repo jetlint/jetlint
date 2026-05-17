@@ -106,6 +106,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noinvalidbuiltininstantiation"
 	"github.com/jetlint/jetlint/internal/rules/noinvalidregexp"
 	"github.com/jetlint/jetlint/internal/rules/noirregularwhitespace"
+	"github.com/jetlint/jetlint/internal/rules/nolabelvar"
 	"github.com/jetlint/jetlint/internal/rules/nolossofprecision"
 	"github.com/jetlint/jetlint/internal/rules/nomeaninglessvoidoperator"
 	"github.com/jetlint/jetlint/internal/rules/nomisleadingcharacterclass"
@@ -786,6 +787,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noinvalidbuiltininstantiation.New(),
 		noinvalidregexp.New(),
 		noirregularwhitespace.New(),
+		nolabelvar.New(),
 		nolossofprecision.New(),
 		nomeaninglessvoidoperator.New(),
 		nomisusedspread.New(),

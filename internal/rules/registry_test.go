@@ -253,6 +253,7 @@ func additionalRulesSnapshot() []string {
 		"no-invalid-builtin-instantiation",
 		"no-invalid-regexp",
 		"no-irregular-whitespace",
+		"no-label-var",
 		"no-loss-of-precision",
 		"no-meaningless-void-operator",
 		"no-misleading-character-class",

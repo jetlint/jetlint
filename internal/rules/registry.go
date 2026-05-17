@@ -189,6 +189,7 @@ var All = []Metadata{
 	{ID: "no-inner-declarations", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-invalid-regexp", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-irregular-whitespace", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-label-var", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-loss-of-precision", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-self-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-solid-destructured-props", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
