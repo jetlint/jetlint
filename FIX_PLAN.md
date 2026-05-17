@@ -22,14 +22,39 @@ complexity → style. Each entry resolves one rule via the
 `docs/RULE-LOOP.md` 14-step procedure and one rule-scoped commit on
 `feat/big-batch`.
 
-### #7 a11y — 2 remaining
+### #7 a11y — STALE COUNT; reconcile next loop
 
-1. #151 use-heading-content
-2. #146 use-aria-activedescendant-with-tabindex
+Reality check (queried 2026-05-17): milestone #7 has 34 open issues
+after closing #151 (was 35). The "2 remaining" figure above came from
+the original reconciliation and never accounted for the full
+biome a11y rule set (issues #128–#163). **Next loop must rebuild this
+queue from `gh issue list --milestone 7 --state open` before picking
+work.**
 
 Landed this batch:
-- #145 use-anchor-content — biome a11y fixture 2/2 passes; rule at
+- #145 use-anchor-content — eslint a11y fixture 2/2 passes; rule at
   `internal/rules/useanchorcontent/`.
+- #151 use-heading-content — eslint a11y fixture 2/2 passes; rule at
+  `internal/rules/useheadingcontent/` (commit a5d2456 on
+  feat/big-batch, PR #619). Closed 2026-05-17.
+
+Remaining a11y queue (issue numbers): #128 no-access-key, #129
+no-aria-hidden-on-focusable, #130 no-aria-unsupported-elements, #131
+no-autofocus, #132 no-distracting-elements, #133 no-header-scope, #134
+no-interactive-element-to-noninteractive-role, #135
+no-label-without-control, #136 no-noninteractive-element-interactions,
+#137 no-noninteractive-element-to-interactive-role, #138
+no-noninteractive-tabindex, #139 no-positive-tabindex, #140
+no-redundant-alt, #141 no-redundant-roles, #142
+no-static-element-interactions, #143 no-svg-without-title, #146
+use-aria-activedescendant-with-tabindex, #147 use-aria-props-for-role,
+#148 use-aria-props-supported-by-role, #149 use-button-type, #150
+use-focusable-interactive, #152 use-html-lang, #153 use-iframe-title,
+#154 use-key-with-click-events, #155 use-key-with-mouse-events, #156
+use-media-caption, #157 use-semantic-elements, #158 use-valid-anchor,
+#159 use-valid-aria-props, #160 use-valid-aria-role, #161
+use-valid-aria-values, #162 use-valid-autocomplete, #163
+use-valid-lang.
 
 ### #2 suspicious — 17 remaining (top-leverage first)
 
