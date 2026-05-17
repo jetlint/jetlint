@@ -118,6 +118,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nonextasyncclientcomponent"
 	"github.com/jetlint/jetlint/internal/rules/nonnullabletypeassertionstyle"
 	"github.com/jetlint/jetlint/internal/rules/nonodejsmodules"
+	"github.com/jetlint/jetlint/internal/rules/nononnullassertedoptionalchain"
 	"github.com/jetlint/jetlint/internal/rules/nononoctaldecimalescape"
 	"github.com/jetlint/jetlint/internal/rules/noobjcalls"
 	"github.com/jetlint/jetlint/internal/rules/noprecisionloss"
@@ -796,6 +797,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nonewnativenonconstructor.New(),
 		nonextasyncclientcomponent.New(),
 		nonodejsmodules.New(),
+		nononnullassertedoptionalchain.New(),
 		nononoctaldecimalescape.New(),
 		noobjcalls.New(),
 		nonnullabletypeassertionstyle.New(),

@@ -264,6 +264,7 @@ func additionalRulesSnapshot() []string {
 		"no-new-native-nonconstructor",
 		"no-next-async-client-component",
 		"no-nodejs-modules",
+		"no-non-null-asserted-optional-chain",
 		"no-nonoctal-decimal-escape",
 		"no-obj-calls",
 		"no-precision-loss",

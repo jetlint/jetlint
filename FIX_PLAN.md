@@ -139,6 +139,16 @@ package ships with empty Handlers) — wiring it would close the issue
 with a no-op, so skipped. Flag in plan: noemptysource needs a real
 implementation before #461 should close._
 
+_2026-05-17: Loop landed `feat(rules): wire no-non-null-asserted-optional-chain
+(suspicious)` (change `ywmpumwx`). Package
+`internal/rules/nononnullassertedoptionalchain/` already existed and its
+`EslintCompatibility` harness passed; this commit added the import +
+buildRules entry in `cli.go` (alphabetically between `nonodejsmodules`
+and `nononoctaldecimalescape`), the `CategorySuspicious` Metadata in
+`registry.go`, and the snapshot line in `registry_test.go`. Closed #483.
+`go test ./internal/cli/ ./internal/rules/ ./internal/rules/nononnullassertedoptionalchain/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-array-index-key
 (suspicious)` (commit `9c536c4f`, change `rrllysov`). Package
 `internal/rules/noarrayindexkey/` already existed and its
@@ -180,7 +190,7 @@ tests pass):_
 - _#473 no-implicit-any-let → `noimplicitanylet` (LANDED 2026-05-17, commit `90f07f81`)_
 - _#478 no-label-var → `nolabelvar` (LANDED 2026-05-17)_
 - _#480/#481 no-misplaced-assertion/-misrefactored-shorthand-assign_
-- _#483 no-non-null-asserted-optional-chain → `nononnullassertedoptionalchain`_
+- _#483 no-non-null-asserted-optional-chain → `nononnullassertedoptionalchain` (LANDED 2026-05-17)_
 - _#484 no-octal-escape → `nooctalescape`_
 - _#486/#487 no-react-forward-ref/-react-specific-props_
 - _#490 no-shadow-restricted-names → `noshadowrestrictednames`_

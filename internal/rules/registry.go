@@ -124,6 +124,7 @@ var All = []Metadata{
 	{ID: "no-new-native-nonconstructor", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-next-async-client-component", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-nodejs-modules", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-non-null-asserted-optional-chain", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-obj-calls", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-process-global", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-precision-loss", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
