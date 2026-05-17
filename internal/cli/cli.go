@@ -85,24 +85,24 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nonestedcomponentdefinitions"
 	"github.com/jetlint/jetlint/internal/rules/nonewnativenonconstructor"
 	"github.com/jetlint/jetlint/internal/rules/nonextasyncclientcomponent"
+	"github.com/jetlint/jetlint/internal/rules/nonnullabletypeassertionstyle"
 	"github.com/jetlint/jetlint/internal/rules/nonodejsmodules"
 	"github.com/jetlint/jetlint/internal/rules/nononoctaldecimalescape"
-	"github.com/jetlint/jetlint/internal/rules/nonnullabletypeassertionstyle"
 	"github.com/jetlint/jetlint/internal/rules/noobjcalls"
 	"github.com/jetlint/jetlint/internal/rules/noprecisionloss"
 	"github.com/jetlint/jetlint/internal/rules/noprivateimports"
 	"github.com/jetlint/jetlint/internal/rules/noprocessglobal"
 	"github.com/jetlint/jetlint/internal/rules/nopromiseexecutorreturn"
-	"github.com/jetlint/jetlint/internal/rules/noqwikusevisibletask"
-	"github.com/jetlint/jetlint/internal/rules/norenderreturnvalue"
-	"github.com/jetlint/jetlint/internal/rules/norestrictedelements"
 	"github.com/jetlint/jetlint/internal/rules/noprototypebuiltins"
+	"github.com/jetlint/jetlint/internal/rules/noqwikusevisibletask"
 	"github.com/jetlint/jetlint/internal/rules/noreactpropassignments"
 	"github.com/jetlint/jetlint/internal/rules/noredundanttypeconstituents"
+	"github.com/jetlint/jetlint/internal/rules/norenderreturnvalue"
+	"github.com/jetlint/jetlint/internal/rules/norestrictedelements"
 	"github.com/jetlint/jetlint/internal/rules/noselfassign"
-	"github.com/jetlint/jetlint/internal/rules/nosoliddestructuredprops"
 	"github.com/jetlint/jetlint/internal/rules/noselfcompare"
 	"github.com/jetlint/jetlint/internal/rules/nosetterreturn"
+	"github.com/jetlint/jetlint/internal/rules/nosoliddestructuredprops"
 	"github.com/jetlint/jetlint/internal/rules/nosparsearrays"
 	"github.com/jetlint/jetlint/internal/rules/nostringcasemismatch"
 	"github.com/jetlint/jetlint/internal/rules/nosuperwithoutextends"
@@ -111,15 +111,9 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nothisbeforesuper"
 	"github.com/jetlint/jetlint/internal/rules/notypeonlyimportattributes"
 	"github.com/jetlint/jetlint/internal/rules/noundeclareddependencies"
-	"github.com/jetlint/jetlint/internal/rules/novuedataobjectdeclaration"
-	"github.com/jetlint/jetlint/internal/rules/novueduplicatekeys"
-	"github.com/jetlint/jetlint/internal/rules/novuereservedkeys"
-	"github.com/jetlint/jetlint/internal/rules/novuereservedprops"
-	"github.com/jetlint/jetlint/internal/rules/novuesetuppropsreactivityloss"
 	"github.com/jetlint/jetlint/internal/rules/noundef"
 	"github.com/jetlint/jetlint/internal/rules/nounexpectedmultiline"
 	"github.com/jetlint/jetlint/internal/rules/nounmodifiedloopcondition"
-	"github.com/jetlint/jetlint/internal/rules/nounresolvedimports"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarybooleanliteralcompare"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarycondition"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessaryqualifier"
@@ -129,7 +123,9 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarytypeconversion"
 	"github.com/jetlint/jetlint/internal/rules/nounnecessarytypeparameters"
 	"github.com/jetlint/jetlint/internal/rules/nounreachable"
+	"github.com/jetlint/jetlint/internal/rules/nounreachableloop"
 	"github.com/jetlint/jetlint/internal/rules/nounreachablesuper"
+	"github.com/jetlint/jetlint/internal/rules/nounresolvedimports"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeargument"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeassignment"
 	"github.com/jetlint/jetlint/internal/rules/nounsafecall"
@@ -141,17 +137,21 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounsafereturn"
 	"github.com/jetlint/jetlint/internal/rules/nounsafetypeassertion"
 	"github.com/jetlint/jetlint/internal/rules/nounsafeunaryminus"
-	"github.com/jetlint/jetlint/internal/rules/nounreachableloop"
 	"github.com/jetlint/jetlint/internal/rules/nounusedfunctionparameters"
 	"github.com/jetlint/jetlint/internal/rules/nounusedimports"
 	"github.com/jetlint/jetlint/internal/rules/nounusedlabels"
 	"github.com/jetlint/jetlint/internal/rules/nounusedprivateclassmembers"
 	"github.com/jetlint/jetlint/internal/rules/nounusedvars"
-	"github.com/jetlint/jetlint/internal/rules/nouselessbackreference"
 	"github.com/jetlint/jetlint/internal/rules/nousebeforedefine"
+	"github.com/jetlint/jetlint/internal/rules/nouselessbackreference"
 	"github.com/jetlint/jetlint/internal/rules/nouselessdefaultassignment"
 	"github.com/jetlint/jetlint/internal/rules/novoidelementswithchildren"
 	"github.com/jetlint/jetlint/internal/rules/novoidtypereturn"
+	"github.com/jetlint/jetlint/internal/rules/novuedataobjectdeclaration"
+	"github.com/jetlint/jetlint/internal/rules/novueduplicatekeys"
+	"github.com/jetlint/jetlint/internal/rules/novuereservedkeys"
+	"github.com/jetlint/jetlint/internal/rules/novuereservedprops"
+	"github.com/jetlint/jetlint/internal/rules/novuesetuppropsreactivityloss"
 	"github.com/jetlint/jetlint/internal/rules/onlythrowerror"
 	"github.com/jetlint/jetlint/internal/rules/preferdestructuring"
 	"github.com/jetlint/jetlint/internal/rules/preferfind"
@@ -193,6 +193,43 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/useunknownincatchcallbackvariable"
 	"github.com/jetlint/jetlint/internal/rules/useyield"
 	"github.com/jetlint/jetlint/internal/rules/validtypeof"
+	// a11y rules — JSX-only, no type checker required.
+	"github.com/jetlint/jetlint/internal/rules/noaccesskey"
+	"github.com/jetlint/jetlint/internal/rules/noariahiddenonfocusable"
+	"github.com/jetlint/jetlint/internal/rules/noariaunsupportedelements"
+	"github.com/jetlint/jetlint/internal/rules/noautofocus"
+	"github.com/jetlint/jetlint/internal/rules/nodistractingelements"
+	"github.com/jetlint/jetlint/internal/rules/noheaderscope"
+	"github.com/jetlint/jetlint/internal/rules/nointeractiveelementtononinteractiverole"
+	"github.com/jetlint/jetlint/internal/rules/nolabelwithoutcontrol"
+	"github.com/jetlint/jetlint/internal/rules/nononinteractiveelementinteractions"
+	"github.com/jetlint/jetlint/internal/rules/nononinteractiveelementtointeractiverole"
+	"github.com/jetlint/jetlint/internal/rules/nononinteractivetabindex"
+	"github.com/jetlint/jetlint/internal/rules/nopositivetabindex"
+	"github.com/jetlint/jetlint/internal/rules/noredundantalt"
+	"github.com/jetlint/jetlint/internal/rules/noredundantroles"
+	"github.com/jetlint/jetlint/internal/rules/nostaticelementinteractions"
+	"github.com/jetlint/jetlint/internal/rules/nosvgwithouttitle"
+	"github.com/jetlint/jetlint/internal/rules/usealttext"
+	"github.com/jetlint/jetlint/internal/rules/useanchorcontent"
+	"github.com/jetlint/jetlint/internal/rules/usearia"
+	"github.com/jetlint/jetlint/internal/rules/useariapropsforrole"
+	"github.com/jetlint/jetlint/internal/rules/useariapropssupportedbyrole"
+	"github.com/jetlint/jetlint/internal/rules/usebuttontype"
+	"github.com/jetlint/jetlint/internal/rules/usefocusableinteractive"
+	"github.com/jetlint/jetlint/internal/rules/useheadingcontent"
+	"github.com/jetlint/jetlint/internal/rules/usehtmllang"
+	"github.com/jetlint/jetlint/internal/rules/useiframetitle"
+	"github.com/jetlint/jetlint/internal/rules/usekeywithclickevents"
+	"github.com/jetlint/jetlint/internal/rules/usekeywithmouseevents"
+	"github.com/jetlint/jetlint/internal/rules/usemediacaption"
+	"github.com/jetlint/jetlint/internal/rules/usesemanticelements"
+	"github.com/jetlint/jetlint/internal/rules/usevalidanchor"
+	"github.com/jetlint/jetlint/internal/rules/usevalidariaprops"
+	"github.com/jetlint/jetlint/internal/rules/usevalidariarole"
+	"github.com/jetlint/jetlint/internal/rules/usevalidariavalues"
+	"github.com/jetlint/jetlint/internal/rules/usevalidautocomplete"
+	"github.com/jetlint/jetlint/internal/rules/usevalidlang"
 	"github.com/jetlint/jetlint/internal/toolerr"
 	"github.com/jetlint/jetlint/internal/transport"
 	wrapperchecker "github.com/microsoft/typescript-go/pkg/checker"
@@ -766,6 +803,43 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		useunknownincatchcallbackvariable.New(),
 		useyield.New(),
 		validtypeof.New(),
+		// a11y — JSX accessibility rules.
+		noaccesskey.New(),
+		noariahiddenonfocusable.New(),
+		noariaunsupportedelements.New(),
+		noautofocus.New(),
+		nodistractingelements.New(),
+		noheaderscope.New(),
+		nointeractiveelementtononinteractiverole.New(),
+		nolabelwithoutcontrol.New(),
+		nononinteractiveelementinteractions.New(),
+		nononinteractiveelementtointeractiverole.New(),
+		nononinteractivetabindex.New(),
+		nopositivetabindex.New(),
+		noredundantalt.New(),
+		noredundantroles.New(),
+		nostaticelementinteractions.New(),
+		nosvgwithouttitle.New(),
+		usealttext.New(),
+		useanchorcontent.New(),
+		usearia.New(),
+		useariapropsforrole.New(),
+		useariapropssupportedbyrole.New(),
+		usebuttontype.New(),
+		usefocusableinteractive.New(),
+		useheadingcontent.New(),
+		usehtmllang.New(),
+		useiframetitle.New(),
+		usekeywithclickevents.New(),
+		usekeywithmouseevents.New(),
+		usemediacaption.New(),
+		usesemanticelements.New(),
+		usevalidanchor.New(),
+		usevalidariaprops.New(),
+		usevalidariarole.New(),
+		usevalidariavalues.New(),
+		usevalidautocomplete.New(),
+		usevalidlang.New(),
 	}, nil
 }
 

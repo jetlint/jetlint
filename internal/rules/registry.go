@@ -26,6 +26,7 @@ const (
 	CategoryPerformance Category = "performance"
 	CategoryComplexity  Category = "complexity"
 	CategoryStyle       Category = "style"
+	CategoryA11y        Category = "a11y"
 	CategoryNursery     Category = "nursery"
 )
 
@@ -261,6 +262,45 @@ var All = []Metadata{
 	{ID: "no-meaningless-void-operator", Category: CategoryStyle, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "prefer-readonly", Category: CategoryStyle, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "prefer-readonly-parameter-types", Category: CategoryStyle, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+
+	// a11y — JSX accessibility. Syntactic; no type checker required.
+	// Ported from eslint-plugin-jsx-a11y and biome's a11y group.
+	{ID: "no-access-key", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-aria-hidden-on-focusable", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-aria-unsupported-elements", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-autofocus", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-distracting-elements", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-header-scope", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-interactive-element-to-noninteractive-role", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-label-without-control", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-noninteractive-element-interactions", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-noninteractive-element-to-interactive-role", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-noninteractive-tabindex", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-positive-tabindex", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-redundant-alt", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-redundant-roles", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-static-element-interactions", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-svg-without-title", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-alt-text", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-anchor-content", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-aria-activedescendant-with-tabindex", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-aria-props-for-role", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-aria-props-supported-by-role", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-button-type", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-focusable-interactive", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-heading-content", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-html-lang", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-iframe-title", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-key-with-click-events", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-key-with-mouse-events", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-media-caption", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-semantic-elements", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-valid-anchor", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-valid-aria-props", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-valid-aria-role", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-valid-aria-values", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-valid-autocomplete", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-valid-lang", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
 }
 
 // MVPRuleIDs preserves the legacy ordering of the recommended set so

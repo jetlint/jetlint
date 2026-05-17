@@ -14,12 +14,9 @@ rule, while keeping a clean mental model.
 | **security**    | Patterns enabling injection, eval, prototype pollution, unsafe deserialization.                  | error            |
 | **performance** | Known-slow patterns with a faster equivalent. No correctness impact.                             | warn             |
 | **complexity**  | Needless complication with a simpler equivalent. No correctness or perf impact.                  | warn             |
+| **a11y**        | JSX accessibility rules: ARIA props, semantic elements, keyboard interactions.                   | off (opt-in)     |
 | **style**       | Formatting, naming, ordering. Pure preference; team-configurable.                                | off (opt-in)     |
 | **nursery**     | New or iterating rules. May change shape or move to another group. Not in `recommended`.         | off              |
-
-Reserved for later:
-
-- **a11y** — accessibility rules. Blocked on JSX support.
 
 Deliberately omitted (for now):
 
@@ -34,7 +31,7 @@ Apply in order; the first match wins:
 1. **Wrong at runtime, or definitely a bug?** → `correctness`
 2. **Enables injection, eval, prototype pollution, unsafe deserialization?** → `security`
 3. **Pure perf cost with a known fast alternative?** → `performance`
-4. **JSX accessibility?** → `a11y` (future)
+4. **JSX accessibility?** → `a11y`
 5. **Smells, but a thoughtful developer could mean it?** → `suspicious`
 6. **Simpler equivalent exists, no perf or correctness impact?** → `complexity`
 7. **Formatting, naming, or ordering only?** → `style`
@@ -120,6 +117,32 @@ checker and rely on syntactic helpers like [Node.SourceText][srctext],
 `no-meaningless-void-operator`, `prefer-readonly`,
 `prefer-readonly-parameter-types`
 
+### a11y (36)
+
+`no-access-key`, `no-aria-hidden-on-focusable`,
+`no-aria-unsupported-elements`, `no-autofocus`, `no-distracting-elements`,
+`no-header-scope`, `no-interactive-element-to-noninteractive-role`,
+`no-label-without-control`, `no-noninteractive-element-interactions`,
+`no-noninteractive-element-to-interactive-role`,
+`no-noninteractive-tabindex`, `no-positive-tabindex`,
+`no-redundant-alt`, `no-redundant-roles`,
+`no-static-element-interactions`, `no-svg-without-title`,
+`use-alt-text`, `use-anchor-content`,
+`use-aria-activedescendant-with-tabindex`, `use-aria-props-for-role`,
+`use-aria-props-supported-by-role`, `use-button-type`,
+`use-focusable-interactive`, `use-heading-content`, `use-html-lang`,
+`use-iframe-title`, `use-key-with-click-events`,
+`use-key-with-mouse-events`, `use-media-caption`,
+`use-semantic-elements`, `use-valid-anchor`, `use-valid-aria-props`,
+`use-valid-aria-role`, `use-valid-aria-values`,
+`use-valid-autocomplete`, `use-valid-lang`
+
+All a11y rules are JSX-syntactic and carry `RequiresTypeChecking: false`.
+Default severity is `off` — opt in via `.jetlintrc.json`. The rules are
+ported from `eslint-plugin-jsx-a11y` and Biome's a11y group; each has a
+passing `EslintCompatibility` harness against the upstream Biome fixtures
+under `biome-fixtures/`.
+
 ### nursery (0)
 
 None yet. Reserved for new rules during incubation.
@@ -158,8 +181,8 @@ When jetlint expands past the type-aware rule set, expected weight by group:
   `no-useless-rename`, `no-useless-concat`.
 - **style** without types: Biome and Prettier already own this turf. Low
   priority unless something is genuinely missing.
-- **a11y**: blocked on JSX support; port from `eslint-plugin-jsx-a11y`
-  once JSX is in.
+- **a11y**: 36 rules ported from `eslint-plugin-jsx-a11y` and Biome's
+  a11y group; see the `a11y` section above.
 
 ## Configuration surface
 
