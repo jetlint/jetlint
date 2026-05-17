@@ -6,7 +6,7 @@ Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
 | Milestone | Open | Close-ready (impl exists) | Still missing |
 |---|---:|---:|---:|
-| #2 suspicious | 61 | 52 | 10 (+1 ambiguous #512 `strict`) |
+| #2 suspicious | 60 | 51 | 10 (+1 ambiguous #512 `strict`) |
 | #5 complexity | 45 | 35 | 10 |
 | #6 style | 69 | 53 | 16 |
 | #7 a11y | 33 | 33 | 0 (wiring + closure only) |
@@ -175,7 +175,7 @@ tests pass):_
 - _#468 no-function-assign → `nofunctionassign` (LANDED 2026-05-17)_
 - _#469 no-global-assign → `noglobalassign` (LANDED 2026-05-17, commit `9e6b3dcd`)_
 - _#470 no-global-is-finite → `noglobalisfinite` (LANDED 2026-05-17, commit `f800aaab`)_
-- _#471 no-global-is-nan → `noglobalisnan`_
+- _#471 no-global-is-nan → `noglobalisnan` (LANDED 2026-05-17, commit `aeb03b44`)_
 - _#472 no-head-import-in-document → `noheadimportindocument` (LANDED 2026-05-17)_
 - _#473 no-implicit-any-let → `noimplicitanylet`_
 - _#478 no-label-var → `nolabelvar`_
