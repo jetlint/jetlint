@@ -90,6 +90,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noforinarray"
 	"github.com/jetlint/jetlint/internal/rules/nofuncassign"
 	"github.com/jetlint/jetlint/internal/rules/nofunctionassign"
+	"github.com/jetlint/jetlint/internal/rules/noglobalassign"
 	"github.com/jetlint/jetlint/internal/rules/noglobaldirnamefilename"
 	"github.com/jetlint/jetlint/internal/rules/noheadimportindocument"
 	"github.com/jetlint/jetlint/internal/rules/noimpliedeval"
@@ -732,6 +733,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nofocusedtests.New(),
 		nofuncassign.New(),
 		nofunctionassign.New(),
+		noglobalassign.New(),
 		noglobaldirnamefilename.New(),
 		noheadimportindocument.New(),
 		nosparsearrays.New(),

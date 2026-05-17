@@ -238,6 +238,7 @@ func additionalRulesSnapshot() []string {
 		"no-focused-tests",
 		"no-func-assign",
 		"no-function-assign",
+		"no-global-assign",
 		"no-global-dirname-filename",
 		"no-global-eval",
 		"no-for-in-array",
