@@ -340,6 +340,7 @@ func additionalRulesSnapshot() []string {
 		"no-double-equals",
 		"no-duplicate-jsx-props",
 		"no-duplicate-test-hooks",
+		"no-head-import-in-document",
 		"no-useless-default-assignment",
 		"non-nullable-type-assertion-style",
 		"only-throw-error",
