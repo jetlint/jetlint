@@ -46,6 +46,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nobasetotostring"
 	"github.com/jetlint/jetlint/internal/rules/nobitwiseoperators"
 	"github.com/jetlint/jetlint/internal/rules/nocatchassign"
+	"github.com/jetlint/jetlint/internal/rules/nocommenttext"
 	"github.com/jetlint/jetlint/internal/rules/nochildrenprop"
 	"github.com/jetlint/jetlint/internal/rules/noclassassign"
 	"github.com/jetlint/jetlint/internal/rules/nocomparenegzero"
@@ -683,6 +684,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noawaitinloop.New(),
 		nobitwiseoperators.New(),
 		nocatchassign.New(),
+		nocommenttext.New(),
 		nochildrenprop.New(),
 		noclassassign.New(),
 		nocomparenegzero.New(),

@@ -156,6 +156,7 @@ var All = []Metadata{
 	{ID: "no-array-index-key", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-bitwise-operators", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-catch-assign", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-comment-text", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-floating-promises", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-for-in-array", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-misleading-character-class", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
