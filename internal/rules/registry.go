@@ -149,6 +149,7 @@ var All = []Metadata{
 	{ID: "no-void-type-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-with", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-instanceof-array", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "prefer-namespace-keyword", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-floating-promises", Category: CategoryCorrectness, Recommended: true, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-for-in-array", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-misleading-character-class", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},

@@ -124,13 +124,18 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 12 remaining (top-leverage first)
+### #2 suspicious — 11 remaining (top-leverage first)
 
 1. #488 no-redeclare — **needs scope/binding analysis**; previously
    skipped on `feat/big-batch` (commit `wip(rules): more +6 (...,
    redeclare-skip)`). Defer until scope-symbol helpers land.
 2. #518 use-iterable-callback-return
-3. #507 prefer-namespace-keyword
+3. ~~#507 prefer-namespace-keyword~~ **landed 2026-05-17** — pure AST
+   syntactic check. Reports `module Foo {}` (legacy spelling) but
+   exempts `declare module 'foo'` (ambient external module),
+   `declare global {}`, `namespace Foo {}`, and inner segments of
+   qualified `module A.B.C {}` (parent-is-ModuleDeclaration skip
+   mirrors oxc). 10/10 oxlint cases pass.
 4. #504 no-useless-regex-backrefs
 5. #497 no-unassigned-variables
 6. #482 no-misused-new
@@ -148,6 +153,15 @@ Landed this batch (prior loops):
 13. (ambiguous) #512 `strict` — needs manual title triage
 
 _Landed 2026-05-17 in this batch:_
+- #507 `prefer-namespace-keyword` —
+  `internal/rules/prefernamespacekeyword/`, 10/10 oxlint cases pass.
+  Pure AST syntactic check: parses the leading keyword from the
+  ModuleDeclaration's source text (after stripping `export`/`declare`
+  modifiers, line and block comments, and whitespace) and reports
+  when it equals `module`. Skips string-named ambient modules
+  (`declare module 'foo'`), `declare global`, and inner segments of
+  qualified `module A.B.C {}` (where the direct parent is itself a
+  TSModuleDeclaration — mirrors oxc's skip). No options.
 - #506 `no-with` — `internal/rules/nowith/`, 12/12 oxlint cases pass.
   Pure AST: dispatches on `KindWithStatement` (Kind=255 magic constant
   — wrapper does not re-export this Kind; precedent in
