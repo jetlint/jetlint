@@ -329,6 +329,7 @@ func additionalRulesSnapshot() []string {
 		"no-unused-vars",
 		"no-use-before-define",
 		"no-useless-backreference",
+		"no-var",
 		"no-void-elements-with-children",
 		"no-void-type-return",
 		"no-with",

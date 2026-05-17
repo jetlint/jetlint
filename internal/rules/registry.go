@@ -158,6 +158,7 @@ var All = []Metadata{
 	{ID: "no-unused-private-class-members", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unused-vars", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-use-before-define", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-var", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-void-elements-with-children", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-void-type-return", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-with", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
