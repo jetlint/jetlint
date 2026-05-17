@@ -362,6 +362,7 @@ func additionalRulesSnapshot() []string {
 		"use-qwik-classlist",
 		"use-qwik-method-usage",
 		"use-qwik-valid-lexical-scope",
+		"use-self-closing-elements",
 		"use-single-js-doc-asterisk",
 		"use-solid-for-component",
 		"use-top-level-regex",

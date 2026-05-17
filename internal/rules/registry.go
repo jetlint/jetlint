@@ -274,6 +274,7 @@ var All = []Metadata{
 	{ID: "no-meaningless-void-operator", Category: CategoryStyle, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "prefer-readonly", Category: CategoryStyle, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "prefer-readonly-parameter-types", Category: CategoryStyle, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-self-closing-elements", Category: CategoryStyle, Fix: FixNone, Stability: StabilityStable},
 
 	// a11y — JSX accessibility. Syntactic; no type checker required.
 	// Ported from eslint-plugin-jsx-a11y and biome's a11y group.

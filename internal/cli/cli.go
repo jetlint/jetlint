@@ -200,6 +200,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/useqwikclasslist"
 	"github.com/jetlint/jetlint/internal/rules/useqwikmethodusage"
 	"github.com/jetlint/jetlint/internal/rules/useqwikvalidlexicalscope"
+	"github.com/jetlint/jetlint/internal/rules/useselfclosingelements"
 	"github.com/jetlint/jetlint/internal/rules/usesinglejsdocasterisk"
 	"github.com/jetlint/jetlint/internal/rules/useuniqueelementids"
 	"github.com/jetlint/jetlint/internal/rules/useunknownincatchcallbackvariable"
@@ -827,6 +828,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		useqwikclasslist.New(),
 		useqwikmethodusage.New(),
 		useqwikvalidlexicalscope.New(),
+		useselfclosingelements.New(),
 		usesinglejsdocasterisk.New(),
 		useuniqueelementids.New(),
 		useunknownincatchcallbackvariable.New(),
