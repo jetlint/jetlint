@@ -6,7 +6,7 @@ Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
 | Milestone | Open | Close-ready (impl exists) | Still missing |
 |---|---:|---:|---:|
-| #2 suspicious | 63 | 51 | 12 (+1 ambiguous #512 `strict`) |
+| #2 suspicious | 62 | 51 | 11 (+1 ambiguous #512 `strict`) |
 | #5 complexity | 45 | 35 | 10 |
 | #6 style | 69 | 53 | 16 |
 | #7 a11y | 33 | 33 | 0 (wiring + closure only) |
@@ -129,24 +129,21 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 7 remaining (top-leverage first)
+### #2 suspicious — 6 remaining (top-leverage first)
 
-1. #482 no-misused-new — biome rule. Pure AST candidate: flags
-   `new(): T` in interfaces and `constructor` methods returning the
-   enclosing class. No type lookups needed.
-2. #504 no-useless-regex-backrefs — biome rule. Reports backreferences
+1. #504 no-useless-regex-backrefs — biome rule. Reports backreferences
    inside a regex literal that can only ever match the empty string.
-3. #497 no-unassigned-variables — biome rule. `let`/`var` declarations
+2. #497 no-unassigned-variables — biome rule. `let`/`var` declarations
    without an initializer that are never assigned later in scope.
-4. #425 adjacent-overload-signatures — typescript-eslint. Walks function
+3. #425 adjacent-overload-signatures — typescript-eslint. Walks function
    / method declarations in a scope and groups overloads by name; reports
    when overload signatures of the same name are interleaved with other
    members.
-5. #475 no-import-cycles — biome rule. Cross-file analysis (needs
+4. #475 no-import-cycles — biome rule. Cross-file analysis (needs
    module-graph plumbing); higher cost.
-6. #464 no-exports-in-test — biome rule. Reports `export` statements in
+5. #464 no-exports-in-test — biome rule. Reports `export` statements in
    files matched by a test glob. Needs a test-file matcher.
-7. #448 no-deprecated-imports — biome rule. Detects imports of symbols
+6. #448 no-deprecated-imports — biome rule. Detects imports of symbols
    annotated `@deprecated` in their declaration site (type-aware).
 
 Deferred:
@@ -157,6 +154,18 @@ Deferred:
   obvious kebab match.
 
 _Landed 2026-05-17 in this batch:_
+- #482 `no-misused-new` — `internal/rules/nomisusednew/`, 19/19 oxlint
+  cases pass. Pure AST: hooks `KindInterfaceDeclaration` (reports
+  `KindConstructSignature` whose return TypeReference name matches the
+  interface name — covers `interface G { new <T>(): G<T>; }` since
+  `TypeReferenceTypeName` returns the unqualified `G`),
+  `KindClassDeclaration` / `KindClassExpression` (reports body-less
+  `KindMethodDeclaration` named `new` whose return type references the
+  class name), and `KindMethodSignature` everywhere (reports name
+  `constructor` in interface bodies and type literals — `type T = {
+  constructor(): void }` is caught universally without a parent check).
+  Anonymous class expressions are skipped because their first child is
+  not an Identifier so `declarationName` returns "".
 - #507 `prefer-namespace-keyword` —
   `internal/rules/prefernamespacekeyword/`, 10/10 oxlint cases pass.
   Pure AST syntactic check: parses the leading keyword from the
