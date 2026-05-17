@@ -284,6 +284,7 @@ func additionalRulesSnapshot() []string {
 		"no-self-compare",
 		"no-solid-destructured-props",
 		"no-setter-return",
+		"no-shadow-restricted-names",
 		"no-sparse-arrays",
 		"no-string-case-mismatch",
 		"no-super-without-extends",

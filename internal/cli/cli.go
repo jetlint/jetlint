@@ -135,6 +135,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noselfassign"
 	"github.com/jetlint/jetlint/internal/rules/noselfcompare"
 	"github.com/jetlint/jetlint/internal/rules/nosetterreturn"
+	"github.com/jetlint/jetlint/internal/rules/noshadowrestrictednames"
 	"github.com/jetlint/jetlint/internal/rules/nosoliddestructuredprops"
 	"github.com/jetlint/jetlint/internal/rules/nosparsearrays"
 	"github.com/jetlint/jetlint/internal/rules/nostringcasemismatch"
@@ -808,6 +809,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noselfcompare.New(),
 		nosoliddestructuredprops.New(),
 		nosetterreturn.New(),
+		noshadowrestrictednames.New(),
 		nounexpectedmultiline.New(),
 		nounreachable.New(),
 		nounreachableloop.New(),
