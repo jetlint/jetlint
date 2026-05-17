@@ -236,6 +236,7 @@ func additionalRulesSnapshot() []string {
 		"no-extra-non-null-assertion",
 		"no-fallthrough",
 		"no-func-assign",
+		"no-function-assign",
 		"no-global-dirname-filename",
 		"no-global-eval",
 		"no-for-in-array",

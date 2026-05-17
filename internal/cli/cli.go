@@ -88,6 +88,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nofloatingpromises"
 	"github.com/jetlint/jetlint/internal/rules/noforinarray"
 	"github.com/jetlint/jetlint/internal/rules/nofuncassign"
+	"github.com/jetlint/jetlint/internal/rules/nofunctionassign"
 	"github.com/jetlint/jetlint/internal/rules/noglobaldirnamefilename"
 	"github.com/jetlint/jetlint/internal/rules/noimpliedeval"
 	"github.com/jetlint/jetlint/internal/rules/noimportassign"
@@ -727,6 +728,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noextranonnullassertion.New(),
 		nofallthrough.New(),
 		nofuncassign.New(),
+		nofunctionassign.New(),
 		noglobaldirnamefilename.New(),
 		nosparsearrays.New(),
 		nostringcasemismatch.New(),
