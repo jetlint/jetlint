@@ -242,6 +242,7 @@ func additionalRulesSnapshot() []string {
 		"no-global-dirname-filename",
 		"no-global-eval",
 		"no-global-is-finite",
+		"no-global-is-nan",
 		"no-for-in-array",
 		"no-img-element",
 		"no-implied-eval",
