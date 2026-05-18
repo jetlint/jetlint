@@ -22,6 +22,34 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): implement no-empty-source
+(suspicious)`. Closes #461. The pre-existing package
+`internal/rules/noemptysource/` shipped as a no-op stub (empty
+Handlers map). This loop:
+1. Implemented the rule against `KindSourceFile`: walk top-level
+   children via `ForEachChild`; a file is "empty" when no child is
+   meaningful. Non-meaningful kinds: EndOfFile token (Kind=1),
+   EmptyStatement (Kind=243), Block with zero statements,
+   ExpressionStatement whose expression is StringLiteral or
+   NoSubstitutionTemplateLiteral (a bare directive like `'use
+   strict';`). The wrapper does not re-export KindEndOfFile or
+   KindEmptyStatement so both are declared as numeric constants
+   (precedent: noirregularwhitespace's jsx-text kinds).
+2. Hand-wrote `testdata/eslint/no-empty-source.json` with 7 invalid
+   + 4 valid cases mirroring biome's
+   `crates/biome_js_analyze/tests/specs/suspicious/noEmptySource/`
+   fixtures (empty file, comment-only, directive-only, `{}`-only,
+   `;`-only, hashbang-only, JSDoc-only → invalid; block with
+   content, directive+code, `;;`+code, `var a = 1;` → valid).
+   Hand-written because `cmd/biome-fixtures` ingests files directly
+   in the rule directory only and skips the `invalid/` and `valid/`
+   subdirectory layout this rule uses (see Notes below).
+3. Wired into `cli.go` buildRules (between `noemptypattern` and
+   `noemptytypeparameters`), added `CategorySuspicious` Metadata in
+   `registry.go`, and the snapshot line in `registry_test.go`.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/noemptysource/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-comma-operator (complexity)`.
 Package `internal/rules/nocommaoperator/` already existed and its
 `EslintCompatibility` harness passed; this commit added the import +
@@ -517,7 +545,7 @@ tests pass):_
 - _#457 no-duplicate-jsx-props → `noduplicatejsxprops` (LANDED 2026-05-17)_
 - _#458 no-duplicate-test-hooks → `noduplicatetesthooks` (LANDED 2026-05-17)_
 - _#460 no-empty-interface → `noemptyinterface` (LANDED 2026-05-17)_
-- _#461 no-empty-source → `noemptysource`_
+- _#461 no-empty-source → `noemptysource` (LANDED 2026-05-17, real implementation, 11/11 hand-written biome cases)_
 - _#463 no-explicit-any → `noexplicitany` (LANDED 2026-05-17)_
 - _#465 no-extra-non-null-assertion → `noextranonnullassertion` (LANDED 2026-05-17)_
 - _#467 no-focused-tests → `nofocusedtests` (LANDED 2026-05-17)_
@@ -609,6 +637,15 @@ discipline is what kept the recovery clean._
   work; the prior "resolved 2026-05-17" claim only held under a TTY.
   Real fix: make the formatter color-decision injectable so the tests
   set the desired mode directly rather than relying on env detection.
+- `cmd/biome-fixtures` only iterates files directly under the rule
+  directory; it does not descend into `invalid/` or `valid/`
+  subdirectories. Several biome rules (e.g. `noEmptySource`,
+  `noExportsInTest`) use that subdir layout, so their fixtures
+  extract as zero cases. Fix: when the rule directory contains
+  `invalid/` and/or `valid/` subdirs, walk them as well and classify
+  validity from the subdir name (with snapshot `# Diagnostics`
+  override). Workaround until then: hand-write the fixture JSON
+  (done for `no-empty-source` this loop).
 - `cli.go:432` carries a `errors.As(err, &te)` call that the linter
   suggests rewriting as `errors.AsType[*toolerr.Error]` (Go 1.26
   generics helper). Pre-existing; refactor in a separate commit so the
@@ -693,7 +730,11 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 5 remaining (top-leverage first; #493 wiring landed this loop, see Active work)
+### #2 suspicious — 5 remaining (after #461 implemented this loop)
+
+Per `gh issue list --milestone 2 --state open` (2026-05-17 after this
+loop): 7 open issues total. #512 `strict` and #488 `no-redeclare` are
+deferred (see below). Remaining tractable queue:
 
 1. #504 no-useless-regex-backrefs — biome rule. Reports backreferences
    inside a regex literal that can only ever match the empty string.

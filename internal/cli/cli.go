@@ -86,6 +86,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noemptycharacterclass"
 	"github.com/jetlint/jetlint/internal/rules/noemptyinterface"
 	"github.com/jetlint/jetlint/internal/rules/noemptypattern"
+	"github.com/jetlint/jetlint/internal/rules/noemptysource"
 	"github.com/jetlint/jetlint/internal/rules/noemptytypeparameters"
 	"github.com/jetlint/jetlint/internal/rules/noevolvingtypes"
 	"github.com/jetlint/jetlint/internal/rules/noexassign"
@@ -779,6 +780,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noemptycharacterclass.New(),
 		noemptyinterface.New(),
 		noemptypattern.New(),
+		noemptysource.New(),
 		noemptytypeparameters.New(),
 		noevolvingtypes.New(),
 		noexassign.New(),

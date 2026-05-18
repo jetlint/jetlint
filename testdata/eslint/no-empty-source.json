@@ -2,5 +2,50 @@
   "ruleId": "no-empty-source",
   "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
   "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noEmptySource",
-  "cases": []
+  "cases": [
+    {
+      "code": "// test\n",
+      "valid": false
+    },
+    {
+      "code": "'use strict';\n",
+      "valid": false
+    },
+    {
+      "code": "{\n}\n",
+      "valid": false
+    },
+    {
+      "code": "",
+      "valid": false
+    },
+    {
+      "code": ";\n",
+      "valid": false
+    },
+    {
+      "code": "#!/usr/bin/env node\n",
+      "valid": false
+    },
+    {
+      "code": "/**\n * test\n */\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n{\n\tconst x = 0;\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n'use strict';\nconst x = 0;\n",
+      "valid": true
+    },
+    {
+      "code": ";;\nconst x = 0;\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nvar a = 1;\n",
+      "valid": true
+    }
+  ]
 }
