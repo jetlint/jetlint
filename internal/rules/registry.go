@@ -260,6 +260,7 @@ var All = []Metadata{
 	// suspicious — usually wrong, occasionally intentional.
 	{ID: "no-confusing-void-expression", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-deprecated", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-deprecated-imports", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-type-assertion", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "promise-function-async", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "restrict-plus-operands", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},

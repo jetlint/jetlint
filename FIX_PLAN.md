@@ -6,7 +6,7 @@ Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
 | Milestone | Open | Close-ready (impl exists) | Still missing |
 |---|---:|---:|---:|
-| #2 suspicious | 5 (open) | — | — |
+| #2 suspicious | 4 (open) | — | — |
 | #5 complexity | 45 | 35 | 10 |
 | #6 style | 69 | 53 | 16 |
 | #7 a11y | 33 | 33 | 0 (wiring + closure only) |
@@ -21,6 +21,32 @@ registry suite passes. What remains is bulk issue closure once PR #619
 merges.
 
 ## Active work / blockers
+
+_2026-05-17: Loop landed `feat(rules): implement no-deprecated-imports
+(suspicious)`. Closes #448. New package
+`internal/rules/nodeprecatedimports/` plus hand-written multi-file
+fixture `testdata/eslint/no-deprecated-imports.json` (4 cases mirroring
+biome's `noDeprecatedImports` per-file fixtures: component.js,
+invalid.js + supporting utils.js+component.js, utils.js, valid.js +
+supporting utils.js+component.js). The rule hooks `KindImportClause`
+(default import slot) and `KindImportSpecifier` (named bindings):
+walks the local-binding identifier, resolves its symbol, and checks
+`IsDeprecated()` — which walks the alias chain through the wrapper's
+`GetImmediateAliasedSymbol` so the source `@deprecated` JSDoc on the
+exported symbol in `./utils` / `./component` is picked up. Reports at
+the source-name slot (first identifier in source order — the
+propertyName when aliased, otherwise the only identifier), matching
+biome's diagnostic position. Namespace imports (`import * as foo`)
+are intentionally not handled, matching biome's documented known
+limitation. The harness follows the `nounresolvedimports` multi-file
+pattern: writes every Files entry to a tmp dir, points tsconfig
+include at `**/*.{ts,tsx,js,jsx}`, runs the rule, and counts only
+diagnostics whose `Range.File` equals the resolved Main path. Wired
+between `nodeprecated` and `nodocumentcookie` in `cli.go`, registered
+as `CategorySuspicious` with `RequiresTypeChecking: true` in
+`registry.go`, and added to `additionalRulesSnapshot()` in
+`registry_test.go`. `go test ./internal/cli/ ./internal/rules/
+./internal/rules/nodeprecatedimports/ -short ./...` all green._
 
 _2026-05-17: Loop landed `feat(rules): implement no-redundant-use-strict
 (suspicious)`. Closes #512. New package
@@ -788,10 +814,10 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 5 remaining (after #512 implemented this loop)
+### #2 suspicious — 4 remaining (after #448 implemented this loop)
 
 Per `gh issue list --milestone 2 --state open` (2026-05-17 after this
-loop): 5 open issues total. Per the release-driving prompt, NONE are
+loop): 4 open issues total. Per the release-driving prompt, NONE are
 deferred — milestone #2 ships at 100% before release. Remaining queue,
 roughly easiest → hardest:
 
@@ -810,9 +836,6 @@ roughly easiest → hardest:
    vs block-scope hoisting, TS interface/type-alias merging).
 4. #475 no-import-cycles — needs module-graph plumbing (per-program
    import-edge tracker + cycle detection over the import graph).
-5. #448 no-deprecated-imports — type-aware. Already have JSDoc
-   `@deprecated` detection logic in `nodeprecated`; this rule
-   surfaces those at import sites instead of use sites.
 
 _Landed 2026-05-17 in this batch:_
 - #425 `adjacent-overload-signatures` —

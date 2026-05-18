@@ -69,6 +69,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nocontrolregex"
 	"github.com/jetlint/jetlint/internal/rules/nodebugger"
 	"github.com/jetlint/jetlint/internal/rules/nodeprecated"
+	"github.com/jetlint/jetlint/internal/rules/nodeprecatedimports"
 	"github.com/jetlint/jetlint/internal/rules/nodocumentcookie"
 	"github.com/jetlint/jetlint/internal/rules/nodocumentimportinpage"
 	"github.com/jetlint/jetlint/internal/rules/nodoubleequals"
@@ -772,6 +773,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nocontrolregex.New(),
 		nodebugger.New(),
 		nodeprecated.New(),
+		nodeprecatedimports.New(),
 		nodocumentcookie.New(),
 		nodocumentimportinpage.New(),
 		nodoubleequals.New(),

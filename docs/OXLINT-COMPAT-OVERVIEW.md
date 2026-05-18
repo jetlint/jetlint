@@ -69,8 +69,9 @@ on 100%; the score is a baseline that improves as rules sharpen.
 | no-empty-source (biome) | 11/11 (100%) |
 | no-exports-in-test (biome) | 5/5 (100%) |
 | no-redundant-use-strict (biome) | 15/15 (100%) |
+| no-deprecated-imports (biome) | 4/4 (100%) |
 
-**Aggregate: 814/814 cases pass (100%)** across all option
+**Aggregate: 818/818 cases pass (100%)** across all option
 combinations the upstream fixtures exercise.
 
 The five rules with options (\`valid-typeof\`, \`use-isnan\`,
