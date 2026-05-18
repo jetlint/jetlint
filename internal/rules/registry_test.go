@@ -483,5 +483,6 @@ func additionalRulesSnapshot() []string {
 		"no-useless-continue",
 		"no-useless-catch-binding",
 		"use-while",
+		"no-unassigned-variables",
 	}
 }

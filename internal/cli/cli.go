@@ -166,6 +166,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nothisbeforesuper"
 	"github.com/jetlint/jetlint/internal/rules/notsignore"
 	"github.com/jetlint/jetlint/internal/rules/notypeonlyimportattributes"
+	"github.com/jetlint/jetlint/internal/rules/nounassignedvariables"
 	"github.com/jetlint/jetlint/internal/rules/noundeclareddependencies"
 	"github.com/jetlint/jetlint/internal/rules/noundef"
 	"github.com/jetlint/jetlint/internal/rules/nounexpectedmultiline"
@@ -825,6 +826,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nothisbeforesuper.New(),
 		notsignore.New(),
 		notypeonlyimportattributes.New(),
+		nounassignedvariables.New(),
 		noundeclareddependencies.New(),
 		novuedataobjectdeclaration.New(),
 		novueduplicatekeys.New(),

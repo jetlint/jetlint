@@ -6,7 +6,7 @@ Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
 | Milestone | Open | Close-ready (impl exists) | Still missing |
 |---|---:|---:|---:|
-| #2 suspicious | 4 (open) | — | — |
+| #2 suspicious | 3 (open) | — | — |
 | #5 complexity | 45 | 35 | 10 |
 | #6 style | 69 | 53 | 16 |
 | #7 a11y | 33 | 33 | 0 (wiring + closure only) |
@@ -21,6 +21,29 @@ registry suite passes. What remains is bulk issue closure once PR #619
 merges.
 
 ## Active work / blockers
+
+_2026-05-17: Loop landed `feat(rules): implement no-unassigned-variables
+(suspicious)`. Closes #497. New package
+`internal/rules/nounassignedvariables/`. The rule hooks `KindSourceFile`
+and does a two-pass walk: pass 1 collects every `let`/`var`
+declaration with no initializer, skipping const/using bindings,
+destructuring patterns, for-in/for-of bindings, and any binding
+nested under an ambient `declare` modifier (caught via parent-chain
+walk so both `declare let x` on a VariableStatement and `let x`
+inside `declare module {}` are handled). Pass 2 walks every
+KindIdentifier, resolves via `Checker.SymbolOf`, matches against
+the tracked symbol set (keyed by `Symbol.ID()`), skips the
+declaration identifier itself by Pos/End, and classifies each
+reference using `Node.IsAssignmentTarget()` — true marks
+`hasWrite`, false marks `hasRead`. After both passes, every tracked
+symbol with `hasRead && !hasWrite` reports at the declaration
+identifier. Variables that are declared but never read are left
+alone, matching biome's note "should be reported by `no-unused-vars`
+only". Wired into `cli.go` between `notypeonlyimportattributes` and
+`noundeclareddependencies`, registered as `CategorySuspicious` with
+`RequiresTypeChecking: true` in `registry.go`, and appended to
+`additionalRulesSnapshot()` in `registry_test.go`. 4/4 biome cases
+pass; `go test -short ./...` clean._
 
 _2026-05-17: Loop landed `feat(rules): implement no-deprecated-imports
 (suspicious)`. Closes #448. New package
@@ -814,27 +837,24 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 4 remaining (after #448 implemented this loop)
+### #2 suspicious — 3 remaining (after #497 implemented this loop)
 
 Per `gh issue list --milestone 2 --state open` (2026-05-17 after this
-loop): 4 open issues total. Per the release-driving prompt, NONE are
+loop): 3 open issues total. Per the release-driving prompt, NONE are
 deferred — milestone #2 ships at 100% before release. Remaining queue,
 roughly easiest → hardest:
 
-1. #497 no-unassigned-variables — biome rule. `let`/`var` declarations
-   without an initializer that are never assigned later in scope.
-   Needs scope-tracking lite (per-scope binding write-set).
-2. #504 no-useless-regex-backrefs — biome rule. Backreferences inside
+1. #504 no-useless-regex-backrefs — biome rule. Backreferences inside
    a regex literal that can never match. Needs full JS regex AST
    parser (group accounting + lookaround direction rules + named
    groups + ES2024/2025 character class set notation). Fixture file
    already at `testdata/eslint/no-useless-regex-backrefs.json`. The
    previous "land no-useless-regex-backrefs" commit was mislabeled
    and shipped no rule code — see earlier loop note.
-3. #488 no-redeclare — needs full scope/binding analysis (per-scope
+2. #488 no-redeclare — needs full scope/binding analysis (per-scope
    binding namespaces with type-vs-value distinction, function-scope
    vs block-scope hoisting, TS interface/type-alias merging).
-4. #475 no-import-cycles — needs module-graph plumbing (per-program
+3. #475 no-import-cycles — needs module-graph plumbing (per-program
    import-edge tracker + cycle detection over the import graph).
 
 _Landed 2026-05-17 in this batch:_
