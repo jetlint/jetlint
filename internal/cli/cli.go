@@ -150,6 +150,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noskippedtests"
 	"github.com/jetlint/jetlint/internal/rules/nosoliddestructuredprops"
 	"github.com/jetlint/jetlint/internal/rules/nosparsearrays"
+	"github.com/jetlint/jetlint/internal/rules/nostaticonlyclass"
 	"github.com/jetlint/jetlint/internal/rules/nostringcasemismatch"
 	"github.com/jetlint/jetlint/internal/rules/nosuperwithoutextends"
 	"github.com/jetlint/jetlint/internal/rules/noswitchdeclarations"
@@ -781,6 +782,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noheadimportindocument.New(),
 		noskippedtests.New(),
 		nosparsearrays.New(),
+		nostaticonlyclass.New(),
 		nostringcasemismatch.New(),
 		nosuperwithoutextends.New(),
 		noswitchdeclarations.New(),

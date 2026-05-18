@@ -295,6 +295,7 @@ func additionalRulesSnapshot() []string {
 		"no-shadow-restricted-names",
 		"no-skipped-tests",
 		"no-sparse-arrays",
+		"no-static-only-class",
 		"no-string-case-mismatch",
 		"no-super-without-extends",
 		"no-switch-declarations",

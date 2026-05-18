@@ -22,6 +22,17 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-static-only-class
+(complexity)`. Package `internal/rules/nostaticonlyclass/` already
+existed and its `EslintCompatibility` harness passed; this commit added
+the import + buildRules entry in `cli.go` (alphabetically between
+`nosparsearrays` and `nostringcasemismatch`), the `CategoryComplexity`
+Metadata in `registry.go` (between `no-sparse-arrays` and
+`no-string-case-mismatch`), and the snapshot line in `registry_test.go`.
+Clears one more wiring-only candidate from the complexity sweep list.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/nostaticonlyclass/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-foreach (complexity)`.
 Package `internal/rules/noforeach/` already existed (rule ID
 `no-for-each`) and its `EslintCompatibility` harness passed; this
@@ -667,7 +678,7 @@ _Landed 2026-05-17 in this batch:_
 
 Remaining wiring-only candidates from the 2026-05-17 sweep (packages exist,
 EslintCompatibility/BiomeCompatibility passes — verify each before wiring):
-nostaticonlyclass, nouselesslabel, nouselessrename,
+nouselesslabel, nouselessrename,
 nouselessundefinedinitialization, nouselessstringraw, nouselessstringconcat,
 nouselessternary, nouselessswitchcase, nouselessemptyexport,
 nouselesscatchbinding.
