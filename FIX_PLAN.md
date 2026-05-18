@@ -190,7 +190,7 @@ tests pass):_
 - _#473 no-implicit-any-let → `noimplicitanylet` (LANDED 2026-05-17, commit `90f07f81`)_
 - _#478 no-label-var → `nolabelvar` (LANDED 2026-05-17)_
 - _#480 no-misplaced-assertion → `nomisplacedassertion` (LANDED 2026-05-17)_
-- _#481 no-misrefactored-shorthand-assign → `nomisrefactoredshorthandassign`_
+- _#481 no-misrefactored-shorthand-assign → `nomisrefactoredshorthandassign` (LANDED 2026-05-17)_
 - _#483 no-non-null-asserted-optional-chain → `nononnullassertedoptionalchain` (LANDED 2026-05-17)_
 - _#484 no-octal-escape → `nooctalescape` (LANDED 2026-05-17)_
 - _#486/#487 no-react-forward-ref/-react-specific-props_

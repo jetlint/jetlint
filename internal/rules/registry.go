@@ -184,6 +184,7 @@ var All = []Metadata{
 	{ID: "no-for-in-array", Category: CategoryCorrectness, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-misleading-character-class", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-misplaced-assertion", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-misrefactored-shorthand-assign", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-nonoctal-decimal-escape", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-misused-new", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "adjacent-overload-signatures", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
