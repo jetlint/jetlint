@@ -386,6 +386,7 @@ func additionalRulesSnapshot() []string {
 		"strict-void-return",
 		"switch-exhaustiveness-check",
 		"unbound-method",
+		"use-await",
 		"use-error-message",
 		"use-exhaustive-dependencies",
 		"use-hook-at-top-level",

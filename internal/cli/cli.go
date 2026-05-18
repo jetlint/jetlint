@@ -224,6 +224,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/strictvoidreturn"
 	"github.com/jetlint/jetlint/internal/rules/switchexhaustivenesscheck"
 	"github.com/jetlint/jetlint/internal/rules/unboundmethod"
+	"github.com/jetlint/jetlint/internal/rules/useawait"
 	"github.com/jetlint/jetlint/internal/rules/useerrormessage"
 	"github.com/jetlint/jetlint/internal/rules/useexhaustivedependencies"
 	"github.com/jetlint/jetlint/internal/rules/usehookattoplevel"
@@ -891,6 +892,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		strictvoidreturn.New(),
 		switchexhaustivenesscheck.New(),
 		unboundmethod.New(),
+		useawait.New(),
 		useerrormessage.New(),
 		useexhaustivedependencies.New(),
 		usehookattoplevel.New(),

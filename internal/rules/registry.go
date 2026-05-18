@@ -330,6 +330,7 @@ var All = []Metadata{
 	{ID: "no-redundant-roles", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-static-element-interactions", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-suspicious-semicolon-in-jsx", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-await", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-error-message", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-svg-without-title", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-alt-text", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
