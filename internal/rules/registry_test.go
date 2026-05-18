@@ -370,6 +370,7 @@ func additionalRulesSnapshot() []string {
 		"no-useless-rename",
 		"no-useless-string-concat",
 		"no-useless-string-raw",
+		"no-useless-switch-case",
 		"no-useless-ternary",
 		"no-useless-undefined-initialization",
 		"non-nullable-type-assertion-style",

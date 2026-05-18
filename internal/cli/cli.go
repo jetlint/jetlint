@@ -203,6 +203,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nouselessrename"
 	"github.com/jetlint/jetlint/internal/rules/nouselessstringconcat"
 	"github.com/jetlint/jetlint/internal/rules/nouselessstringraw"
+	"github.com/jetlint/jetlint/internal/rules/nouselessswitchcase"
 	"github.com/jetlint/jetlint/internal/rules/nouselessternary"
 	"github.com/jetlint/jetlint/internal/rules/nouselessundefinedinitialization"
 	"github.com/jetlint/jetlint/internal/rules/novar"
@@ -903,6 +904,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nouselessrename.New(),
 		nouselessstringconcat.New(),
 		nouselessstringraw.New(),
+		nouselessswitchcase.New(),
 		nouselessternary.New(),
 		nouselessundefinedinitialization.New(),
 		onlythrowerror.New(),
