@@ -22,6 +22,18 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire use-single-var-declarator
+(style)`. Package `internal/rules/usesingvardeclarator/` already
+existed and its `EslintCompatibility` harness passed; this commit
+added the import + buildRules entry in `cli.go` (alphabetically
+between `usesinglejsdocasterisk` and `usestaticresponsemethods`), the
+`CategoryStyle` Metadata in `registry.go` (after
+`use-self-closing-elements`, before the a11y block), and the snapshot
+line in `registry_test.go`. Closes #419. First style-milestone wiring
+in this loop sweep; #6 style queue drops to 15 remaining.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/usesingvardeclarator/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire use-strict-mode
 (suspicious)`. Package `internal/rules/usestrictmode/` already existed
 and its `EslintCompatibility` harness passed; this commit added the
@@ -592,7 +604,7 @@ _Landed 2026-05-17 in this batch:_
 9. #195 no-useless-fragments
 10. #169 no-excessive-cognitive-complexity
 
-### #6 style — 16 remaining
+### #6 style — 15 remaining (after #419 wired this loop)
 
 1. #397 use-const
 2. #382 prefer-template
@@ -600,16 +612,15 @@ _Landed 2026-05-17 in this batch:_
 4. #351 default-case
 5. #362 no-inferrable-types
 6. #424 use-unified-type-signatures
-7. #419 use-single-var-declarator
-8. #415 use-readonly-class-properties
-9. #408 use-naming-convention
-10. #407 use-literal-enum-members
-11. #403 use-filenaming-convention
-12. #393 use-consistent-curly-braces
-13. #389 use-component-export-only-modules
-14. #385 use-at-index
-15. #364 no-magic-numbers
-16. #363 no-jsx-literals
+7. #415 use-readonly-class-properties
+8. #408 use-naming-convention
+9. #407 use-literal-enum-members
+10. #403 use-filenaming-convention
+11. #393 use-consistent-curly-braces
+12. #389 use-component-export-only-modules
+13. #385 use-at-index
+14. #364 no-magic-numbers
+15. #363 no-jsx-literals
 
 ## Bookkeeping queue
 

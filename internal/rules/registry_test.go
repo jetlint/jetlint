@@ -402,6 +402,7 @@ func additionalRulesSnapshot() []string {
 		"use-qwik-valid-lexical-scope",
 		"use-self-closing-elements",
 		"use-single-js-doc-asterisk",
+		"use-single-var-declarator",
 		"use-solid-for-component",
 		"use-top-level-regex",
 		"use-unique-element-ids",
