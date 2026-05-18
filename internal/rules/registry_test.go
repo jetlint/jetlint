@@ -368,6 +368,7 @@ func additionalRulesSnapshot() []string {
 		"no-useless-default-assignment",
 		"no-useless-label",
 		"no-useless-rename",
+		"no-useless-string-raw",
 		"no-useless-undefined-initialization",
 		"non-nullable-type-assertion-style",
 		"only-throw-error",
