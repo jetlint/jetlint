@@ -293,6 +293,7 @@ func additionalRulesSnapshot() []string {
 		"no-template-curly-in-string",
 		"no-then-property",
 		"no-this-before-super",
+		"no-ts-ignore",
 		"no-type-only-import-attributes",
 		"no-undeclared-dependencies",
 		"no-undef",
