@@ -22,6 +22,14 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-confusing-labels
+(suspicious)`. Package `internal/rules/noconfusinglabels/` already
+existed and its `EslintCompatibility` harness passed; this commit
+added the import + buildRules entry in `cli.go` (between `nocondassign`
+and `noconfusingvoidexpression`), the `CategorySuspicious` Metadata in
+`registry.go` (between `no-catch-assign` and `no-comment-text`), and
+the snapshot line in `registry_test.go`. Closes #439._
+
 _2026-05-17: Loop landed `feat(rules): wire no-assign-in-expressions
 (suspicious)`. Package `internal/rules/noassigninexpressions/` already
 existed and its `EslintCompatibility` harness passed; this commit added

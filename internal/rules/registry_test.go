@@ -357,6 +357,7 @@ func additionalRulesSnapshot() []string {
 		"no-assign-in-expressions",
 		"no-bitwise-operators",
 		"no-catch-assign",
+		"no-confusing-labels",
 		"no-comment-text",
 		"no-console",
 		"no-const-enum",

@@ -55,6 +55,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noclassassign"
 	"github.com/jetlint/jetlint/internal/rules/nocomparenegzero"
 	"github.com/jetlint/jetlint/internal/rules/nocondassign"
+	"github.com/jetlint/jetlint/internal/rules/noconfusinglabels"
 	"github.com/jetlint/jetlint/internal/rules/noconfusingvoidexpression"
 	"github.com/jetlint/jetlint/internal/rules/noconfusingvoidtype"
 	"github.com/jetlint/jetlint/internal/rules/noconsole"
@@ -752,6 +753,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noclassassign.New(),
 		nocomparenegzero.New(),
 		nocondassign.New(),
+		noconfusinglabels.New(),
 		noconfusingvoidexpression.New(),
 		noconfusingvoidtype.New(),
 		noconsole.New(),

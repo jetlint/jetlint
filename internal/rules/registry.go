@@ -179,6 +179,7 @@ var All = []Metadata{
 	{ID: "no-assign-in-expressions", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-bitwise-operators", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-catch-assign", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-confusing-labels", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-comment-text", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-console", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-const-enum", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
