@@ -448,6 +448,7 @@ func additionalRulesSnapshot() []string {
 		"use-media-caption",
 		"use-semantic-elements",
 		"use-static-response-methods",
+		"use-strict-mode",
 		"use-valid-anchor",
 		"use-valid-aria-props",
 		"use-valid-aria-role",
