@@ -67,8 +67,9 @@ on 100%; the score is a baseline that improves as rules sharpen.
 | no-misused-new | 19/19 (100%) |
 | adjacent-overload-signatures | 64/64 (100%) |
 | no-empty-source (biome) | 11/11 (100%) |
+| no-exports-in-test (biome) | 5/5 (100%) |
 
-**Aggregate: 794/794 cases pass (100%)** across all option
+**Aggregate: 799/799 cases pass (100%)** across all option
 combinations the upstream fixtures exercise.
 
 The five rules with options (\`valid-typeof\`, \`use-isnan\`,

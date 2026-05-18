@@ -109,6 +109,7 @@ var All = []Metadata{
 	{ID: "no-evolving-types", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-ex-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-explicit-any", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-exports-in-test", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-extra-boolean-cast", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-extra-non-null-assertion", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-fallthrough", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},

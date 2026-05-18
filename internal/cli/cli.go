@@ -91,6 +91,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noevolvingtypes"
 	"github.com/jetlint/jetlint/internal/rules/noexassign"
 	"github.com/jetlint/jetlint/internal/rules/noexplicitany"
+	"github.com/jetlint/jetlint/internal/rules/noexportsintest"
 	"github.com/jetlint/jetlint/internal/rules/noextrabooleancast"
 	"github.com/jetlint/jetlint/internal/rules/noextranonnullassertion"
 	"github.com/jetlint/jetlint/internal/rules/nofallthrough"
@@ -785,6 +786,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noevolvingtypes.New(),
 		noexassign.New(),
 		noexplicitany.New(),
+		noexportsintest.New(),
 		noextrabooleancast.New(),
 		noextranonnullassertion.New(),
 		nofallthrough.New(),

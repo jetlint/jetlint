@@ -236,6 +236,7 @@ func additionalRulesSnapshot() []string {
 		"no-evolving-types",
 		"no-ex-assign",
 		"no-explicit-any",
+		"no-exports-in-test",
 		"no-extra-boolean-cast",
 		"no-extra-non-null-assertion",
 		"no-fallthrough",

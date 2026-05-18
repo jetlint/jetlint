@@ -6,7 +6,7 @@ Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
 | Milestone | Open | Close-ready (impl exists) | Still missing |
 |---|---:|---:|---:|
-| #2 suspicious | 60 | 51 | 10 (+1 ambiguous #512 `strict`) |
+| #2 suspicious | 6 (open) | — | — |
 | #5 complexity | 45 | 35 | 10 |
 | #6 style | 69 | 53 | 16 |
 | #7 a11y | 33 | 33 | 0 (wiring + closure only) |
@@ -21,6 +21,35 @@ registry suite passes. What remains is bulk issue closure once PR #619
 merges.
 
 ## Active work / blockers
+
+_2026-05-17: Loop landed `feat(rules): implement no-exports-in-test
+(suspicious)`. New package `internal/rules/noexportsintest/` plus
+hand-written fixture `testdata/eslint/no-exports-in-test.json`
+(5 cases mirroring biome's `noExportsInTest` invalid.js, invalid.cjs,
+valid.js, valid.cjs, in-source-testing.js). Pure-AST: a file is
+"a test" when its top-level statements include an ExpressionStatement
+calling `describe`/`suite`/`context`/`test`/`it`/`bench` (bare
+identifier or `<name>.X`). In a test file, every top-level
+`KindExportDeclaration`, `KindExportAssignment`, statement with
+`HasExportModifier()`, and CommonJS assignment whose LHS resolves to
+`module.exports` (handles `module.exports = …`, `module.exports.X =
+…`, `module.exports["X"] = …`) is reported. Walks only direct
+SourceFile children, so `in-source-testing.js` (describe nested in
+`if (import.meta.vitest)`) stays valid. Wired between `noexplicitany`
+and `noextrabooleancast` in `cli.go`, registered as
+`CategorySuspicious` in `registry.go`, and added to
+`additionalRulesSnapshot()` in `registry_test.go`. Closes #464.
+`go test ./internal/rules/ ./internal/cli/
+./internal/rules/noexportsintest/` all green; `go test -short ./...`
+fully green._
+
+_2026-05-17: Discovered the commit `vvmxoyolqxyv 89d7c0d30f0a feat(rules):
+land no-useless-regex-backrefs (suspicious)` is mislabeled — its diff
+only wires `no-assign-in-expressions`. No `internal/rules/nouselessregexbackrefs/`
+package exists. Issue #504 remains open with a fixture but no
+implementation; it needs a full JS regex AST parser (group accounting
++ lookaround direction rules + named-group support + ES2024/2025
+character class set notation). Captured as a future-loop priority._
 
 _2026-05-17: Loop landed `feat(rules): implement no-empty-source
 (suspicious)`. Closes #461. The pre-existing package
@@ -730,29 +759,40 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 5 remaining (after #461 implemented this loop)
+### #2 suspicious — 6 remaining (after #464 implemented this loop)
 
 Per `gh issue list --milestone 2 --state open` (2026-05-17 after this
-loop): 7 open issues total. #512 `strict` and #488 `no-redeclare` are
-deferred (see below). Remaining tractable queue:
+loop): 6 open issues total. Per the release-driving prompt, NONE are
+deferred — milestone #2 ships at 100% before release. Remaining queue,
+roughly easiest → hardest:
 
-1. #504 no-useless-regex-backrefs — biome rule. Reports backreferences
-   inside a regex literal that can only ever match the empty string.
+1. #512 `strict` — biome alias `no-redundant-use-strict`. Pure-AST.
+   Flags redundant `"use strict"` directives (ES modules, classes,
+   nested strict contexts). Biome fixtures at
+   `crates/biome_js_analyze/tests/specs/suspicious/noRedundantUseStrict/`
+   (invalid.js, invalid.cjs, invalid.ts, invalidClass.cjs,
+   invalidFunction.{cjs,js}, invalid-with-trivia.js, valid.cjs,
+   commonJsValid.js, validReactDirectives.tsx). Need to hand-write
+   fixture since `biome-fixtures` won't capture the variant filenames
+   directly.
 2. #497 no-unassigned-variables — biome rule. `let`/`var` declarations
    without an initializer that are never assigned later in scope.
-3. #475 no-import-cycles — biome rule. Cross-file analysis (needs
-   module-graph plumbing); higher cost.
-4. #464 no-exports-in-test — biome rule. Reports `export` statements in
-   files matched by a test glob. Needs a test-file matcher.
-5. #448 no-deprecated-imports — biome rule. Detects imports of symbols
-   annotated `@deprecated` in their declaration site (type-aware).
-
-Deferred:
-- #488 no-redeclare — needs scope/binding analysis; previously
-  skipped on `feat/big-batch` (commit `wip(rules): more +6 (...,
-  redeclare-skip)`). Defer until scope-symbol helpers land.
-- (ambiguous) #512 `strict` — needs manual title triage; oxc has no
-  obvious kebab match.
+   Needs scope-tracking lite (per-scope binding write-set).
+3. #504 no-useless-regex-backrefs — biome rule. Backreferences inside
+   a regex literal that can never match. Needs full JS regex AST
+   parser (group accounting + lookaround direction rules + named
+   groups + ES2024/2025 character class set notation). Fixture file
+   already at `testdata/eslint/no-useless-regex-backrefs.json`. The
+   previous "land no-useless-regex-backrefs" commit was mislabeled
+   and shipped no rule code — see earlier loop note.
+4. #488 no-redeclare — needs full scope/binding analysis (per-scope
+   binding namespaces with type-vs-value distinction, function-scope
+   vs block-scope hoisting, TS interface/type-alias merging).
+5. #475 no-import-cycles — needs module-graph plumbing (per-program
+   import-edge tracker + cycle detection over the import graph).
+6. #448 no-deprecated-imports — type-aware. Already have JSDoc
+   `@deprecated` detection logic in `nodeprecated`; this rule
+   surfaces those at import sites instead of use sites.
 
 _Landed 2026-05-17 in this batch:_
 - #425 `adjacent-overload-signatures` —
