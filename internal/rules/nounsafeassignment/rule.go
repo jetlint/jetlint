@@ -113,7 +113,7 @@ func walkArrayPattern(ctx *engine.Context, pattern *wrapperchecker.Node, sender 
 	if !sender.IsTupleType() {
 		return
 	}
-	tupleArgs := sender.TypeArguments()
+	tupleArgs := safeTypeArguments(sender)
 	pattern.ForEachChild(func(c *wrapperchecker.Node) bool {
 		idx := indexOfBindingElement(pattern, c)
 		if idx < 0 || idx >= len(tupleArgs) {
@@ -304,7 +304,7 @@ func walkArrayAssignmentTarget(ctx *engine.Context, target *wrapperchecker.Node,
 	if !sender.IsTupleType() {
 		return
 	}
-	tupleArgs := sender.TypeArguments()
+	tupleArgs := safeTypeArguments(sender)
 	idx := -1
 	target.ForEachChild(func(c *wrapperchecker.Node) bool {
 		idx++
@@ -607,8 +607,8 @@ func assignmentIsUnsafe(rhs, lhs *wrapperchecker.Type, depth int) bool {
 		}
 		return false
 	}
-	rhsArgs := rhs.TypeArguments()
-	lhsArgs := lhs.TypeArguments()
+	rhsArgs := safeTypeArguments(rhs)
+	lhsArgs := safeTypeArguments(lhs)
 	if len(rhsArgs) > 0 && len(rhsArgs) == len(lhsArgs) &&
 		rhs.SymbolName() == lhs.SymbolName() && rhs.SymbolName() != "" {
 		for i := range rhsArgs {
@@ -618,4 +618,25 @@ func assignmentIsUnsafe(rhs, lhs *wrapperchecker.Type, depth int) bool {
 		}
 	}
 	return false
+}
+
+// safeTypeArguments returns the type's type arguments, or nil if the
+// type has none or the underlying checker rejects the query. The
+// wrapper's TypeArguments() filters out non-Object types and non-
+// TypeReferences but still propagates panics for TypeReferences whose
+// target lacks the expected InterfaceType backing (e.g., synthesized
+// references seen on certain object literals — jetlint#621).
+// Falling back to nil here loses at most a nested generic recursion;
+// the surrounding logic already treats "no matching arguments" as
+// "nothing to recurse into."
+func safeTypeArguments(t *wrapperchecker.Type) (args []*wrapperchecker.Type) {
+	if t == nil {
+		return nil
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			args = nil
+		}
+	}()
+	return t.TypeArguments()
 }
