@@ -1,0 +1,275 @@
+{
+  "ruleId": "no-useless-undefined",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessUndefined",
+  "cases": [
+    {
+      "code": "let a = undefined;",
+      "valid": false
+    },
+    {
+      "code": "let a = undefined, b = 2;",
+      "valid": false
+    },
+    {
+      "code": "var a = undefined;",
+      "valid": false
+    },
+    {
+      "code": "var a = undefined, b = 2;",
+      "valid": false
+    },
+    {
+      "code": "function foo() {return undefined;}",
+      "valid": false
+    },
+    {
+      "code": "const foo = () =\u003e {return undefined;};",
+      "valid": false
+    },
+    {
+      "code": "function foo() {return /* comment */ undefined;}",
+      "valid": false
+    },
+    {
+      "code": "function* foo() {yield undefined;}",
+      "valid": false
+    },
+    {
+      "code": "const {foo = undefined} = {};",
+      "valid": false
+    },
+    {
+      "code": "const [foo = undefined] = [];",
+      "valid": false
+    },
+    {
+      "code": "function foo(bar = undefined) {}",
+      "valid": false
+    },
+    {
+      "code": "function foo({bar = undefined}) {}",
+      "valid": false
+    },
+    {
+      "code": "function foo({bar = undefined} = {}) {}",
+      "valid": false
+    },
+    {
+      "code": "function foo([bar = undefined]) {}",
+      "valid": false
+    },
+    {
+      "code": "function foo([bar = undefined] = []) {}",
+      "valid": false
+    },
+    {
+      "code": "function foo() {return;}",
+      "valid": true
+    },
+    {
+      "code": "const foo = () =\u003e {};",
+      "valid": true
+    },
+    {
+      "code": "const foo = () =\u003e undefined;",
+      "valid": true
+    },
+    {
+      "code": "let foo;",
+      "valid": true
+    },
+    {
+      "code": "var foo;",
+      "valid": true
+    },
+    {
+      "code": "const foo = undefined;",
+      "valid": true
+    },
+    {
+      "code": "foo();",
+      "valid": true
+    },
+    {
+      "code": "foo(bar,);",
+      "valid": true
+    },
+    {
+      "code": "foo(undefined, bar);",
+      "valid": true
+    },
+    {
+      "code": "const {foo} = {};",
+      "valid": true
+    },
+    {
+      "code": "function foo({bar} = {}) {}",
+      "valid": true
+    },
+    {
+      "code": "function foo(bar) {}",
+      "valid": true
+    },
+    {
+      "code": "function* foo() {yield* undefined;}",
+      "valid": true
+    },
+    {
+      "code": "if (Object.is(foo, undefined)){}",
+      "valid": true
+    },
+    {
+      "code": "t.is(foo, undefined)",
+      "valid": true
+    },
+    {
+      "code": "assert.equal(foo, undefined, message)",
+      "valid": true
+    },
+    {
+      "code": "assert.notEqual(foo, undefined, message)",
+      "valid": true
+    },
+    {
+      "code": "assert.strictEqual(foo, undefined, message)",
+      "valid": true
+    },
+    {
+      "code": "assert.notStrictEqual(foo, undefined, message)",
+      "valid": true
+    },
+    {
+      "code": "assert.propertyVal(foo, 'bar', undefined, message)",
+      "valid": true
+    },
+    {
+      "code": "assert.notPropertyVal(foo, 'bar', undefined, message)",
+      "valid": true
+    },
+    {
+      "code": "expect(foo).not(undefined)",
+      "valid": true
+    },
+    {
+      "code": "expect(foo).to.have.property('bar', undefined)",
+      "valid": true
+    },
+    {
+      "code": "expect(foo).toBe(undefined)",
+      "valid": true
+    },
+    {
+      "code": "expect(foo).toContain(undefined)",
+      "valid": true
+    },
+    {
+      "code": "expect(foo).toContainEqual(undefined)",
+      "valid": true
+    },
+    {
+      "code": "expect(foo).toEqual(undefined)",
+      "valid": true
+    },
+    {
+      "code": "t.same(foo, undefined)",
+      "valid": true
+    },
+    {
+      "code": "t.notSame(foo, undefined)",
+      "valid": true
+    },
+    {
+      "code": "t.strictSame(foo, undefined)",
+      "valid": true
+    },
+    {
+      "code": "t.strictNotSame(foo, undefined)",
+      "valid": true
+    },
+    {
+      "code": "expect(someFunction).toHaveBeenCalledWith(1, 2, undefined);",
+      "valid": true
+    },
+    {
+      "code": "set.add(undefined);",
+      "valid": true
+    },
+    {
+      "code": "map.set(foo, undefined);",
+      "valid": true
+    },
+    {
+      "code": "array.push(foo, undefined);",
+      "valid": true
+    },
+    {
+      "code": "array.push(undefined);",
+      "valid": true
+    },
+    {
+      "code": "array.unshift(foo, undefined);",
+      "valid": true
+    },
+    {
+      "code": "array.unshift(undefined);",
+      "valid": true
+    },
+    {
+      "code": "createContext(undefined);",
+      "valid": true
+    },
+    {
+      "code": "React.createContext(undefined);",
+      "valid": true
+    },
+    {
+      "code": "setState(undefined)",
+      "valid": true
+    },
+    {
+      "code": "setState?.(undefined)",
+      "valid": true
+    },
+    {
+      "code": "props.setState(undefined)",
+      "valid": true
+    },
+    {
+      "code": "props.setState?.(undefined)",
+      "valid": true
+    },
+    {
+      "code": "array.includes(undefined)",
+      "valid": true
+    },
+    {
+      "code": "set.has(undefined)",
+      "valid": true
+    },
+    {
+      "code": "foo.bind(bar, undefined)",
+      "valid": true
+    },
+    {
+      "code": "foo.bind(...bar, undefined)",
+      "valid": true
+    },
+    {
+      "code": "foo.bind(...[], undefined)",
+      "valid": true
+    },
+    {
+      "code": "foo.bind(...[undefined], undefined)",
+      "valid": true
+    },
+    {
+      "code": "foo.bind(bar, baz, undefined)",
+      "valid": true
+    },
+    {
+      "code": "foo?.bind(bar, undefined)",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-media-caption",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/useMediaCaption",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n\t\u003caudio\u003e\u003ctrack /\u003e\u003c/audio\u003e\n\t\u003caudio\u003e\u003ctrack kind=\"subtitles\" /\u003e\u003c/audio\u003e\n\t\u003caudio /\u003e\n\t\u003cvideo\u003e\u003ctrack /\u003e\u003c/video\u003e\n\t\u003cvideo\u003e\u003ctrack kind=\"subtitles\" /\u003e\u003c/video\u003e\n\t\u003cvideo /\u003e\n\t\u003caudio\u003eFoo\u003c/audio\u003e\n\t\u003cvideo\u003eFoo\u003c/video\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n\t\u003cdiv /\u003e\n\t\u003cMyDiv /\u003e\n\t\u003caudio\u003e\u003ctrack kind=\"captions\" /\u003e\u003c/audio\u003e\n\t\u003caudio\u003e\u003ctrack kind=\"Captions\" /\u003e\u003c/audio\u003e\n\t\u003caudio\u003e\u003ctrack kind=\"Captions\" /\u003e\u003ctrack kind=\"subtitles\" /\u003e\u003c/audio\u003e\n\t\u003cvideo\u003e\u003ctrack kind=\"captions\" /\u003e\u003c/video\u003e\n\t\u003cvideo\u003e\u003ctrack kind=\"Captions\" /\u003e\u003c/video\u003e\n\t\u003cvideo\u003e\u003ctrack kind=\"Captions\" /\u003e\u003ctrack kind=\"subtitles\" /\u003e\u003c/video\u003e\n\t\u003caudio muted={true}\u003e\u003c/audio\u003e\n\t\u003cvideo muted={true}\u003e\u003c/video\u003e\n\t\u003cvideo muted\u003e\u003c/video\u003e\n\t\u003caudio {...props} /\u003e\n\t\u003cvideo {...props} /\u003e\n\u003c/\u003e\n",
+      "valid": true
+    }
+  ]
+}

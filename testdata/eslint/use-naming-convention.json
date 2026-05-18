@@ -1,0 +1,327 @@
+{
+  "ruleId": "use-naming-convention",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useNamingConvention",
+  "cases": [
+    {
+      "code": "try {} catch(E) {}\n\ntry {} catch(SpecificError) {}\n\ntry {} catch(specific_error) {}\n\ntry {} catch(SPECIFIC_ERROR) {}\n",
+      "valid": false
+    },
+    {
+      "code": "class c {}\n\nclass camelCase {}\n\nexport default class default_class {}\n\nconst x = class CLASS_EXPRESSION {}\n\nclass Unknown_Style {}",
+      "valid": false
+    },
+    {
+      "code": "export default class {\n    get X() {}\n\n    get PROPERTY() {}\n\n    get SpecialProperty() {}\n\n    get special_property() {}\n\n    get Unknown_Style() {}\n\n    get #X() {}\n\n    get #PROPERTY() {}\n\n    get #SpecialProperty() {}\n\n    get #special_property() {}\n\n    get #Unknown_Style() {}\n}",
+      "valid": false
+    },
+    {
+      "code": "export default class {\n    M() {}\n\n    METHOD() {}\n\n    AMethod() {}\n\n    method_1() {}\n\n    Unknown_Style() {}\n\n    #M() {}\n\n    #METHOD() {}\n\n    #AMethod() {}\n\n    #method_1() {}\n\n    #Unknown_Style() {}\n}",
+      "valid": false
+    },
+    {
+      "code": "export default class {\n    X\n\n    \"Y\" = 0\n\n    #X\n\n    Initialized = 0\n\n    #Initialized = 0\n\n    PROPERTY\n\n    #PROPERTY\n\n    SpecialProperty\n\n    #SpecialProperty\n\n    special_property\n\n    #special_property\n\n    Unknown_Style\n\n    #Unknown_Style\n\n    Unknown_Init_Style = 0\n\n    #Unknown_Init_Style = 0\n}",
+      "valid": false
+    },
+    {
+      "code": "export default class {\n    set X(x) {}\n\n    set PROPERTY(x) {}\n\n    set SpecialProperty(x) {}\n\n    set special_property(x) {}\n\n    set Unknown_Style(x) {}\n\n    set #X(x) {}\n\n    set #PROPERTY(x) {}\n\n    set #SpecialProperty(x) {}\n\n    set #special_property(x) {}\n\n    set #Unknown_Style(x) {}\n}",
+      "valid": false
+    },
+    {
+      "code": "export default class {\n    static get SpecialProperty() {}\n\n    static get special_property() {}\n\n    static get Unknown_Style() {}\n\n    static get #X() {}\n\n    static get #SpecialProperty() {}\n\n    static get #special_property() {}\n\n    static get #Unknown_Style() {}\n}",
+      "valid": false
+    },
+    {
+      "code": "export default class {\n    static METHOD() {}\n\n    static AMethod() {}\n\n    static method_1() {}\n\n    static Unknown_Style() {}\n\n    static #M() {}\n\n    static #METHOD() {}\n\n    static #AMethod() {}\n\n    static #method_1() {}\n\n    static #Unknown_Style() {}\n}",
+      "valid": false
+    },
+    {
+      "code": "export default class {\n    static set X(x) {}\n\n    static set PROPERTY(x) {}\n\n    static set SpecialProperty(x) {}\n\n    static set special_property(x) {}\n\n    static set Unknown_Style(x) {}\n\n    static set #X(x) {}\n\n    static set #PROPERTY(x) {}\n\n    static set #SpecialProperty(x) {}\n\n    static set #special_property(x) {}\n\n    static set #Unknown_Style(x) {}\n}",
+      "valid": false
+    },
+    {
+      "code": "import HTMLWrapper from \"HTMLWrapper.tsx\";\n\nfunction component() {\n    return \u003cHTMLWrapper\u003e \u003c/HTMLWrapper\u003e;\n}\n",
+      "valid": false
+    },
+    {
+      "code": "enum specialStatus {}\n\nenum special_status {}\n\nenum SPECIAL_STATUS {}",
+      "valid": false
+    },
+    {
+      "code": "export enum Status {\n    OPEN,\n    CLOSE,\n}\n\nexport enum Direction {\n    right,\n    left,\n}",
+      "valid": false
+    },
+    {
+      "code": "export { X as XxXX }\n\nexport { Y as snake_case  }\n\nexport { X as XxXX } from \"\"\n\nexport { Y as snake_case  } from \"\"",
+      "valid": false
+    },
+    {
+      "code": "export * as X from \"\"\n\nexport * as PascalCase from \"\"\n\nexport * as CONSTANT_CASE from \"\"\n\nexport * as snake_case from \"\"\n\nexport * as Unknown_Style from \"\"\n",
+      "valid": false
+    },
+    {
+      "code": "function special_function() {}\n\nfunction Unknown_Style() {}\n\n(function() {\n    function PERSON() {}\n\n    const g = function SPECIAL_FUNCTION() {}\n})()\n",
+      "valid": false
+    },
+    {
+      "code": "export function f(_snake_case, CONSTANT_CASE) { return _snake_case }",
+      "valid": false
+    },
+    {
+      "code": "interface camelCase {}",
+      "valid": false
+    },
+    {
+      "code": "import { X as XxXX } from \"\"\n\nimport { Y as snake_case  } from \"\"\n\nimport { X as XxXX } from \"\"\n\nimport { Y as snake_case  } from \"\"\n\nimport XxXX from \"\"\n\nimport snake_case from \"\"\n\nimport XxXX from \"\"\n\nimport snake_case from \"\"",
+      "valid": false
+    },
+    {
+      "code": "import * as X from \"\"\n\nimport * as PascalCase from \"\"\n\nimport * as CONSTANT_CASE from \"\"\n\nimport * as snake_case from \"\"\n\nimport * as Unknown_Style from \"\"\n",
+      "valid": false
+    },
+    {
+      "code": "export interface X {\n    [PascalCase: string]: unknown\n\n    [CONSTANT_CASE: number]: unknown\n\n    [snake_case: symbol]: unknown\n}\n\nexport interface Y {\n    readonly [PascalCase: string]: unknown\n\n    readonly [CONSTANT_CASE: number]: unknown\n\n    readonly [snake_case: symbol]: unknown\n}",
+      "valid": false
+    },
+    {
+      "code": "export interface XXX {}\n\nexport interface CONSTANT_CASE {}\n\nexport interface camelCase {}\n\nexport interface snake_case {}\n\nexport interface Unknown_Style {}\n\ninterface _XXX {}\n\ninterface _CONSTANT_CASE {}\n\ninterface _camelCase {}\n\ninterface _snake_case {}\n\ninterface _Unknown_Style {}",
+      "valid": false
+    },
+    {
+      "code": "export default function () {\n    const CONSTANT_CASE_CONST = 0\n\n    let CONSTANT_CASE_LET\n\n    var CONSTANT_CASE_VAR\n\n    const { prop: Unknown_Style } = obj\n}\n\nexport function f() {\n    const a_var = 0;\n    console.log(a_var);\n    return {\n        a_var // comment\n    };\n}\n",
+      "valid": false
+    },
+    {
+      "code": "export namespace XXX {}\n\nexport namespace CONSTANT_CASE {}\n\nexport namespace snake_case {}\n\nexport namespace Unknown_Style {}\n\nnamespace _XXX {}\n\nnamespace _CONSTANT_CASE {}\n\nnamespace _snake_case {}\n\nnamespace _Unknown_Style {}",
+      "valid": false
+    },
+    {
+      "code": "const café = 0;",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    get SpecialProperty() {},\n\n    get special_property() {},\n\n    get Unknown_Style() {},\n}",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    METHOD() {},\n\n    AMethod() {},\n\n    method_1() {},\n\n    Unknown_Style() {},\n}",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    Initialized: 0,\n\n    SpecialProperty: 0,\n\n    special_property: 0,\n\n    Unknown_Style: 0,\n\n    Unknown_Init_Style: 0,\n}",
+      "valid": false
+    },
+    {
+      "code": "export default {\n    set X(x) {},\n\n    set PROPERTY(x) {},\n\n    set SpecialProperty(x) {},\n\n    set special_property(x) {},\n\n    set Unknown_Style(x) {},\n}",
+      "valid": false
+    },
+    {
+      "code": "export default class {\n    constructor(\n        readonly PascalCase: unknown,\n\n        protected CONSTANT_CASE: unknown,\n\n        public Unknown_Style: unknown,\n    ) {}\n}",
+      "valid": false
+    },
+    {
+      "code": "const SERVICE_NAME = \"my-service\" as const;\n\nconst SERVICE = {\n  SERVICE_NAME,\n} as const;\n",
+      "valid": false
+    },
+    {
+      "code": "interface VNode {\n\thello: 'world'\n}\ntype AAb = any",
+      "valid": false
+    },
+    {
+      "code": "export const Unknown_Style = 0\nexport const MY__CONSTANT = 0\n\nexport var Unknown_Style_1 = 0\n\nexport let Unknown_Style_2 = 0\n\nexport namespace X {\n    export const Unknown_Style = 0\n\n    export var Unknown_Style_1 = 0\n\n    export let Unknown_Style_2 = 0\n}\n\nexport const fooYPosition = 0;",
+      "valid": false
+    },
+    {
+      "code": "export type camelCase = {}\n\nexport type CONSTANT_CASE = {}\n\nexport type snake_case = {}\n\nexport type Unknown_Style = {}\n\ntype _CONSTANT_CASE = {}\n\ntype _snake_case = {}\n\ntype _Unknown_Style = {}\n\ntype str = string",
+      "valid": false
+    },
+    {
+      "code": "export interface X {\n    get SpecialProperty(): unknown\n\n    get special_property(): unknown\n\n    get Unknown_Style(): unknown\n}",
+      "valid": false
+    },
+    {
+      "code": "export interface X {\n    METHOD(): unknown\n\n    AMethod(): unknown\n\n    method_1(): unknown\n\n    Unknown_Style(): unknown\n}",
+      "valid": false
+    },
+    {
+      "code": "export default class \u003cl, l1, camelCase, CONSTANT_CASE, snake_case, Unknown_Style\u003e {}\n\ntype Mapped\u003cT\u003e = {\n    [k in keyof T]: T\n}",
+      "valid": false
+    },
+    {
+      "code": "export interface X {\n    Initialized: unknown\n\n    SpecialProperty: unknown\n\n    special_property: unknown\n\n    Unknown_Style: unknown\n\n    Unknown_Init_Style: unknown\n\n    A_CONSTANT: unknown\n}",
+      "valid": false
+    },
+    {
+      "code": "export interface X {\n    readonly Initialized: unknown\n\n    readonly SpecialProperty: unknown\n\n    readonly special_property: unknown\n\n    readonly Unknown_Style: unknown\n\n    readonly Unknown_Init_Style: unknown\n}",
+      "valid": false
+    },
+    {
+      "code": "export interface X {\n    set X(x: unknown )\n\n    set PROPERTY(x: unknown )\n\n    set SpecialProperty(x: unknown )\n\n    set special_property(x: unknown )\n\n    set Unknown_Style(x: unknown )\n}",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\ntry {} catch(e) {}\n\ntry {} catch(_e) {}\n\ntry {} catch(_) {}\n\ntry {} catch(err) {}\n\ntry {} catch(specificError) {}\n\ntry {} catch(_specificError) {}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nclass C {}\n\nclass _C {}\n\nclass PascalCase {}\n\nclass _PascalCase {}\n\nexport default class DefaultClass {}\n\nconst x = class ClassExpression {}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default class {\n    get p() {}\n\n    get property() {}\n\n    get specialProperty() {}\n\n    get stream$() {}\n\n    get $stream() {}\n\n    get _special_() {}\n\n    get \"custom-property\"() {}\n\n    get \"@\"() {}\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default class {\n    m() {}\n\n    method() {}\n\n    aMethod() {}\n\n    method$() {}\n\n    $method() {}\n\n    _method_() {}\n\n    \"custom-method\"() {}\n\n    \"%\"() {}\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default class {\n    p\n\n    \"q\" = 0\n\n    #p\n\n    initialized = 0\n\n    #initialized = 0\n\n    _privateConvention\n\n    #_privateConvention\n\n    property\n\n    #property\n\n    specialProperty\n\n    #specialProperty\n\n    initializedProperty = 5\n\n    #initializedProperty = 5\n\n    stream$\n\n    #stream$\n\n    $stream\n\n    #$stream\n\n    _special_\n\n    #_special_\n\n    \"custom-property\"\n\n    \"@\"\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default class {\n    set p(x) {}\n\n    set property(x) {}\n\n    set specialProperty(x) {}\n\n    set stream$(x) {}\n\n    set $stream(x) {}\n\n    set _special_(x) {}\n\n    set \"custom-property\"(x) {}\n\n    set \"@\"(x) {}\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default class {\n    static get p() {}\n\n    static get property() {}\n\n    static get specialProperty() {}\n\n    static get stream$() {}\n\n    static get $stream() {}\n\n    static get _special_() {}\n\n    static get \"custom-property\"() {}\n\n    static get \"@\"() {}\n\n    static get READONLY_PROPERTY() {}\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default class {\n    static m() {}\n\n    static method() {}\n\n    static aMethod() {}\n\n    static method$() {}\n\n    static $method() {}\n\n    static _method_() {}\n\n    static \"custom-method\"() {}\n\n    static \"%\"() {}\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default class {\n    static p\n\n    static #p\n\n    static initialized = 0\n\n    static #initialized = 0\n\n    static _privateConvention\n\n    static #_privateConvention\n\n    static property\n\n    static #property\n\n    static specialProperty\n\n    static #specialProperty\n\n    static initializedProperty = 5\n\n    static #initializedProperty = 5\n\n    static stream$\n\n    static #stream$\n\n    static $stream\n\n    static #$stream\n\n    static _special_\n\n    static #_special_\n\n    static \"custom-property\"\n\n    static \"@\"\n\n    static CLASS_CONSTANT = 0\n\n    static #CLASS_CONSTANT = 0\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default class {\n    static set p(x) {}\n\n    static set property(x) {}\n\n    static set specialProperty(x) {}\n\n    static set stream$(x) {}\n\n    static set $stream(x) {}\n\n    static set _special_(x) {}\n\n    static set \"custom-property\"(x) {}\n\n    static set \"@\"(x) {}\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction loadWidgetComponent(widgetId) {\n  const Component = getWidgetComponent(widgetId);\n  if (!Component) return null;\n  return \u003cComponent /\u003e;\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst { Unknown_Style } = obj;",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nenum S {}\n\nenum Status {}\n\nenum SpecialStatus {}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nenum Status {\n    Open,\n    Close,\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport { X as X }\n\nexport { Y as CONSTANT_Y  }\n\nexport { fun as Func  }\n\nexport { CONSTANT_Z as z  }\n\nexport { jquery as $ }\n\nexport { lodash as _ }\n\nexport { X as X } from \"\"\n\nexport { Y as CONSTANT_Y  } from \"\"\n\nexport { fun as Func  } from \"\"\n\nexport { CONSTANT_Z as z  } from \"\"\n\nexport { jquery as $ } from \"\"\n\nexport { lodash as _ } from \"\"",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport * as x from \"\"\n\nexport * as camelCase from \"\"\n\nexport * as $ from \"\"\n\nexport * as _ from \"\"",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// Don't apply naming convention on the export source\nexport { Unknown_Style as u } from \"\"",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\ndeclare module \"myExternalModule\" {\n    export interface my_INTERFACE {}\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction Person() {}\n\nfunction f() {}\n\nfunction specialFunction() {}\n\nfunction $stream() {}\n\nfunction stream$() {}\n\nfunction _internalFunction() {}\n\nfunction _special_() {}\n\nfunction _() {}\n\nfunction $() {}\n\nconst g = function g() {}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction f(a, PascalCase, specialParameter, _unused, $1, stream$, _, $, __doubledUnderscore, __) {}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport { X as X } from \"\"\n\nimport { Y as CONSTANT_Y  } from \"\"\n\nimport { fun as Func  } from \"\"\n\nimport { CONSTANT_Z as z  } from \"\"\n\nimport { jquery as $ } from \"\"\n\nimport { lodash as _ } from \"\"\n\nimport X from \"\"\n\nimport CONSTANT_Y from \"\"\n\nimport Func from \"\"\n\nimport z from \"\"\n\nimport $ from \"\"\n\nimport _ from \"\"",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport * as x from \"\"\n\nimport * as camelCase from \"\"\n\nimport * as $ from \"\"\n\nimport * as _ from \"\"",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// Don't apply naming convention on the import source\nimport { Unknown_Style as u } from \"\"\n\nimport { Unknown_Style } from \"\"",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport interface X {\n    [s: string]: unknown\n\n    [index: number]: unknown\n\n    [specialSymbol: symbol]: unknown\n}\n\nexport interface Y {\n    readonly [s: string]: unknown;\n\n    readonly [index: number]: unknown;\n\n    readonly [specialSymbol: symbol]: unknown;\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport interface X {}\n\nexport interface PascalCase {}\n\nexport interface _PascalCase {}\n\nexport interface _ {}\n\nexport interface $ {}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport {}\ndeclare global {\n    interface HTMLElement {}\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default function () {\n    const x = 0\n\n    const _x = 0\n\n    const camelCaseConst = 0\n\n    let camelCaseLet\n\n    var camelCaseVar\n\n    const _camelCaseConst = 0\n\n    let _camelCaseLet\n\n    var _camelCaseVar\n\n    const X = 0\n\n    const PascalCaseConst = 0\n\n    let PascalCaseLet\n\n    var PascalCaseVar\n\n    const { Unknown_Style: local } = obj\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport namespace X {}\n\nexport namespace PascalCase {}\n\nexport namespace camelCase {}\n\nexport namespace _PascalCase {}\n\nexport namespace _camelCase {}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default {\n    get p() {},\n\n    get property() {},\n\n    get specialProperty() {},\n\n    get stream$() {},\n\n    get $stream() {},\n\n    get _special_() {},\n\n    get \"custom-property\"() {},\n\n    get \"@\"() {},\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default {\n    m() {},\n\n    method() {},\n\n    aMethod() {},\n\n    method$() {},\n\n    $method() {},\n\n    _method_() {},\n\n    \"custom-method\"() {},\n\n    \"%\"() {},\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default {\n    p: 0,\n\n    _privateConvention: 0,\n\n    property: 0,\n\n    specialProperty: 0,\n\n    stream$: 0,\n\n    $stream: 0,\n\n    _special_: 0,\n\n    \"custom-property\": 0,\n\n    \"@\": 0,\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default {\n    set p(x) {},\n\n    set property(x) {},\n\n    set specialProperty(x) {},\n\n    set stream$(x) {},\n\n    set $stream(x) {},\n\n    set _special_(x) {},\n\n    set \"custom-property\"(x) {},\n\n    set \"@\"(x) {},\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default class {\n    constructor(\n        readonly p: unknown,\n        protected property: unknown,\n        public camelCase: unknown,\n        private _privateProperty: unknown,\n    ) {}\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport const CONSTANT_CASE = 0\n\nexport const camelCase = 0\n\nexport const PascalCase = class {}\n\nexport var CONSTANT_CASE_1 = 0\n\nexport var camelCase1 = 0\n\nexport var PascalCase1 = class {}\n\nexport let camelCase2 = 0\n\nnamespace X {\n    export const CONSTANT_CASE = 0\n\n    export const camelCase = 0\n\n    export const PascalCase = class {}\n\n    export var CONSTANT_CASE_1 = 0\n\n    export var camelCase1 = 0\n\n    export var PascalCase1 = class {}\n\n    export let camelCase2 = 0\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport type X = {}\n\nexport type PascalCase = {}\n\nexport type _PascalCase = {}\n\nexport type _ = {}\n\nexport type $ = {}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport interface X {\n    get p(): unknown\n\n    get property(): unknown\n\n    get specialProperty(): unknown\n\n    get stream$(): unknown\n\n    get $stream(): unknown\n\n    get _special_(): unknown\n\n    get \"custom-property\"(): unknown\n\n    get \"@\"(): unknown\n\n    get READONLY_PROPERTY(): unknown\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport interface X {\n    m(): void\n\n    method(): void\n\n    aMethod(): void\n\n    method$(): void\n\n    $method(): void\n\n    _method_(): void\n\n    \"custom-method\"(): void\n\n    \"%\"(): void\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport default class \u003cT, T1, T42, _U, Val\u003e {}\n\ntype Mapped\u003cT\u003e = {\n    [K in keyof T]: T\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport interface X {\n    p: unknown\n\n    _privateConvention: unknown\n\n    property: unknown\n\n    specialProperty: unknown\n\n    stream$: unknown\n\n    $stream: unknown\n\n    _special_: unknown\n\n    \"custom-property\": unknown\n\n    \"@\": unknown\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport interface X {\n    readonly A_CONSTANT: unknown\n\n    readonly p: unknown\n\n    readonly _privateConvention: unknown\n\n    readonly property: unknown\n\n    readonly specialProperty: unknown\n\n    readonly stream$: unknown\n\n    readonly $stream: unknown\n\n    readonly _special_: unknown\n\n    readonly\"custom-property\": unknown\n\n    readonly\"@\": unknown\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport interface X {\n    set p(x: unknown)\n\n    set property(x: unknown)\n\n    set specialProperty(x: unknown)\n\n    set stream$(x: unknown)\n\n    set $stream(x: unknown)\n\n    set _special_(x: unknown)\n\n    set \"custom-property\"(x: unknown)\n\n    set \"@\"(x: unknown)\n}",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-key-with-mouse-events",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/useKeyWithMouseEvents",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003cdiv onMouseOver={() =\u003e {}} /\u003e;\n\u003cdiv onMouseOut={() =\u003e {}} /\u003e;\n\u003cdiv onMouseOver={() =\u003e {}} onFocus={undefined} /\u003e;\n\u003cdiv onMouseOut={() =\u003e {}} onBlur={undefined} /\u003e;\n\u003cdiv onMouseOver={() =\u003e {}} onFocus={null} /\u003e;\n\u003cdiv onMouseOut={() =\u003e {}} onBlur={null} /\u003e;\n\u003cdiv onMouseOver={() =\u003e {}}\u003e\u003c/div\u003e;\n\u003cdiv onMouseOut={() =\u003e {}}\u003e\u003c/div\u003e;\n\u003cdiv {...spread} onMouseOut={() =\u003e {}}\u003e\u003c/div\u003e;\n\u003cdiv {...spread} onMouseOver={() =\u003e {}}\u003e\u003c/div\u003e;",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003cdiv /\u003e;\n\u003cdiv onFocus={() =\u003e {}} /\u003e;\n\u003cdiv onMouseOver={() =\u003e {}} onFocus={() =\u003e {}} /\u003e;\n\u003cdiv onMouseOver={() =\u003e {}} {...props} /\u003e;\n\u003cdiv onMouseOver={() =\u003e {}} onFocus={() =\u003e {}} {...props} /\u003e;\n\u003cdiv onMouseOver={handleMouseOver} onFocus={handleFocus} /\u003e;\n\u003cdiv onMouseOver={handleMouseOver} onFocus={handleFocus} {...props} /\u003e;\n\u003cdiv onBlur={() =\u003e {}} /\u003e;\n\u003cdiv onMouseOut={() =\u003e {}} onBlur={() =\u003e {}} /\u003e;\n\u003cdiv onMouseOut={() =\u003e {}} {...props} /\u003e;\n\u003cdiv onMouseOut={() =\u003e {}} onBlur={() =\u003e {}} {...props} /\u003e;\n\u003cdiv onMouseOut={handleMouseOut} onBlur={handleOnBlur} /\u003e;\n\u003cdiv onMouseOut={handleMouseOut} onBlur={handleOnBlur} {...props} /\u003e;\n\u003cMyComponent /\u003e;\n\u003cMyComponent onMouseOver={() =\u003e {}} /\u003e;\n\u003cMyComponent onMouseOut={() =\u003e {}} /\u003e;\n\u003cMyComponent onBlur={() =\u003e {}} /\u003e;\n\u003cMyComponent onFocus={() =\u003e {}} /\u003e;\n\u003cMyComponent onMouseOver={() =\u003e {}} {...props} /\u003e;\n\u003cMyComponent onMouseOut={() =\u003e {}} {...props} /\u003e;\n\u003cMyComponent onBlur={() =\u003e {}} {...props} /\u003e;\n\u003cMyComponent onFocus={() =\u003e {}} {...props} /\u003e;\n\n",
+      "valid": true
+    }
+  ]
+}

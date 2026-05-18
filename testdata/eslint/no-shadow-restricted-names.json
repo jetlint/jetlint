@@ -1,0 +1,35 @@
+{
+  "ruleId": "no-shadow-restricted-names",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noShadowRestrictedNames",
+  "cases": [
+    {
+      "code": "function NaN() {}",
+      "valid": false
+    },
+    {
+      "code": "function undefined() {}",
+      "valid": false
+    },
+    {
+      "code": "function Infinity() {}",
+      "valid": false
+    },
+    {
+      "code": "function Array() {}",
+      "valid": false
+    },
+    {
+      "code": "function test(JSON) { console.log(JSON); }",
+      "valid": false
+    },
+    {
+      "code": "let Set;",
+      "valid": false
+    },
+    {
+      "code": "try {} catch (Object) {}",
+      "valid": false
+    }
+  ]
+}

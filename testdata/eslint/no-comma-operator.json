@@ -1,0 +1,123 @@
+{
+  "ruleId": "no-comma-operator",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noCommaOperator",
+  "cases": [
+    {
+      "code": "<!-- should generate diagnostics -->\n<script>\n  let x = 1;\n</script>\n\n<!-- Comma operator in template expression - should be flagged -->\n<p>{(console.log(\"side effect\"), x)}</p>\n<p class={a, b}>real comma operator</p>\n",
+      "valid": false
+    },
+    {
+      "code": "a = 1, 2",
+      "valid": false
+    },
+    {
+      "code": "do {} while (doSomething(), !!test);",
+      "valid": false
+    },
+    {
+      "code": "for (; doSomething(), !!test; );",
+      "valid": false
+    },
+    {
+      "code": "if (doSomething(), !!test);",
+      "valid": false
+    },
+    {
+      "code": "switch (doSomething(), val) {}",
+      "valid": false
+    },
+    {
+      "code": "while (doSomething(), !!test);",
+      "valid": false
+    },
+    {
+      "code": "with (doSomething(), val) {}",
+      "valid": false
+    },
+    {
+      "code": "a => (doSomething(), a)",
+      "valid": false
+    },
+    {
+      "code": "(1), 2",
+      "valid": false
+    },
+    {
+      "code": "((1)) , (2)",
+      "valid": false
+    },
+    {
+      "code": "while((1) , 2);",
+      "valid": false
+    },
+    {
+      "code": "var foo = (1, 2);",
+      "valid": false
+    },
+    {
+      "code": "(0,eval)(\"foo()\");",
+      "valid": false
+    },
+    {
+      "code": "foo(a, (b, c), d);",
+      "valid": false
+    },
+    {
+      "code": "do {} while ((doSomething(), !!test));",
+      "valid": false
+    },
+    {
+      "code": "for (; (doSomething(), !!test); );",
+      "valid": false
+    },
+    {
+      "code": "if ((doSomething(), !!test));",
+      "valid": false
+    },
+    {
+      "code": "switch ((doSomething(), val)) {}",
+      "valid": false
+    },
+    {
+      "code": "while ((doSomething(), !!test));",
+      "valid": false
+    },
+    {
+      "code": "with ((doSomething(), val)) {}",
+      "valid": false
+    },
+    {
+      "code": "a => ((doSomething(), a))",
+      "valid": false
+    },
+    {
+      "code": "let arr = [1, 2];",
+      "valid": true
+    },
+    {
+      "code": "let obj = {a: 1, b: 2};",
+      "valid": true
+    },
+    {
+      "code": "let a = 1, b = 2;",
+      "valid": true
+    },
+    {
+      "code": "foo(a, b, d);",
+      "valid": true
+    },
+    {
+      "code": "for (i = 0, j = 0; test; );",
+      "valid": true
+    },
+    {
+      "code": "for (; test; i++, j++);",
+      "valid": true
+    },
+    {
+      "code": "for (let i = 0, j = 1, k = 2; i < 100; i++, j++, k++) {}",
+      "valid": true
+    }
+  ]
+}

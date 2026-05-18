@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-throw-only-error",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useThrowOnlyError",
+  "cases": [
+    {
+      "code": "throw undefined;\nthrow \"error\";\nthrow 0;\nthrow false;\nthrow null;\nthrow {};\nthrow \"a\" + \"b\";\nconst a = \"\";\nthrow a + \"b\";\nlet foo;\nthrow (foo = \"error\");\nthrow (new Error(), 1, 2, 3);\nthrow \"literal\" \u0026\u0026 \"not an Error\";\nthrow \"literal\" || new Error();\nthrow new Error() \u0026\u0026 \"literal\";\nthrow \"literal\" ?? new Error();\nthrow foo ? \"not an Error\" : \"literal\";\nthrow foo ? new Error() : \"literal\";\nthrow foo ? \"literal\" : new Error();\nthrow `${foo}`;\n\n// False positives while valid, not a good practice.\nthrow \"literal\" \u0026\u0026 new Error();\nthrow new Error() || \"literal\";",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nthrow new Error();\nthrow new Error(error);\nthrow Error(error);\n\ntry {\n\tthrow new Error();\n} catch (e) {\n\tthrow e;\n}\n\nfunction foo() {\n\treturn new Error();\n}\nthrow foo();\n\nconst fooObj = {\n\tbar: new Error(),\n};\nthrow fooObj.bar;\n\nconst fooObj1 = {\n\tbar: new Error(),\n};\n\nthrow fooObj1[\"bar\"];\n\nclass CustomError extends Error {}\nthrow new CustomError();\n\nclass CustomError1 extends Error {}\nclass CustomError2 extends CustomError1 {}\nthrow new CustomError2();\n\nthrow (foo1 = new Error());\nthrow (1, 2, new Error());\nthrow foo ? new Error() : new Error();\nfunction* fooGenerator() {\n\tlet index = 0;\n\tthrow yield index++;\n}\n\nasync function fooAsync() {\n\tthrow await bar;\n}\n\n// Cases below should be invalid, but are not.\n// TODO. Need type inference to handle them properly.\nthrow new String(\"\");\nconst err = \"error\";\nthrow err;\nfunction fooFn(msg) {}\nthrow fooFn(\"error\");\nconst fooObjInvalid = {\n    msg: \"error\",\n};\nthrow fooObjInvalid.msg;\nconst fooMsg = {\n    msg: undefined,\n};\nthrow fooMsg.msg;\nclass CustomError {}\nthrow new CustomError();\nclass Foo {}\nclass CustomError extends Foo {}\nthrow new CustomError();\n{\n    const Error = null;\n    throw Error;\n}\n",
+      "valid": true
+    }
+  ]
+}

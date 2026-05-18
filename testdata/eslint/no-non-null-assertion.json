@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-non-null-assertion",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noNonNullAssertion",
+  "cases": [
+    {
+      "code": "x!;\nx!.y;\nx.y!;\n!x!.y;\nx!.y?.z;\nx![y];\nx![y]?.z;\nx.y.z!();\nx.y?.z!();\nx!!!;\nx!!.y;\nx.y!!;\nx.y.z!!();\nx!?.[y].z;\nx!?.y.z;\nx!!!?.y.z;\nx.y.z!?.();\nx.y.z!!!?.();\n(b! as number) = \"test\";\n(b!! as number) = \"test\";\nx[y.z!];\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nx;\nx.y;\nx.y.z;\nx?.y.z;\nx?.y?.z;\n!x;\n",
+      "valid": true
+    }
+  ]
+}

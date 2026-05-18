@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-enum-initializers",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useEnumInitializers",
+  "cases": [
+    {
+      "code": "export enum Status {\n\tClose,\n\tMidClose = 1,\n\tMidOpen = 10,\n\t/* implicit */ Open /* 11 */,\n}\n\nexport enum ComputedFlags {\n\tFlag1 = 1,\n\tFlag2 = 1 \u003c\u003c 1,\n\tFlag3,\n}\n\nexport enum Direction {\n\tDown,\n\tLeft,\n\tRight,\n\tUp,\n}\n\nexport enum Color {\n\tRed = \"Red\",\n\tGreen = \"Green\",\n\tBlue,\n}\n\nexport enum Exotic {\n\tA = 0.1,\n\tB,\n\tC = \"Special\",\n\tD,\n}\n\nexport enum IndexedColor {\n\tRed = \"0\",\n\tGreen = \"1\",\n\tBlue,\n}\n\nexport namespace A {\n    export namespace B {\n        export enum Enum {\n            A,\n            B,\n        }\n    }\n}\n\nconst RED = 0;\nexport enum RgbColor {\n\tRed = RED,\n\tGreen,\n\tBlue,\n}\n\nexport enum RgbColor2 {\n\tRed = RED,\n\tGreen = 5,\n\tBlue,\n}\n\nconst GREEN = 0;\nexport enum RgbColor3 {\n\tRed,\n\tGreen = GREEN,\n\tBlue,\n}\n\n// https://github.com/biomejs/biome/issues/1640\nexport enum WithComment {\n  First = 1, // Comment1\n  Second, // Comment2\n  Third // Comment3\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport enum Status {\n\tOpen = 1,\n\tClose = 2,\n}\n\nexport enum Color {\n\tRed = \"Red\",\n\tGreen = \"Green\",\n\tBlue = \"Blue\",\n}\n\nexport enum Mix {\n\tStr = \"Str\",\n\tNumber = 0,\n}\n\nexport declare enum Weather {\n    Rainy,\n    Sunny,\n}\n\ndeclare enum Weather2 {\n    Rainy,\n    Sunny,\n}\n\nexport declare namespace A {\n    export namespace B {\n        export enum Enum {\n            A,\n            B,\n        }\n    }\n}\n\ndeclare namespace A2 {\n    export namespace B2 {\n        export enum Enum {\n            A,\n            B,\n        }\n    }\n}\n",
+      "valid": true
+    }
+  ]
+}

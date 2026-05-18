@@ -1,0 +1,11 @@
+{
+  "ruleId": "use-block-statements",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useBlockStatements",
+  "cases": [
+    {
+      "code": "if (x) x;\nif (x) {\n  x;\n} else y;\nif (x) {\n  x;\n} else if (y) y;\nfor (;;);\nfor (p in obj);\nfor (x of xs);\ndo;\nwhile (x);\nwhile (x);\n\nif (x);\n\nif (test);\nelse if (test);\nelse;\n\nwhile (test)\n  bar\n\n  while (test)\n    bar\n\nif (test)\n  bar\nelse if(test)\n  bar\nelse\n  bar\n\n  if (test)\n    bar\n  else if(test)\n    bar\n  else\n    bar\n\nif (test) {\n  correct;\n} else console.log(\"false\") // comment\n",
+      "valid": false
+    }
+  ]
+}

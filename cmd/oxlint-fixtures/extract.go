@@ -85,7 +85,7 @@ func tokenize(src string) ([]tok, error) {
 			}
 			toks = append(toks, tok{kind: tokString, value: s, pos: i})
 			i = next
-		case c == 'r' && i+1 < n && (src[i+1] == '"' || src[i+1] == '#'):
+		case c == 'r' && i+1 < n && isRawStringStart(src, i):
 			s, next, err := readRawString(src, i)
 			if err != nil {
 				return nil, err
@@ -282,6 +282,18 @@ func hexVal(b byte) rune {
 		return rune(b-'A') + 10
 	}
 	return 0
+}
+
+// isRawStringStart returns true when src[i:] begins a raw string
+// literal (`r"..."` or `r#"..."#` etc.). Distinguishes raw strings
+// from Rust raw identifiers like `r#static`, which share the `r#`
+// prefix but are followed by an identifier instead of a quote.
+func isRawStringStart(src string, i int) bool {
+	j := i + 1
+	for j < len(src) && src[j] == '#' {
+		j++
+	}
+	return j < len(src) && src[j] == '"'
 }
 
 // readRawString reads a raw string literal starting at src[i] (which

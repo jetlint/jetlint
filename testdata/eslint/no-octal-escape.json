@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-octal-escape",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noOctalEscape",
+  "cases": [
+    {
+      "code": "0;\n\"foo \\01 bar\";\n\"foo \\000 bar\";\n\"foo \\377 bar\";\n\"foo \\378 bar\";\n\"foo \\37a bar\";\n\"foo \\381 bar\";\n\"foo \\3a1 bar\";\n\"foo \\751 bar\";\n\"foo \\258 bar\";\n\"foo \\25a bar\";\n\nconst o = {\n    '\\31': 0,\n};\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n/([abc]) \\1/g;\n\"\\x51\" /* \\01 */;\n\"foo \\\\251 bar\";\n\"\\8\";\n\"\\9\";\n\"\\0 \";\n\"\\0a\";\n\"\\\\\";\n\"0\";\n\"1\";\n\"\\a\";\n\"\\n\";",
+      "valid": true
+    }
+  ]
+}

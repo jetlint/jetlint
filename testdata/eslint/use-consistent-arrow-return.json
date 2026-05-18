@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-consistent-arrow-return",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useConsistentArrowReturn",
+  "cases": [
+    {
+      "code": "const returnsObjectArrow = () =\u003e {\n    return { a: 1, b: 2 };\n}\n\nconst returnsSequenceArrow = () =\u003e {\n    return (a, b);\n}\n\n\nconst returnsAwaitArrow = async () =\u003e {\n    return await fetchData();\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst a = () =\u003e 0;\nconst b = () =\u003e \"hello\";\nconst c = (a, b) =\u003e a + b;\nconst d = () =\u003e ({ a: 1 });\n\nfunction multiStatement() {\n    const x = 1;\n    return x;\n}\n\nconst multiStatement2 = () =\u003e {\n    console.log(\"hello\");\n};\n\nconst multiStatement3 = () =\u003e {\n    let y = 2;\n    y++;\n    return y;\n}\n\nfunction noReturn() {\n    // I do nothing\n}\n\nfunction foo() {\n    return 0;\n}\n\nconst noReturnArrow = () =\u003e {};\n\nfunction conditionalReturn(a) {\n    if (a) {\n        return 1;\n    }\n    return 0;\n}\n\n\nconst withComment = () =\u003e {\n  // intentional comment\n  return 1;\n};\n\n\nconst emptyReturn = () =\u003e {\n  return;\n};\n\nconst withDirective = () =\u003e {\n  \"use strict\";\n  return 1;\n};\n\nconst emptyReturnWithComment = () =\u003e {\n  return; // explicitly empty\n};\n\nconst withInlineComment = () =\u003e { return 1; /* inline */ };\nconst withBlockCommentBefore = () =\u003e { /* leading */ return 1; };\nconst withCommentBetweenReturnAndExpr = () =\u003e { return /* comment */ 1; };\n\nconst returnsSequenceArrow = () =\u003e (a, b)\nconst returnsAwaitArrow = async () =\u003e await fetchData()\n",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-consistent-curly-braces",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useConsistentCurlyBraces",
+  "cases": [
+    {
+      "code": "\u003c\u003e\n\u003cFoo\u003e{'Hello world'}\u003c/Foo\u003e\n\n\u003cFoo foo={'bar'} /\u003e\n\n\u003cFoo foo=\u003cBar /\u003e /\u003e\n\n\u003cFoo\u003e{\n\t'Hello world'\n}\u003c/Foo\u003e\n\n\u003cFoo\u003e{/*comment*/'Hello world'/*comment*/}\u003c/Foo\u003e\n\n\u003cFoo\u003e{x}{'y'}{z}\u003c/Foo\u003e\n\n\u003cFoo foo={' '}\u003e\u003c/Foo\u003e\n\n{/* https://github.com/biomejs/biome/issues/7320 */}\n\u003cConnectedFieldTemplate\n\tdescription1=\n\t\t'Upload a CSV file containing an \"email\" column, and optional \"first_name\" and \"last_name\" columns'\n\tdescription2={\n\t\t'Upload a CSV file containing an \"email\" column, and optional \"first_name\" and \"last_name\" columns'\n\t}\n\tclassName={\n\t\t\"d-block\"\n\t}\n/\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n\u003c\u003e\n\u003cFoo\u003eHello world\u003c/Foo\u003e\n\n\u003cFoo foo=\"bar\" /\u003e\n\n\u003cFoo foo=\"bar\"\u003eBaz\u003c/Foo\u003e\n\n\u003cFoo foo={5} /\u003e\n\nlet baz = 4;\n\u003cFoo foo={baz} /\u003e\n\u003cFoo\u003eBaz is {baz}\u003c/Foo\u003e\n\u003cFoo\u003e{baz} is Baz\u003c/Foo\u003e\n\n\u003cFoo foo={\u003cBar /\u003e} /\u003e\n\n\u003cFoo\u003e\u003cBar /\u003e\u003c/Foo\u003e\n\n\u003cFoo\u003e{/*comment*/}Hello world{/*comment*/}\u003c/Foo\u003e\n\n\u003cFoo\u003e{' '}\u003c/Foo\u003e\n\n\u003cFoo\u003e{'  '}\u003c/Foo\u003e\n\n\u003cFoo\u003eInvalid closing tag {'}'}\u003c/Foo\u003e\n\n\u003cFoo\u003e{'Invalid closing tag }'}\u003c/Foo\u003e\n\n\u003cFoo\u003eInvalid opening tag {'{'}\u003c/Foo\u003e\n\n\u003cFoo\u003e{'Invalid opening tag {'}\u003c/Foo\u003e\n\n\u003cFoo\u003e{'start {{'}\u003c/Foo\u003e\n\n\u003cFoo\u003e{'}} end'}\u003c/Foo\u003e\n\n\u003cFoo\u003e{'\u003cscript\u003e'}\u003c/Foo\u003e\n\n\u003cFoo\u003e{'a \u003c b'}\u003c/Foo\u003e\n\n\u003cFoo\u003e{'\u0026amp;'}\u003c/Foo\u003e\n\n\u003cFoo\u003e{'Tom \u0026 Jerry'}\u003c/Foo\u003e\n\n\u003cFoo\u003eJupiter {\"\u003e\"} Venus\u003c/Foo\u003e\n\n\u003cFoo\u003eJupiter {'\u003e'} Venus\u003c/Foo\u003e\n\n\u003cFoo\u003e{'Jupiter \u003e Venus'}\u003c/Foo\u003e\n\n\u003cFoo\u003e{'Invalid double quotes \" '}\u003c/Foo\u003e\n\n\u003cFoo\u003e{'Invalid single quote \\' '}\u003c/Foo\u003e\n\n\u003cFoo\u003e{\"Invalid single quote ' \"}\u003c/Foo\u003e\n\n\u003cFoo\u003e{\"Invalid double quotes \\\" \"}\u003c/Foo\u003e\n\u003c/\u003e\n",
+      "valid": true
+    }
+  ]
+}

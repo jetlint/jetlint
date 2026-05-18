@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-shouty-constants",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noShoutyConstants",
+  "cases": [
+    {
+      "code": "const FOO = \"FOO\";\nconsole.log(FOO, FOO2);\n\nconst FOO2 = \"FOO2\", a = \"FOO3\", FOO4 = \"FOO4\";\n\nconsole.log(FOO, FOO4);\n\nlet foo = \"foo\";\nconst B = \"B\";\nexport default B;\nexport const A = \"A\";\n\nconst BAR = \"BAR\";\n\nexport const bar = {\n\tfoo: BAR,\n\tbar: BAR,\n};\n\nconst C = \"C\";\n\nexport const d = {\n\tfoo: C\n};\n\nconst D =\"D\";\nexport const e = {\n\tD\n};",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst Empty = \"\";\nexport const E = Empty;\n\nconst NotMatching = \"DoesNotMatch\";\nexport const F = NotMatching;\n\nconst matchingLowercase = \"matchingLowercase\";\nexport const G = matchingLowercase;\n\nconst AL = \"ALPHA\";\nexport const H = AL;\n\nconst ALPHA = \"AL\";\nexport const I = ALPHA;\n",
+      "valid": true
+    }
+  ]
+}

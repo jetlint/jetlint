@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-header-scope",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/noHeaderScope",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n\t\u003cdiv scope={scope} /\u003e\n\t\u003cdiv scope={scope}\u003e\u003c/div\u003e\n\t\u003cdiv scope=\"col\" /\u003e\n\t\u003cdiv scope=\"col\"\u003e\u003c/div\u003e\n\t\u003cdiv scope /\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n  \u003cth scope /\u003e\n\t\u003cth scope=\"col\"\u003e\u003c/th\u003e\n\t\u003cth scope={scope}\u003e\u003c/th\u003e\n\t\u003cth scope={\"col\"} {...props} /\u003e\n\t\u003cComponent scope={scope} /\u003e\n\t\u003cComponent scope={scope} {...props} /\u003e\n\u003c/\u003e\n",
+      "valid": true
+    }
+  ]
+}

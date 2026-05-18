@@ -1,0 +1,263 @@
+{
+  "ruleId": "adjacent-overload-signatures",
+  "oxcSHA": "625758ab25657c0fc13555c890aeca979be8ebdf",
+  "oxcSource": "crates/oxc_linter/src/rules/typescript/adjacent_overload_signatures.rs",
+  "cases": [
+    {
+      "code": "function error(a: string);\n      function error(b: number);\n      function error(ab: string | number) {}\n      export { error };",
+      "valid": true
+    },
+    {
+      "code": "import { connect } from 'react-redux';\n      export interface ErrorMessageModel {\n        message: string;\n      }\n      function mapStateToProps() {}\n      function mapDispatchToProps() {}\n      export default connect(mapStateToProps, mapDispatchToProps)(ErrorMessage);",
+      "valid": true
+    },
+    {
+      "code": "export const foo = 'a',\n      bar = 'b';\n      export interface Foo {}\n      export class Foo {}",
+      "valid": true
+    },
+    {
+      "code": "export interface Foo {}\n      export const foo = 'a',\n        bar = 'b';\n      export class Foo {}",
+      "valid": true
+    },
+    {
+      "code": "const foo = 'a',\n      bar = 'b';\n      interface Foo {}\n      class Foo {}",
+      "valid": true
+    },
+    {
+      "code": "interface Foo {}\n      const foo = 'a',\n        bar = 'b';\n      class Foo {}",
+      "valid": true
+    },
+    {
+      "code": "export class Foo {}\n      export class Bar {}\n      export type FooBar = Foo | Bar;",
+      "valid": true
+    },
+    {
+      "code": "export interface Foo {}\n      export class Foo {}\n      export class Bar {}\n      export type FooBar = Foo | Bar;",
+      "valid": true
+    },
+    {
+      "code": "export function foo(s: string);\n      export function foo(n: number);\n      export function foo(sn: string | number) {}\n      export function bar(): void {}\n      export function baz(): void {}",
+      "valid": true
+    },
+    {
+      "code": "function foo(s: string);\n      function foo(n: number);\n      function foo(sn: string | number) {}\n      function bar(): void {}\n      function baz(): void {}",
+      "valid": true
+    },
+    {
+      "code": "declare function foo(s: string);\n      declare function foo(n: number);\n      declare function foo(sn: string | number);\n      declare function bar(): void;\n      declare function baz(): void;",
+      "valid": true
+    },
+    {
+      "code": "declare module 'Foo' {\n        export function foo(s: string): void;\n        export function foo(n: number): void;\n        export function foo(sn: string | number): void;\n        export function bar(): void;\n        export function baz(): void;\n      }",
+      "valid": true
+    },
+    {
+      "code": "declare namespace Foo {\n        export function foo(s: string): void;\n        export function foo(n: number): void;\n        export function foo(sn: string | number): void;\n        export function bar(): void;\n        export function baz(): void;\n      }",
+      "valid": true
+    },
+    {
+      "code": "type Foo = {\n        foo(s: string): void;\n        foo(n: number): void;\n        foo(sn: string | number): void;\n        bar(): void;\n        baz(): void;\n      };",
+      "valid": true
+    },
+    {
+      "code": "type Foo = {\n        foo(s: string): void;\n        ['foo'](n: number): void;\n        foo(sn: string | number): void;\n        bar(): void;\n        baz(): void;\n      };",
+      "valid": true
+    },
+    {
+      "code": "interface Foo {\n        (s: string): void;\n        (n: number): void;\n        (sn: string | number): void;\n        foo(n: number): void;\n        bar(): void;\n        baz(): void;\n      }",
+      "valid": true
+    },
+    {
+      "code": "interface Foo {\n        (s: string): void;\n        (n: number): void;\n        (sn: string | number): void;\n        foo(n: number): void;\n        bar(): void;\n        baz(): void;\n        call(): void;\n      }",
+      "valid": true
+    },
+    {
+      "code": "interface Foo {\n        foo(s: string): void;\n        foo(n: number): void;\n        foo(sn: string | number): void;\n        bar(): void;\n        baz(): void;\n      }",
+      "valid": true
+    },
+    {
+      "code": "interface Foo {\n        foo(s: string): void;\n        ['foo'](n: number): void;\n        foo(sn: string | number): void;\n        bar(): void;\n        baz(): void;\n      }",
+      "valid": true
+    },
+    {
+      "code": "interface Foo {\n        foo(): void;\n        bar: {\n          baz(s: string): void;\n          baz(n: number): void;\n          baz(sn: string | number): void;\n        };\n      }",
+      "valid": true
+    },
+    {
+      "code": "interface Foo {\n        new (s: string);\n        new (n: number);\n        new (sn: string | number);\n        foo(): void;\n      }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n        constructor(s: string);\n        constructor(n: number);\n        constructor(sn: string | number) {}\n        bar(): void {}\n        baz(): void {}\n      }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n        foo(s: string): void;\n        foo(n: number): void;\n        foo(sn: string | number): void {}\n        bar(): void {}\n        baz(): void {}\n      }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n        foo(s: string): void;\n        ['foo'](n: number): void;\n        foo(sn: string | number): void {}\n        bar(): void {}\n        baz(): void {}\n      }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n        name: string;\n        foo(s: string): void;\n        foo(n: number): void;\n        foo(sn: string | number): void {}\n        bar(): void {}\n        baz(): void {}\n      }",
+      "valid": true
+    },
+    {
+      "code": "class Foo {\n        name: string;\n        static foo(s: string): void;\n        static foo(n: number): void;\n        static foo(sn: string | number): void {}\n        bar(): void {}\n        baz(): void {}\n      }",
+      "valid": true
+    },
+    {
+      "code": "class Test {\n        static test() {}\n        untest() {}\n        test() {}\n      }",
+      "valid": true
+    },
+    {
+      "code": "export default function \u003cT\u003e(foo: T) {}",
+      "valid": true
+    },
+    {
+      "code": "export default function named\u003cT\u003e(foo: T) {}",
+      "valid": true
+    },
+    {
+      "code": "interface Foo {\n        [Symbol.toStringTag](): void;\n        [Symbol.iterator](): void;\n      }",
+      "valid": true
+    },
+    {
+      "code": "class Test {\n        #private(): void;\n        #private(arg: number): void {}\n\n        bar() {}\n\n        '#private'(): void;\n        '#private'(arg: number): void {}\n      }",
+      "valid": true
+    },
+    {
+      "code": "function wrap() {\n        function foo(s: string);\n        function foo(n: number);\n        function foo(sn: string | number) {}\n      }",
+      "valid": true
+    },
+    {
+      "code": "if (true) {\n        function foo(s: string);\n        function foo(n: number);\n        function foo(sn: string | number) {}\n      }",
+      "valid": true
+    },
+    {
+      "code": "function wrap() {\n        function foo(s: string);\n        function foo(n: number);\n        type bar = number;\n        function foo(sn: string | number) {}\n      }",
+      "valid": false
+    },
+    {
+      "code": "if (true) {\n        function foo(s: string);\n        function foo(n: number);\n        let a = 1;\n        function foo(sn: string | number) {}\n        foo(a);\n      }",
+      "valid": false
+    },
+    {
+      "code": "export function foo(s: string);\n      export function foo(n: number);\n      export function bar(): void {}\n      export function baz(): void {}\n      export function foo(sn: string | number) {}",
+      "valid": false
+    },
+    {
+      "code": "export function foo(s: string);\n      export function foo(n: number);\n      export type bar = number;\n      export type baz = number | string;\n      export function foo(sn: string | number) {}",
+      "valid": false
+    },
+    {
+      "code": "function foo(s: string);\n      function foo(n: number);\n      function bar(): void {}\n      function baz(): void {}\n      function foo(sn: string | number) {}",
+      "valid": false
+    },
+    {
+      "code": "function foo(s: string);\n      function foo(n: number);\n      type bar = number;\n      type baz = number | string;\n      function foo(sn: string | number) {}",
+      "valid": false
+    },
+    {
+      "code": "declare function foo(s: string);\n      declare function foo(n: number);\n      declare function bar(): void;\n      declare function baz(): void;\n      declare function foo(sn: string | number);",
+      "valid": false
+    },
+    {
+      "code": "declare function foo(s: string);\n      declare function foo(n: number);\n      const a = '';\n      const b = '';\n      declare function foo(sn: string | number);",
+      "valid": false
+    },
+    {
+      "code": "declare module 'Foo' {\n        export function foo(s: string): void;\n        export function foo(n: number): void;\n        export function bar(): void;\n        export function baz(): void;\n        export function foo(sn: string | number): void;\n      }",
+      "valid": false
+    },
+    {
+      "code": "declare module 'Foo' {\n        export function foo(s: string): void;\n        export function foo(n: number): void;\n        export function foo(sn: string | number): void;\n        function baz(s: string): void;\n        export function bar(): void;\n        function baz(n: number): void;\n        function baz(sn: string | number): void;\n      }",
+      "valid": false
+    },
+    {
+      "code": "declare namespace Foo {\n        export function foo(s: string): void;\n        export function foo(n: number): void;\n        export function bar(): void;\n        export function baz(): void;\n        export function foo(sn: string | number): void;\n      }",
+      "valid": false
+    },
+    {
+      "code": "declare namespace Foo {\n        export function foo(s: string): void;\n        export function foo(n: number): void;\n        export function foo(sn: string | number): void;\n        function baz(s: string): void;\n        export function bar(): void;\n        function baz(n: number): void;\n        function baz(sn: string | number): void;\n      }",
+      "valid": false
+    },
+    {
+      "code": "type Foo = {\n        foo(s: string): void;\n        foo(n: number): void;\n        bar(): void;\n        baz(): void;\n        foo(sn: string | number): void;\n      };",
+      "valid": false
+    },
+    {
+      "code": "type Foo = {\n        foo(s: string): void;\n        ['foo'](n: number): void;\n        bar(): void;\n        baz(): void;\n        foo(sn: string | number): void;\n      };",
+      "valid": false
+    },
+    {
+      "code": "type Foo = {\n        foo(s: string): void;\n        name: string;\n        foo(n: number): void;\n        foo(sn: string | number): void;\n        bar(): void;\n        baz(): void;\n      };",
+      "valid": false
+    },
+    {
+      "code": "interface Foo {\n        (s: string): void;\n        foo(n: number): void;\n        (n: number): void;\n        (sn: string | number): void;\n        bar(): void;\n        baz(): void;\n        call(): void;\n      }",
+      "valid": false
+    },
+    {
+      "code": "interface Foo {\n        foo(s: string): void;\n        foo(n: number): void;\n        bar(): void;\n        baz(): void;\n        foo(sn: string | number): void;\n      }",
+      "valid": false
+    },
+    {
+      "code": "interface Foo {\n        foo(s: string): void;\n        ['foo'](n: number): void;\n        bar(): void;\n        baz(): void;\n        foo(sn: string | number): void;\n      }",
+      "valid": false
+    },
+    {
+      "code": "interface Foo {\n        foo(s: string): void;\n        'foo'(n: number): void;\n        bar(): void;\n        baz(): void;\n        foo(sn: string | number): void;\n      }",
+      "valid": false
+    },
+    {
+      "code": "interface Foo {\n        foo(s: string): void;\n        name: string;\n        foo(n: number): void;\n        foo(sn: string | number): void;\n        bar(): void;\n        baz(): void;\n      }",
+      "valid": false
+    },
+    {
+      "code": "interface Foo {\n        foo(): void;\n        bar: {\n          baz(s: string): void;\n          baz(n: number): void;\n          foo(): void;\n          baz(sn: string | number): void;\n        };\n      }",
+      "valid": false
+    },
+    {
+      "code": "interface Foo {\n        new (s: string);\n        new (n: number);\n        foo(): void;\n        bar(): void;\n        new (sn: string | number);\n      }",
+      "valid": false
+    },
+    {
+      "code": "interface Foo {\n        new (s: string);\n        foo(): void;\n        new (n: number);\n        bar(): void;\n        new (sn: string | number);\n      }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n        constructor(s: string);\n        constructor(n: number);\n        bar(): void {}\n        baz(): void {}\n        constructor(sn: string | number) {}\n      }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n        foo(s: string): void;\n        foo(n: number): void;\n        bar(): void {}\n        baz(): void {}\n        foo(sn: string | number): void {}\n      }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n        foo(s: string): void;\n        ['foo'](n: number): void;\n        bar(): void {}\n        baz(): void {}\n        foo(sn: string | number): void {}\n      }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n        // prettier-ignore\n        \"foo\"(s: string): void;\n        foo(n: number): void;\n        bar(): void {}\n        baz(): void {}\n        foo(sn: string | number): void {}\n      }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n        constructor(s: string);\n        name: string;\n        constructor(n: number);\n        constructor(sn: string | number) {}\n        bar(): void {}\n        baz(): void {}\n      }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n        foo(s: string): void;\n        name: string;\n        foo(n: number): void;\n        foo(sn: string | number): void {}\n        bar(): void {}\n        baz(): void {}\n      }",
+      "valid": false
+    },
+    {
+      "code": "class Foo {\n        static foo(s: string): void;\n        name: string;\n        static foo(n: number): void;\n        static foo(sn: string | number): void {}\n        bar(): void {}\n        baz(): void {}\n      }",
+      "valid": false
+    },
+    {
+      "code": "class Test {\n        #private(): void;\n        '#private'(): void;\n        #private(arg: number): void {}\n        '#private'(arg: number): void {}\n      }",
+      "valid": false
+    }
+  ]
+}

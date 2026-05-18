@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-anchor-content",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/useAnchorContent",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n\t\u003ca /\u003e\n\t\u003ca\u003e\u003c/a\u003e\n\t\u003ca\u003e   \u003c/a\u003e\n\t\u003ca\u003e{null}\u003c/a\u003e\n\t\u003ca\u003e{undefined}\u003c/a\u003e\n\t\u003ca aria-hidden\u003econtent\u003c/a\u003e\n\t\u003ca\u003e\u003cspan aria-hidden=\"true\"\u003econtent\u003c/span\u003e\u003c/a\u003e\n\t\u003ca\u003e\u003cspan aria-hidden={true}\u003econtent\u003c/span\u003e\u003c/a\u003e\n\t\u003ca\u003e\u003cspan aria-hidden={\"true\"}\u003econtent\u003c/span\u003e\u003c/a\u003e\n\t\u003ca\u003e\u003cspan aria-hidden={`true`}\u003econtent\u003c/span\u003e\u003c/a\u003e\n\t\u003ca\u003e\u003cspan aria-hidden={`${true}`}\u003econtent\u003c/span\u003e\u003c/a\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n    \u003ca\u003econtent\u003c/a\u003e\n    \u003ca\u003e\u003cTextWrapper /\u003e\u003c/a\u003e\n\t\t\u003ca\u003e\u003cTextWrapper aria-hidden /\u003e\u003c/a\u003e\n\t\t\u003ca\u003e\u003cTextWrapper aria-hidden={true} /\u003e\u003c/a\u003e\n    \u003ca\u003e\u003cTextWrapper aria-hidden={false} /\u003e\u003c/a\u003e\n    \u003ca dangerouslySetInnerHTML={{ __html: \"foo\" }} /\u003e\n    \u003ca innerHTML={\"\u003ci /\u003e\"} /\u003e\n    \u003ca\u003e\u003cdiv aria-hidden=\"true\"\u003e\u003c/div\u003econtent\u003c/a\u003e\n    \u003ca\u003e\u003cspan aria-hidden=\"false\"\u003econtent\u003c/span\u003e\u003c/a\u003e\n    \u003ca\u003e{content}\u003c/a\u003e\n    \u003ca children={children} /\u003e\n\u003c/\u003e\n",
+      "valid": true
+    }
+  ]
+}

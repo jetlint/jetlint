@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-alert",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noAlert",
+  "cases": [
+    {
+      "code": "// Direct function calls (should trigger the rule)\nalert(\"here!\");\n\nconfirm(\"Are you sure?\");\n\nprompt(\"What's your name?\", \"John Doe\");\n\n// Window object calls (should trigger the rule)\nwindow.alert(\"hello\");\n\nwindow.confirm(\"proceed?\");\n\nwindow.prompt(\"enter name\");\n\n// Bracket notation calls (should trigger the rule)\nwindow[\"alert\"](\"bracket notation\");\n\n// Expression calls (should trigger the rule)  \n(alert)(\"wrapped in parens\");\n\n// Nested in other expressions\nif (confirm(\"really?\")) {\n    console.log(\"yes\");\n}\n\nconst result = prompt(\"input:\");\n\n// Multiple calls\nalert(\"first\");\nalert(\"second\");\nconfirm(\"third\");",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n// Custom implementations (should NOT trigger the rule)\nconst alert = myCustomLib.customAlert;\nalert(\"custom alert\");\n\nfunction alert(message) {\n    console.log(message);\n}\nalert(\"shadowed function\");\n\n// Object methods with same names (should NOT trigger the rule)\nconst myObject = {\n    alert: function(msg) { console.log(msg); },\n    confirm: function(msg) { return true; },\n    prompt: function(msg) { return \"input\"; }\n};\n\nmyObject.alert(\"object method\");\nmyObject.confirm(\"object method\");\nmyObject.prompt(\"object method\");\n\n// Different function names (should NOT trigger the rule)\ncustomAlert(\"Something happened!\");\n\ncustomConfirm(\"Are you sure?\");\n\ncustomPrompt(\"Who are you?\");\n\n// Scoped variables (should NOT trigger the rule)\nfunction foo() {\n    const alert = myCustomLib.customAlert;\n    alert();\n}\n\n// Variables with same name (should NOT trigger the rule)\nlet prompt = \"this is a string\";\nconsole.log(prompt);\n\n// Other global functions (should NOT trigger the rule)\nconsole.log(\"hello\");\nsetTimeout(() =\u003e {}, 1000);\n\n// Comments containing the words (should NOT trigger the rule)\n// This alert should not trigger\n/* confirm this works */\nconst msg = \"prompt the user\"; // not a function call",
+      "valid": true
+    }
+  ]
+}

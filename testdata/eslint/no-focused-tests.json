@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-focused-tests",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noFocusedTests",
+  "cases": [
+    {
+      "code": "describe.only(\"bar\", function () {});\nit.only(\"bar\", function () {});\ntest.only(\"bar\", function () {});\n\ndescribe.only(\"bar\", () =\u003e {});\nit.only(\"bar\", () =\u003e {});\ntest.only(\"bar\", () =\u003e {});\n\ndescribe[\"only\"](\"bar\", function () {});\nit[\"only\"](\"bar\", function () {});\ntest[\"only\"](\"bar\", function () {});\n\nfdescribe(\"foo\", () =\u003e {});\nfit(\"foo\", () =\u003e {});\n\ndescribe.only(bar, () =\u003e {});\nit.only(bar, () =\u003e {});\ntest.only(bar, () =\u003e {});\n\ndescribe.only(foo.bar, () =\u003e {});\nit.only(foo.bar, () =\u003e {});\ntest.only(foo.bar, () =\u003e {});\n\ndescribe.only(name = name || \"bar\", () =\u003e {});\nit.only(name = name || \"bar\", () =\u003e {});\ntest.only(name = name || \"bar\", () =\u003e {});\n\ndescribe.only.each([[\"a\"], [\"b\"]])(\"%s\", (a) =\u003e {});\nit.only.each([[\"a\"], [\"b\"]])(\"%s\", (a) =\u003e {});\ntest.only.each([[\"a\"], [\"b\"]])(\"%s\", (a) =\u003e {});\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\ndescribe.skip(\"test\", () =\u003e {});\nit.skip(\"test\", () =\u003e {});\ntest.skip(\"test\", () =\u003e {});\nxdescribe(\"test\", () =\u003e {});\nxit(\"test\", () =\u003e {})\ndescribe.each([[\"a\"], [\"b\"]])(\"%s\", (a) =\u003e {});\nit.each([[\"a\"], [\"b\"]])(\"%s\", (a) =\u003e {});\ntest.each([[\"a\"], [\"b\"]])(\"%s\", (a) =\u003e {});\nfoo.fit();",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-aria-hidden-on-focusable",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/noAriaHiddenOnFocusable",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n  \u003cdiv aria-hidden=\"true\" tabIndex=\"0\" /\u003e\n  \u003cinput aria-hidden=\"true\" /\u003e\n  \u003ca href=\"/\" aria-hidden=\"true\" /\u003e\n  \u003cbutton aria-hidden=\"true\" /\u003e\n  \u003ctextarea aria-hidden=\"true\" /\u003e\n  \u003cp tabIndex=\"0\" aria-hidden=\"true\"\u003etext\u003c/p\u003e\n\u003c/\u003e",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n  \u003cdiv aria-hidden=\"true\" /\u003e\n  \u003cimg aria-hidden=\"true\" /\u003e\n  \u003ca aria-hidden=\"false\" href=\"#\" /\u003e\n  \u003cbutton aria-hidden=\"true\" tabIndex=\"-1\" /\u003e\n  \u003cbutton aria-hidden=\"true\" tabIndex={-1} /\u003e\n  \u003ca href=\"/\" /\u003e\n  \u003cdiv aria-hidden=\"true\"\u003e\u003ca href=\"#\"\u003e\u003c/a\u003e\u003c/div\u003e\n  \u003cbutton /\u003e\n\u003c/\u003e\n",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "ruleId": "use-max-params",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/useMaxParams",
+  "cases": [
+    {
+      "code": "function tooManyParams(a, b, c, d, e, f, g, h) {\n    return a + b + c + d + e + f + g + h;\n}\n\nfunction namedFunction(a, b, c, d, e, f, g, h, i) {\n    return a + b + c + d + e + f + g + h + i;\n}\n\nconst fn1 = function(a, b, c, d, e, f, g, h) {\n    return a + b + c + d + e + f + g + h;\n};\n\nconst fn2 = function namedFnExpression(a, b, c, d, e, f, g, h, i) {\n    return a + b + c + d + e + f + g + h + i;\n};\n\nconst arrow1 = (a, b, c, d, e, f, g, h) =\u003e {\n    return a + b + c + d + e + f + g + h;\n};\n\nconst arrow2 = (a, b, c, d, e, f, g, h, i) =\u003e a + b + c + d + e + f + g + h + i;\n\nclass MyClass {\n    method(a, b, c, d, e, f, g, h) {\n        return a + b + c + d + e + f + g + h;\n    }\n\n    constructor(a, b, c, d, e, f, g, h, i) {\n        this.sum = a + b + c + d + e + f + g + h + i;\n    }\n}\n\nconst obj = {\n    method(a, b, c, d, e, f, g, h) {\n        return a + b + c + d + e + f + g + h;\n    }\n};\n\nfunction withThisParam(this, a, b, c, d, e, f, g) {\n    return a + b + c + d + e + f + g;\n}\n",
+      "valid": false
+    },
+    {
+      "code": "interface MyInterface {\n    value: number;\n}\n\nfunction withThisParam(this: MyInterface, a: number, b: number, c: number, d: number, e: number): number {\n    return this.value + a + b + c + d + e;\n}\n\nfunction tooManyParamsWithThis(this: MyInterface, a: number, b: number, c: number, d: number, e: number, f: number): number {\n    return this.value + a + b + c + d + e + f;\n}\n\ndeclare function makeDate(m: number, d: number, y: number, h: number, min: number, s: number): Date;\n\ntype sum = (a: number, b: number, c: number, d: number, e: number) =\u003e number;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction goodFunction(a, b, c) {\n    return a + b + c;\n}\n\nfunction oneParam(a) {\n    return a;\n}\n\nfunction noParams() {\n    return 42;\n}\n\nconst fn1 = function(a, b, c) {\n    return a + b + c;\n};\n\nconst fn2 = function namedFn(a, b) {\n    return a + b;\n};\n\nconst arrow1 = (a, b, c) =\u003e {\n    return a + b + c;\n};\n\nconst arrow2 = (a, b) =\u003e a + b;\n\nconst arrow3 = a =\u003e a * 2;\n\nclass MyClass {\n    method(a, b, c) {\n        return a + b + c;\n    }\n\n    constructor(a, b) {\n        this.sum = a + b;\n    }\n}\n\nconst obj = {\n    method(a, b, c) {\n        return a + b + c;\n    }\n};\n\nfunction withThisParamValid(this, a, b, c) {\n    return a + b + c;\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\ninterface MyInterface {\n    value: number;\n}\n\nfunction withThisParamValid(this: MyInterface, a: number, b: number, c: number): number {\n    return this.value + a + b + c;\n}\n\ndeclare function makeDateValid(m: number, d: number, y: number): Date;\n\ntype sumValid = (a: number, b: number, c: number) =\u003e number;\n",
+      "valid": true
+    }
+  ]
+}

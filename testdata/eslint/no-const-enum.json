@@ -1,0 +1,11 @@
+{
+  "ruleId": "no-const-enum",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noConstEnum",
+  "cases": [
+    {
+      "code": "/**\n * Doc\n */\nconst enum /* enum */ Port {\n\tIn,\n\tOut,\n}\n\nexport /* const */ const /* enum */ enum Status {\n\tOpen,\n\tClose,\n}\n\nexport enum Direction {\n\tPrev,\n\tNext,\n}",
+      "valid": false
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-access-key",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/noAccessKey",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003cinput type=\"submit\" accessKey=\"s\" value=\"Submit\" /\u003e;\n\u003cbutton accessKey=\"n\"\u003eNext\u003c/button\u003e;\n\u003cdiv accessKey=\"h\" {...props} /\u003e;\n\u003cdiv accessKey={\"y\"} /\u003e;\n\u003cdiv accessKey={`${y}`} /\u003e;\n\u003cdiv accessKey={`${undefined}y${undefined}`} /\u003e;\n\u003cdiv accessKey={`This is ${bad}`} /\u003e;\n\u003cdiv accessKey={accessKey} /\u003e;\n\u003cdiv accessKey={`${undefined}`} /\u003e;\n\u003cdiv accessKey={`${undefined}${undefined}`} /\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003cinput accessKey={undefined} /\u003e;\n\u003cinput accessKey={null} /\u003e;\n\u003cbutton\u003eNext\u003c/button\u003e;\n\u003cInput accessKey=\"s\" /\u003e;\n\u003cButton accessKey=\"n\" /\u003e;\n\u003cRadioGroup.Radio accessKey=\"a\" /\u003e;\n\u003ccontext.Provider accessKey={key} /\u003e;\n",
+      "valid": true
+    }
+  ]
+}

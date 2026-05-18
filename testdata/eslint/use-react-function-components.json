@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-react-function-components",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useReactFunctionComponents",
+  "cases": [
+    {
+      "code": "class Foo extends React.Component {\n  render() {\n    return \u003cdiv\u003eThis is a class component.\u003c/div\u003e;\n  }\n}\n\nclass Bar extends React.PureComponent {\n  render() {\n    return \u003cdiv\u003eThis is a class component.\u003c/div\u003e;\n  }\n}\n\nexport class Foo extends React.Component {\n  render() {\n    return \u003cdiv\u003eThis is a class component.\u003c/div\u003e;\n  }\n}\n\nexport default class Baz extends React.Component {\n  render() {\n    return \u003cdiv\u003eThis is a class component.\u003c/div\u003e;\n  }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\nfunction Foo() {\n  return \u003cdiv\u003eHello, world!\u003c/div\u003e;\n}\n\nconst Foo = () =\u003e {\n  return \u003cdiv\u003eHello, world!\u003c/div\u003e;\n};\n\nclass Foo extends React.Component {\n  componentDidCatch(error, errorInfo) {}\n\n  render() {\n    return \u003cdiv\u003eThis is a class component with error handling.\u003c/div\u003e;\n  }\n}\n\nexport default class Bar extends React.Component {\n  componentDidCatch(error, errorInfo) {}\n\n  render() {\n    return \u003cdiv\u003eThis is a class component with error handling.\u003c/div\u003e;\n  }\n}\n\nconst ErrorBoundary = class extends React.Component {\n  componentDidCatch(error, errorInfo) {}\n\n  render() {\n    return this.props.children;\n  }\n}\n",
+      "valid": true
+    }
+  ]
+}

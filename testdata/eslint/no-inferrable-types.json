@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-inferrable-types",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noInferrableTypes",
+  "cases": [
+    {
+      "code": "// const contexts\nconst x/*before*/: /*inside*/ 1 /*after*/ = (1);\n\nconst x: 1n = 1n;\nconst x: -1n = -1n;\nconst x: false = false;\nconst x: false = !true;\nconst x: false = !1;\nconst x: true = true;\nconst x: true = !false;\nconst x: true = !0;\nconst x: 1 = +1;\nconst x: -1 = -1;\nconst x: 1e-5 = 1e-5;\nconst x: RegExp = /a/;\nconst x: \"str\" = \"str\";\nconst x: \"str\" = `str`; // constant template string\nconst x: \"str2\" = `str${f()}`;\n\nclass X {\n\treadonly x: 1 = 1;\n}\n\nclass X {\n\tconstructor(readonly x: 1 = 1) {}\n}\n\n// non-const contexts\nlet x /*before*/: /*inside*/ number /*after*/ = (1);\n\nlet x: bigint = 1n;\nlet x: bigint = -1n;\nlet x: boolean = false;\nlet x: boolean = true;\nlet x: boolean = !false;\nlet x: boolean = !true;\nlet x: number = +1;\nlet x: number = -1;\nlet x: number = 1e-5;\nlet x: RegExp = /a/;\nlet x: string = \"str\";\nlet x: string = `str`;\nlet x: string = `str${f()}`;\nlet x: number = +\"\";\nlet x: boolean = !\"\";\n\nfunction f(x: number = 1) {}\n\nclass X {\n\tx: number = 1;\n}\n\nclass X {\n\tconstructor(protected x: number = 1) {}\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst x: undefined = undefined; // undefined is an identifier\nconst x: RegExp = /a/; // RegExp could be redefined\n\nconst x: bigint = BigInt(1);\nconst x: boolean = Boolean(null);\nconst x: number = Number(\"1\");\nconst x: RegExp = new RegExp(\"a\");\nconst x: string = String(1);\nconst x: symbol = Symbol(\"a\");\n\nlet x: string = tag`str`; // could be anything\nlet x: RegExp = /a/; // RegExp could be redefined\n\n// widen types are allowed in const context\nconst x: bigint = 1n;\nconst x: bigint = -1n;\nconst x: boolean = true;\nconst x: boolean = false;\nconst x: number = 1;\nconst x: number = 1e-5;\nconst x: string = \"str\";\nconst x: string = `str`;\nconst x: string = `str${f()}`;\n\nclass X {\n\treadonly x: number = 1;\n}\n\nclass X {\n\tconstructor(readonly x: number = 1) {}\n}\n\n// literal types are allowed in non-const contexts\nlet x: 1n = 1n;\nlet x: -1n = -1n;\nlet x: true = true;\nlet x: false = false;\nlet x: undefined = void f();\nlet x: null = null;\nlet x: 1 = 1;\nlet x: -1 = -1;\nlet x: 1e-5 = 1e-5;\nlet x: \"str\" = \"str\";\nlet x: \"str\" = `str`;\nlet x: \"str2\" = `str${f()}`;\n\nfunction f(x: 1 = 1) {}\n\nclass X {\n\tx: 1 = 1;\n}\n\nclass X {\n\tconstructor(protected x: 1 = 1) {}\n}\n\n\n// In unsafe null mode, TypeScript widen unannotated variable to `any`.\n// In this mode, it is useful to keep `null` and `undefined` type annotation.\nconst x: undefined = void f();\nlet x: undefined = void f();\nlet x: null = null;\n\nfunction g(a: string = null): void {}\nfunction h(a: string = undefined): void {}\n",
+      "valid": true
+    }
+  ]
+}

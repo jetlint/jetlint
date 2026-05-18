@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-implicit-boolean",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noImplicitBoolean",
+  "cases": [
+    {
+      "code": "\u003cinput disabled /\u003e;\n\u003cinput accept /** some comment */ /\u003e;\n\u003cinput /** some comment */ accept /\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003cinput disabled={false} /\u003e;\n\u003cinput disabled={\"\"} /\u003e;\n\u003cinput disabled={0} /\u003e;\n\u003cinput disabled={undefined} /\u003e;\n\u003cinput disabled=\"false\" /\u003e;\n// https://github.com/rome/tools/issues/2944\n// \u003cdiv className={asdf asdf} /\u003e;\n",
+      "valid": true
+    }
+  ]
+}

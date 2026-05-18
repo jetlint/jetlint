@@ -1,0 +1,63 @@
+{
+  "ruleId": "no-deprecated-imports",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noDeprecatedImports",
+  "cases": [
+    {
+      "main": "component.js",
+      "files": [
+        {
+          "path": "component.js",
+          "content": "/**\n * Very awesome component.\n */\nexport function Component(props) {}\n\n/**\n * @deprecated Use a named import instead.\n */\nconst DefaultComponent = Component;\n\nexport default DefaultComponent;\n"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "main": "invalid.js",
+      "files": [
+        {
+          "path": "utils.js",
+          "content": "/** @deprecated */\nexport const DEPRECATED_CONSTANT = 0;\n\n// @deprecated\nexport const NOT_REALLY_DEPRECATED_CONSTANT = 1;\n\n/**\n * @deprecated This method has been deprecated for a long time and you should\n *             really consider using `modernUtil()` instead.\n *\n * Does stuff.\n */\nexport function deprecatedUtil() {}\n\nexport function modernUtil() {}\n"
+        },
+        {
+          "path": "component.js",
+          "content": "/**\n * Very awesome component.\n */\nexport function Component(props) {}\n\n/**\n * @deprecated Use a named import instead.\n */\nconst DefaultComponent = Component;\n\nexport default DefaultComponent;\n"
+        },
+        {
+          "path": "invalid.js",
+          "content": "/* should generate diagnostics */\nimport { DEPRECATED_CONSTANT as CONSTANT } from \"./utils\";\n\nimport { deprecatedUtil } from \"./utils\";\n\nimport Component from \"./component\";\n"
+        }
+      ],
+      "valid": false
+    },
+    {
+      "main": "utils.js",
+      "files": [
+        {
+          "path": "utils.js",
+          "content": "/** @deprecated */\nexport const DEPRECATED_CONSTANT = 0;\n\n// @deprecated\nexport const NOT_REALLY_DEPRECATED_CONSTANT = 1;\n\n/**\n * @deprecated This method has been deprecated for a long time and you should\n *             really consider using `modernUtil()` instead.\n *\n * Does stuff.\n */\nexport function deprecatedUtil() {}\n\nexport function modernUtil() {}\n"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "main": "valid.js",
+      "files": [
+        {
+          "path": "utils.js",
+          "content": "/** @deprecated */\nexport const DEPRECATED_CONSTANT = 0;\n\n// @deprecated\nexport const NOT_REALLY_DEPRECATED_CONSTANT = 1;\n\n/**\n * @deprecated This method has been deprecated for a long time and you should\n *             really consider using `modernUtil()` instead.\n *\n * Does stuff.\n */\nexport function deprecatedUtil() {}\n\nexport function modernUtil() {}\n"
+        },
+        {
+          "path": "component.js",
+          "content": "/**\n * Very awesome component.\n */\nexport function Component(props) {}\n\n/**\n * @deprecated Use a named import instead.\n */\nconst DefaultComponent = Component;\n\nexport default DefaultComponent;\n"
+        },
+        {
+          "path": "valid.js",
+          "content": "/* should not generate diagnostics */\nimport { NOT_REALLY_DEPRECATED_CONSTANT as CONSTANT } from \"./utils\";\n\nimport { modernUtil } from \"./utils\";\n\n// Namespace imports are not flagged even if they contain deprecated symbols\n// (known limitation).\nimport * as utilsNs from \"./utils\";\n\nimport { Component } from \"./component\";\n"
+        }
+      ],
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-fragment-syntax",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useFragmentSyntax",
+  "cases": [
+    {
+      "code": "import React, {Fragment} from \"react\";\n\n\u003cdiv\u003e\n    {/* invalid */}\n    \u003cFragment\u003e\n        \u003cp\u003eLorem\u003c/p\u003e\n        \u003cstrong\u003eIpsum\u003c/strong\u003e\n    \u003c/Fragment\u003e\n\n    \u003cReact.Fragment\u003e\n        \u003cacronym\u003eLorem\u003c/acronym\u003e\n        \u003caside\u003eIpsum\u003c/aside\u003e\n    \u003c/React.Fragment\u003e\n\n    \u003c/*comment*/Fragment\u003e\n        \u003cp\u003eLorem\u003c/p\u003e\n        \u003cstrong\u003eIpsum\u003c/strong\u003e\n    \u003c/ /*comment*/Fragment\u003e\n\u003c/div\u003e",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport React, {Fragment} from \"react\";\n\n\u003cdiv\u003e\n    \u003cFragment key=\"1\"\u003e\n        \u003cp\u003eLorem\u003c/p\u003e\n        \u003cstrong\u003eIpsum\u003c/strong\u003e\n    \u003c/Fragment\u003e\n\n    \u003cReact.Fragment key=\"1\"\u003e\n        \u003cacronym\u003eLorem\u003c/acronym\u003e\n        \u003caside\u003eIpsum\u003c/aside\u003e\n    \u003c/React.Fragment\u003e\n\u003c/div\u003e",
+      "valid": true
+    }
+  ]
+}

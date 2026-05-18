@@ -1,0 +1,23 @@
+{
+  "ruleId": "no-useless-catch-binding",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessCatchBinding",
+  "cases": [
+    {
+      "code": "// should generate diagnostics\n\ntry { /* ... */ } catch (unused) { }\n\ntry { /* ... */ } catch (_unused) { }\n\n\ntry { /* ... */ } catch ({ unused }) { }\n\ntry { /* ... */ } catch ({ _unused }) { }\n\ntry { /* ... */ } catch ({ unused, _unused }) { }\n\n\ntry { /* ... */ } catch (/* leading inner */ unused /* trailing inner */) { }\n\ntry { /* ... */ } catch /* leading outer */ (unused) /* trailing outer */ { }\n\ntry { /* ... */ } catch /* leading outer */ (/* leading inner */ unused /* trailing inner */) /* trailing outer */ { }\n\ntry { /* ... */ } catch /* leading outer */ (/* leading inner 1 */ { /* leading inner 2 */ unused /* trailing inner 2 */ } /* trailing inner 1 */) /* trailing outer */ { }\n\n\ntry { /* ... */ } catch ({ used: alias }) { }\n\ntry { /* ... */ } catch ({ nested: { unused } }) { }\n\ntry { /* ... */ } catch ({ ...rest }) { }\n",
+      "valid": false
+    },
+    {
+      "code": "// should generate diagnostics\n\ntry { /* ... */ } catch (unused: any) { }\n\ntry { /* ... */ } catch (_unused: any) { }\n\n\ntry { /* ... */ } catch ({ unused }: any) { }\n\ntry { /* ... */ } catch ({ _unused }: any) { }\n\ntry { /* ... */ } catch ({ unused, _unused }: any) { }\n\n\ntry { /* ... */ } catch (/* leading inner */ unused: any /* trailing inner */) { }\n\ntry { /* ... */ } catch /* leading outer */ (unused: any) /* trailing outer */ { }\n\ntry { /* ... */ } catch /* leading outer */ (/* leading inner */ unused: any /* trailing inner */) /* trailing outer */ { }\n\ntry { /* ... */ } catch /* leading outer */ (/* leading inner 1 */ { /* leading inner 2 */ unused: any /* trailing inner 2 */ } /* trailing inner 1 */) /* trailing outer */ { }\n\n\ntry { /* ... */ } catch ({ used: alias }: any) { }\n\ntry { /* ... */ } catch ({ nested: { unused } }: any) { }\n\ntry { /* ... */ } catch ({ ...rest }: any) { }\n",
+      "valid": false
+    },
+    {
+      "code": "// should not generate diagnostics\n\ntry { /* ... */ } catch { }\n\n\ntry { /* ... */ } catch (used) { console.error(used); }\n\ntry { /* ... */ } catch ({ used }) { console.error(used); }\n\ntry { /* ... */ } catch ({ used, unused }) { console.error(used); }\n\n\ntry { /* ... */ } catch (used) { const log = () =\u003e console.error(used); log(); }\n\ntry { /* ... */ } catch ({ used }) { const log = () =\u003e console.error(used); log(); }\n\ntry { /* ... */ } catch ({ used, unused }) { const log = () =\u003e console.error(used); log(); }\n\n\ntry { /* ... */ } catch ({ used: alias }) { console.error(alias); }\n\ntry { /* ... */ } catch ({ nested: { unused } }) { console.error(unused); }\n\ntry { /* ... */ } catch ({ ...rest }) { console.error(rest); }\n",
+      "valid": true
+    },
+    {
+      "code": "// should not generate diagnostics\n\ntry { /* ... */ } catch { }\n\n\ntry { /* ... */ } catch (used: any) { console.error(used); }\n\ntry { /* ... */ } catch ({ used }: any) { console.error(used); }\n\ntry { /* ... */ } catch ({ used, unused }: any) { console.error(used); }\n\n\ntry { /* ... */ } catch (used: any) { const log = () =\u003e console.error(used); log(); }\n\ntry { /* ... */ } catch ({ used }: any) { const log = () =\u003e console.error(used); log(); }\n\ntry { /* ... */ } catch ({ used, unused }: any) { const log = () =\u003e console.error(used); log(); }\n\n\ntry { /* ... */ } catch ({ used: alias }: any) { console.error(alias); }\n\ntry { /* ... */ } catch ({ nested: { used } }: any) { console.error(used); }\n\ntry { /* ... */ } catch ({ ...rest }: any) { console.error(rest); }\n",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-non-null-asserted-optional-chain",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noNonNullAssertedOptionalChain",
+  "cases": [
+    {
+      "code": "// https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/tests/rules/no-non-null-asserted-optional-chain.test.ts\n\n// Basic optional chaining with non-null assertion\nfoo?.bar!;\n\n// Computed member access with optional chaining and non-null assertion\nfoo?.[\"bar\"]!;\n\n// Optional chaining method call with non-null assertion\nfoo?.bar()!;\n\n// Optional chaining call with non-null assertion\nfoo.bar?.()!;\n\n// Parenthesized optional chaining with non-null assertion\n(foo?.bar)!.baz;\n\n// Parenthesized optional chaining call with non-null assertion\n(foo?.bar)!().baz;\n\n// Parenthesized optional chaining with non-null assertion (standalone)\n(foo?.bar)!;\n\n// Parenthesized optional chaining call with non-null assertion (standalone)\n(foo?.bar)!();\n\n// Nested parenthesized optional chaining with non-null assertion\n(foo?.bar!);\n\n// Nested parenthesized optional chaining call with non-null assertion\n(foo?.bar!)();\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n// Non-null assertion without optional chaining\nfoo.bar!;\n\n// Non-null assertion followed by optional chaining\nfoo.bar!.baz;\n\n// Non-null assertion on function call\nfoo.bar()!;\n\n// Non-null assertion on function call followed by method call\nfoo.bar()!();\n\n// Non-null assertion on function call followed by property access\nfoo.bar()!.baz;\n\n// Optional chaining without non-null assertion\nfoo?.bar;\n\n// Optional chaining method call without non-null assertion\nfoo?.bar();\n\n// Parenthesized optional chaining without non-null assertion on the chain\n(foo?.bar).baz!;\n\n// Parenthesized optional chaining call without non-null assertion on the chain\n(foo?.bar()).baz!;\n\n// Logical AND with chaining patterns\nfoo \u0026\u0026 foo.bar;\n\n// Logical OR pattern\nfoo || foo.bar;",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "ruleId": "no-misused-new",
+  "oxcSHA": "625758ab25657c0fc13555c890aeca979be8ebdf",
+  "oxcSource": "crates/oxc_linter/src/rules/typescript/no_misused_new.rs",
+  "cases": [
+    {
+      "code": "declare abstract class C { foo(); get new();bar();}",
+      "valid": true
+    },
+    {
+      "code": "class C { constructor();}",
+      "valid": true
+    },
+    {
+      "code": "const foo = class { constructor();};",
+      "valid": true
+    },
+    {
+      "code": "const foo = class { new(): X;};",
+      "valid": true
+    },
+    {
+      "code": "class C { new() {} }",
+      "valid": true
+    },
+    {
+      "code": "class C { constructor() {} }",
+      "valid": true
+    },
+    {
+      "code": "const foo = class { new() {} };",
+      "valid": true
+    },
+    {
+      "code": "const foo = class { constructor() {} };",
+      "valid": true
+    },
+    {
+      "code": "interface I { new (): {}; }",
+      "valid": true
+    },
+    {
+      "code": "type T = { new (): T };",
+      "valid": true
+    },
+    {
+      "code": "export default class { constructor(); }",
+      "valid": true
+    },
+    {
+      "code": "interface foo { new \u003cT\u003e(): bar\u003cT\u003e; }",
+      "valid": true
+    },
+    {
+      "code": "interface foo { new \u003cT\u003e(): 'x'; }",
+      "valid": true
+    },
+    {
+      "code": "interface I { new (): I; constructor(): void;}",
+      "valid": false
+    },
+    {
+      "code": "interface G { new \u003cT\u003e(): G\u003cT\u003e;}",
+      "valid": false
+    },
+    {
+      "code": "type T = { constructor(): void;};",
+      "valid": false
+    },
+    {
+      "code": "class C { new(): C;}",
+      "valid": false
+    },
+    {
+      "code": "declare abstract class C { new(): C;}",
+      "valid": false
+    },
+    {
+      "code": "interface I { constructor(): '';}",
+      "valid": false
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "ruleId": "prefer-namespace-keyword",
+  "oxcSHA": "625758ab25657c0fc13555c890aeca979be8ebdf",
+  "oxcSource": "crates/oxc_linter/src/rules/typescript/prefer_namespace_keyword.rs",
+  "cases": [
+    {
+      "code": "declare module 'foo';",
+      "valid": true
+    },
+    {
+      "code": "declare module 'foo' {}",
+      "valid": true
+    },
+    {
+      "code": "namespace foo {}",
+      "valid": true
+    },
+    {
+      "code": "declare namespace foo {}",
+      "valid": true
+    },
+    {
+      "code": "declare global {}",
+      "valid": true
+    },
+    {
+      "code": "module foo {}",
+      "valid": false
+    },
+    {
+      "code": "module A.B {}",
+      "valid": false
+    },
+    {
+      "code": "declare module foo {}",
+      "valid": false
+    },
+    {
+      "code": "\n        declare module foo {\n          declare module bar {}\n        }\n        ",
+      "valid": false
+    },
+    {
+      "code": "\n        declare global {\n            module foo {}\n        }\n        ",
+      "valid": false
+    }
+  ]
+}

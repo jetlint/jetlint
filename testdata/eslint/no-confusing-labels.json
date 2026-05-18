@@ -1,0 +1,87 @@
+{
+  "ruleId": "no-confusing-labels",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noConfusingLabels",
+  "cases": [
+    {
+      "code": "label: foo();",
+      "valid": false
+    },
+    {
+      "code": "A: const foo = 0;",
+      "valid": false
+    },
+    {
+      "code": "A: break A = 0;",
+      "valid": false
+    },
+    {
+      "code": "A: let foo = 0;",
+      "valid": false
+    },
+    {
+      "code": "A: if (a) { if (foo()) { break A; } bar(); };",
+      "valid": false
+    },
+    {
+      "code": "A: { if (foo()) { break A; } bar(); };",
+      "valid": false
+    },
+    {
+      "code": "A: switch (a) { case 0: break A; default: break; };",
+      "valid": false
+    },
+    {
+      "code": "$: {}",
+      "valid": false
+    },
+    {
+      "code": "const f = { label: foo ()}",
+      "valid": true
+    },
+    {
+      "code": "while (true) {}",
+      "valid": true
+    },
+    {
+      "code": "while (true) { break; }",
+      "valid": true
+    },
+    {
+      "code": "while (true) { continue; }",
+      "valid": true
+    },
+    {
+      "code": "label: while(true) {}",
+      "valid": true
+    },
+    {
+      "code": "label: while (true) { break label; }",
+      "valid": true
+    },
+    {
+      "code": "label: while (true) { continue label; }",
+      "valid": true
+    },
+    {
+      "code": "A: while (a) { break A; }",
+      "valid": true
+    },
+    {
+      "code": "A: do { if (b) { break A; } } while (a);",
+      "valid": true
+    },
+    {
+      "code": "A: for (let a in obj) { for (;;) { switch (a) { case 0: break A; } } }",
+      "valid": true
+    },
+    {
+      "code": "A: for (let a of arr) { for (;;) { switch (a) { case 0: break A; } } }",
+      "valid": true
+    },
+    {
+      "code": "\u003c!-- should not generate diagnostics --\u003e\n\u003cscript\u003e\n\texport let title;\n\texport let person;\n\n\t// this will update `document.title` whenever\n\t// the `title` prop changes\n\t$: document.title = title;\n\n\t$: {\n\t\tconsole.log(`multiple statements can be combined`);\n\t\tconsole.log(`the current title is ${title}`);\n\t}\n\n\t// this will update `name` when 'person' changes\n\t$: ({ name } = person);\n\n\t// don't do this. it will run before the previous line\n\tlet name2 = name;\n\u003c/script\u003e",
+      "valid": true
+    }
+  ]
+}

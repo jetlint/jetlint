@@ -1,0 +1,19 @@
+{
+  "ruleId": "no-useless-ternary",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessTernary",
+  "cases": [
+    {
+      "code": "var a = x ? true : true;\nvar a = x ? false : false;\n\nvar a = foo() ? false : true;\nvar a = foo ? false : true;\nvar a = foo === 1 ? false : true;\nvar a = foo + 1 ? false : true;\n\nvar a = foo() ? true : false;\nvar a = foo ? true : false;\nvar a = foo === 1 ? true : false;\nvar a = foo + 1 ? true : false;\n\nvar a= !foo? true : false;\n\nvar a = x instanceof foo ? false : true;\nvar a = x instanceof foo ? true : false;\n\nvar a = 'make' in car ? true : false;\nvar a = 'make' in car ? false : true;",
+      "valid": false
+    },
+    {
+      "code": "var a = x?true:true;\nvar a = x?false:false;\n\nvar a = foo()?false:true;\nvar a = foo?false:true;\nvar a = foo===1?false:true;\nvar a = foo+1?false:true;\n\nvar a = foo()?true:false;\nvar a = foo?true:false;\nvar a = foo===1?true:false;\nvar a = foo+1?true:false;\n\nvar a= !foo?true:false;",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconfig.newIsCap = config.newIsCap !== false;\nvar a = x === 2 ? 'Yes' : 'No';\nvar a = x === 2 ? true : 'No';\nvar a = x === 2 ? 'Yes' : false;\nvar a = x === 2 ? 'true' : 'false';\nvar a = foo ? foo : bar;\nvar value = 'a';var canSet = true;var result = value || (canSet ? 'unset' : 'can not set');\nvar a = foo ? bar : foo;\nfoo ? bar : foo;\nvar a = f(x ? x : 1);\nf(x ? x : 1);\nfoo ? foo : bar;\nvar a = foo ? 'Yes' : foo;\n",
+      "valid": true
+    }
+  ]
+}

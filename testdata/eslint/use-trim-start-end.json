@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-trim-start-end",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useTrimStartEnd",
+  "cases": [
+    {
+      "code": "foo.trimLeft()\nfoo.trimRight()\ntrimLeft.trimRight()\nfoo.trimLeft.trimRight()\n\"foo\".trimLeft()\nfoo\n\t// comment\n\t.trimRight /* comment */\n\t/* comment */\n\t()\nbar['trimLeft']()\nbar[\"trimLeft\"]()\nbar[`trimLeft`]()\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst foo = bar.trimStart();\nconst foo = bar.trimEnd();\nbar.trimStart?.()\nfoo.trimStart(),\nfoo.trimStart?.(),\nfoo.trimEnd(),\n// Not `CallExpression`\nnew foo.trimLeft();,\n// Not `MemberExpression`\ntrimLeft();,\n// `callee.property` is not a `Identifier`\nfoo[\\'trimLeft\\']();',\n// Computed\nfoo[trimLeft]();,\n// Not `trimLeft`/`trimRight`\nfoo.bar();,\n// More argument(s)\nfoo.trimLeft(extra);,\nfoo.trimLeft(...argumentsArray),\n// `trimLeft` is in argument\nfoo.bar(trimLeft),\nfoo.bar(foo.trimLeft),\n// `trimLeft` is in `MemberExpression.object`\ntrimLeft.foo(),\nfoo.trimLeft.bar(),\nbar['trimStart']()\nbar[\"trimStart\"]()\nbar[`trimStart`]()\n",
+      "valid": true
+    }
+  ]
+}

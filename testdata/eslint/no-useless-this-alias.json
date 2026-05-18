@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-useless-this-alias",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessThisAlias",
+  "cases": [
+    {
+      "code": "const self = this, v = 0, /*u*/ u = 2, self2 = this;\n\nfunction f() {\n    // assignment comment\n    const self = this;\n    return () =\u003e {\n        /*a*/self/*b*/.g();\n    }\n}\n\nfunction f() {\n    let self = this;\n    return () =\u003e {\n        self.g();\n    }\n}\n\nfunction f() {\n    var self;\n    self = this;\n    self = this;\n    return () =\u003e {\n        self.g();\n    }\n}\n\n\n// https://github.com/biomejs/biome/issues/1633\nclass FetchServersMetrics extends React.Component {\n    _fetchServersMetrics() {\n      const { onStatusChange, appIds, filters, time } = this.props;\n      const component = this;\n\n      fetchServers(appIds, time)\n        .then(servers =\u003e {\n          const data = isEmpty(filters) ? servers : applyFilters(servers, filters);\n          component.setState({\n            timestamp: new Date().getTime(),\n            isLoading: false,\n            data: data.filter(identity),\n          });\n        })\n        .catch((err) =\u003e {\n          component.setState({ serverError: throwOrResolve(err) });\n        })\n        .then(() =\u003e component.setState({ isLoading: false }));\n    }\n\n    render() {\n      const { children } = this.props;\n      return children(this._fetchServerMetrics);\n    }\n  }\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst { a, b } = this;\nconst [c, d] = this;\nconst property = this.property;\nconst firstItem = this[0];\nconst object = { property: this };\nfoo.bar = this;\n\nfunction f() {\n    const self = this;\n    return function distinctThisScope() {\n      self.g();\n    }\n}\n\nfunction f() {\n    const self = this;\n    function f() {\n        self.g();\n    }\n    return () =\u003e {\n        self.g();\n    }\n}\n\nfunction f() {\n    let self = this;\n    self = {}\n    return () =\u003e {\n        self.g();\n    }\n}\n\nfunction f() {\n    let self;\n    return () =\u003e {\n        self.g();\n    }\n}\n\nclass Class {\n    a = this;\n    #priv = this;\n\n    constructor() {\n      this.b = this;\n      this.c = [this];\n    }\n\n    act(self = this) {\n        self.f()\n    }\n\n    f() {}\n}\n",
+      "valid": true
+    }
+  ]
+}

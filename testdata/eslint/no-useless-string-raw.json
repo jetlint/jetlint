@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-useless-string-raw",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessStringRaw",
+  "cases": [
+    {
+      "code": "String.raw`a`;\nString.raw`abc`;\nString.raw`a ${x}`;",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nString.raw`\\n a`;\nString.raw`\\n abc`;\n// FIXME: This should not generate a diagnostic\n// String.raw`a ${x}`;",
+      "valid": true
+    }
+  ]
+}

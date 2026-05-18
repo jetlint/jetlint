@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-index-of",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/useIndexOf",
+  "cases": [
+    {
+      "code": "const list = ['foo', 'bar', 'baz'];\nlist.findIndex(bar =\u003e bar === 'foo');\nlist.findIndex((x) =\u003e x === 'foo');\nlist.findIndex(x =\u003e 'foo' === x);\nlist.findIndex(x =\u003e {\n\treturn x === 'foo';\n});\nlist.findIndex((x, y) =\u003e x === 'foo');\nlist.findIndex(x =\u003e x === undefined);\n\nlist.findLastIndex(bar =\u003e bar === 'foo');\nlist.findLastIndex((x) =\u003e x === 'foo');\nlist.findLastIndex(x =\u003e 'foo' === x);\nlist.findLastIndex(x =\u003e {\n\treturn x === 'foo';\n});\nlist.findLastIndex((x, y) =\u003e x === 'foo');\nlist.findLastIndex(x =\u003e x === undefined);\n",
+      "valid": false
+    },
+    {
+      "code": "/** should not generate diagnostics */\nconst list = ['foo', 'bar', 'baz'];\nconst isValid = () =\u003e true;\nconst getBar = () =\u003e 'bar';\nconst a = 'foo';\nconst y = {a};\n\nlist.findIndex((x, index) =\u003e x === index);\nlist.findIndex(x =\u003e (x === 'foo') \u0026\u0026 isValid());\nlist.findIndex(x =\u003e a === 'foo');\nlist.findIndex(x =\u003e y.a === 'foo');\nlist.findIndex(x =\u003e {\n\tconst bar = getBar();\n\treturn x === bar;\n});\nlist.findIndex(x =\u003e {\n\tconst bar = getBar();\n\tif (x === 'foo') {\n\t\treturn true;\n\t}\n\t\n\treturn x === bar;\n});\nlist.lastIndexOf('foo');\nlist.findLastIndex(x =\u003e x !== 'foo');\nlist.findLastIndex((x, index) =\u003e x === index);\nlist.findLastIndex(x =\u003e (x === 'foo') \u0026\u0026 isValid());\nlist.findLastIndex(x =\u003e a === 'foo');\nlist.findLastIndex(x =\u003e y.a === 'foo');\nlist.findLastIndex(x =\u003e {\n\tconst bar = getBar();\n\treturn x === bar;\n});\n\n",
+      "valid": true
+    }
+  ]
+}

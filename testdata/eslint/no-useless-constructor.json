@@ -1,0 +1,107 @@
+{
+  "ruleId": "no-useless-constructor",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessConstructor",
+  "cases": [
+    {
+      "code": "class WithDocs {\n    /**\n     * A documented constructor.\n     */\n    constructor() {}\n}\n\nclass WithComments {\n    constructor() {\n        // A comment.\n    }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "class A { constructor(){} }",
+      "valid": false
+    },
+    {
+      "code": "class A { 'constructor'(){} }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { super(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor(foo){ super(foo); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor(foo, bar){ super(foo, bar); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor(...args){ super(...args); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor(a, b, ...c) { super(a, b, ...c); } }",
+      "valid": false
+    },
+    {
+      "code": "class B extends A {\n    constructor(foo: number) {\n        super(foo);\n    }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "class A { }",
+      "valid": false
+    },
+    {
+      "code": "class A { constructor(a, b = 0){ } }",
+      "valid": false
+    },
+    {
+      "code": "class A { constructor(){ doSomething(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor(){} }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor(){ super('foo'); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor(foo, bar){ super(foo, bar, 1); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor(){ super(); doSomething(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor(...args){ super(...args); doSomething(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A { dummyMethod(){ doSomething(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B.C { constructor() { super(foo); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor(a, b, c) { super(a, b); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor(foo, bar){ super(foo); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor(test) { super(); } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor() { foo; } }",
+      "valid": false
+    },
+    {
+      "code": "class A extends B { constructor(foo, bar) { super(bar); } }",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\ndeclare class A { constructor(options: any) }\n\nclass B {\n    constructor(private name: string) {}\n}\n\nclass C {\n    constructor(public name: string) {}\n}\n\nclass D {\n    constructor(protected name: string) {}\n}\n\nclass E {\n    private constructor() {}\n}\n\nclass F {\n    protected constructor() {}\n}\n\nclass G extends B {\n    private constructor(foo, bar) {\n      super(bar);\n    }\n}\n\nclass H extends B {\n    constructor(name = \"default\") {\n      super(name);\n    }\n}\n",
+      "valid": true
+    }
+  ]
+}

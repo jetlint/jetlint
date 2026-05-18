@@ -1,0 +1,19 @@
+{
+  "ruleId": "no-empty-interface",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noEmptyInterface",
+  "cases": [
+    {
+      "code": "interface Foo {}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\ndeclare global {\n    export interface App extends Services {}\n    export namespace Ns {\n        export interface Empty {}\n    }\n}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\ninterface A extends B { prop: number; }\n\n// valid because extending multiple interfaces\n// can be used instead of a union type\ninterface Baz extends Foo, Bar {}\n\n// See https://github.com/biomejs/biome/issues/959\ndeclare module \"external\" {\n  export interface App extends Services {}\n  export interface Empty {}\n\n  global {\n    export interface App extends Services {}\n  }\n}\n\n// Ignore all interfaces that extends a type\ninterface Baz extends Foo {}\n\ninterface Foo extends Array\u003cnumber\u003e {}\n\ninterface Foo extends Array\u003cnumber | {}\u003e {}\n\ninterface Foo\u003cT\u003e extends Bar\u003cT\u003e {}\n\ndeclare module FooBar {\n  export interface Bar extends Baz {}\n}\n\nnamespace Ns {\n  export interface Bar extends Baz {}\n}\n",
+      "valid": true
+    }
+  ]
+}

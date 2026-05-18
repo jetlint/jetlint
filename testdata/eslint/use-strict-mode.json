@@ -1,0 +1,43 @@
+{
+  "ruleId": "use-strict-mode",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/useStrictMode",
+  "cases": [
+    {
+      "code": "// comment\nlet some_variable = \"some value\";\n",
+      "valid": false
+    },
+    {
+      "code": "\"use server\";\n",
+      "valid": false
+    },
+    {
+      "code": "#!/usr/bin/env node\n// comment\nlet some_variable = \"some value\";\n",
+      "valid": false
+    },
+    {
+      "code": "#!/usr/bin/env node\nlet some_variable = \"some value\";\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\n\n// comment\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\"use server\";\n\"use strict\";",
+      "valid": true
+    },
+    {
+      "code": "#!/usr/bin/env node\n/* should not generate diagnostics */\n\n// comment\n",
+      "valid": true
+    },
+    {
+      "code": "#!/usr/bin/env node\n/* should not generate diagnostics */\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// var a = 1;",
+      "valid": true
+    }
+  ]
+}

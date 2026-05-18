@@ -1,0 +1,131 @@
+{
+  "ruleId": "no-adjacent-spaces-in-regex",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noAdjacentSpacesInRegex",
+  "cases": [
+    {
+      "code": "/   /;",
+      "valid": false
+    },
+    {
+      "code": "/  foo/;",
+      "valid": false
+    },
+    {
+      "code": "/foo   /;",
+      "valid": false
+    },
+    {
+      "code": "/foo  bar/;",
+      "valid": false
+    },
+    {
+      "code": "/foo   bar    baz/;",
+      "valid": false
+    },
+    {
+      "code": "/foo [ba]r  b(a|z)/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  +/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  +?/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  */;",
+      "valid": false
+    },
+    {
+      "code": "/foo  *?/;",
+      "valid": false
+    },
+    {
+      "code": "/foo   */;",
+      "valid": false
+    },
+    {
+      "code": "/foo  ?/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  {2}/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  {2}a{1,2}/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  {2,}/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  {,2}/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  {2,3}/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  +  *   *   {2,}/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  {}/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  {,}/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  {1 2}/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  {1/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  {1,2/;",
+      "valid": false
+    },
+    {
+      "code": "/‎⁦⁩   /gu;",
+      "valid": false
+    },
+    {
+      "code": "/foo😀  ?/;",
+      "valid": false
+    },
+    {
+      "code": "/foo  😀/;",
+      "valid": false
+    },
+    {
+      "code": "/foo {2}bar/;",
+      "valid": true
+    },
+    {
+      "code": "/foo bar baz/;",
+      "valid": true
+    },
+    {
+      "code": "/foo bar\tbaz/;",
+      "valid": true
+    },
+    {
+      "code": "/foo /;",
+      "valid": true
+    },
+    {
+      "code": "/‎⁦⁩/gu;",
+      "valid": true
+    }
+  ]
+}

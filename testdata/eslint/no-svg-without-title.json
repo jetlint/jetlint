@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-svg-without-title",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/noSvgWithoutTitle",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n\t\u003csvg\u003efoo\u003c/svg\u003e\n\t\u003csvg\u003e\n\t\t\u003ctitle\u003e\u003c/title\u003e\n\t\t\u003ccircle /\u003e\n\t\u003c/svg\u003e\n\t\u003csvg\u003e\n\t\t\u003crect /\u003e\n\t\t\u003crect /\u003e\n\t\t\u003cg\u003e\n\t\t\t\u003ctitle\u003efoo\u003c/title\u003e\n\t\t\t\u003ccircle /\u003e\n\t\t\t\u003ccircle /\u003e\n\t\t\u003c/g\u003e\n\t\u003c/svg\u003e\n\t\u003csvg role=\"img\" title=\"title\"\u003e\n\t\t\u003cspan id=\"\"\u003efoo\u003c/span\u003e\n\t\u003c/svg\u003e\n\t\u003csvg role=\"img\" aria-labelledby=\"title\"\u003e\n\t\t\u003cspan id=\"\"\u003efoo\u003c/span\u003e\n\t\u003c/svg\u003e\n\t\u003csvg role=\"\"\u003e\n\t\t\u003cspan\u003eimplicit role\u003c/span\u003e\n\t\u003c/svg\u003e\n\t\u003csvg role=\"graphics-symbol\"\u003e\n\t\t\u003crect /\u003e\n\t\u003c/svg\u003e\n\t\u003csvg role=\"img presentation\"\u003e\n\t\t\u003crect /\u003e\n\t\u003c/svg\u003e\n\u003c/\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n\t\u003csvg\u003e\n\t\t\u003ctitle\u003ePass\u003c/title\u003e\n\t\t\u003ccircle /\u003e\n\t\u003c/svg\u003e\n\t\u003csvg role=\"img\" aria-label=\"title\"\u003e\n\t\t\u003ctitle id=\"title\"\u003ePass\u003c/title\u003e\n\t\u003c/svg\u003e\n\t\u003csvg role=\"img\" aria-label=\"title\"\u003e\n\t\t\u003cspan\u003ePass\u003c/span\u003e\n\t\u003c/svg\u003e\n\t\u003csvg role=\"img\" aria-label=\"title\"\u003e\n\t\t\u003cspan id=\"sample\"\u003ePass\u003c/span\u003e\n\t\u003c/svg\u003e\n\t\u003csvg role=\"img\" aria-labelledby=\"title\"\u003e\n\t\t\u003ctitle id=\"title\"\u003ePass\u003c/title\u003e\n\t\u003c/svg\u003e\n\t\u003csvg role=\"graphics-symbol\"\u003e\n\t\t\u003ctitle\u003ePass\u003c/title\u003e\n\t\t\u003crect /\u003e\n\t\u003c/svg\u003e\n\t\u003csvg role=\"graphics-symbol img\"\u003e\n\t\t\u003ctitle\u003ePass\u003c/title\u003e\n\t\t\u003crect /\u003e\n\t\u003c/svg\u003e\n\t\u003csvg role=\"img\" aria-labelledby=\"title\"\u003e\n\t\t\u003cspan id=\"title\"\u003ePass\u003c/span\u003e\n\t\u003c/svg\u003e\n\t\u003csvg role=\"\"\u003e\n\t\t\u003ctitle\u003eimplicit role\u003c/title\u003e\n\t\t\u003cspan\u003ePass\u003c/span\u003e\n\t\u003c/svg\u003e\n\n\t\u003csvg aria-hidden=\"true\"\u003e\n\t\t\u003cdefs\u003e\n\t\t\t\u003cpattern\u003e\n\t\t\t\t\u003cpath d=\"M.5 200V.5H200\" fill=\"none\" /\u003e\n\t\t\t\u003c/pattern\u003e\n\t\t\u003c/defs\u003e\n\t\u003c/svg\u003e\n\u003c/\u003e;\n",
+      "valid": true
+    }
+  ]
+}

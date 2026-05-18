@@ -87,3 +87,21 @@ func TestNoUselessBackreference_AllowsMultiDigitGroupCount(t *testing.T) {
 		t.Errorf("expected 0 diagnostics (\\10 refers to 10th group), got %d", n)
 	}
 }
+
+func TestNoUselessBackreference_FlagsCircularNumberedRef(t *testing.T) {
+	if n := runRule(t, `var r = /(a\1)/;`); n != 1 {
+		t.Errorf("expected 1 diagnostic for circular \\1 inside group 1, got %d", n)
+	}
+}
+
+func TestNoUselessBackreference_FlagsCircularNamedRef(t *testing.T) {
+	if n := runRule(t, `var r = /(?<foo>a\k<foo>)/;`); n != 1 {
+		t.Errorf("expected 1 diagnostic for circular \\k<foo> inside (?<foo>...), got %d", n)
+	}
+}
+
+func TestNoUselessBackreference_AllowsForwardRefOutsideContainingGroup(t *testing.T) {
+	if n := runRule(t, `var r = /((a)\2)/;`); n != 0 {
+		t.Errorf("expected 0 diagnostics for \\2 after group 2 closes, got %d", n)
+	}
+}

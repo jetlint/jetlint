@@ -1,0 +1,19 @@
+{
+  "ruleId": "no-useless-type-constraint",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noUselessTypeConstraint",
+  "cases": [
+    {
+      "code": "interface FooAny1\u003cT extends any\u003e {\n\tfield: T;\n}\n\ninterface FooAny2\u003cT extends unknown\u003e {\n\tfield: T;\n}\n\nclass BazAny\u003cT extends any\u003e {\n  quxAny\u003cU extends any\u003e() {}\n}\n\nconst QuuxAny = \u003cT extends any\u003e() =\u003e {};\n\nfunction QuuzAny\u003cT extends any\u003e() {}\n\nfunction commented\u003cT /*a*/ extends /*b*/ any /*c*/\u003e() {}\n\nconst A = \u003cT extends unknown\u003e() =\u003e {}\nconst B = \u003cT extends unknown = unknown\u003e() =\u003e {}\n",
+      "valid": false
+    },
+    {
+      "code": "const A = \u003cT extends unknown\u003e() =\u003e {}\nconst B = \u003cT extends unknown = unknown\u003e() =\u003e {}\nconst A = \u003cT extends unknown, U\u003e() =\u003e {}",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\ninterface FooAny0\u003cT\u003e {\n\tfield: T;\n}\n\ninterface FooNotAny0\u003cT extends string\u003e {\n\tfield: T;\n}\n\ntype Bar\u003cT\u003e = {};\n\ntype Bar2\u003cT extends string\u003e = {};\n",
+      "valid": true
+    }
+  ]
+}

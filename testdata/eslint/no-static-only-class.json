@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-static-only-class",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noStaticOnlyClass",
+  "cases": [
+    {
+      "code": "class X0 {\n\tstatic foo = false;\n\tstatic bar() { }\n}\n\nclass X1 {\n\tstatic #foo = false;\n\tstatic bar() {}\n}\n\nconst X2 = class {\n\tstatic foo = false;\n};\n\nconst X3 = class A {\n\tstatic foo = false;\n};\n\nexport default class {\n\tstatic foo = false;\n}\n\nclass StaticConstants0 {\n\tstatic readonly version = 42;\n\n\tstatic isProduction() {\n\t\treturn Math.random() \u003e 0.5;\n\t}\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst X0 = {\n\tfoo: false,\n\tbar() {}\n};\n\nclass X1 {\n\tstatic foo = false;\n\tstatic bar() {}\n\n\tconstructor() {}\n}\n\nclass X2 {\n\tstatic foo = false;\n\tstatic bar() {}\n\n\tunicorn() {}\n}\n\nclass X3 {\n\tunicorn() {}\n}\n\n\nclass X4 {\n\tconstructor() {}\n}\n\nclass HelloWorldLogger {\n\tconstructor() {\n\t\tconsole.log('Hello, world!');\n\t}\n}\n\nexport const version = 42;\n\nexport function isProduction() {\n\treturn Math.random() \u003e 0.5;\n}\n\nfunction logHelloWorld() {\n\tconsole.log('Hello, world!');\n}\n\nconst X5 = class {\n\tfoo = false;\n};\n\nexport default class {\n\tfoo = false;\n}\n\nfunction sealed(ctor, _ctx) {\n\tObject.seal(ctor);\n\tObject.seal(ctor.prototype);\n}\n\n// A decorator should prevent the class from being seen as \"static-only\"\n@sealed\nclass StaticConstants1 {\n\tstatic readonly version = 42;\n\n\tstatic isProduction() {\n\t\treturn Math.random() \u003e 0.5;\n\t}\n}\n\nclass Empty {}\n\nclass Environment {\n\ttype: string;\n\n\tconstructor(type: string) {\n\t\tthis.type = type;\n\t}\n\n\tgetType(): string {\n\t\treturn this.type;\n\t}\n}\n\nclass Application extends Environment {\n\tprivate static environment: Environment;\n\n\tstatic initialize(type: string): void {\n\t\tif (!this.environment) {\n\t\t\tthis.environment = new Environment(type);\n\t\t}\n\t}\n\n\tstatic getEnvironment(): string {\n\t\tif (!this.environment) {\n\t\t\tthrow new Error(\"Application not initialized.\");\n\t\t}\n\t\treturn this.environment.getType();\n\t}\n}\n",
+      "valid": true
+    }
+  ]
+}

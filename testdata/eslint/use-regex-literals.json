@@ -1,0 +1,871 @@
+{
+  "ruleId": "use-regex-literals",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/useRegexLiterals",
+  "cases": [
+    {
+      "code": "// https://github.com/biomejs/biome/issues/5487\nnew RegExp(\"\\/pattern$\");\n\nnew RegExp(\"\\🙂pattern\");\n\n// https://github.com/biomejs/biome/issues/5693#issuecomment-2816096167\nnew RegExp(`a\\*b`);\n\n// The backspace escape is not supported in regexes.\nnew RegExp(\"\\b\");\n\nnew RegExp(\"a\\\nb\");\n\nnew RegExp(`a\nb`);\n",
+      "valid": false
+    },
+    {
+      "code": "new RegExp('');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('', '');",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(String.raw``);",
+      "valid": false
+    },
+    {
+      "code": "new RegExp('abc');",
+      "valid": false
+    },
+    {
+      "code": "new RegExp((('abc')), ('g'));",
+      "valid": false
+    },
+    {
+      "code": "RegExp('abc');",
+      "valid": false
+    },
+    {
+      "code": "new RegExp('abc', 'g');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('abc', 'g');",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(`abc`);",
+      "valid": false
+    },
+    {
+      "code": "RegExp(`abc`);",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(`abc`, `g`);",
+      "valid": false
+    },
+    {
+      "code": "RegExp(`abc`, `g`);",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(String.raw`abc`);",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(String.raw`abc\nabc`);",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(String.raw`\tabc\nabc`);",
+      "valid": false
+    },
+    {
+      "code": "RegExp(String.raw`abc`);",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(String.raw`abc`, String.raw`g`);",
+      "valid": false
+    },
+    {
+      "code": "RegExp(String.raw`abc`, String.raw`g`);",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(String['raw']`a`);",
+      "valid": false
+    },
+    {
+      "code": "new RegExp('a', `g`);",
+      "valid": false
+    },
+    {
+      "code": "RegExp(`a`, 'g');",
+      "valid": false
+    },
+    {
+      "code": "RegExp(String.raw`a`, 'g');",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(String.raw`\\d`, `g`);",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(String.raw`\\\\d`, `g`);",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(String['raw']`\\\\d`, `g`);",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(String[\"raw\"]`\\\\d`, `g`);",
+      "valid": false
+    },
+    {
+      "code": "RegExp('a', String.raw`g`);",
+      "valid": false
+    },
+    {
+      "code": "new globalThis.RegExp('a');",
+      "valid": false
+    },
+    {
+      "code": "globalThis.RegExp('a');",
+      "valid": false
+    },
+    {
+      "code": "(globalThis).RegExp('a');",
+      "valid": false
+    },
+    {
+      "code": "new RegExp((String?.raw)`a`);",
+      "valid": false
+    },
+    {
+      "code": "RegExp('abc', 'u');",
+      "valid": false
+    },
+    {
+      "code": "new RegExp('abc', 'd');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('abc', 'd');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\\\\\\\', '');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\n', '');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\n\\n', '');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\t', '');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\t\\t', '');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\r\\n', '');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\u1234', 'g')",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\u{1234}', 'g')",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\u{11111}', 'g')",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\v', '');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\v\\v', '');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\f', '');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\f\\f', '');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\\\b', '');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\\\b\\\\b', '');",
+      "valid": false
+    },
+    {
+      "code": "new RegExp('\\\\B\\\\b', '');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\\\w', '');",
+      "valid": false
+    },
+    {
+      "code": "new globalThis.RegExp('\\\\W', '');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\\\s', '');",
+      "valid": false
+    },
+    {
+      "code": "new RegExp('\\\\S', '')",
+      "valid": false
+    },
+    {
+      "code": "globalThis.RegExp('\\\\d', '');",
+      "valid": false
+    },
+    {
+      "code": "globalThis.RegExp('\\\\D', '')",
+      "valid": false
+    },
+    {
+      "code": "globalThis.RegExp('\\\\\\\\\\\\D', '')",
+      "valid": false
+    },
+    {
+      "code": "new RegExp('\\\\D\\\\D', '')",
+      "valid": false
+    },
+    {
+      "code": "new globalThis.RegExp('\\\\0\\\\0', '');",
+      "valid": false
+    },
+    {
+      "code": "new RegExp('\\\\0\\\\0', '');",
+      "valid": false
+    },
+    {
+      "code": "new RegExp('\\0\\0', 'g');",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\\\0\\\\0\\\\0', '')",
+      "valid": false
+    },
+    {
+      "code": "RegExp('\\\\78\\\\126\\\\5934', '')",
+      "valid": false
+    },
+    {
+      "code": "new window['RegExp']('\\\\x56\\\\x78\\\\x45', '');",
+      "valid": false
+    },
+    {
+      "code": "new (window['RegExp'])('\\\\x56\\\\x78\\\\x45', '');",
+      "valid": false
+    },
+    {
+      "code": "a in(RegExp('abc'))",
+      "valid": false
+    },
+    {
+      "code": "func(new RegExp(String.raw`\\w{1, 2`, 'u'),new RegExp(String.raw`\\w{1, 2`, 'u'))",
+      "valid": false
+    },
+    {
+      "code": "x = y;\n            RegExp(\"foo\").test(x) ? bar() : baz()",
+      "valid": false
+    },
+    {
+      "code": "typeof RegExp(\"foo\")",
+      "valid": false
+    },
+    {
+      "code": "RegExp(\"foo\") instanceof RegExp(String.raw`blahblah`, 'g') ? typeof new RegExp('(\\\\p{Emoji_Presentation})\\\\1', `ug`) : false",
+      "valid": false
+    },
+    {
+      "code": "[   new RegExp(`someregular`)]",
+      "valid": false
+    },
+    {
+      "code": "const totallyValidatesEmails = new RegExp(\"\\\\S+@(\\\\S+\\\\.)+\\\\S+\")\n            if (typeof totallyValidatesEmails === 'object') {\n                runSomethingThatExists(Regexp('stuff'))\n            }",
+      "valid": false
+    },
+    {
+      "code": "!new RegExp('^Hey, ', 'u') \u0026\u0026 new RegExp('jk$') \u0026\u0026 ~new RegExp('^Sup, ') || new RegExp('hi') + new RegExp('person') === -new RegExp('hi again') ? 5 * new RegExp('abc') : 'notregbutstring'",
+      "valid": false
+    },
+    {
+      "code": "#!/usr/bin/sh\n            RegExp(\"foo\")",
+      "valid": false
+    },
+    {
+      "code": "async function abc(){await new RegExp(\"foo\")}",
+      "valid": false
+    },
+    {
+      "code": "function* abc(){yield new RegExp(\"foo\")}",
+      "valid": false
+    },
+    {
+      "code": "function* abc(){yield* new RegExp(\"foo\")}",
+      "valid": false
+    },
+    {
+      "code": "console.log({ ...new RegExp('a') })",
+      "valid": false
+    },
+    {
+      "code": "delete RegExp('a');",
+      "valid": false
+    },
+    {
+      "code": "void RegExp('a');",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(\"\\\\S+@(\\\\S+\\\\.)+\\\\S+\")**RegExp('a')",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(\"\\\\S+@(\\\\S+\\\\.)+\\\\S+\")%RegExp('a')",
+      "valid": false
+    },
+    {
+      "code": "a in RegExp('abc')",
+      "valid": false
+    },
+    {
+      "code": "\n            /abc/ == new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            /abc/ === new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            /abc/ != new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            /abc/ !== new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            /abc/ \u003e new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            /abc/ \u003c new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            /abc/ \u003e= new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            /abc/ \u003c= new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            /abc/ \u003c\u003c new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            /abc/ \u003e\u003e new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            /abc/ \u003e\u003e\u003e new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            /abc/ ^ new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            /abc/ \u0026 new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            /abc/ | new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            null ?? new RegExp('blah')\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc *= new RegExp('blah')\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            console.log({a: new RegExp('sup')})\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            console.log(() =\u003e {new RegExp('sup')})\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            function abc() {new RegExp('sup')}\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            function abc() {return new RegExp('sup')}\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc \u003c\u003c= new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc \u003e\u003e= new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc \u003e\u003e\u003e= new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc ^= new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc \u0026= new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc |= new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc ??= new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc \u0026\u0026= new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc ||= new RegExp('cba');\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc **= new RegExp('blah')\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc /= new RegExp('blah')\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc += new RegExp('blah')\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc -= new RegExp('blah')\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            abc %= new RegExp('blah')\n            ",
+      "valid": false
+    },
+    {
+      "code": "\n            () =\u003e new RegExp('blah')\n            ",
+      "valid": false
+    },
+    {
+      "code": "a/RegExp(\"foo\")in b",
+      "valid": false
+    },
+    {
+      "code": "a/RegExp(\"foo\")instanceof b",
+      "valid": false
+    },
+    {
+      "code": "do RegExp(\"foo\")\nwhile (true);",
+      "valid": false
+    },
+    {
+      "code": "for(let i;i\u003c5;i++) { break\nnew RegExp('search')}",
+      "valid": false
+    },
+    {
+      "code": "for(let i;i\u003c5;i++) { continue\nnew RegExp('search')}",
+      "valid": false
+    },
+    {
+      "code": "\n            switch (value) {\n                case \"possibility\":\n                    console.log('possibility matched')\n                case RegExp('myReg').toString():\n                    console.log('matches a regexp\\' toString value')\n                    break;\n            }\n            ",
+      "valid": false
+    },
+    {
+      "code": "throw new RegExp('abcdefg') // fail with a regular expression",
+      "valid": false
+    },
+    {
+      "code": "for (value of new RegExp('something being searched')) { console.log(value) }",
+      "valid": false
+    },
+    {
+      "code": "(async function(){for await (value of new RegExp('something being searched')) { console.log(value) }})()",
+      "valid": false
+    },
+    {
+      "code": "for (value in new RegExp('something being searched')) { console.log(value) }",
+      "valid": false
+    },
+    {
+      "code": "if (condition1 \u0026\u0026 condition2) new RegExp('avalue').test(str);",
+      "valid": false
+    },
+    {
+      "code": "debugger\nnew RegExp('myReg')",
+      "valid": false
+    },
+    {
+      "code": "RegExp(\"\\\\\\n\")",
+      "valid": false
+    },
+    {
+      "code": "RegExp(\"\\\\\\t\")",
+      "valid": false
+    },
+    {
+      "code": "RegExp(\"\\\\\\f\")",
+      "valid": false
+    },
+    {
+      "code": "RegExp(\"\\\\\\v\")",
+      "valid": false
+    },
+    {
+      "code": "RegExp(\"\\\\\\r\")",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(\"\t\")",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(\"/\")",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(\"\\.\")",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(\"\\\\.\")",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(\"\\\\\\n\\\\\\n\")",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(\"\\\\\\n\\\\\\f\\\\\\n\")",
+      "valid": false
+    },
+    {
+      "code": "new RegExp(\"\\u000A\\u000A\");",
+      "valid": false
+    },
+    {
+      "code": "new RegExp('mysafereg' /* comment explaining its safety */)",
+      "valid": false
+    },
+    {
+      "code": "new RegExp('[[A--B]]', 'v')",
+      "valid": false
+    },
+    {
+      "code": "new RegExp('[[A\u0026\u0026\u0026]]', 'v')",
+      "valid": false
+    },
+    {
+      "code": "new RegExp('://[^:/]*')",
+      "valid": false
+    },
+    {
+      "code": "/abc/",
+      "valid": true
+    },
+    {
+      "code": "/abc/g",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(pattern)",
+      "valid": true
+    },
+    {
+      "code": "new RegExp('\\\\p{Emoji_Presentation}\\\\P{Script_Extensions=Latin}' + '', `ug`)",
+      "valid": true
+    },
+    {
+      "code": "new RegExp('\\\\cA' + '')",
+      "valid": true
+    },
+    {
+      "code": "RegExp(pattern, 'g')",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(f('a'))",
+      "valid": true
+    },
+    {
+      "code": "RegExp(prefix + 'a')",
+      "valid": true
+    },
+    {
+      "code": "new RegExp('a' + suffix)",
+      "valid": true
+    },
+    {
+      "code": "RegExp(`a` + suffix);",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(String.raw`a` + suffix);",
+      "valid": true
+    },
+    {
+      "code": "RegExp('a', flags)",
+      "valid": true
+    },
+    {
+      "code": "const flags = 'gu';RegExp('a', flags)",
+      "valid": true
+    },
+    {
+      "code": "RegExp('a', 'g' + flags)",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(String.raw`a`, flags);",
+      "valid": true
+    },
+    {
+      "code": "RegExp(`${prefix}abc`)",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(`a${b}c`);",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(`a${''}c`);",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(String.raw`a${b}c`);",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(String.raw`a${''}c`);",
+      "valid": true
+    },
+    {
+      "code": "new RegExp('a' + 'b')",
+      "valid": true
+    },
+    {
+      "code": "RegExp(1)",
+      "valid": true
+    },
+    {
+      "code": "new RegExp('(\\\\p{Emoji_Presentation})\\\\1' + '', `ug`)",
+      "valid": true
+    },
+    {
+      "code": "RegExp(String.raw`\\78\\126` + '\\\\5934', '' + `g` + '')",
+      "valid": true
+    },
+    {
+      "code": "func(new RegExp(String.raw`a${''}c\\d`, 'u'),new RegExp(String.raw`a${''}c\\d`, 'u'))",
+      "valid": true
+    },
+    {
+      "code": "new RegExp('\\\\[' + \"b\\\\]\")",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(/a/);",
+      "valid": true
+    },
+    {
+      "code": "new RegExp;",
+      "valid": true
+    },
+    {
+      "code": "new RegExp();",
+      "valid": true
+    },
+    {
+      "code": "RegExp();",
+      "valid": true
+    },
+    {
+      "code": "new RegExp('a', 'g', 'b');",
+      "valid": true
+    },
+    {
+      "code": "RegExp('a', 'g', 'b');",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(`a`, `g`, `b`);",
+      "valid": true
+    },
+    {
+      "code": "RegExp(`a`, `g`, `b`);",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(String.raw`a`, String.raw`g`, String.raw`b`);",
+      "valid": true
+    },
+    {
+      "code": "RegExp(String.raw`a`, String.raw`g`, String.raw`b`);",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(/a/, 'u', 'foo');",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(String`a`);",
+      "valid": true
+    },
+    {
+      "code": "RegExp(raw`a`);",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(f(String.raw)`a`);",
+      "valid": true
+    },
+    {
+      "code": "RegExp(string.raw`a`);",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(String.Raw`a`);",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(String[raw]`a`);",
+      "valid": true
+    },
+    {
+      "code": "RegExp(String.raw.foo`a`);",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(String.foo.raw`a`);",
+      "valid": true
+    },
+    {
+      "code": "RegExp(foo.String.raw`a`);",
+      "valid": true
+    },
+    {
+      "code": "new RegExp(String.raw);",
+      "valid": true
+    },
+    {
+      "code": "let String; new RegExp(String.raw`a`);",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var String; new RegExp(String.raw`a`); }",
+      "valid": true
+    },
+    {
+      "code": "function foo(String) { RegExp(String.raw`a`); }",
+      "valid": true
+    },
+    {
+      "code": "if (foo) { const String = bar; RegExp(String.raw`a`); }",
+      "valid": true
+    },
+    {
+      "code": "new Regexp('abc');",
+      "valid": true
+    },
+    {
+      "code": "Regexp(`a`);",
+      "valid": true
+    },
+    {
+      "code": "new Regexp(String.raw`a`);",
+      "valid": true
+    },
+    {
+      "code": "let RegExp; new RegExp('a');",
+      "valid": true
+    },
+    {
+      "code": "function foo() { var RegExp; RegExp('a', 'g'); }",
+      "valid": true
+    },
+    {
+      "code": "function foo(RegExp) { new RegExp(String.raw`a`); }",
+      "valid": true
+    },
+    {
+      "code": "if (foo) { const RegExp = bar; RegExp('a'); }",
+      "valid": true
+    },
+    {
+      "code": "class C { #RegExp; foo() { globalThis.#RegExp('a'); } }",
+      "valid": true
+    },
+    {
+      "code": "new RegExp('[[A--B]]' + a, 'v')",
+      "valid": true
+    },
+    {
+      "code": "new Regexp('abc')",
+      "valid": true
+    },
+    {
+      "code": "RegExp('*');",
+      "valid": true
+    },
+    {
+      "code": "new RegExp('*', 'g');",
+      "valid": true
+    },
+    {
+      "code": "RegExp('*', 'g');",
+      "valid": true
+    },
+    {
+      "code": "new RegExp('a', 'uv')",
+      "valid": true
+    },
+    {
+      "code": "new RegExp('+');",
+      "valid": true
+    },
+    {
+      "code": "RegExp('+');",
+      "valid": true
+    },
+    {
+      "code": "new RegExp('+', 'g');",
+      "valid": true
+    },
+    {
+      "code": "RegExp('+', 'g');",
+      "valid": true
+    }
+  ]
+}

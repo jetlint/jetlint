@@ -1,0 +1,43 @@
+{
+  "ruleId": "no-misplaced-assertion",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noMisplacedAssertion",
+  "cases": [
+    {
+      "code": "describe(() =\u003e {\n    expect(\"something\").toBeTrue()\n})\n\nexpect(\"\")\nassertEquals(1, 1)",
+      "valid": false
+    },
+    {
+      "code": "import {test, expect} from \"bun:test\";\n\nexpect(\"something\").toBeTrue()",
+      "valid": false
+    },
+    {
+      "code": "import { expect } from \"chai\";\ndescribe(() =\u003e {\n\texpect(\"something\").toBeTrue()\n})",
+      "valid": false
+    },
+    {
+      "code": "import {assertEquals} from \"https://deno.land/std@0.220.0/assert/mod.ts\";\n\nassertEquals(url.href, \"https://deno.land/foo.js\");\nDeno.test(\"url test\", () =\u003e {\n    const url = new URL(\"./foo.js\", \"https://deno.land/\");\n});",
+      "valid": false
+    },
+    {
+      "code": "import assert from \"node:assert\";\nimport { describe } from \"node:test\";\n\ndescribe(() =\u003e {\n\tassert.equal(\"something\", \"something\")\n})",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\ndescribe(\"msg\", () =\u003e {\n\tit(\"msg\", () =\u003e {\n\t\texpect(\"something\").toBeTrue()\n\t})\n})\n\ntest(\"something\", () =\u003e {\n\texpect(\"something\").toBeTrue()\n})\n\nDeno.test(\"something\", () =\u003e {\n\texpect(\"something\").toBeTrue()\n})\n\nawait waitFor(() =\u003e {\n\texpect(111).toBe(222);\n});\n\nexpect.any(Number);\n\nexpect.anything()\n\nexpect.closeTo(0.3, 5)\n\nexpect.arrayContaining(['Alice', 'Bob'])\n\nexpect.objectContaining({\n  x: expect.any(Number),\n  y: expect.any(Number),\n})\n\nexpect.stringContaining('Hello world!')\n\nexpect.stringMatching(/^Alic/)\nexpect.stringMatching(/^[BR]ob/)\n\nexpect.extend({\n  toBeFoo: (received, expected) =\u003e {\n\tif (received !== 'foo') {\n      return {\n\t    message: () =\u003e `expected ${received} to be foo`,\n\t\tpass: false,\n\t  }\n\t}\n  },\n});\n\nexpect.addEqualityTesters([areVolumesEqual]);\n\nexpect.addSnapshotSerializer(serializer);",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport {test, expect} from \"bun:test\";\n\ntest(\"something\", () =\u003e {\n    expect(\"something\").toBeTrue()\n})\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport {assertEquals} from \"https://deno.land/std@0.220.0/assert/mod.ts\";\n\nDeno.test(\"url test\", () =\u003e {\n    const url = new URL(\"./foo.js\", \"https://deno.land/\");\n    assertEquals(url.href, \"https://deno.land/foo.js\");\n});",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nit.each([1, 2, 3])('test', (a, b, expected) =\u003e {\n  expect(a + b).toBe(expected)\n})\n\ntest.each([1, 2, 3])('test', (a, b, expected) =\u003e {\n  expect(a + b).toBe(expected)\n})\n\nit.each`\n\ta               | b      | expected\n\t${{ val: 1 }}   | ${'b'} | ${'1b'}\n`('test', ({ a, b, expected }) =\u003e {\n  expect(a.val + b).toBe(expected)\n})\n\ntest.each`\n\ta               | b      | expected\n\t${{ val: 1 }}   | ${'b'} | ${'1b'}\n`('test', ({ a, b, expected }) =\u003e {\n  expect(a.val + b).toBe(expected)\n})\n\ndescribe.skip('test', () =\u003e {\n  test('test', () =\u003e {\n    assert.equal(Math.sqrt(4), 3)\n  })\n})\n\ntest.skip('test', () =\u003e {\n  assert.equal(Math.sqrt(4), 2)\n})\n",
+      "valid": true
+    }
+  ]
+}

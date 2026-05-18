@@ -1,0 +1,19 @@
+{
+  "ruleId": "no-useless-escape-in-string",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noUselessEscapeInString",
+  "cases": [
+    {
+      "code": "var s = {\n    '\\a': /*before*/ \"\\a\" /*after*/,\n    '\\\"': \"\\'\",\n    \"abc\\defg\": ` test ${1} \\a` /*after*/,\n    // A test with unicode characters that take more than one byte\n    key: \"😀\\😀\",\n    // https://github.com/biomejs/biome/issues/6039\n    templateLiterals1: `\\$x`,\n    templateLiterals2: `\\${\\a`,\n    templateLiterals3: `\\${} \\a`,\n    // https://github.com/biomejs/biome/issues/7595\n    templateLiterals4: `a\\{`,\n    templateLiterals5: `$\\{\\a`,\n    templateLiterals6: `$\\{} \\a`,\n};\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nvar s = {\n    '\\0\\'': \"\\n\\\"\",\n    \"abc\\u42efg\": tagged` test ${1} \\a`,\n    key: `\\``,\n    escapeTemplateLiteralInterpolation1: `\\${`,\n    escapeTemplateLiteralInterpolation2: `\\${}`,\n    escapeTemplateLiteralInterpolation3: `$\\{`,\n    escapeTemplateLiteralInterpolation4: `$\\{}`\n};\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// Ignore JSX strings\n\u003cdiv attr=\"str\\a\"/\u003e;",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "ruleId": "no-console",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noConsole",
+  "cases": [
+    {
+      "code": "console.log('hello world')\nconsole['log']('hello world')\nconsole.info('hello world')\nconsole.warn('hello world')\nconsole.table('hello world')\nconsole.error('hello world')\nconsole.nonExistent('hello world')\nconsole.log('with semicolon');\n\nglobalThis.console.warn();\n",
+      "valid": false
+    },
+    {
+      "code": "const x = () =\u003e console.log(\"test\");\n[].forEach(() =\u003e console.log(\"test\"));\n",
+      "valid": false
+    },
+    {
+      "code": "function callFn(fn) {\n    fn();\n}\n\ncallFn(console.log);\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\nvar a = 1;\n\nconst console = { log: (args) =\u003e { /* do nothing */} };\nconsole.log('hello world');\nconsole['log']('hello world');\n",
+      "valid": true
+    }
+  ]
+}

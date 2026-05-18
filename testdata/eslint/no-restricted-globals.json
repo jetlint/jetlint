@@ -1,0 +1,19 @@
+{
+  "ruleId": "no-restricted-globals",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noRestrictedGlobals",
+  "cases": [
+    {
+      "code": "console.log(event);",
+      "valid": false
+    },
+    {
+      "code": "console.log(error);",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nfunction f(event, error) {\n    console.log(event);\n    console.log(error);\n}",
+      "valid": true
+    }
+  ]
+}

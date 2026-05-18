@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-comment-text",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noCommentText",
+  "cases": [
+    {
+      "code": "\u003c\u003e\n    \u003cdiv\u003e// comment\u003c/div\u003e\n    \u003cdiv\u003e/* comment */\u003c/div\u003e\n    \u003cdiv\u003e/** comment */\u003c/div\u003e\n    \u003cdiv\u003etext /* comment */\u003c/div\u003e\n    \u003cdiv\u003e/* comment */ text\u003c/div\u003e\n    \u003cdiv\u003e\n        text\n        // comment\n    \u003c/div\u003e\n    \u003cdiv\u003e\n        /* comment */\n        text\n    \u003c/div\u003e\n    \u003cdiv\u003e\n        // comment\n        text\n    \u003c/div\u003e\n    \u003cdiv\u003e\n        /* comment\n        comment */\n    \u003c/div\u003e\n    \u003cdiv\u003e😀//😀 comment \u003c/div\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n    \u003cdiv\u003e{/* comment */}\u003c/div\u003e\n    \u003cdiv\u003e{/** comment */}\u003c/div\u003e\n    \u003cdiv className={\"cls\" /* comment */}\u003e\u003c/div\u003e\n    \u003cdiv\u003etext {/* comment */}\u003c/div\u003e\n    \u003cdiv\u003e{/* comment */} text\u003c/div\u003e\n    \u003cdiv\u003ehttps://domain.com\u003c/div\u003e\n    \u003cdiv\u003e/😀\u003c/div\u003e\n\u003c/\u003e\n",
+      "valid": true
+    }
+  ]
+}

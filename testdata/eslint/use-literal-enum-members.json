@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-literal-enum-members",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useLiteralEnumMembers",
+  "cases": [
+    {
+      "code": "enum InvalidLiterals {\n  A = {},\n  B = [],\n  C = true,\n  D = 1n,\n}\n\nenum InvalidTemplateLiteral {\n  A = `foo ${0}`,\n}\n\nenum InvalidConstructor {\n  A = new Set(),\n}\n\nenum InvalidExpression {\n  A = delete 2,\n  B = -a,\n  C = void 2,\n  D = !0,\n}\n\nconst variable = 'Test';\nenum InvalidVariable {\n  A = 'TestStr',\n  V = variable,\n}\n\nenum Valid {\n  A,\n}\nenum InvalidEnumMember {\n  A = Valid.A,\n}\n\nconst x = 1;\nenum Foo {\n  A = x \u003c\u003c 0,\n  B = x \u003e\u003e 0,\n  C = x \u003e\u003e\u003e 0,\n  D = x | 0,\n  E = x \u0026 0,\n  F = x ^ 0,\n  G = ~x,\n}\n\nenum InvalidRef {\n  A = A,\n  B = InvalidRef.B,\n  C = InvalidRef[\"C\"],\n  D = E,\n  E = InvalidRef.F,\n  F = InvalidRef[\"G\"],\n  G\n}\n\nexport {}",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nenum ValidString {\n  A = 'test',\n  B = 'div' + 'ided',\n  C = `test2`,\n  D = `di` + `ided2`,\n  AA = A + ValidString.A,\n}\n\nenum ValidNumber {\n  A,\n  B = 42,\n  C = -42,\n  D = +42,\n  E = 2 + 2,\n  F = A + ValidNumber.B,\n}\n\nenum ValidQuotedKey {\n  'A',\n  'B' = 1,\n  ['C'],\n}\n\nenum ValidFlags {\n  A = 1 \u003c\u003c 0,\n  B = 1 \u003e\u003e 0,\n  C = 1 \u003e\u003e\u003e 0,\n  D = 1 | 0,\n  E = 1 \u0026 0,\n  F = 1 ^ 0,\n  G = ~1,\n}\n\nenum FileAccess {\n  None = 0,\n  Read = 1,\n  Write = 1 \u003c\u003c 1,\n  All = (1 | (1 \u003c\u003c 1)),\n}\n\nenum FileAccessWithRef {\n  None = 0,\n  Read = 1,\n  Write = FileAccessWithRef[\"Read\"] \u003c\u003c 1,\n  All = Read | FileAccessWithRef.Write,\n}\n\nenum ValidRef {\n  \"A\",\n  \"B\",\n  C = A | B,\n}\n\nenum ValidComputedRef {\n  [\"A\"],\n  [\"B\"],\n  C = A | B,\n}\n\nexport {}",
+      "valid": true
+    }
+  ]
+}

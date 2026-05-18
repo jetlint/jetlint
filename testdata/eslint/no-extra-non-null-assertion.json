@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-extra-non-null-assertion",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noExtraNonNullAssertion",
+  "cases": [
+    {
+      "code": "// @ts-expect-error\nconst bar = case1!!.bar;\n\nfunction case2(bar: number | undefined) {\n  const bar1: number = bar!!!;\n}\n\nfunction case3(bar?: { n: number }) {\n  return bar!?.n;\n}\n\nfunction case4(bar?: { n: number }) {\n  return bar!?.();\n}\n\nconst bar2 = (case5!)!.bar;\n\nfunction case6(bar?: { n: number }) {\n  return (bar!)?.n;\n}\n\nfunction case7(bar?: { n: number }) {\n  return (bar)!?.n;\n}\n\nfunction case8(bar?: { n: number }) {\n  return ((bar!))?.();\n}\n\nclass Case9 {\n  method() {\n    this.property!!;\n  }\n}\n\ncase10!!.prop = null;\n\ncase11!?.[computedField];\n\ncase12!?.[a.b!!];\n\ncase13!!! = null\n\ncase14!! = null\n\nif (case15!!) {}\n\nif (!case16!!) {}\n\n// Test cases for issue #7927: nested assertions in compound assignments should be flagged\nconst arr1: number[] = [1, 2, 3];\narr1[0]!! ^= arr1[1];\n\nconst arr2: number[] = [1, 2, 3];\narr2[0] ^= arr2[1]!!;\n\n// Test case for issue #8475\nconst _d2 = (blob.b!)!.d!.length;\nconst _d2 = ((blob.b!))!.d!.length;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst bar = case1!.bar;\n\nfunction case2(bar: number | undefined) {\n  const bar1: number = bar!;\n}\n\nfunction case3(bar?: { n: number }) {\n  return bar?.n;\n}\n\nchecksCounter?.case4!.trim();\n\nfunction case5(key: string | null) {\n  const obj = {};\n  return obj?.[key!];\n}\n\nfunction issue3419(value: string | null): string {\n  return (value!);\n}\n\n// Test case for issue #7927: compound assignment with non-null assertions on both sides\nconst arr: number[] = [1, 2, 3];\narr[0]! ^= arr[1]!;\n\n// Test case for issue #8475\nconst _d2 = blob.b!.d!.length;\nconst _d2 = blob.b?.d!.length;\n",
+      "valid": true
+    }
+  ]
+}

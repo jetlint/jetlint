@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-self-closing-elements",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useSelfClosingElements",
+  "cases": [
+    {
+      "code": "\u003cdiv               \u003e\u003c/div\u003e;\n\u003cComponent\u003e\u003c/Component\u003e;\n\u003cFoo.bar\u003e\u003c/Foo.bar\u003e;\n\u003cdiv\n\n\u003e\u003c/div\u003e;\n\n\u003cdiv \u003e\u003c/div\u003e /* comment */;\n/* comment */ \u003cdiv \u003e\u003c/div\u003e;\n\u003cGeneric\u003ctrue\u003e\u003e\u003c/Generic\u003e;",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\u003cdiv /\u003e;\n\u003cdiv\u003echild\u003c/div\u003e;\n\u003cComponent /\u003e;\n\u003cComponent\u003echild\u003c/Component\u003e;\n\u003cFoo.bar /\u003e;\n\u003cFoo.bar\u003echild\u003c/Foo.bar\u003e;",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-valid-anchor",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/useValidAnchor",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n\t\u003ca /\u003e\n\t\u003ca href /\u003e\n\t\u003ca href={null} /\u003e\n\t\u003ca href={undefined} /\u003e\n\t\u003ca href=\"\" /\u003e\n\t\u003ca href=\"#\" /\u003e\n\t\u003ca href={\"#\"} /\u003e\n\t\u003ca href={`#`} /\u003e\n\t\u003ca href=\"javascript:void(0)\" /\u003e\n\t\u003ca href={\"javascript:void(0)\"} /\u003e\n\t\u003ca href={`javascript:void(0)`} /\u003e\n\t\u003ca onClick={() =\u003e void 0} /\u003e\n\t\u003ca href=\"#\" onClick={() =\u003e void 0} /\u003e\n\t\u003ca href=\"javascript:void(0)\" onClick={() =\u003e void 0} /\u003e\n\t\u003ca href={\"javascript:void(0)\"} onClick={() =\u003e void 0} /\u003e\n\t\u003ca href=\"\" onClick=\"window.location.href=index.html\"\u003e Home \u003c/a\u003e\n\t\u003ca href=\"class/html-css1/navigation/links#\" onClick=\"window.location.href=index.html\"\u003e Home \u003c/a\u003e\n\t\u003ca href=\"javascript:void(0)\" onClick=\"myFunc();\"\u003e Annual Reports \u003c/a\u003e\n\u003c/\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n\t\u003cAnchor /\u003e\n\t\u003cAnchor href=\"\" onClick={() =\u003e void 0} /\u003e\n\t\u003cdiv href=\"foo\" /\u003e\n\t\u003ca {...props} /\u003e\n\t\u003ca href=\"foo\" /\u003e\n\t\u003ca href=\"/foo\" /\u003e\n\t\u003ca href=\"#foo\" /\u003e\n\t\u003ca href=\"javascript\" /\u003e\n\t\u003ca href={`#foo`} /\u003e\n\t\u003ca href={\"foo\"} /\u003e\n\t\u003ca href={foo} /\u003e\n\t\u003ca href={this} /\u003e\n\t\u003ca href={getFileUrl()}\u003eDownload\u003c/a\u003e\n\t\u003ca href={a ? b : c}\u003eDownload\u003c/a\u003e\n\t\u003ca href={await getLink()}\u003eDownload\u003c/a\u003e\n\t\u003ca href={a[\"a\"]}\u003eDownload\u003c/a\u003e\n\t\u003ca href={true ?? \"url\"}\u003eDownload\u003c/a\u003e\n\t\u003ca href=\"http://www.deque.com\" onClick=\"window.open(this.href); return false;\"\u003e Annual Reports \u003c/a\u003e\n\t\u003ca href=\"https://github.com\" onClick={progressivelyEnhancedFunction}\u003eThis is a progressively enhanced link\u003c/a\u003e\n\u003c/\u003e;\n",
+      "valid": true
+    }
+  ]
+}

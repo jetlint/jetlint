@@ -269,6 +269,15 @@ func extractRule(biomePath, outDir, ruleID, category string) error {
 		if err != nil {
 			return fmt.Errorf("read fixture %s: %w", name, err)
 		}
+		// biome-ignore comments suppress the rule for the next node;
+		// fixtures using them test the linter's suppression mechanism,
+		// not the rule's semantics. jetlint doesn't honor biome-ignore
+		// comments, and rejecting these cases via the extractor keeps
+		// the per-rule harness focused on rule behavior rather than
+		// suppression compatibility.
+		if bytes.Contains(body, []byte("biome-ignore")) {
+			continue
+		}
 		snapBody, _ := os.ReadFile(filepath.Join(ruleDir, name+".snap"))
 		valid := classifyValidity(snapBody)
 		// JSONC files contain a top-level array of code strings — biome

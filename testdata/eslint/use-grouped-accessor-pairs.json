@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-grouped-accessor-pairs",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useGroupedAccessorPairs",
+  "cases": [
+    {
+      "code": "class User {\n    get name() {\n        return 'John Doe';\n    }\n    set #age(age) {}\n    get #age() {\n        return 30;\n    }\n    set name(value) {}\n}\n\nconst user = {\n    get age() {\n        return 30;\n    },\n    set name(value) {},\n    get name() {\n        return 'John Doe';\n    },\n    set age(age) {},\n};\n\ntype UserType = {\n    set age(age: number);\n    set name(value: string);\n    get name(): string;\n    get age(): number;\n}\n\ninterface UserInterface {\n    set name(value: string);\n    set age(age: number);\n    get age(): number;\n    get name(): string;\n}\n\ndeclare module 'module' {\n    export class User {\n        set name(value: string);\n        get name(): string;\n        set #age(age: number);\n        get #age(): number;\n    }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nclass User {\n    protected field: string;\n    get name() {\n        return 'John Doe';\n    }\n    set name(value) {}\n    constructor() {}\n    get #age() {\n        return 30;\n    }\n    set #age(age) {}\n    method() {}\n    // Ignores getters without setters\n    get isHuman() {\n        return true;\n    }\n    // Ignores setters without getters\n    set enabled(enabled: boolean) {}\n}\n\nconst user = {\n    field: 'field',\n    get name() {\n        return 'John Doe';\n    },\n    set name(value) {},\n    method() {},\n    get age() {\n        return 30;\n    },\n    set age(age) {},\n    get isHuman() {\n        return true;\n    },\n    set enabled(enabled: boolean) {}\n};\n\ntype UserType = {\n    field: string;\n    get name(): string;\n    set name(value: string);\n    method(): void;\n    get age(): number;\n    set age(age: number);\n    get isHuman(): boolean;\n    set enabled(enabled: boolean);\n}\n\ninterface UserInterface {\n    field: string;\n    get name(): string;\n    set name(value: string);\n    method(): void;\n    get age(): number;\n    set age(age: number);\n    get isHuman(): boolean;\n    set enabled(enabled: boolean);\n}\n\ndeclare module 'module' {\n    export class User {\n        protected field: string;\n        get name(): string;\n        set name(value: string);\n        constructor();\n        get #age(): number;\n        set #age(age: number);\n        method(): void;\n        get isHuman(): boolean;\n        set enabled(enabled: boolean);\n    }\n}\n",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-global-is-nan",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noGlobalIsNan",
+  "cases": [
+    {
+      "code": "isNaN({});\n\n(isNaN)({});\n\nglobalThis.isNaN({});\n\n(globalThis).isNaN({});\n\nglobalThis.globalThis.window.isNaN({});\n\nglobalThis[\"isNaN\"]({});\n\n(globalThis)[(\"isNaN\")]({});\n\nfunction localIsNaN(isNaN) {\n    globalThis.isNaN({});\n}\n\nlocalIsNaN(isNaN);\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nNumber.isNaN(Number.NaN);\n\nglobalThis.Number.isNaN(Number.NaN);\n\nfunction localIsNaN(isNaN) {\n    isNaN({});\n}\n\nfunction localVar() {\n    var isNaN;\n    isNaN()\n}\n\nlocalIsNaN(Number.isNaN);\n",
+      "valid": true
+    }
+  ]
+}

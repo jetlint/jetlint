@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-namespace",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noNamespace",
+  "cases": [
+    {
+      "code": "module foo {}\ndeclare module foo {}\n\nnamespace foo {}\ndeclare namespace foo {}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\nexport {};\n\ndeclare global {}\n\ndeclare module \"foo\" {}\n",
+      "valid": true
+    }
+  ]
+}

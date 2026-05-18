@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-common-js",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noCommonJs",
+  "cases": [
+    {
+      "code": "require('node:fs')\n\nif (true) {\n    require('node:fs')\n}\n\nmodule.exports = 'path'\nexports.path = 'path'\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport 'node:fs'\nimport { join } from 'node:path'\n\nimport('node:fs/promises')\n\nconst require = () =\u003e {}\n\nrequire('node:fs')\n\nconst module = {}\nmodule.exports = 'path'\n\nconst exports = {}\nexports.path = 'path'",
+      "valid": true
+    }
+  ]
+}

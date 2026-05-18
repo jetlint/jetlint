@@ -1,0 +1,23 @@
+{
+  "ruleId": "no-yoda-expression",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noYodaExpression",
+  "cases": [
+    {
+      "code": "if (\"red\" == value) {}\nif (true === value) {}\nif (5 != value) {}\nif (5n != value) {}\nif (null !== value) {}\nif (\"red\" \u003c= value) {}\nif (`red` \u003c= value) {}\nif (`red` \u003c= `${foo}`) {}\nif (`red` \u003c= `${\"red\"}`) {}\nif (true \u003e= value) {}\nvar foo = (5 \u003c value) ? true : false\nfunction foo() { return (null \u003e value); }\nif (-1 \u003c str.indexOf(substr)) {}\nif ( /* a */ 0 /* b */ \u003c /* c */ foo /* d */ ) {}\nif (((((((5)))))) === ((((((((((foo))))))))))) {}\nwhile (0 === (a));\nwhile (0 === (a = b));\nasync function foo() { return 1 \u003c await bar() }\nfunction *foo() { yield(1) \u003c a }\nfunction *foo() { yield((1)) \u003c a }\nfunction *foo() { yield 1 \u003c a }\nfunction *foo() { yield/**/1 \u003c a }\nfunction *foo() { yield(1) \u003c ++a }\nfunction *foo() { yield(1) \u003c (a) }\nx=1 \u003c a\n0 \u003c f()in obj\n1 \u003e x++instanceof foo\nfalse \u003c= ((x))in foo\nfalse \u003c= ((x)) in foo\n1 \u003e x===foo\n1 \u003e x\n",
+      "valid": false
+    },
+    {
+      "code": "if (a \u003c 0 \u0026\u0026 0 \u003c= b \u0026\u0026 b \u003c 1) {}\nif (0 \u003c= a \u0026\u0026 a \u003c 1 \u0026\u0026 b \u003c 1) {}\nif (1 \u003c a \u0026\u0026 a \u003c 0) {}\n0 \u003c a \u0026\u0026 a \u003c 1\nvar a = b \u003c 0 || 1 \u003c= b;\nif (0 \u003c= x \u0026\u0026 x \u003c -1) {}\nif (`green` \u003c x.y \u0026\u0026 x.y \u003c `blue`) {}\nif ('b' \u003c= x \u0026\u0026 x \u003c 'a') {}\nif('a' \u003c= x \u0026\u0026 x \u003c 1) {}\nif (0 \u003c a \u0026\u0026 b \u003c max) {}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nif (value === \"red\") {}\nwhile (value === \"red\") {}\nif (value === value) {}\nif (value != 5) {}\nif (5 \u0026 foo) {}\nif (5 === 4) {}\nif (value === `red`) {}\nif (`red` === `red`) {}\nif (`${foo}` === `red`) {}\nif (`${\"\"}` === `red`) {}\nif (`${\"red\"}` === foo) {}\nif (b \u003e `a` \u0026\u0026 b \u003e `a`) {}\nif (`b` \u003e `a` \u0026\u0026 \"b\" \u003e \"a\") {}\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nif (\"a\" \u003c x \u0026\u0026 x \u003c MAX ) {}\nwhile (\"a\" \u003c x \u0026\u0026 x \u003c MAX ) {}\nif (1 \u003c x \u0026\u0026 x \u003c MAX ) {}\nif ('a' \u003c x \u0026\u0026 x \u003c MAX ) {}\nif (x \u003c `x` || `x` \u003c= x) {}\nif (0 \u003c x \u0026\u0026 x \u003c= 1) {}\nif ('blue' \u003c x.y \u0026\u0026 x.y \u003c 'green') {}\nif (0 \u003c x[``] \u0026\u0026 x[``] \u003c 100) {}\nif (a \u003c 4 || (b[c[0]].d['e'] \u003c 0 || 1 \u003c= b[c[0]].d['e'])) {}\nif (0 \u003c= x['y'] \u0026\u0026 x['y'] \u003c= 100) {}\nif (a \u003c 0 \u0026\u0026 (0 \u003c b \u0026\u0026 b \u003c 1)) {}\nif ((0 \u003c a \u0026\u0026 a \u003c 1) \u0026\u0026 b \u003c 0) {}\nif (-1 \u003c x \u0026\u0026 x \u003c 0) {}\nif (0 \u003c= this.prop \u0026\u0026 this.prop \u003c= 1) {}\nif (0 \u003c= index \u0026\u0026 index \u003c list.length) {}\nif (ZERO \u003c= index \u0026\u0026 index \u003c 100) {}\nif (value \u003c= MIN || 10 \u003c value) {}\nif (value \u003c= 0 || MAX \u003c value) {}\nif (-1n \u003c x \u0026\u0026 x \u003c= 1n) {}\nif (MIN \u003c x \u0026\u0026 x \u003c 'a' ) {}\nif (MIN \u003c x \u0026\u0026 x \u003c 'a' ) {}\nif (`blue` \u003c x.y \u0026\u0026 x.y \u003c `green`) {}\nif (0 \u003c= x[`y`] \u0026\u0026 x[`y`] \u003c= 100) {}\nif ('a' \u003c= x \u0026\u0026 x \u003c 'b') {}\nif (x \u003c -1n || 1n \u003c= x) {}\nif (1 \u003c a \u0026\u0026 a \u003c= 2) {}\nif (x \u003c -1 || 1 \u003c x) {}\nif (x \u003c 0 || 1 \u003c= x) {}\nif('a' \u003c= x \u0026\u0026 x \u003c MAX) {}\nif (0 \u003c= obj?.a \u0026\u0026 obj?.a \u003c 1) {}\nif (0 \u003c= a[b()] \u0026\u0026 a[b()] \u003c 1) {}\n",
+      "valid": true
+    }
+  ]
+}

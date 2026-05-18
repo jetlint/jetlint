@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-flat-map-identity",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noFlatMapIdentity",
+  "cases": [
+    {
+      "code": "array.flatMap(function f(arr) { return arr });\n\narray.flatMap(function (arr) { return arr });\n\narray.flatMap((arr) =\u003e arr)\n\narray.flatMap((arr) =\u003e {return arr})\n\narray.flatMap(arr =\u003e arr)\n\narray.flatMap(arr =\u003e {return arr})",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\narray.flatMap((arr) =\u003e arr * 2);\n\narray.flatMap(arr =\u003e arr * 2);\n\nflatMap((x) =\u003e x);\n\nflatMap(x =\u003e x);\n\narr.flatMap((x, y) =\u003e (x, y))",
+      "valid": true
+    }
+  ]
+}

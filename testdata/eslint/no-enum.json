@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-enum",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noEnum",
+  "cases": [
+    {
+      "code": "enum MyEnum {\n\tA = 123\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst enum MyEnum {\n\tA = 123\n}\n",
+      "valid": true
+    }
+  ]
+}

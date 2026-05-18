@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-html-lang",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/useHtmlLang",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n    \u003chtml /\u003e\n    \u003chtml\u003e\u003c/html\u003e\n    \u003chtml lang=\"\"\u003e\u003c/html\u003e\n    \u003chtml lang={\"\"}\u003e\u003c/html\u003e\n    \u003chtml lang={``}\u003e\u003c/html\u003e\n    \u003chtml lang={true}\u003e\u003c/html\u003e\n    \u003chtml lang={false}\u003e\u003c/html\u003e\n    \u003chtml lang={undefined}\u003e\u003c/html\u003e\n    \u003chtml lang={null}\u003e\u003c/html\u003e\n    \u003chtml {...props} lang=\"\"\u003e\u003c/html\u003e\n\u003c/\u003e",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n    \u003chtml lang=\"en\"\u003e\u003c/html\u003e\n    \u003chtml lang={\"en\"}\u003e\u003c/html\u003e\n    \u003chtml lang={`en`}\u003e\u003c/html\u003e\n    \u003chtml lang={lang}\u003e\u003c/html\u003e\n    \u003chtml {...props}\u003e\u003c/html\u003e\n    \u003chtml lang=\"\" {...props}\u003e\u003c/html\u003e\n\u003c/\u003e",
+      "valid": true
+    }
+  ]
+}

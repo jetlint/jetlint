@@ -1,0 +1,23 @@
+{
+  "ruleId": "no-unassigned-variables",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noUnassignedVariables",
+  "cases": [
+    {
+      "code": "let status;\nif (status === 'ready') {\n  console.log('Ready!');\n}\n\nlet user;\ngreet(user);\n\nfunction test() {\n  let error;\n  return error || \"Unknown error\";\n}\n\nlet options;\nconst { debug } = options || {};\n\nlet flag;\nwhile (!flag) {\n  // Do something...\n}\n\nlet config;\nfunction init() {\n  return config?.enabled;\n}",
+      "valid": false
+    },
+    {
+      "code": "let value: number | undefined;\nconsole.log(value);",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nlet message = \"hello\";\nconsole.log(message);\n\nlet user;\nuser = getUser();\nconsole.log(user.name);\n\nlet count;\ncount = 1;\ncount++;\n\n// Variable is unused (should be reported by `no-unused-vars` only)\nlet temp;\n\nlet error;\nif (somethingWentWrong) {\n  error = \"Something went wrong\";\n}\nconsole.log(error);\n\nlet item;\nfor (item of items) {\n  process(item);\n}\n\nlet config;\nfunction setup() {\n  config = { debug: true };\n}\nsetup();\nconsole.log(config);\n\nlet one = undefined;\nif (one === two) {\n  // Noop\n}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\ndeclare let t: number | undefined;\nconsole.log(t);\n\ndeclare module \"my-module\" {\n  let value: string;\n  export = value;\n}\n",
+      "valid": true
+    }
+  ]
+}

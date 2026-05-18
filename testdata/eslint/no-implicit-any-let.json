@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-implicit-any-let",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noImplicitAnyLet",
+  "cases": [
+    {
+      "code": "let someVar1;\nsomeVar1 = '123';\nsomeVar1 = 123;\n\nvar someVar1;\nsomeVar1 = '123';\nsomeVar1 = 123;\n\nlet x = 0, y, z = 0;\nvar x = 0, y, z = 0;\nfor(let a = 0, b; a \u003c 5; a++) {}\n\nfunction ex() {\n    let b;\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\nlet a: number;\nlet b = 1\nvar c : string;\nvar d = \"abn\"\n\nconst x = 0;\nfor(let y of xs) {}\nusing z = f();\n",
+      "valid": true
+    }
+  ]
+}

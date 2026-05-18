@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-autofocus",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/noAutofocus",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n    \u003cbutton autoFocus /\u003e\n    \u003cinput autoFocus /\u003e\n    \u003cinput autoFocus=\"true\" /\u003e\n    \u003cinput autoFocus={undefined} /\u003e\n    \u003cinput autoFocus={\"false\"} /\u003e\n    \u003cinput autoFocus={\"false\"} /*comment*/ /\u003e\n    \u003cinput /*comment*/ autoFocus={\"false\"} /\u003e\n    \u003cinput autoFocus={\"false\" /*comment*/} /\u003e\n    \u003cinput /*comment*/ autoFocus={\"false\"} /*comment*/ /\u003e\n    \u003cdiv autoFocus /\u003e\n    \u003cdiv autoFocus={true} /\u003e\n    \u003cdiv autoFocus={false} /\u003e\n    \u003cdiv popover={false}\u003e\u003cinput autoFocus /\u003e\u003c/div\u003e\n\u003c/\u003e\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n    \u003cdiv /\u003e\n    \u003cbutton /\u003e\n    \u003cinput /\u003e\n    \u003cdiv autofocus /\u003e\n    \u003cinput autofocus=\"true\" /\u003e\n    \u003cMyComponent autoFocus={true} /\u003e\n    \u003cdiv popover\u003e\u003cinput autoFocus /\u003e\u003c/div\u003e\n    \u003cdialog\u003e\u003cinput autoFocus /\u003e\u003c/dialog\u003e\n\u003c/\u003e",
+      "valid": true
+    }
+  ]
+}

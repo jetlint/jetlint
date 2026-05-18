@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-error-message",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/useErrorMessage",
+  "cases": [
+    {
+      "code": "throw new Error();\nthrow Error();\nthrow new Error(\"\");\nthrow new Error(``);\n\nnew AggregateError()\nnew EvalError()\nnew InternalError()\nnew RangeError()\nnew ReferenceError()\nnew SyntaxError()\nnew TypeError()\nnew URIError()\n\nthrow new Error([]);\nthrow new Error([foo]);\nthrow new Error({});\nthrow new Error({ foo });\nthrow new Error(1);\nthrow new Error(undefined);\nthrow new Error(null);\nthrow new Error(true);\n\nnew AggregateError(errors);\nnew AggregateError(errors);\nnew AggregateError(errors, \"\");\nnew AggregateError(errors, ``);\nnew AggregateError(errors, \"\", extraArgument);\n\nnew AggregateError(errors, []);\nnew AggregateError(errors, [foo]);\nnew AggregateError(errors, [0][0]);\nnew AggregateError(errors, {});\nnew AggregateError(errors, { foo });\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nthrow new Error(\"error\");\nthrow new TypeError(\"error\");\nthrow new MyCustomError(\"error\");\nthrow new MyCustomError();\nthrow generateError();\nthrow foo();\nthrow err;\nthrow 1;\nconst err = TypeError(\"error\");\nthrow err;\n// Should not check other argument\nnew Error(\"message\", 0, 0);\n// We don't know the value\nnew Error(foo);\nnew Error(...foo);\n\nnew AggregateError(errors, \"message\");\nnew NotAggregateError(errors);\nnew AggregateError(...foo);\nnew AggregateError(...foo, \"\");\nnew AggregateError(errors, ...foo);\nnew AggregateError(errors, message, \"\");\nnew AggregateError(\"\", message, \"\");\n\n// Invalid but we don't know the value\nconst errorMessage1 = Object.freeze({ errorMessage: 1 }).errorMessage;\nthrow new Error(errorMessage);\nthrow new Error((lineNumber = 2));\nthrow new Error({ foo: 0 }.foo);\n\n{\n    // Do not fail if Error is shadowed\n    const Error = function () {};\n    const err1 = new Error({\n        name: \"Unauthorized\",\n    });\n}\n",
+      "valid": true
+    }
+  ]
+}

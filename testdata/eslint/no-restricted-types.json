@@ -1,0 +1,6 @@
+{
+  "ruleId": "no-restricted-types",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noRestrictedTypes",
+  "cases": []
+}

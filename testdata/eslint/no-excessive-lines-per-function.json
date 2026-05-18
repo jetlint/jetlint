@@ -1,0 +1,11 @@
+{
+  "ruleId": "no-excessive-lines-per-function",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noExcessiveLinesPerFunction",
+  "cases": [
+    {
+      "code": "/* should not generate diagnostics */\n\n(function () {\n\tlet x = 0;\n\tlet y = 0;\n\tlet z = x + y;\n\tlet foo = {};\n\treturn bar;\n})();\n\n(() =\u003e {\n\tlet x = 0;\n\tlet y = 0;\n\tlet z = x + y;\n\tlet foo = {};\n\treturn bar;\n})();\n",
+      "valid": true
+    }
+  ]
+}

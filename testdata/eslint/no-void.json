@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-void",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noVoid",
+  "cases": [
+    {
+      "code": "void 0;\nfunction f() {\n\treturn void 0;\n}\nvar foo = void 0;\nvoid(0);\n\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nvar foo = bar();\nfoo.void();\nfoo.void = bar;\ndelete foo;\n",
+      "valid": true
+    }
+  ]
+}

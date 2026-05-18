@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-empty-type-parameters",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/noEmptyTypeParameters",
+  "cases": [
+    {
+      "code": "type A\u003c\u003e = {};\ninterface B\u003c\u003e {};",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\ntype A\u003cT\u003e = {};\ninterface B\u003cT\u003e {};",
+      "valid": true
+    }
+  ]
+}

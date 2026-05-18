@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-exported-imports",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/noExportedImports",
+  "cases": [
+    {
+      "code": "import { A } from \"mod\";\nexport { A };\n\nimport * as ns from \"mod\";\nexport { ns };\n\nimport D from \"mod\";\nexport { D };",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport { A } from \"mod\";\nexport * as ns from \"mod\";\nexport { default as D } from \"mod\";",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "ruleId": "use-exponentiation-operator",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useExponentiationOperator",
+  "cases": [
+    {
+      "code": "/*1*/Math.pow(/*2*/a/*3*/, /*4*/b/*5*/)/*6*/;\n(Math).pow(a, b);\n\n// able to catch some workarounds\nMath[`pow`](a, b);\n(Math)['pow'](a, b);\n(Math)[\"pow\"](a, b);\n(Math)[`pow`](a, b);\n\n// non-expression parents that don't require parens\nvar x = Math.pow(a, b);\nif(Math.pow(a, b)){}\nfor(;Math.pow(a, b);){}\nswitch(foo){ case Math.pow(a, b): break; }\n{ foo: Math.pow(a, b) }\nfunction foo(bar, baz = Math.pow(a, b), quux){}\n`${Math.pow(a, b)}`\n\n// non-expression parents that do require parens\nclass C extends Math.pow(a, b) {}\n\n// already parenthesised, shouldn't insert extra parens\n+(Math.pow(a, b))\n(Math.pow(a, b)).toString()\n(class extends (Math.pow(a, b)) {})\nclass C extends (Math.pow(a, b)) {}\n\n// '**' is right-associative, that applies to both parent and child nodes\na ** Math.pow(b, c);\nMath.pow(a, b) ** c;\nMath.pow(a, b ** c);\nMath.pow(a ** b, c);\na ** Math.pow(b ** c, d ** e) ** f;\n\n// doesn't remove already existing unnecessary parens around the whole expression\n(Math.pow(a, b));\nfoo + (Math.pow(a, b));\n(Math.pow(a, b)) + foo;\n`${(Math.pow(a, b))}`;\n\n// Optional chaining\nMath.pow?.(a, b)\nMath?.pow(a, b)\nMath?.pow?.(a, b)\n;(Math?.pow)(a, b)\n;(Math?.pow)?.(a, b)\n\n// doesn't put extra parens\nMath.pow((a + b), (c + d))\n\n// tokens that can be adjacent\na+Math.pow(b, c)+d\n",
+      "valid": false
+    },
+    {
+      "code": "// tokens that cannot be adjacent\na+Math.pow(++b, c);\n(a)+(Math).pow((++b), c);\nMath.pow(a, b)in c\nMath.pow(a, (b))in (c)\na+Math.pow(++b, c)in d\na+Math.pow( ++b, c )in d\n\n// tokens that cannot be adjacent, but there is already space or something else between\na+ Math.pow(++b, c) in d\n// a+/**/Math.pow(++b, c)/**/in d // ignored because of comments\na+(Math.pow(++b, c))in d\n\n// tokens that cannot be adjacent, but the autofix inserts parens required for precedence\n+Math.pow(++a, b)\nMath.pow(a, b + c)in d\nMath.pow(a, b) + Math.pow(c, d)\nMath.pow(Math.pow(a, b), Math.pow(c, d))\nMath.pow(a, b)**Math.pow(c, d)\n",
+      "valid": false
+    },
+    {
+      "code": " // base and exponent with a higher precedence\n Math.pow(2, 3)\n Math.pow(a.foo, b)\n Math.pow(a, b.foo)\n Math.pow(a(), b)\n Math.pow(a, b())\n Math.pow(++a, ++b)\n Math.pow(a++, ++b)\n Math.pow(a--, b--)\n Math.pow(--a, b--)\n",
+      "valid": false
+    },
+    {
+      "code": "// base and exponent with a lower precedence\nMath.pow(a * b, c)\nMath.pow(a, b * c)\nMath.pow(a / b, c)\nMath.pow(a, b / c)\nMath.pow(a + b, 3)\nMath.pow(2, a - b)\nMath.pow(a + b, c + d)\nMath.pow(a = b, c = d)\nMath.pow(a += b, c -= d)\nMath.pow((a, b), (c, d))\nfunction *f() { Math.pow(yield, yield) }\n",
+      "valid": false
+    },
+    {
+      "code": "// @ts-nocheck\nclass C\u003cT\u003e extends Math.pow(a, b) implements Foo\u003cT\u003e {}\n(class A extends Math.pow(a, b) implements Foo {})\n(class A\u003cT\u003e extends (Math.pow(a, b)) {})\nclass C\u003cT\u003e extends (Math.pow(a, b)) implements Foo, Bar\u003cT\u003e {}\n",
+      "valid": false
+    },
+    {
+      "code": "+ Math.pow(a, b);\n- Math.pow(a, b);\n! Math.pow(a, b);\ntypeof Math.pow(a, b);\nvoid Math.pow(a, b);\nMath.pow(a, b) .toString();\nMath.pow(a, b) ();\nMath.pow(a, b) ``;\n(class extends Math.pow(a, b) {})\n\n// parents with a higher precedence, but the expression's role doesn't require parens\nf(Math.pow(a, b))\nf(foo, Math.pow(a, b))\nf(Math.pow(a, b), foo)\nf(foo, Math.pow(a, b), bar)\nnew F(Math.pow(a, b))\nnew F(foo, Math.pow(a, b))\nnew F(Math.pow(a, b), foo)\nnew F(foo, Math.pow(a, b), bar)\nobj[Math.pow(a, b)]\n[foo, Math.pow(a, b), bar]\n",
+      "valid": false
+    },
+    {
+      "code": "// parents with a lower precedence\na * Math.pow(b, c);\nMath.pow(a, b) * c;\na + Math.pow(b, c);\nMath.pow(a, b)/c;\na \u003c Math.pow(b, c);\nMath.pow(a, b) \u003e c;\na === Math.pow(b, c);\na ? Math.pow(b, c) : d;\na = Math.pow(b, c);\na += Math.pow(b, c);\nfunction *f() { yield Math.pow(a, b) }\na, Math.pow(b, c), d\n",
+      "valid": false
+    },
+    {
+      "code": "// unary expressions are exception by the language - parens are required for the base to disambiguate operator precedence\nMath.pow(+a, b)\nMath.pow(a, +b)\nMath.pow(-a, b)\nMath.pow(a, -b)\nMath.pow(-2, 3)\nMath.pow(2, -3)\nasync () =\u003e Math.pow(await a, b)\nasync () =\u003e Math.pow(a, await b)\n",
+      "valid": false
+    },
+    {
+      "code": "/* comment */Math.pow(a, b)\nMath.pow(a, b)/* comment */;\nMath.pow(a, b)// comment\n\nMath.pow(/**/a/**/, /**/b/**/)\n\nMath/**/.pow/**/(a, b)\n\n\nMath // 0\n    .pow( // 1\n        // 2\n        a, // 3\n        // 4\n        b, // 5\n    // 6\n    ) // 5\n",
+      "valid": false
+    },
+    {
+      "code": "// shouldn't autofix if the call doesn't have exactly two arguments\nMath.pow()\nMath.pow(a)\nMath.pow(a, b, c)\nMath.pow(a, b, c, d)\n\n// shouldn't autofix if any of the arguments is spread\nMath.pow(...a)\nMath.pow(...a, b)\nMath.pow(a, ...b)\nMath.pow(a, b, ...c)\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// not Math.pow()\nObject.pow(a, b)\nMath.max(a, b)\nMath\nMath(a, b)\npow\npow(a, b)\nMath.pow\nMath.Pow(a, b)\nmath.pow(a, b)\nfoo.Math.pow(a, b)\nnew Math.pow(a, b)\nMath[pow](a, b)\nglobalThis.Object.pow(a, b)\nglobalThis.Math.max(a, b)\nclass C { #pow; foo() { Math.#pow(a, b); } }\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n// not the global Math\nfunction case1() {\n\tlet Math;\n\tMath.pow(a, b);\n}\n\nfunction case2(Math) {\n\tMath.pow(a, b);\n}\n\nvar case3 = function Math() {\n\tMath.pow(a, b);\n}\n\nfunction case4() {\n\tMath.pow(a, b);\n\tvar Math;\n}\n\nfunction case5() {\n\tif (foo) {\n\t\tconst Math = 1;\n\t\tMath.pow(a, b);\n\t}\n}\n",
+      "valid": true
+    }
+  ]
+}

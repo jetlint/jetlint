@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-noninteractive-tabindex",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/noNoninteractiveTabindex",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003c\u003e\n\t\u003cdiv tabIndex=\"0\"\u003e\u003c/div\u003e\n\t\u003cdiv role=\"article\" tabIndex=\"0\"\u003e\u003c/div\u003e\n\t\u003carticle tabIndex={0} /\u003e\n\u003c/\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n\t\u003cbutton tabIndex=\"0\"\u003e\u003c/button\u003e\n\t\u003cspan role=\"button\" tabIndex=\"0\"\u003e\u003c/span\u003e\n\t\u003cspan role=\"article\" tabIndex=\"-1\"\u003e\u003c/span\u003e\n\t\u003cMyButton tabIndex={0} /\u003e\n\t\u003carticle tabIndex=\"-1\"\u003e\u003c/article\u003e\n\t\u003cdiv tabIndex=\"-1\"\u003e\u003c/div\u003e\n\t\u003carticle tabIndex={-1}\u003e\u003c/article\u003e\n\t\u003cdiv tabIndex={-1}\u003e\u003c/div\u003e\n\t\u003cdiv\u003e\u003c/div\u003e\n\t\u003cbutton tabIndex=\"-1\"\u003e\u003c/button\u003e\n\u003c/\u003e;\n",
+      "valid": true
+    }
+  ]
+}

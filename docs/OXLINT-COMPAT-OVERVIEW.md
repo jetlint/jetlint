@@ -55,12 +55,49 @@ on 100%; the score is a baseline that improves as rules sharpen.
 | valid-typeof | 60/60 (100%) |
 | use-isnan | 208/208 (100%) |
 | no-self-assign | 92/92 (100%) |
+| no-empty | 34/34 (100%) |
+| default-case-last | 37/37 (100%) |
+| no-unused-expressions | 110/110 (100%) |
+| guard-for-in | 12/12 (100%) |
+| no-with | 12/12 (100%) |
+| no-instanceof-array | 17/17 (100%) |
+| prefer-namespace-keyword | 10/10 (100%) |
+| use-iterable-callback-return (biome) | 2/2 (100%) |
+| no-confusing-void-type (biome) | 2/2 (100%) |
+| no-misused-new | 19/19 (100%) |
+| adjacent-overload-signatures | 64/64 (100%) |
+| no-empty-source (biome) | 11/11 (100%) |
+| no-exports-in-test (biome) | 5/5 (100%) |
+| no-redundant-use-strict (biome) | 15/15 (100%) |
+| no-deprecated-imports (biome) | 4/4 (100%) |
+| no-unassigned-variables (biome) | 4/4 (100%) |
+| no-useless-regex-backrefs (biome) | 3/3 (100%) |
+| no-redeclare (biome) | 51/51 (100%) |
+| no-import-cycles (biome) | 8/8 (100%) |
 
-**Aggregate: 464/464 cases pass (100%)** across all option
-combinations the upstream fixtures exercise.
+**Aggregate: 884/884 cases pass (100%)** across all option
+combinations the upstream fixtures exercise. The `no-import-cycles`
+row reflects a directory-layout fixture under
+`testdata/biome/no-import-cycles/` rather than a flat `<rule>.json`,
+because the rule is multi-file by nature: each case is one source
+file inside a shared in-program directory and its expected diagnostic
+count depends on the import edges that exist between siblings. The
+harness mirrors biome's `<stem>.options.json` mechanic by running
+the engine per file with the right `Options` value.
 
-The three rules with options (\`valid-typeof\`, \`use-isnan\`,
-\`no-self-assign\`) expose the standard \`Options\` /
+The `no-useless-regex-backrefs` row covers the biome variant of
+`internal/rules/nouselessbackreference/`, which exposes a second
+constructor (`NewBiome()`) reporting under the biome id. The biome
+variant flags only circular self-references (per the ECMAScript
+spec, `\N` past the group count is an octal escape and `\k<name>`
+without a matching named group is literal text); the eslint variant
+keeps the broader "non-existent group" check expected by
+`testdata/eslint/no-useless-backreference.json` and the rule's
+unit tests.
+
+The six rules with options (\`valid-typeof\`, \`use-isnan\`,
+\`no-self-assign\`, \`no-empty\`, \`no-unused-expressions\`,
+\`no-import-cycles\`) expose the standard \`Options\` /
 \`DefaultOptions\` / \`OptionsFromJSON\` / \`NewWithOptions\` surface
 so user-supplied config in \`.jetlintrc.json\` is plumbed through.
 

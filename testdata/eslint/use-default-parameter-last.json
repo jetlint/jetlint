@@ -1,0 +1,23 @@
+{
+  "ruleId": "use-default-parameter-last",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/style/useDefaultParameterLast",
+  "cases": [
+    {
+      "code": "export function f(a = 0, b) {}\n\nexport function g(a, b = 0, c) {}\n\nexport function g(a, b /* before */ = /* mid */ 0/* after */) {}\n\nexport function g(a, b /* before */ = /* mid */ 0 /* after */ /* after comma */, c) {}\n\nexport function u(a=5, b, c) {}\n",
+      "valid": false
+    },
+    {
+      "code": "export function h(a: number, b?: number, c: number) {}\n\nexport function l(a = 0, b?: number, c: number) {}\n\nexport function f(a = 0, b = 0, c?: string, c: string) {}\n\nexport function h(a/* before */?/* after */: number, b: number) {}\n\nexport class Foo {\n    constructor(readonly a = 10, readonly b: number) {}\n}",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport function f(a, b = 0) {}",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\nexport function g(a: number, b?: number, c = 0) {}\n\nexport function h(a: number, b = 0, c?: number) {}",
+      "valid": true
+    }
+  ]
+}

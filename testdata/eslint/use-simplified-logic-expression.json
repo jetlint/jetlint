@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-simplified-logic-expression",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/complexity/useSimplifiedLogicExpression",
+  "cases": [
+    {
+      "code": "const r = true \u0026\u0026 boolExp;\nconst boolExp2 = true;\nconst r2 = boolExp || true;\nconst nonNullExp = 123;\nconst r3 = null ?? nonNullExp;\nconst boolExpr1 = true;\nconst boolExpr2 = false;\nconst r4 = /*1*/ !boolExpr1 /*2*/  || /*3*/ !boolExpr2 /*4*/ \n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nconst boolExpr3 = true;\nconst boolExpr4 = false;\nconst r5 = !(boolExpr1 \u0026\u0026 boolExpr2);\nconst boolExpr5 = true;\nconst boolExpr6 = false;\nconst r6 = !!boolExpr1 || !!boolExpr2;\n!!x;\n",
+      "valid": true
+    }
+  ]
+}

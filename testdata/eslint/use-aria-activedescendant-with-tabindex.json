@@ -1,0 +1,15 @@
+{
+  "ruleId": "use-aria-activedescendant-with-tabindex",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/a11y/useAriaActivedescendantWithTabindex",
+  "cases": [
+    {
+      "code": "/* should generate diagnostics */\n\u003cdiv aria-activedescendant={someID} /\u003e;\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\u003c\u003e\n\t\u003cCustomComponent /\u003e;\n\t\u003cCustomComponent aria-activedescendant={someID} /\u003e;\n\t\u003cCustomComponent aria-activedescendant={someID} tabIndex={0} /\u003e;\n\t\u003cCustomComponent aria-activedescendant={someID} tabIndex={-1} /\u003e;\n\t\u003cdiv /\u003e;\n\t\u003cinput /\u003e;\n\t\u003cdiv tabIndex={0} /\u003e;\n\t\u003cdiv aria-activedescendant={someID} tabIndex={0} /\u003e;\n\t\u003cdiv aria-activedescendant={someID} tabIndex=\"0\" /\u003e;\n\t\u003cdiv aria-activedescendant={someID} tabIndex={1} /\u003e;\n\t\u003cdiv aria-activedescendant={someID} tabIndex={-1} /\u003e;\n\t\u003cdiv aria-activedescendant={someID} tabIndex=\"-1\" /\u003e;\n\t\u003cinput aria-activedescendant={someID} /\u003e;\n\t\u003cinput aria-activedescendant={someID} tabIndex={0} /\u003e;\n\t\u003cinput aria-activedescendant={someID} tabIndex={-1} /\u003e;\n\u003c/\u003e;\n",
+      "valid": true
+    }
+  ]
+}

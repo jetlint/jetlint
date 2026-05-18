@@ -1,0 +1,23 @@
+{
+  "ruleId": "no-import-cycles",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noImportCycles",
+  "cases": [
+    {
+      "code": "import { bar } from \"./invalidFoobar.js\";\n\nexport function baz() {\n    bar();\n}\n",
+      "valid": false
+    },
+    {
+      "code": "import { baz } from \"./invalidBaz.js\";\n\nexport function foo() {\n    baz();\n}\n\nexport function bar() {\n    console.log(\"foobar\");\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\nimport type {} from \"./ignoreTypes.ts\";\nimport type {} from \"./includeTypes.ts\";\n\nexport type Foo = {};\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\nimport { foo } from \"./invalidFoobar\";\n\nfoo();\n\nexport function bar() {\n  return 1;\n}\n\nexport * as bar from \"./valid\"\n\nimport { foobar } from \"./valid\"\n\nfoobar.bar();\n",
+      "valid": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ruleId": "no-global-assign",
+  "biomeSHA": "15fdfdf92e382993d7a826f50abde6220be1edd7",
+  "biomeSource": "crates/biome_js_analyze/tests/specs/suspicious/noGlobalAssign",
+  "cases": [
+    {
+      "code": "window = {};\nObject = null;\nundefined = 1;\nlength = 1;\ntop = 1;\nString++;\n({Object = 0, String = 0} = {});\nrequire = 0;",
+      "valid": false
+    },
+    {
+      "code": "/* should not generate diagnostics */\na = 1;\n\nlet window;\nwindow = {};\n",
+      "valid": true
+    }
+  ]
+}
