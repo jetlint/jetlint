@@ -53,6 +53,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nocommenttext"
 	"github.com/jetlint/jetlint/internal/rules/nochildrenprop"
 	"github.com/jetlint/jetlint/internal/rules/noclassassign"
+	"github.com/jetlint/jetlint/internal/rules/nocommaoperator"
 	"github.com/jetlint/jetlint/internal/rules/nocomparenegzero"
 	"github.com/jetlint/jetlint/internal/rules/nocondassign"
 	"github.com/jetlint/jetlint/internal/rules/noconfusinglabels"
@@ -752,6 +753,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nocommenttext.New(),
 		nochildrenprop.New(),
 		noclassassign.New(),
+		nocommaoperator.New(),
 		nocomparenegzero.New(),
 		nocondassign.New(),
 		noconfusinglabels.New(),

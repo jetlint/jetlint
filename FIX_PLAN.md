@@ -22,6 +22,22 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-comma-operator (complexity)`.
+Package `internal/rules/nocommaoperator/` already existed and its
+`EslintCompatibility` harness passed; this commit added the import +
+buildRules entry in `cli.go` (between `noclassassign` and
+`nocomparenegzero`), the `CategoryComplexity` Metadata in `registry.go`
+(between `no-class-assign` and `no-compare-neg-zero`), and the snapshot
+line in `registry_test.go`. Closes #166.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/nocommaoperator/`
+all green. Re-survey of unwired packages shows 16+ more wiring-only
+candidates in the complexity milestone alone (e.g. noexcessivelinesperfunction
+#170, noexcessivenestedtestsuites #171, norestrictedtypes #177,
+nothisinstatic #179, nouselesstypeconstraint #204, novoid #207,
+usearrowfunction #214, usedatenow #215, useflatmap #216, useindexof #217,
+useliteralkeys #218, usemaxparams #219, usenumericliterals #220,
+usesimplenumberkeys #223, usesimplifiedlogicexpression #224)._
+
 _2026-05-17: Loop landed `feat(rules): wire use-while (complexity)`.
 Package `internal/rules/usewhile/` already existed (rule ID `use-while`)
 and its `EslintCompatibility` harness passed; this commit added the

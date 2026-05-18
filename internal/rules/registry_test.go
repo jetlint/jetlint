@@ -203,6 +203,7 @@ func additionalRulesSnapshot() []string {
 		"no-blank-target",
 		"no-children-prop",
 		"no-class-assign",
+		"no-comma-operator",
 		"no-compare-neg-zero",
 		"no-cond-assign",
 		"no-confusing-void-expression",
