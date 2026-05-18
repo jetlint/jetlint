@@ -194,7 +194,7 @@ tests pass):_
 - _#483 no-non-null-asserted-optional-chain → `nononnullassertedoptionalchain` (LANDED 2026-05-17)_
 - _#484 no-octal-escape → `nooctalescape` (LANDED 2026-05-17)_
 - _#486 no-react-forward-ref → `noreactforwardref` (LANDED 2026-05-17)_
-- _#487 no-react-specific-props → `noreactspecificprops`_
+- _#487 no-react-specific-props → `noreactspecificprops` (LANDED 2026-05-17)_
 - _#490 no-shadow-restricted-names → `noshadowrestrictednames` (LANDED 2026-05-17, commit `62791e66`)_
 - _#491 no-skipped-tests → `noskippedtests` (LANDED 2026-05-17, commit `cce0597b`)_
 - _#493 no-suspicious-semicolon-in-jsx → `nosuspicioussemicoloninjsx` (LANDED 2026-05-17, commit `b169cb9d`)_

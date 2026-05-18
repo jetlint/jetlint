@@ -281,6 +281,7 @@ func additionalRulesSnapshot() []string {
 		"no-prototype-builtins",
 		"no-react-forward-ref",
 		"no-react-prop-assignments",
+		"no-react-specific-props",
 		"no-redundant-type-constituents",
 		"no-secrets",
 		"no-self-assign",
