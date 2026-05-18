@@ -269,6 +269,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/useariapropssupportedbyrole"
 	"github.com/jetlint/jetlint/internal/rules/usebuttontype"
 	"github.com/jetlint/jetlint/internal/rules/usefocusableinteractive"
+	"github.com/jetlint/jetlint/internal/rules/usegooglefontdisplay"
 	"github.com/jetlint/jetlint/internal/rules/useheadingcontent"
 	"github.com/jetlint/jetlint/internal/rules/usehtmllang"
 	"github.com/jetlint/jetlint/internal/rules/useiframetitle"
@@ -936,6 +937,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		useariapropssupportedbyrole.New(),
 		usebuttontype.New(),
 		usefocusableinteractive.New(),
+		usegooglefontdisplay.New(),
 		useheadingcontent.New(),
 		usehtmllang.New(),
 		useiframetitle.New(),

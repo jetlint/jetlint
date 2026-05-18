@@ -168,6 +168,16 @@ buildRules entry in `cli.go` (between `unboundmethod` and
 #515. `go test ./internal/rules/ ./internal/cli/
 ./internal/rules/useawait/` all green._
 
+_2026-05-17: Loop landed `feat(rules): wire use-google-font-display
+(suspicious)`. Package `internal/rules/usegooglefontdisplay/` already
+existed and its `EslintCompatibility` harness passed; this commit added
+the import + buildRules entry in `cli.go` (between
+`usefocusableinteractive` and `useheadingcontent`), the
+`CategorySuspicious` Metadata in `registry.go`, and the snapshot line
+in `registry_test.go`. Closes #517.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/usegooglefontdisplay/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-array-index-key
 (suspicious)` (commit `9c536c4f`, change `rrllysov`). Package
 `internal/rules/noarrayindexkey/` already existed and its
@@ -224,7 +234,8 @@ tests pass):_
 - _#505 no-var → `novar` (LANDED 2026-05-17, commit `8f23a0be`)_
 - _#515 use-await → `useawait` (LANDED 2026-05-17)_
 - _#516 use-error-message → `useerrormessage` (LANDED 2026-05-17)_
-- _#517/#519/#520/#521 use-google-font-display/-number-to-fixed-digits-argument/-static-response-methods/-strict-mode_
+- _#517 use-google-font-display → `usegooglefontdisplay` (LANDED 2026-05-17)_
+- _#519/#520/#521 use-number-to-fixed-digits-argument/-static-response-methods/-strict-mode_
 - _Plus 30+ open in milestones #5 (complexity) and #6 (style)._
 
 _Future loops should clear this wiring-only queue before tackling

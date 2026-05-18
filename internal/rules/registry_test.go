@@ -438,6 +438,7 @@ func additionalRulesSnapshot() []string {
 		"use-aria-props-supported-by-role",
 		"use-button-type",
 		"use-focusable-interactive",
+		"use-google-font-display",
 		"use-heading-content",
 		"use-html-lang",
 		"use-iframe-title",
