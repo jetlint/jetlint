@@ -452,5 +452,6 @@ func additionalRulesSnapshot() []string {
 		"use-valid-aria-values",
 		"use-valid-autocomplete",
 		"use-valid-lang",
+		"no-adjacent-spaces-in-regex",
 	}
 }

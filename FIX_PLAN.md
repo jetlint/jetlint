@@ -178,6 +178,24 @@ in `registry_test.go`. Closes #517.
 `go test ./internal/rules/ ./internal/cli/ ./internal/rules/usegooglefontdisplay/`
 all green._
 
+_2026-05-17: Loop landed `feat(rules): wire no-adjacent-spaces-in-regex
+(complexity)`. Package `internal/rules/noadjacentspacesinregex/` already
+existed and its `EslintCompatibility` harness passed; this commit added
+the import + buildRules entry in `cli.go` (between `namingconvention`
+and `noalert`), the `CategoryComplexity` Metadata in `registry.go`
+(after `prefer-return-this-type`), and the snapshot line in
+`registry_test.go`. Closes #164.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/noadjacentspacesinregex/`
+all green. First wiring sweep into the complexity milestone; ~13 more
+unwired candidates confirmed (noarguments, noemptytypeparameters,
+noextrabooleancast, noflatmapidentity, noforeach, nostaticonlyclass,
+nouselesscatch, nouselesscontinue, nouselesslabel, nouselessrename,
+nouselessundefinedinitialization, nouselessstringraw,
+nouselessstringconcat, nouselessternary, nouselessswitchcase,
+nouselessemptyexport, nouselesscatchbinding) plus
+noapproximativenumericconstant, noassigninexpressions, noconfusinglabels
+in suspicious. Each pattern: 3 file edits + 1 test run._
+
 _2026-05-17: Loop landed `feat(rules): wire no-array-index-key
 (suspicious)` (commit `9c536c4f`, change `rrllysov`). Package
 `internal/rules/noarrayindexkey/` already existed and its

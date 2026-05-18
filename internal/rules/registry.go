@@ -302,6 +302,7 @@ var All = []Metadata{
 	{ID: "prefer-optional-chain", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "prefer-reduce-type-parameter", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "prefer-return-this-type", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-adjacent-spaces-in-regex", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 
 	// style — formatting, naming, ordering. Pure preference.
 	{ID: "consistent-type-exports", Category: CategoryStyle, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
