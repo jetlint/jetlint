@@ -447,6 +447,7 @@ func additionalRulesSnapshot() []string {
 		"use-key-with-mouse-events",
 		"use-media-caption",
 		"use-semantic-elements",
+		"use-static-response-methods",
 		"use-valid-anchor",
 		"use-valid-aria-props",
 		"use-valid-aria-role",

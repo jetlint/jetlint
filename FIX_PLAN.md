@@ -22,6 +22,18 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire use-static-response-methods
+(suspicious)`. Package `internal/rules/usestaticresponsemethods/`
+already existed and its `EslintCompatibility` harness passed; this
+commit added the import + buildRules entry in `cli.go` (alphabetically
+between `usesinglejsdocasterisk` and `useuniqueelementids`), the
+`CategorySuspicious` Metadata in `registry.go` (between
+`use-semantic-elements` and `use-valid-anchor`), and the snapshot line
+in `registry_test.go`. Closes #520.
+`go test ./internal/cli/ ./internal/rules/ ./internal/rules/usestaticresponsemethods/`
+all green. One more wiring-only candidate from the original trio
+remains: #521 use-strict-mode (`usestrictmode`)._
+
 _2026-05-17: Loop landed `feat(rules): wire use-number-to-fixed-digits-argument
 (suspicious)`. Package `internal/rules/usenumbertofixeddigitsargument/`
 already existed and its compatibility harness passed; this commit added
@@ -287,7 +299,8 @@ tests pass):_
 - _#516 use-error-message → `useerrormessage` (LANDED 2026-05-17)_
 - _#517 use-google-font-display → `usegooglefontdisplay` (LANDED 2026-05-17)_
 - _#519 use-number-to-fixed-digits-argument → `usenumbertofixeddigitsargument` (LANDED 2026-05-17)_
-- _#520/#521 use-static-response-methods/-strict-mode_
+- _#520 use-static-response-methods → `usestaticresponsemethods` (LANDED 2026-05-17)_
+- _#521 use-strict-mode → `usestrictmode`_
 - _Plus 30+ open in milestones #5 (complexity) and #6 (style)._
 
 _Future loops should clear this wiring-only queue before tackling

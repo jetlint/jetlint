@@ -244,6 +244,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/useqwikvalidlexicalscope"
 	"github.com/jetlint/jetlint/internal/rules/useselfclosingelements"
 	"github.com/jetlint/jetlint/internal/rules/usesinglejsdocasterisk"
+	"github.com/jetlint/jetlint/internal/rules/usestaticresponsemethods"
 	"github.com/jetlint/jetlint/internal/rules/useuniqueelementids"
 	"github.com/jetlint/jetlint/internal/rules/useunknownincatchcallbackvariable"
 	"github.com/jetlint/jetlint/internal/rules/useyield"
@@ -916,6 +917,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		useqwikvalidlexicalscope.New(),
 		useselfclosingelements.New(),
 		usesinglejsdocasterisk.New(),
+		usestaticresponsemethods.New(),
 		useuniqueelementids.New(),
 		useunknownincatchcallbackvariable.New(),
 		useyield.New(),

@@ -352,6 +352,7 @@ var All = []Metadata{
 	{ID: "use-key-with-mouse-events", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-media-caption", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-semantic-elements", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-static-response-methods", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-valid-anchor", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-valid-aria-props", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-valid-aria-role", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
