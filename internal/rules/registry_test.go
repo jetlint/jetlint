@@ -366,6 +366,7 @@ func additionalRulesSnapshot() []string {
 		"no-duplicate-test-hooks",
 		"no-head-import-in-document",
 		"no-useless-default-assignment",
+		"no-useless-label",
 		"non-nullable-type-assertion-style",
 		"only-throw-error",
 		"prefer-destructuring",

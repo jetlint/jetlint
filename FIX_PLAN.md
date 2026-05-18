@@ -22,6 +22,16 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-useless-label (complexity)`.
+Package `internal/rules/nouselesslabel/` already existed and its
+`EslintCompatibility` harness passed; this commit added the import +
+buildRules entry in `cli.go` (between `nouselessescapeinstring` and
+`novar`), the `CategoryComplexity` Metadata in `registry.go` (between
+`no-useless-escape-in-string` and `non-nullable-type-assertion-style`),
+and the snapshot line in `registry_test.go`. Closes #196.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/nouselesslabel/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-static-only-class
 (complexity)`. Package `internal/rules/nostaticonlyclass/` already
 existed and its `EslintCompatibility` harness passed; this commit added
@@ -678,7 +688,7 @@ _Landed 2026-05-17 in this batch:_
 
 Remaining wiring-only candidates from the 2026-05-17 sweep (packages exist,
 EslintCompatibility/BiomeCompatibility passes — verify each before wiring):
-nouselesslabel, nouselessrename,
+nouselessrename,
 nouselessundefinedinitialization, nouselessstringraw, nouselessstringconcat,
 nouselessternary, nouselessswitchcase, nouselessemptyexport,
 nouselesscatchbinding.
