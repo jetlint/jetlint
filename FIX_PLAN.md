@@ -22,6 +22,18 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-useless-undefined-initialization
+(complexity)`. Package `internal/rules/nouselessundefinedinitialization/`
+already existed (rule ID `no-useless-undefined-initialization`) and its
+`EslintCompatibility` harness passed; this commit added the import +
+buildRules entry in `cli.go` (between `nouselessrename` and `novar` for
+the import, after `nouselessrename.New()` in buildRules), the
+`CategoryComplexity` Metadata in `registry.go` (between `no-useless-rename`
+and `non-nullable-type-assertion-style`), and the snapshot line in
+`registry_test.go`. Closes #206.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/nouselessundefinedinitialization/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-useless-rename (complexity)`.
 Package `internal/rules/nouselessrename/` already existed and its
 `EslintCompatibility` harness passed; this commit added the import +
@@ -697,7 +709,7 @@ _Landed 2026-05-17 in this batch:_
 
 Remaining wiring-only candidates from the 2026-05-17 sweep (packages exist,
 EslintCompatibility/BiomeCompatibility passes — verify each before wiring):
-nouselessundefinedinitialization, nouselessstringraw, nouselessstringconcat,
+nouselessstringraw, nouselessstringconcat,
 nouselessternary, nouselessswitchcase, nouselessemptyexport,
 nouselesscatchbinding.
 
