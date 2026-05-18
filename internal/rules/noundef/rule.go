@@ -134,6 +134,25 @@ func isScopeIntroducer(n *wrapperchecker.Node) bool {
 	return false
 }
 
+// declarationNameMatches reports whether decl's declaration-name node
+// is a simple identifier whose text equals name. Destructuring
+// declarations bind via BindingPattern nodes whose Text() panics in
+// the upstream AST helper; those patterns expose their bound
+// identifiers via inner BindingElement nodes that this scope walk
+// visits separately, so treating a non-identifier name as "no match"
+// is correct and panic-free (jetlint#625).
+func declarationNameMatches(decl *wrapperchecker.Node, name string) bool {
+	nm := decl.DeclarationName()
+	if nm == nil {
+		return false
+	}
+	switch nm.Kind() {
+	case wrapperchecker.KindIdentifier, wrapperchecker.KindPrivateIdentifier:
+		return nm.LiteralText() == name
+	}
+	return false
+}
+
 func scopeHasSiblingBinding(scope, skip *wrapperchecker.Node, name string) bool {
 	found := false
 	scope.ForEachChild(func(c *wrapperchecker.Node) bool {
@@ -145,7 +164,7 @@ func scopeHasSiblingBinding(scope, skip *wrapperchecker.Node, name string) bool 
 			if list := c.VariableStatementDeclarationList(); list != nil {
 				list.ForEachChild(func(decl *wrapperchecker.Node) bool {
 					if decl.Kind() == wrapperchecker.KindVariableDeclaration {
-						if nm := decl.DeclarationName(); nm != nil && nm.LiteralText() == name {
+						if declarationNameMatches(decl, name) {
 							found = true
 						}
 					}
@@ -155,7 +174,7 @@ func scopeHasSiblingBinding(scope, skip *wrapperchecker.Node, name string) bool 
 		case wrapperchecker.KindFunctionDeclaration,
 			wrapperchecker.KindClassDeclaration,
 			wrapperchecker.KindParameter:
-			if nm := c.DeclarationName(); nm != nil && nm.LiteralText() == name {
+			if declarationNameMatches(c, name) {
 				found = true
 			}
 		}
