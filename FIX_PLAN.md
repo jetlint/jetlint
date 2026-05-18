@@ -6,7 +6,7 @@ Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
 | Milestone | Open | Close-ready (impl exists) | Still missing |
 |---|---:|---:|---:|
-| #2 suspicious | 6 (open) | — | — |
+| #2 suspicious | 5 (open) | — | — |
 | #5 complexity | 45 | 35 | 10 |
 | #6 style | 69 | 53 | 16 |
 | #7 a11y | 33 | 33 | 0 (wiring + closure only) |
@@ -21,6 +21,35 @@ registry suite passes. What remains is bulk issue closure once PR #619
 merges.
 
 ## Active work / blockers
+
+_2026-05-17: Loop landed `feat(rules): implement no-redundant-use-strict
+(suspicious)`. Closes #512. New package
+`internal/rules/noredundantusestrict/` plus hand-written fixture
+`testdata/eslint/no-redundant-use-strict.json` (15 cases distilled from
+biome's `noRedundantUseStrict` fixtures: commonJsValid.js, invalid.js,
+invalid.cjs, invalid.ts, invalidClass.cjs, invalidFunction.{cjs,js},
+invalid-with-trivia.js, valid.cjs, validReactDirectives.tsx). The rule
+hooks `KindExpressionStatement` and flags `"use strict"` directives in
+a prologue container (SourceFile, ModuleBlock, or function-body Block)
+when either (a) the container's scope is already strict — module
+sourcefile, namespace body, class wrapping the function, or an
+enclosing function/script with `"use strict"` in its own prologue —
+or (b) an earlier `"use strict"` already appears in the same prologue.
+Other directive strings like `'use client'` / `'use server'` are
+ignored. Hand-written fixture because the biome extractor doesn't
+handle the per-variant filenames in this rule directory. Wired into
+`cli.go` between `noredundanttypeconstituents` and `noselfassign`,
+registered as `CategorySuspicious` in `registry.go`, and added to
+`additionalRulesSnapshot()` in `registry_test.go`. **Bug found and
+fixed during implementation:** initial draft compared
+`*wrapperchecker.Node` pointers directly inside `ForEachChild` to
+find target's position; the wrapper allocates a fresh `&Node{}` per
+visit, so the comparison never matched. Fixed by comparing `c.Inner()
+== target.Inner()` — same fix pattern as
+`noconfusingvoidtype/rule.go:66`. Documenting here so future loops
+hitting the same trap recognise it quickly. `go test ./internal/cli/
+./internal/rules/ ./internal/rules/noredundantusestrict/` all green
+and `go test -short ./...` clean._
 
 _2026-05-17: Loop landed `feat(rules): implement no-exports-in-test
 (suspicious)`. New package `internal/rules/noexportsintest/` plus
@@ -759,38 +788,29 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 6 remaining (after #464 implemented this loop)
+### #2 suspicious — 5 remaining (after #512 implemented this loop)
 
 Per `gh issue list --milestone 2 --state open` (2026-05-17 after this
-loop): 6 open issues total. Per the release-driving prompt, NONE are
+loop): 5 open issues total. Per the release-driving prompt, NONE are
 deferred — milestone #2 ships at 100% before release. Remaining queue,
 roughly easiest → hardest:
 
-1. #512 `strict` — biome alias `no-redundant-use-strict`. Pure-AST.
-   Flags redundant `"use strict"` directives (ES modules, classes,
-   nested strict contexts). Biome fixtures at
-   `crates/biome_js_analyze/tests/specs/suspicious/noRedundantUseStrict/`
-   (invalid.js, invalid.cjs, invalid.ts, invalidClass.cjs,
-   invalidFunction.{cjs,js}, invalid-with-trivia.js, valid.cjs,
-   commonJsValid.js, validReactDirectives.tsx). Need to hand-write
-   fixture since `biome-fixtures` won't capture the variant filenames
-   directly.
-2. #497 no-unassigned-variables — biome rule. `let`/`var` declarations
+1. #497 no-unassigned-variables — biome rule. `let`/`var` declarations
    without an initializer that are never assigned later in scope.
    Needs scope-tracking lite (per-scope binding write-set).
-3. #504 no-useless-regex-backrefs — biome rule. Backreferences inside
+2. #504 no-useless-regex-backrefs — biome rule. Backreferences inside
    a regex literal that can never match. Needs full JS regex AST
    parser (group accounting + lookaround direction rules + named
    groups + ES2024/2025 character class set notation). Fixture file
    already at `testdata/eslint/no-useless-regex-backrefs.json`. The
    previous "land no-useless-regex-backrefs" commit was mislabeled
    and shipped no rule code — see earlier loop note.
-4. #488 no-redeclare — needs full scope/binding analysis (per-scope
+3. #488 no-redeclare — needs full scope/binding analysis (per-scope
    binding namespaces with type-vs-value distinction, function-scope
    vs block-scope hoisting, TS interface/type-alias merging).
-5. #475 no-import-cycles — needs module-graph plumbing (per-program
+4. #475 no-import-cycles — needs module-graph plumbing (per-program
    import-edge tracker + cycle detection over the import graph).
-6. #448 no-deprecated-imports — type-aware. Already have JSDoc
+5. #448 no-deprecated-imports — type-aware. Already have JSDoc
    `@deprecated` detection logic in `nodeprecated`; this rule
    surfaces those at import sites instead of use sites.
 

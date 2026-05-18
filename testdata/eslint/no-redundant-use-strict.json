@@ -1,0 +1,67 @@
+{
+  "rule": "no-redundant-use-strict",
+  "source": "hand-written from biome noRedundantUseStrict fixtures",
+  "biomeSHA": "n/a",
+  "cases": [
+    {
+      "code": "\"use strict\";\nconst x = 1;\n",
+      "valid": true
+    },
+    {
+      "code": "function foo() {\n  \"use strict\";\n  return 1;\n}\nfunction bar() {\n  \"use strict\";\n  return 2;\n}\n",
+      "valid": true
+    },
+    {
+      "code": "\"use client\";\nexport const X = 1;\n",
+      "valid": true
+    },
+    {
+      "code": "\"use server\";\nconst x = 1;\n",
+      "valid": true
+    },
+    {
+      "code": "/* should not generate diagnostics */\n\"use strict\";\nconst a = require(\"a\");\n",
+      "valid": true
+    },
+    {
+      "code": "\"use strict\";\nexport const x = 1;\n",
+      "valid": false
+    },
+    {
+      "code": "\"use strict\";\n\"use strict\";\nconst x = 1;\n",
+      "valid": false
+    },
+    {
+      "code": "function test() {\n  \"use strict\";\n  \"use strict\";\n}\n",
+      "valid": false
+    },
+    {
+      "code": "\"use strict\";\nfunction test() {\n  \"use strict\";\n}\n",
+      "valid": false
+    },
+    {
+      "code": "function outer() {\n  \"use strict\";\n  function inner() {\n    \"use strict\";\n  }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "class C {\n  test() {\n    \"use strict\";\n  }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "const C = class {\n  test() {\n    \"use strict\";\n  }\n};\n",
+      "valid": false
+    },
+    {
+      "code": "export class C {\n  test() {\n    \"use strict\";\n  }\n}\n",
+      "valid": false
+    },
+    {
+      "code": "export function test(): void {\n  \"use strict\";\n}\n",
+      "valid": false
+    },
+    {
+      "code": "/// <reference types=\"node\" />\n// comment\n\"use strict\";\nexport let foo = \"foo\";\n",
+      "valid": false
+    }
+  ]
+}

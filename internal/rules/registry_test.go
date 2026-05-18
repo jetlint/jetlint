@@ -290,6 +290,7 @@ func additionalRulesSnapshot() []string {
 		"no-react-prop-assignments",
 		"no-react-specific-props",
 		"no-redundant-type-constituents",
+		"no-redundant-use-strict",
 		"no-secrets",
 		"no-self-assign",
 		"no-self-compare",

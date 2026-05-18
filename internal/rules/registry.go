@@ -198,6 +198,7 @@ var All = []Metadata{
 	{ID: "no-misrefactored-shorthand-assign", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-react-forward-ref", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-react-specific-props", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-redundant-use-strict", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-nonoctal-decimal-escape", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-misused-new", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "adjacent-overload-signatures", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},

@@ -146,6 +146,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noreactpropassignments"
 	"github.com/jetlint/jetlint/internal/rules/noreactspecificprops"
 	"github.com/jetlint/jetlint/internal/rules/noredundanttypeconstituents"
+	"github.com/jetlint/jetlint/internal/rules/noredundantusestrict"
 	"github.com/jetlint/jetlint/internal/rules/norenderreturnvalue"
 	"github.com/jetlint/jetlint/internal/rules/norestrictedelements"
 	"github.com/jetlint/jetlint/internal/rules/noselfassign"
@@ -868,6 +869,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nooctalescape.New(),
 		nonnullabletypeassertionstyle.New(),
 		noredundanttypeconstituents.New(),
+		noredundantusestrict.New(),
 		noselfassign.New(),
 		noselfcompare.New(),
 		nosoliddestructuredprops.New(),
