@@ -1,6 +1,23 @@
 # FIX_PLAN.md — running plan for the suspicious/complexity/style/a11y batch
 
-Working bookmark: `feat/big-batch`. PR: opened against `main`.
+Working bookmark: `feat/big-batch`. PR: #619 against `main`.
+
+## RELEASE STATUS — milestone #2 (suspicious) complete
+
+**2026-05-18:** Milestone #2 suspicious is **100% shipped** — 0 open
+issues, 97 closed (`gh issue list --repo jetlint/jetlint --milestone 2
+--state open` returns `[]`). PR #619 is `MERGEABLE`; the only blocker
+to release-merge is CI on `build-and-test` (currently pending on run
+26014688792). When CI turns green, run:
+
+```
+gh pr checks 619 --repo jetlint/jetlint
+gh pr merge 619 --repo jetlint/jetlint --squash --delete-branch
+```
+
+(fall back to `--merge`/`--rebase` if branch protection blocks squash).
+Complexity, style, and a11y are explicitly out of scope for this
+release; their queues below are tracked for the next batch.
 
 Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
