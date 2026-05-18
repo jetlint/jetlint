@@ -40,6 +40,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/namingconvention"
 	"github.com/jetlint/jetlint/internal/rules/noadjacentspacesinregex"
 	"github.com/jetlint/jetlint/internal/rules/noalert"
+	"github.com/jetlint/jetlint/internal/rules/noarguments"
 	"github.com/jetlint/jetlint/internal/rules/noarrayindexkey"
 	"github.com/jetlint/jetlint/internal/rules/noarraydelete"
 	"github.com/jetlint/jetlint/internal/rules/noasyncpromiseexecutor"
@@ -716,6 +717,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		namingconvention.New(),
 		noadjacentspacesinregex.New(),
 		noalert.New(),
+		noarguments.New(),
 		noarrayindexkey.New(),
 		noarraydelete.New(),
 		noasyncpromiseexecutor.New(),

@@ -189,6 +189,16 @@ buildRules entry in `cli.go` (between `nouselessbackreference` and
 `go test ./internal/rules/ ./internal/cli/ ./internal/rules/nouselesscatch/`
 all green._
 
+_2026-05-17: Loop landed `feat(rules): wire no-arguments (complexity)`.
+Package `internal/rules/noarguments/` already existed and its
+`EslintCompatibility` harness passed; this commit added the import +
+buildRules entry in `cli.go` (between `noalert` and `noarrayindexkey`),
+the `CategoryComplexity` Metadata in `registry.go` (after
+`no-adjacent-spaces-in-regex`), and the snapshot line in
+`registry_test.go`. Closes #165.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/noarguments/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-adjacent-spaces-in-regex
 (complexity)`. Package `internal/rules/noadjacentspacesinregex/` already
 existed and its `EslintCompatibility` harness passed; this commit added
@@ -531,7 +541,7 @@ _Landed 2026-05-17 in this batch:_
   `TypeParameterDefaultType()`). UnionType is left unflagged so
   `void | Promise<void>` doesn't false-positive.
 
-### #5 complexity — 10 remaining
+### #5 complexity — 9 remaining (after #165 wired this loop)
 
 1. #194 no-useless-escape
 2. #190 no-useless-constructor

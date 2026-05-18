@@ -454,5 +454,6 @@ func additionalRulesSnapshot() []string {
 		"use-valid-lang",
 		"no-adjacent-spaces-in-regex",
 		"no-useless-catch",
+		"no-arguments",
 	}
 }
