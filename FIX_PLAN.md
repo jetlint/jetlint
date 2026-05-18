@@ -199,7 +199,7 @@ tests pass):_
 - _#495 no-then-property → `nothenproperty` (LANDED 2026-05-17, commit `d0e09a1d`)_
 - _#496 no-ts-ignore → `notsignore` (LANDED 2026-05-17, commit `32b53eb5`)_
 - _#499 no-unsafe-declaration-merging → `nounsafedeclarationmerging` (LANDED 2026-05-17, commit `b4f64e76`)_
-- _#503 no-useless-escape-in-string → `nouselessescapeinstring`_
+- _#503 no-useless-escape-in-string → `nouselessescapeinstring` (LANDED 2026-05-17, commit `f67f53df`)_
 - _#505 no-var → `novar` (LANDED 2026-05-17, commit `8f23a0be`)_
 - _#515/#516/#517/#519/#520/#521 use-await/-error-message/-google-font-display/-number-to-fixed-digits-argument/-static-response-methods/-strict-mode_
 - _Plus 30+ open in milestones #5 (complexity) and #6 (style)._
