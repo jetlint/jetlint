@@ -2,22 +2,21 @@
 
 Working bookmark: `feat/big-batch`. PR: #619 against `main`.
 
-## RELEASE STATUS — milestone #2 (suspicious) complete
+## RELEASE STATUS — milestone #2 (suspicious) RELEASED ✅
 
-**2026-05-18:** Milestone #2 suspicious is **100% shipped** — 0 open
-issues, 97 closed (`gh issue list --repo jetlint/jetlint --milestone 2
---state open` returns `[]`). PR #619 is `MERGEABLE`; the only blocker
-to release-merge is CI on `build-and-test` (currently pending on run
-26014688792). When CI turns green, run:
+**2026-05-18:** Milestone #2 suspicious is **released**. PR #619
+(`feat(rules): suspicious + complexity + style + a11y batch`) merged
+into `main` at 2026-05-18T05:24:12Z as merge commit
+[`f2f5c7c63c2304bca3cbfa31c8266239276cf9d2`](https://github.com/jetlint/jetlint/commit/f2f5c7c63c2304bca3cbfa31c8266239276cf9d2)
+(short `f2f5c7c63c23`). `build-and-test` CI passed (6m15s, run
+26014900920). Milestone snapshot:
 
-```
-gh pr checks 619 --repo jetlint/jetlint
-gh pr merge 619 --repo jetlint/jetlint --squash --delete-branch
-```
+- `gh issue list --repo jetlint/jetlint --milestone 2 --state open` → `[]`
+- `gh issue list --repo jetlint/jetlint --milestone 2 --state closed` → 97 issues
+- `gh pr view 619 --repo jetlint/jetlint` → `state: MERGED`
 
-(fall back to `--merge`/`--rebase` if branch protection blocks squash).
-Complexity, style, and a11y are explicitly out of scope for this
-release; their queues below are tracked for the next batch.
+Complexity (#5), style (#6), and a11y (#7) are explicitly out of scope
+for this release; their queues below are tracked for the next batch.
 
 Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
@@ -56,8 +55,10 @@ registered in `internal/rules/registry.go` (`CategoryA11y` constant + 36
 `Metadata` entries), listed in `additionalRulesSnapshot()` in
 `registry_test.go`, and wired into `buildRules` in `internal/cli/cli.go`
 so `.jetlintrc.json` can opt them in. The `go test ./internal/rules/`
-registry suite passes. What remains is bulk issue closure once PR #619
-merges.
+registry suite passes. With PR #619 now merged
+(`f2f5c7c63c23`), what remains is bulk issue closure on the open
+a11y/complexity/style issues — out of scope for the suspicious
+release but ready for the next batch.
 
 ## Active work / blockers
 
