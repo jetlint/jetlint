@@ -165,6 +165,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nothenproperty"
 	"github.com/jetlint/jetlint/internal/rules/nothisbeforesuper"
 	"github.com/jetlint/jetlint/internal/rules/notsignore"
+	"github.com/jetlint/jetlint/internal/rules/noimportcycles"
 	"github.com/jetlint/jetlint/internal/rules/noredeclare"
 	"github.com/jetlint/jetlint/internal/rules/notypeonlyimportattributes"
 	"github.com/jetlint/jetlint/internal/rules/nounassignedvariables"
@@ -701,6 +702,10 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 	if err != nil {
 		return nil, toolerr.New(toolerr.CodeConfigInvalid, err.Error())
 	}
+	nicOpts, err := noimportcycles.OptionsFromJSON(ruleOptions["no-import-cycles"])
+	if err != nil {
+		return nil, toolerr.New(toolerr.CodeConfigInvalid, err.Error())
+	}
 	rejectIfOptionsPresent := func(ruleID string) *toolerr.Error {
 		if len(ruleOptions[ruleID]) == 0 {
 			return nil
@@ -829,6 +834,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		notypeonlyimportattributes.New(),
 		nounassignedvariables.New(),
 		noredeclare.New(),
+		noimportcycles.NewWithOptions(nicOpts),
 		noundeclareddependencies.New(),
 		novuedataobjectdeclaration.New(),
 		novueduplicatekeys.New(),

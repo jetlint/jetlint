@@ -486,5 +486,6 @@ func additionalRulesSnapshot() []string {
 		"no-unassigned-variables",
 		"no-useless-regex-backrefs",
 		"no-redeclare",
+		"no-import-cycles",
 	}
 }

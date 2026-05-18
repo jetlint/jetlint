@@ -261,6 +261,7 @@ var All = []Metadata{
 	{ID: "no-confusing-void-expression", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-deprecated", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-deprecated-imports", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-import-cycles", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-redeclare", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unassigned-variables", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unsafe-type-assertion", Category: CategorySuspicious, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},

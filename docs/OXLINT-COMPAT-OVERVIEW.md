@@ -73,9 +73,17 @@ on 100%; the score is a baseline that improves as rules sharpen.
 | no-unassigned-variables (biome) | 4/4 (100%) |
 | no-useless-regex-backrefs (biome) | 3/3 (100%) |
 | no-redeclare (biome) | 51/51 (100%) |
+| no-import-cycles (biome) | 8/8 (100%) |
 
-**Aggregate: 876/876 cases pass (100%)** across all option
-combinations the upstream fixtures exercise.
+**Aggregate: 884/884 cases pass (100%)** across all option
+combinations the upstream fixtures exercise. The `no-import-cycles`
+row reflects a directory-layout fixture under
+`testdata/biome/no-import-cycles/` rather than a flat `<rule>.json`,
+because the rule is multi-file by nature: each case is one source
+file inside a shared in-program directory and its expected diagnostic
+count depends on the import edges that exist between siblings. The
+harness mirrors biome's `<stem>.options.json` mechanic by running
+the engine per file with the right `Options` value.
 
 The `no-useless-regex-backrefs` row covers the biome variant of
 `internal/rules/nouselessbackreference/`, which exposes a second
@@ -87,8 +95,9 @@ keeps the broader "non-existent group" check expected by
 `testdata/eslint/no-useless-backreference.json` and the rule's
 unit tests.
 
-The five rules with options (\`valid-typeof\`, \`use-isnan\`,
-\`no-self-assign\`, \`no-empty\`, \`no-unused-expressions\`) expose the standard \`Options\` /
+The six rules with options (\`valid-typeof\`, \`use-isnan\`,
+\`no-self-assign\`, \`no-empty\`, \`no-unused-expressions\`,
+\`no-import-cycles\`) expose the standard \`Options\` /
 \`DefaultOptions\` / \`OptionsFromJSON\` / \`NewWithOptions\` surface
 so user-supplied config in \`.jetlintrc.json\` is plumbed through.
 

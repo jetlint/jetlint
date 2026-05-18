@@ -6,10 +6,32 @@ Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
 | Milestone | Open | Close-ready (impl exists) | Still missing |
 |---|---:|---:|---:|
-| #2 suspicious | 1 (open) | — | — |
+| #2 suspicious | 0 ✅ | — | — |
 | #5 complexity | 45 | 35 | 10 |
 | #6 style | 69 | 53 | 16 |
 | #7 a11y | 33 | 33 | 0 (wiring + closure only) |
+
+**Suspicious milestone #2 implementation 100% (2026-05-18).** The final
+rule, `no-import-cycles` (#475), landed this loop. Implementation lives
+in `internal/rules/noimportcycles/`; fixtures vendored from biome into
+`testdata/biome/no-import-cycles/`; biome-style harness loads the
+directory as one TS program and asserts diagnostic counts per file
+(8/8, 100%). The rule walks every import/side-effecting export, skips
+`import type` and `export type` declarations when `ignoreTypes: true`
+(default, matching biome), resolves relative specifiers across the
+program's `SourceFiles()` with bundler-style extension fixups
+(`./x.js` → `x.ts`), and DFS-traverses the import graph asking "does
+the target reach back to me?" Self-imports (`A → A`) are not flagged,
+matching biome's behaviour on `valid.js`. Type-only edges are stripped
+from the graph too — biome's `ignoreTypes/{a,b,c}.ts` case forms a
+cycle only through `import type` chains plus one non-type edge from
+`c.ts` → `a.ts` that does not close on its own, and our rule correctly
+reports zero diagnostics. Per-file options support mirrors biome's
+`<stem>.options.json` mechanic via the harness running the engine once
+per case with a freshly-constructed rule. No wrapper changes were
+needed: `IsTypeOnlyImport` is detected syntactically from the import
+statement's leading source text, mirroring how `IsTypeOnlyExport` is
+exposed but avoiding a typescript-go release bump.
 
 **a11y status (2026-05-17): implementation + wiring 100%.** All 36 a11y
 packages (16 `no-*` + 20 `use-*`, 33 open issues + 3 already landed) are
@@ -920,14 +942,25 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 1 remaining (after #488 implemented this loop)
+### #2 suspicious — 0 remaining ✅ (closed out 2026-05-18)
 
-Per `gh issue list --milestone 2 --state open` (2026-05-17 after this
-loop): 1 open issue total. Per the release-driving prompt, NONE are
-deferred — milestone #2 ships at 100% before release. Remaining:
+All suspicious issues implemented at 100% fixture compatibility.
+PR #619 carries the work; release-merge is the only remaining step.
 
-1. #475 no-import-cycles — needs module-graph plumbing (per-program
-   import-edge tracker + cycle detection over the import graph).
+_Landed 2026-05-18:_
+- #475 `no-import-cycles` — `internal/rules/noimportcycles/`, 8/8
+  biome fixture cases pass. First multi-file rule in the linter:
+  builds an in-program import graph, DFS-asks whether the import
+  target reaches back to the importer, flags only edges that close
+  a cycle of length ≥ 2 (self-imports exempt, matching biome).
+  Honours `ignoreTypes` (default true) by stripping `import type`
+  and `export type` from the graph; the harness applies per-file
+  options to honour biome's neighbouring `<stem>.options.json`
+  files. Module resolution is bundler-style with `.js` → `.ts`
+  fixups; bare specifiers are ignored (cannot close a user-space
+  cycle). Type-only check is syntactic on the import statement's
+  leading source text to avoid bumping the typescript-go fork for
+  a new `IsTypeOnlyImport` wrapper method.
 
 _Landed 2026-05-17 in this batch:_
 - #425 `adjacent-overload-signatures` —
