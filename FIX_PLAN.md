@@ -22,6 +22,17 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-useless-continue (complexity)`.
+Package `internal/rules/nouselesscontinue/` already existed and its
+`EslintCompatibility` harness passed; this commit added the import +
+buildRules entry in `cli.go` (between `nouselesscatch` and
+`nouselessdefaultassignment`), the `CategoryComplexity` Metadata in
+`registry.go` (between `no-useless-catch` and
+`no-useless-default-assignment`), and the snapshot line in
+`registry_test.go`. Closes complexity wiring-only candidate from the
+2026-05-17 sweep list. `go test ./internal/rules/ ./internal/cli/
+./internal/rules/nouselesscontinue/` all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-approximative-numeric-constant
 (suspicious)`. Package `internal/rules/noapproximativenumericconstant/`
 already existed and its `EslintCompatibility` harness passed; this commit
@@ -600,7 +611,7 @@ _Landed 2026-05-17 in this batch:_
   `TypeParameterDefaultType()`). UnionType is left unflagged so
   `void | Promise<void>` doesn't false-positive.
 
-### #5 complexity — 9 remaining (after #165 wired this loop)
+### #5 complexity — 9 remaining (after no-useless-continue wired this loop)
 
 1. #194 no-useless-escape
 2. #190 no-useless-constructor
@@ -612,6 +623,14 @@ _Landed 2026-05-17 in this batch:_
 8. #197 no-useless-lone-block-statements
 9. #195 no-useless-fragments
 10. #169 no-excessive-cognitive-complexity
+
+Remaining wiring-only candidates from the 2026-05-17 sweep (packages exist,
+EslintCompatibility/BiomeCompatibility passes — verify each before wiring):
+noemptytypeparameters, noextrabooleancast, noflatmapidentity, noforeach,
+nostaticonlyclass, nouselesslabel, nouselessrename,
+nouselessundefinedinitialization, nouselessstringraw, nouselessstringconcat,
+nouselessternary, nouselessswitchcase, nouselessemptyexport,
+nouselesscatchbinding.
 
 ### #6 style — 15 remaining (after #419 wired this loop)
 

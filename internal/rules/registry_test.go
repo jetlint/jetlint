@@ -460,5 +460,6 @@ func additionalRulesSnapshot() []string {
 		"no-adjacent-spaces-in-regex",
 		"no-useless-catch",
 		"no-arguments",
+		"no-useless-continue",
 	}
 }

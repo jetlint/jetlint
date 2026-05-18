@@ -296,6 +296,7 @@ var All = []Metadata{
 	{ID: "no-unnecessary-type-parameters", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-backreference", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-catch", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-useless-continue", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-default-assignment", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-escape-in-string", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "non-nullable-type-assertion-style", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
