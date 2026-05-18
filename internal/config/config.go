@@ -12,7 +12,9 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/bmatcuk/doublestar/v4"
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
 
 	"github.com/jetlint/jetlint/internal/rules"
@@ -39,6 +41,14 @@ type FileConfig struct {
 	// formatter renders. A pointer distinguishes "absent" (defer to
 	// parent / default) from "0" (explicit "render everything").
 	MaxDiagnostics *int `json:"maxDiagnostics,omitempty"`
+
+	// IgnorePatterns is a gitignore-flavored list of doublestar globs
+	// that select files the linter should skip emitting diagnostics
+	// for. Patterns starting with "!" un-ignore. Patterns resolve
+	// relative to the directory of the .jetlintrc.json that contains
+	// them; the cascade appends parent patterns before child patterns
+	// so a child can negate a parent rule.
+	IgnorePatterns []string `json:"ignorePatterns,omitempty"`
 }
 
 // RuleEntry is one rule's configuration: a severity plus optional
@@ -99,6 +109,46 @@ type ResolvedConfig struct {
 	// resolution, in cascade order (outermost first). Useful for "why is
 	// this rule active?" debugging in future tooling.
 	Sources []string
+	// IgnorePatterns is the cascade-resolved ignore matcher built from
+	// each .jetlintrc.json's ignorePatterns list. Files whose absolute
+	// path matches are excluded from lint emission while remaining part
+	// of the TypeScript program for type-resolution.
+	IgnorePatterns IgnoreMatcher
+}
+
+// IgnoreMatcher decides whether a file path is ignored by the resolved
+// configuration. Rules are evaluated in the order they were declared
+// (outer config first, then inner), and the last matching rule wins —
+// the same semantics .gitignore uses.
+type IgnoreMatcher struct {
+	rules []ignoreRule
+}
+
+type ignoreRule struct {
+	pattern string
+	base    string
+	negate  bool
+}
+
+// Matches reports whether absPath is currently ignored.
+func (m IgnoreMatcher) Matches(absPath string) bool {
+	ignored := false
+	for _, r := range m.rules {
+		rel, err := filepath.Rel(r.base, absPath)
+		if err != nil {
+			continue
+		}
+		if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			continue
+		}
+		rel = filepath.ToSlash(rel)
+		ok, err := doublestar.PathMatch(r.pattern, rel)
+		if err != nil || !ok {
+			continue
+		}
+		ignored = !r.negate
+	}
+	return ignored
 }
 
 // LoadFile reads and validates a single configuration file. It returns
@@ -165,12 +215,21 @@ func ResolveCascade(startDir string) (ResolvedConfig, error) {
 		RuleOptions:    map[string]json.RawMessage{},
 		MaxDiagnostics: DefaultMaxDiagnostics,
 	}
+	// rootBase anchors negation patterns. A negation declared in any
+	// config in the cascade can subtract from positive ignores higher
+	// up, so we evaluate negations relative to the outermost config's
+	// directory rather than the declaring config's own directory.
+	var rootBase string
 	for _, path := range stack {
 		cfg, err := LoadFile(path)
 		if err != nil {
 			return ResolvedConfig{}, err
 		}
-		mergeFileInto(&resolved, cfg)
+		baseDir := filepath.Dir(path)
+		if rootBase == "" {
+			rootBase = baseDir
+		}
+		mergeFileInto(&resolved, cfg, baseDir, rootBase)
 		resolved.Sources = append(resolved.Sources, path)
 	}
 	return resolved, nil
@@ -192,7 +251,7 @@ func defaultRules() map[string]wrapperlint.Severity {
 // options at the deepest level wins; mixing parent-options with
 // child-severity is not supported (the user can replicate the parent's
 // options in the child if they want both).
-func mergeFileInto(resolved *ResolvedConfig, child FileConfig) {
+func mergeFileInto(resolved *ResolvedConfig, child FileConfig, baseDir, rootBase string) {
 	for ruleID, entry := range child.Rules {
 		if entry.Severity == "off" {
 			delete(resolved.Rules, ruleID)
@@ -208,6 +267,19 @@ func mergeFileInto(resolved *ResolvedConfig, child FileConfig) {
 	}
 	if child.MaxDiagnostics != nil {
 		resolved.MaxDiagnostics = *child.MaxDiagnostics
+	}
+	for _, raw := range child.IgnorePatterns {
+		negate := strings.HasPrefix(raw, "!")
+		pat := strings.TrimPrefix(raw, "!")
+		base := baseDir
+		if negate {
+			base = rootBase
+		}
+		resolved.IgnorePatterns.rules = append(resolved.IgnorePatterns.rules, ignoreRule{
+			pattern: pat,
+			base:    base,
+			negate:  negate,
+		})
 	}
 }
 

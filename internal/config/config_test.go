@@ -302,3 +302,77 @@ func TestLoadFile_RejectsRuleEntryWithBadShape(t *testing.T) {
 		t.Errorf("expected CodeConfigInvalid tool error, got %v", err)
 	}
 }
+
+func TestResolveCascade_IgnorePatternsMatchPathsRelativeToTheConfigThatDeclaredThem(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, ".jetlintrc.json"),
+		`{"ignorePatterns": ["app/generated/**", "packages/*/lib/**/*.gen.ts"]}`)
+	got, err := config.ResolveCascade(dir)
+	if err != nil {
+		t.Fatalf("ResolveCascade: %v", err)
+	}
+	if !got.IgnorePatterns.Matches(filepath.Join(dir, "app/generated/client.ts")) {
+		t.Errorf("expected app/generated/client.ts to be ignored")
+	}
+	if !got.IgnorePatterns.Matches(filepath.Join(dir, "packages/accela-sdk/lib/api/users.gen.ts")) {
+		t.Errorf("expected packages/accela-sdk/lib/api/users.gen.ts to be ignored")
+	}
+	if got.IgnorePatterns.Matches(filepath.Join(dir, "app/components/DatePicker.tsx")) {
+		t.Errorf("expected app/components/DatePicker.tsx to NOT be ignored")
+	}
+}
+
+func TestResolveCascade_NegatedIgnorePatternUnignoresASpecificFile(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, ".jetlintrc.json"),
+		`{"ignorePatterns": ["build/**", "!build/keep.ts"]}`)
+	got, err := config.ResolveCascade(dir)
+	if err != nil {
+		t.Fatalf("ResolveCascade: %v", err)
+	}
+	if !got.IgnorePatterns.Matches(filepath.Join(dir, "build/other.ts")) {
+		t.Errorf("expected build/other.ts to be ignored")
+	}
+	if got.IgnorePatterns.Matches(filepath.Join(dir, "build/keep.ts")) {
+		t.Errorf("expected build/keep.ts to be un-ignored by the `!build/keep.ts` rule")
+	}
+}
+
+func TestResolveCascade_IgnorePatternsFromChildConfigResolveRelativeToTheChildDirectory(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, ".jetlintrc.json"),
+		`{}`)
+	writeFile(t, filepath.Join(dir, "sub", ".jetlintrc.json"),
+		`{"ignorePatterns": ["generated/**"]}`)
+	got, err := config.ResolveCascade(filepath.Join(dir, "sub"))
+	if err != nil {
+		t.Fatalf("ResolveCascade: %v", err)
+	}
+	if !got.IgnorePatterns.Matches(filepath.Join(dir, "sub/generated/x.ts")) {
+		t.Errorf("expected sub/generated/x.ts to be ignored by the child config")
+	}
+	if got.IgnorePatterns.Matches(filepath.Join(dir, "generated/x.ts")) {
+		t.Errorf("expected /generated/x.ts at the parent level to NOT match the child config's pattern")
+	}
+}
+
+func TestResolveCascade_IgnorePatternsCascadeByAppendingParentPatternsBeforeChildPatterns(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, ".jetlintrc.json"),
+		`{"ignorePatterns": ["vendored/**"]}`)
+	writeFile(t, filepath.Join(dir, "sub", ".jetlintrc.json"),
+		`{"ignorePatterns": ["!vendored/keep.ts"]}`)
+	got, err := config.ResolveCascade(filepath.Join(dir, "sub"))
+	if err != nil {
+		t.Fatalf("ResolveCascade: %v", err)
+	}
+	// Parent rule ignores everything under vendored/; child rule
+	// un-ignores one specific file. Child's negation should win because
+	// it is evaluated after the parent's positive rule.
+	if !got.IgnorePatterns.Matches(filepath.Join(dir, "vendored/auto.ts")) {
+		t.Errorf("expected vendored/auto.ts to remain ignored")
+	}
+	if got.IgnorePatterns.Matches(filepath.Join(dir, "vendored/keep.ts")) {
+		t.Errorf("expected vendored/keep.ts to be un-ignored by the child config's negation rule")
+	}
+}
