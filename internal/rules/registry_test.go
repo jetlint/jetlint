@@ -453,5 +453,6 @@ func additionalRulesSnapshot() []string {
 		"use-valid-autocomplete",
 		"use-valid-lang",
 		"no-adjacent-spaces-in-regex",
+		"no-useless-catch",
 	}
 }

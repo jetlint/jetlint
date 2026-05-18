@@ -178,6 +178,17 @@ in `registry_test.go`. Closes #517.
 `go test ./internal/rules/ ./internal/cli/ ./internal/rules/usegooglefontdisplay/`
 all green._
 
+_2026-05-17: Loop landed `feat(rules): wire no-useless-catch (complexity)`.
+Package `internal/rules/nouselesscatch/` already existed and its
+`EslintCompatibility` harness passed; this commit added the import +
+buildRules entry in `cli.go` (between `nouselessbackreference` and
+`nouselessdefaultassignment`), the `CategoryComplexity` Metadata in
+`registry.go` (between `no-useless-backreference` and
+`no-useless-default-assignment`), and a snapshot line in
+`registry_test.go`. Closes #188.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/nouselesscatch/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-adjacent-spaces-in-regex
 (complexity)`. Package `internal/rules/noadjacentspacesinregex/` already
 existed and its `EslintCompatibility` harness passed; this commit added

@@ -188,6 +188,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nounusedvars"
 	"github.com/jetlint/jetlint/internal/rules/nousebeforedefine"
 	"github.com/jetlint/jetlint/internal/rules/nouselessbackreference"
+	"github.com/jetlint/jetlint/internal/rules/nouselesscatch"
 	"github.com/jetlint/jetlint/internal/rules/nouselessdefaultassignment"
 	"github.com/jetlint/jetlint/internal/rules/nouselessescapeinstring"
 	"github.com/jetlint/jetlint/internal/rules/novar"
@@ -869,6 +870,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		novoidelementswithchildren.New(),
 		novoidtypereturn.New(),
 		nouselessbackreference.New(),
+		nouselesscatch.New(),
 		nouselessdefaultassignment.New(),
 		nouselessescapeinstring.New(),
 		onlythrowerror.New(),
