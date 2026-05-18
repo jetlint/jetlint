@@ -22,6 +22,16 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire use-while (complexity)`.
+Package `internal/rules/usewhile/` already existed (rule ID `use-while`)
+and its `EslintCompatibility` harness passed; this commit added the
+import + buildRules entry in `cli.go` (between
+`useunknownincatchcallbackvariable` and `useyield`), the
+`CategoryComplexity` Metadata in `registry.go` (after `no-arguments`),
+and the snapshot line in `registry_test.go`. Closes #225.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/usewhile/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-confusing-labels
 (suspicious)`. Package `internal/rules/noconfusinglabels/` already
 existed and its `EslintCompatibility` harness passed; this commit

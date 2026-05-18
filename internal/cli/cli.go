@@ -267,6 +267,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/usestrictmode"
 	"github.com/jetlint/jetlint/internal/rules/useuniqueelementids"
 	"github.com/jetlint/jetlint/internal/rules/useunknownincatchcallbackvariable"
+	"github.com/jetlint/jetlint/internal/rules/usewhile"
 	"github.com/jetlint/jetlint/internal/rules/useyield"
 	"github.com/jetlint/jetlint/internal/rules/validtypeof"
 	// a11y rules — JSX-only, no type checker required.
@@ -960,6 +961,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		usestrictmode.New(),
 		useuniqueelementids.New(),
 		useunknownincatchcallbackvariable.New(),
+		usewhile.New(),
 		useyield.New(),
 		validtypeof.New(),
 		// a11y — JSX accessibility rules.

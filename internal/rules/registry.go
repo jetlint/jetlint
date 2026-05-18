@@ -323,6 +323,7 @@ var All = []Metadata{
 	{ID: "prefer-return-this-type", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-adjacent-spaces-in-regex", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-arguments", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-while", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 
 	// style — formatting, naming, ordering. Pure preference.
 	{ID: "consistent-type-exports", Category: CategoryStyle, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
