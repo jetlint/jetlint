@@ -15,6 +15,18 @@ into `main` at 2026-05-18T05:24:12Z as merge commit
 - `gh issue list --repo jetlint/jetlint --milestone 2 --state closed` → 97 issues
 - `gh pr view 619 --repo jetlint/jetlint` → `state: MERGED`
 
+**Docs reconciliation (2026-05-18):** `docs/OXLINT-COMPAT-OVERVIEW.md`
+was regenerated end-to-end after the suspicious release. It had been
+lagging by ~278 rules (only 25/303 harnessed rules listed). Full
+compat sweep (`go test -count=1 -run 'Compatibility|Compat' -v
+./internal/rules/...`) was clean — 0 failures across all 372 rule
+packages. New aggregate recorded in the overview:
+**5,463/5,463 cases pass (100%)** across 303 rules (59 oxlint-source
++ 244 biome-source). `docs/TSEC-COMPAT-OVERVIEW.md` was already in
+sync at 6,193/6,193 across 61 rules. Combined linter compatibility
+across both upstream suites: **11,656/11,656 cases (100%)** across
+364 rules. No regressions.
+
 Complexity (#5), style (#6), and a11y (#7) are explicitly out of scope
 for this release; their queues below are tracked for the next batch.
 
