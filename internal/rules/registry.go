@@ -139,6 +139,7 @@ var All = []Metadata{
 	{ID: "no-shadow-restricted-names", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-skipped-tests", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-template-curly-in-string", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-then-property", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-this-before-super", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-undeclared-dependencies", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-type-only-import-attributes", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},

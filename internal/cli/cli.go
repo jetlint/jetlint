@@ -143,6 +143,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nosuperwithoutextends"
 	"github.com/jetlint/jetlint/internal/rules/noswitchdeclarations"
 	"github.com/jetlint/jetlint/internal/rules/notemplatecurlyinstring"
+	"github.com/jetlint/jetlint/internal/rules/nothenproperty"
 	"github.com/jetlint/jetlint/internal/rules/nothisbeforesuper"
 	"github.com/jetlint/jetlint/internal/rules/notypeonlyimportattributes"
 	"github.com/jetlint/jetlint/internal/rules/noundeclareddependencies"
@@ -764,6 +765,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noprototypebuiltins.New(),
 		noreactpropassignments.New(),
 		notemplatecurlyinstring.New(),
+		nothenproperty.New(),
 		nothisbeforesuper.New(),
 		notypeonlyimportattributes.New(),
 		noundeclareddependencies.New(),

@@ -291,6 +291,7 @@ func additionalRulesSnapshot() []string {
 		"no-super-without-extends",
 		"no-switch-declarations",
 		"no-template-curly-in-string",
+		"no-then-property",
 		"no-this-before-super",
 		"no-type-only-import-attributes",
 		"no-undeclared-dependencies",

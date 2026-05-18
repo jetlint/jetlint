@@ -196,7 +196,8 @@ tests pass):_
 - _#490 no-shadow-restricted-names → `noshadowrestrictednames` (LANDED 2026-05-17, commit `62791e66`)_
 - _#491 no-skipped-tests → `noskippedtests` (LANDED 2026-05-17, commit `cce0597b`)_
 - _#493 no-suspicious-semicolon-in-jsx → `nosuspicioussemicoloninjsx` (LANDED 2026-05-17, commit `b169cb9d`)_
-- _#495/#496 no-then-property/-ts-ignore_
+- _#495 no-then-property → `nothenproperty` (LANDED 2026-05-17, commit `d0e09a1d`)_
+- _#496 no-ts-ignore → `notsignore`_
 - _#499 no-unsafe-declaration-merging → `nounsafedeclarationmerging` (LANDED 2026-05-17, commit `b4f64e76`)_
 - _#503 no-useless-escape-in-string → `nouselessescapeinstring`_
 - _#505 no-var → `novar` (LANDED 2026-05-17, commit `8f23a0be`)_
