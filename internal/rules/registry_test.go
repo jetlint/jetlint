@@ -485,5 +485,6 @@ func additionalRulesSnapshot() []string {
 		"use-while",
 		"no-unassigned-variables",
 		"no-useless-regex-backrefs",
+		"no-redeclare",
 	}
 }

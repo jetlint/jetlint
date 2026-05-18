@@ -72,8 +72,9 @@ on 100%; the score is a baseline that improves as rules sharpen.
 | no-deprecated-imports (biome) | 4/4 (100%) |
 | no-unassigned-variables (biome) | 4/4 (100%) |
 | no-useless-regex-backrefs (biome) | 3/3 (100%) |
+| no-redeclare (biome) | 51/51 (100%) |
 
-**Aggregate: 825/825 cases pass (100%)** across all option
+**Aggregate: 876/876 cases pass (100%)** across all option
 combinations the upstream fixtures exercise.
 
 The `no-useless-regex-backrefs` row covers the biome variant of

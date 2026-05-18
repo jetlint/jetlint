@@ -6,7 +6,7 @@ Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
 | Milestone | Open | Close-ready (impl exists) | Still missing |
 |---|---:|---:|---:|
-| #2 suspicious | 2 (open) | — | — |
+| #2 suspicious | 1 (open) | — | — |
 | #5 complexity | 45 | 35 | 10 |
 | #6 style | 69 | 53 | 16 |
 | #7 a11y | 33 | 33 | 0 (wiring + closure only) |
@@ -21,6 +21,47 @@ registry suite passes. What remains is bulk issue closure once PR #619
 merges.
 
 ## Active work / blockers
+
+_2026-05-17: Loop landed `feat(rules): implement no-redeclare
+(suspicious)`. Closes #488. New package `internal/rules/noredeclare/`.
+Two-pass design — TypeScript's binder merges legal mergings into a
+single Symbol, so pass 1 walks every binding-introducing AST node
+(VariableDeclaration, FunctionDeclaration, Class/Enum/Interface/
+TypeAlias/ModuleDeclaration, Parameter, BindingElement, Import*),
+calls `Checker.SymbolOf`, dedups by `Symbol.ID()`, and runs a
+slot-conflict table over `Symbol.Declarations()`. The table treats
+namespace as merge-friendly with anything, treats InterfaceDecl as
+merge-friendly with itself and with ClassDeclaration (declaration
+merging), allows function overloads (only flags when bodyCount > 1),
+allows type-alias paired with a single value-slot decl (type+const
+idiom), and flags every other same-slot duplicate. Two false-positive
+sources were hit by valid fixtures and pinned down here so the next
+maintainer doesn't re-discover them: (a) the synthetic `default`
+symbol gathers every `export default function ...` decl across a
+file, so duplicate default impls would over-flag any module with
+default-export overloads — skip when `sym.Name() == "default"`;
+(b) `infer Base | infer Base` in a conditional type creates two
+TypeParameter declarations under one symbol, which TS treats as
+unification, so TypeParameter is excluded from the slot table.
+Pass 2 (`hoistPass`) compensates for TypeScript's strict-by-default
+binder, which keeps `function` declarations block-scoped even in JS
+scripts — biome's no-redeclare follows the JS spec, where in sloppy
+mode (no `"use strict"`, not an ES module) function decls hoist to
+the enclosing function-like scope. We walk per scope (SourceFile,
+function-likes, class static blocks), determine strict via module
+syntax or `"use strict"` prologue, collect var names and function
+names (function decls always added in sloppy, only top-level in
+strict), then flag name collisions across var+var, fnImpl+fnImpl,
+var+fn, and param+var. Pass 2 catches `var a; function a(){}`,
+`var a; { function a(){} }`, and `switch(x){case 0:{function foo}
+default:{function foo}}` which TS gives separate symbols for.
+Bug found and fixed mid-implementation: an initial `walk(scope,
+false)` recursed through the scope node itself, which re-classified
+the scope as a nested scope, triggering an infinite recursion stack
+overflow on the first program load. Fixed by hoisting the walk to
+`scopeBody(scope)` — the SourceFile / FunctionBody / static block
+body — so the scope node never re-enters `nested`. 51/51 biome
+cases pass; `go test -short ./...` clean._
 
 _2026-05-17: Loop landed `feat(rules): implement no-useless-regex-backrefs
 (suspicious)`. Closes #504. Reused the existing
@@ -879,17 +920,13 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 2 remaining (after #504 implemented this loop)
+### #2 suspicious — 1 remaining (after #488 implemented this loop)
 
 Per `gh issue list --milestone 2 --state open` (2026-05-17 after this
-loop): 2 open issues total. Per the release-driving prompt, NONE are
-deferred — milestone #2 ships at 100% before release. Remaining queue,
-roughly easiest → hardest:
+loop): 1 open issue total. Per the release-driving prompt, NONE are
+deferred — milestone #2 ships at 100% before release. Remaining:
 
-1. #488 no-redeclare — needs full scope/binding analysis (per-scope
-   binding namespaces with type-vs-value distinction, function-scope
-   vs block-scope hoisting, TS interface/type-alias merging).
-2. #475 no-import-cycles — needs module-graph plumbing (per-program
+1. #475 no-import-cycles — needs module-graph plumbing (per-program
    import-edge tracker + cycle detection over the import graph).
 
 _Landed 2026-05-17 in this batch:_
