@@ -2,6 +2,23 @@
 
 Working bookmark: `feat/big-batch`. PR: #619 against `main`.
 
+## RUN COMPLETE — milestone #2 SHIPPED
+
+**2026-05-18 (final reconciliation loop):** milestone #2 complete —
+ready for release. Verification this loop:
+
+- `gh issue list --repo jetlint/jetlint --milestone 2 --state open` → `[]`
+- `gh pr view 619 --repo jetlint/jetlint` → `state: MERGED`,
+  `mergedAt: 2026-05-18T05:24:12Z`,
+  `mergeCommit: f2f5c7c63c2304bca3cbfa31c8266239276cf9d2`
+- `docs/OXLINT-COMPAT-OVERVIEW.md` regenerated post-merge (5,463/5,463
+  cases, 303 rules — see release status section below)
+- `docs/TSEC-COMPAT-OVERVIEW.md` already in sync (6,193/6,193, 61 rules)
+
+No outstanding suspicious work. Complexity (#5), style (#6), and a11y
+(#7) queues are out of scope for this run and remain tracked below for
+a subsequent batch.
+
 ## RELEASE STATUS — milestone #2 (suspicious) RELEASED ✅
 
 **2026-05-18:** Milestone #2 suspicious is **released**. PR #619
