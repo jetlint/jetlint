@@ -308,6 +308,7 @@ var All = []Metadata{
 	{ID: "no-unnecessary-type-conversion", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-unnecessary-type-parameters", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-backreference", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-useless-regex-backrefs", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-catch", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-catch-binding", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-continue", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},

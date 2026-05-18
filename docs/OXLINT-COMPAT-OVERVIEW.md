@@ -71,9 +71,20 @@ on 100%; the score is a baseline that improves as rules sharpen.
 | no-redundant-use-strict (biome) | 15/15 (100%) |
 | no-deprecated-imports (biome) | 4/4 (100%) |
 | no-unassigned-variables (biome) | 4/4 (100%) |
+| no-useless-regex-backrefs (biome) | 3/3 (100%) |
 
-**Aggregate: 822/822 cases pass (100%)** across all option
+**Aggregate: 825/825 cases pass (100%)** across all option
 combinations the upstream fixtures exercise.
+
+The `no-useless-regex-backrefs` row covers the biome variant of
+`internal/rules/nouselessbackreference/`, which exposes a second
+constructor (`NewBiome()`) reporting under the biome id. The biome
+variant flags only circular self-references (per the ECMAScript
+spec, `\N` past the group count is an octal escape and `\k<name>`
+without a matching named group is literal text); the eslint variant
+keeps the broader "non-existent group" check expected by
+`testdata/eslint/no-useless-backreference.json` and the rule's
+unit tests.
 
 The five rules with options (\`valid-typeof\`, \`use-isnan\`,
 \`no-self-assign\`, \`no-empty\`, \`no-unused-expressions\`) expose the standard \`Options\` /

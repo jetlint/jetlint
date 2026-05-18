@@ -915,6 +915,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		novoidelementswithchildren.New(),
 		novoidtypereturn.New(),
 		nouselessbackreference.New(),
+		nouselessbackreference.NewBiome(),
 		nouselesscatch.New(),
 		nouselesscatchbinding.New(),
 		nouselesscontinue.New(),

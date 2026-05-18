@@ -6,7 +6,7 @@ Status snapshot (see `MILESTONE_RECONCILIATION.md` for derivation):
 
 | Milestone | Open | Close-ready (impl exists) | Still missing |
 |---|---:|---:|---:|
-| #2 suspicious | 3 (open) | — | — |
+| #2 suspicious | 2 (open) | — | — |
 | #5 complexity | 45 | 35 | 10 |
 | #6 style | 69 | 53 | 16 |
 | #7 a11y | 33 | 33 | 0 (wiring + closure only) |
@@ -21,6 +21,48 @@ registry suite passes. What remains is bulk issue closure once PR #619
 merges.
 
 ## Active work / blockers
+
+_2026-05-17: Loop landed `feat(rules): implement no-useless-regex-backrefs
+(suspicious)`. Closes #504. Reused the existing
+`internal/rules/nouselessbackreference/` package by parameterising it:
+`rule.New()` keeps the eslint id (`no-useless-backreference`) with the
+broader "non-existent group" check that the existing unit tests expect;
+the new `rule.NewBiome()` reports under the biome id
+(`no-useless-regex-backrefs`) and skips that check, since per the
+ECMAScript spec `\N` past the group count is a regex octal escape and
+`\k<name>` without a matching named group is literal text when no named
+groups appear. Both variants share a new circular self-reference
+detector — a single pattern walk maintains a stack of currently-open
+capturing-group frames (numbered + optional name), and every `\N` /
+`\k<name>` is marked circular when the referenced group is still on
+the stack at the backref position. Biome compatibility harness at
+`internal/rules/nouselessbackreference/biomecompat_test.go` runs the
+biome variant against the 3-case fixture
+`testdata/eslint/no-useless-regex-backrefs.json`: case 1 (invalid,
+~80 patterns covering forward/circular/cross-alternative refs) yields
+many diagnostics via the new circular detector, case 2 (invalid,
+`/(\217483a\1)/` plus partial regex literal) yields a circular hit
+on `\1` inside group 1, case 3 (valid, ~70 patterns including octal
+escapes and lookbehind forward refs) yields zero. Wired into
+`cli.go` `buildRules` immediately after the eslint variant; registered
+as `CategorySuspicious` in `registry.go`; appended to
+`additionalRulesSnapshot()` in `registry_test.go`. Updated
+`docs/OXLINT-COMPAT-OVERVIEW.md` aggregate from 822/822 to 825/825
+with a new row for the biome variant. `go test -short ./...` clean
+(0 failures); the per-package harness passes 13/13 including 3/3
+biome compatibility. The biome variant is intentionally a strict
+subset of biome's full forward/alternation/lookaround analysis —
+enough for the 3-case fixture, simpler than a full regex AST parser.
+Future work: extend with forward-reference detection so the rule
+matches biome's diagnostic counts exactly (currently only matches
+the >=1 / ==0 boundary)._
+
+**Pre-existing lint note:** `golangci-lint`'s `errorsastype` checker
+flags `internal/cli/cli.go:515` (`errors.As(err, &te)` could use
+`AsType[*toolerr.Error]`). Not introduced by this loop's edits — the
+diagnostic surfaced because cli.go was touched. Worth a follow-up
+"chore(cli): adopt errors.AsType" commit; left untouched here to
+keep this loop's commit scoped to the rule.
 
 _2026-05-17: Loop landed `feat(rules): implement no-unassigned-variables
 (suspicious)`. Closes #497. New package
@@ -837,24 +879,17 @@ Landed this batch (prior loops):
   `internal/rules/usealttext/`. No matching open issue under
   milestone #7 — confirm it's already closed before resuming.
 
-### #2 suspicious — 3 remaining (after #497 implemented this loop)
+### #2 suspicious — 2 remaining (after #504 implemented this loop)
 
 Per `gh issue list --milestone 2 --state open` (2026-05-17 after this
-loop): 3 open issues total. Per the release-driving prompt, NONE are
+loop): 2 open issues total. Per the release-driving prompt, NONE are
 deferred — milestone #2 ships at 100% before release. Remaining queue,
 roughly easiest → hardest:
 
-1. #504 no-useless-regex-backrefs — biome rule. Backreferences inside
-   a regex literal that can never match. Needs full JS regex AST
-   parser (group accounting + lookaround direction rules + named
-   groups + ES2024/2025 character class set notation). Fixture file
-   already at `testdata/eslint/no-useless-regex-backrefs.json`. The
-   previous "land no-useless-regex-backrefs" commit was mislabeled
-   and shipped no rule code — see earlier loop note.
-2. #488 no-redeclare — needs full scope/binding analysis (per-scope
+1. #488 no-redeclare — needs full scope/binding analysis (per-scope
    binding namespaces with type-vs-value distinction, function-scope
    vs block-scope hoisting, TS interface/type-alias merging).
-3. #475 no-import-cycles — needs module-graph plumbing (per-program
+2. #475 no-import-cycles — needs module-graph plumbing (per-program
    import-edge tracker + cycle detection over the import graph).
 
 _Landed 2026-05-17 in this batch:_
