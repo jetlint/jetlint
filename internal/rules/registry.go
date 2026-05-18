@@ -169,6 +169,7 @@ var All = []Metadata{
 	{ID: "prefer-namespace-keyword", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-iterable-callback-return", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-alert", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-approximative-numeric-constant", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-array-index-key", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-bitwise-operators", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-catch-assign", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},

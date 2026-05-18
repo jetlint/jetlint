@@ -347,6 +347,7 @@ func additionalRulesSnapshot() []string {
 		"prefer-namespace-keyword",
 		"use-iterable-callback-return",
 		"no-alert",
+		"no-approximative-numeric-constant",
 		"no-array-index-key",
 		"no-bitwise-operators",
 		"no-catch-assign",

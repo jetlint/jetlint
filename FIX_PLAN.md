@@ -22,6 +22,14 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-approximative-numeric-constant
+(suspicious)`. Package `internal/rules/noapproximativenumericconstant/`
+already existed and its `EslintCompatibility` harness passed; this commit
+added the import + buildRules entry in `cli.go` (alphabetically between
+`noalert` and `noarguments`), the `CategorySuspicious` Metadata in
+`registry.go` (between `no-alert` and `no-array-index-key`), and the
+snapshot line in `registry_test.go`. Closes #430._
+
 _2026-05-17: Loop landed `feat(rules): wire use-single-var-declarator
 (style)`. Package `internal/rules/usesingvardeclarator/` already
 existed and its `EslintCompatibility` harness passed; this commit
@@ -282,6 +290,7 @@ packages that are NOT wired into `cli.go` or registered in
 tests pass):_
 
 - _#429 no-alert → `noalert` (LANDED 2026-05-17)_
+- _#430 no-approximative-numeric-constant → `noapproximativenumericconstant` (LANDED 2026-05-17)_
 - _#431 no-array-index-key → `noarrayindexkey` (LANDED 2026-05-17)_
 - _#434 no-bitwise-operators → `nobitwiseoperators` (LANDED 2026-05-17)_
 - _#435 no-catch-assign → `nocatchassign` (LANDED 2026-05-17)_
