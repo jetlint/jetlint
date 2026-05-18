@@ -149,6 +149,16 @@ and `nononoctaldecimalescape`), the `CategorySuspicious` Metadata in
 `go test ./internal/cli/ ./internal/rules/ ./internal/rules/nononnullassertedoptionalchain/`
 all green._
 
+_2026-05-17: Loop landed `feat(rules): wire use-error-message
+(suspicious)`. Package `internal/rules/useerrormessage/` already
+existed and its `EslintCompatibility` harness passed; this commit
+added the import + buildRules entry in `cli.go` (between
+`unboundmethod` and `useexhaustivedependencies`), the
+`CategorySuspicious` Metadata in `registry.go`, and the snapshot
+line in `registry_test.go`. Closes #516.
+`go test ./internal/cli/ ./internal/rules/ ./internal/rules/useerrormessage/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-array-index-key
 (suspicious)` (commit `9c536c4f`, change `rrllysov`). Package
 `internal/rules/noarrayindexkey/` already existed and its
@@ -203,7 +213,8 @@ tests pass):_
 - _#499 no-unsafe-declaration-merging → `nounsafedeclarationmerging` (LANDED 2026-05-17, commit `b4f64e76`)_
 - _#503 no-useless-escape-in-string → `nouselessescapeinstring` (LANDED 2026-05-17, commit `f67f53df`)_
 - _#505 no-var → `novar` (LANDED 2026-05-17, commit `8f23a0be`)_
-- _#515/#516/#517/#519/#520/#521 use-await/-error-message/-google-font-display/-number-to-fixed-digits-argument/-static-response-methods/-strict-mode_
+- _#516 use-error-message → `useerrormessage` (LANDED 2026-05-17)_
+- _#515/#517/#519/#520/#521 use-await/-google-font-display/-number-to-fixed-digits-argument/-static-response-methods/-strict-mode_
 - _Plus 30+ open in milestones #5 (complexity) and #6 (style)._
 
 _Future loops should clear this wiring-only queue before tackling
