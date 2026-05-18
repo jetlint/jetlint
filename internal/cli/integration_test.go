@@ -995,3 +995,46 @@ func TestCLI_DoesNotEmitTargetNotInProgramErrorWhenTargetIsADirectory(t *testing
 		t.Errorf("expected no 'not part of program' tool-error on directory target, got stderr: %s", stderr.String())
 	}
 }
+
+// Regression for jetlint#621: the README documents
+// `jetlint --project ./tsconfig.json` but the CLI rejected the flag.
+// With `--project`, no positional target is required: the linter
+// loads the named tsconfig and reports on the program it builds.
+func TestCLI_ProjectFlagPointsAtTsconfigAndRunsWithoutPositionalTargets(t *testing.T) {
+	bin := buildBinary(t)
+	project := fixtureProject(t)
+	rt := runtimeDir(t)
+
+	cmd := exec.Command(bin, "--project", filepath.Join(project, "tsconfig.json"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("expected exit 0 on clean project via --project, got %v\nstdout: %s\nstderr: %s",
+			err, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Checked") {
+		t.Errorf("expected human summary line, got stdout: %s", stdout.String())
+	}
+}
+
+// When the user invokes jetlint with no targets and no --project, the
+// "no targets provided" error should hint at how to get going so a
+// first-time user isn't left guessing (jetlint#621).
+func TestCLI_NoTargetsErrorIncludesGuidanceTowardsHelpOrProject(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	cmd := exec.Command(bin)
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_ = cmd.Run()
+
+	out := stderr.String()
+	if !strings.Contains(out, "--project") && !strings.Contains(out, "--help") {
+		t.Errorf("expected no-targets error to mention --project or --help, got stderr: %s", out)
+	}
+}

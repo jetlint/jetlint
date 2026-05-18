@@ -46,8 +46,18 @@ setup.
 
 ## Run
 
+Point `--project` at a tsconfig (or a directory containing one):
+
 ```bash
 jetlint --project ./tsconfig.json
+```
+
+Or pass files and directories directly &mdash; the nearest enclosing
+`tsconfig.json` is discovered by walking upward:
+
+```bash
+jetlint src/index.ts
+jetlint .
 ```
 
 The **5 MVP rules** default to `error`. The other **56 rules** ship `off`
