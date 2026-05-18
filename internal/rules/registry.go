@@ -344,6 +344,7 @@ var All = []Metadata{
 	{ID: "use-button-type", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-focusable-interactive", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-google-font-display", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "use-number-to-fixed-digits-argument", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-heading-content", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-html-lang", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},
 	{ID: "use-iframe-title", Category: CategoryA11y, Fix: FixNone, Stability: StabilityStable},

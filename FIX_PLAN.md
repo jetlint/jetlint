@@ -22,6 +22,18 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire use-number-to-fixed-digits-argument
+(suspicious)`. Package `internal/rules/usenumbertofixeddigitsargument/`
+already existed and its compatibility harness passed; this commit added
+the import + buildRules entry in `cli.go` (alphabetically between
+`usejsxkeyiniterable` and `useparseintradix`), the `CategorySuspicious`
+Metadata in `registry.go` (after `use-google-font-display`), and the
+snapshot line in `registry_test.go`. Closes #519.
+`go test ./internal/cli/ ./internal/rules/ ./internal/rules/usenumbertofixeddigitsargument/`
+all green. Two more wiring-only candidates remain from the original
+trio: #520 use-static-response-methods (`usestaticresponsemethods`) and
+#521 use-strict-mode (`usestrictmode`) — both packages exist and pass._
+
 _2026-05-17: Loop landed `feat(rules): wire no-global-is-finite
 (suspicious)` (commit `f800aaab`, change `sztspwrq`). Package
 `internal/rules/noglobalisfinite/` already existed and its
@@ -274,7 +286,8 @@ tests pass):_
 - _#515 use-await → `useawait` (LANDED 2026-05-17)_
 - _#516 use-error-message → `useerrormessage` (LANDED 2026-05-17)_
 - _#517 use-google-font-display → `usegooglefontdisplay` (LANDED 2026-05-17)_
-- _#519/#520/#521 use-number-to-fixed-digits-argument/-static-response-methods/-strict-mode_
+- _#519 use-number-to-fixed-digits-argument → `usenumbertofixeddigitsargument` (LANDED 2026-05-17)_
+- _#520/#521 use-static-response-methods/-strict-mode_
 - _Plus 30+ open in milestones #5 (complexity) and #6 (style)._
 
 _Future loops should clear this wiring-only queue before tackling

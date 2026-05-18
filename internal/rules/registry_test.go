@@ -439,6 +439,7 @@ func additionalRulesSnapshot() []string {
 		"use-button-type",
 		"use-focusable-interactive",
 		"use-google-font-display",
+		"use-number-to-fixed-digits-argument",
 		"use-heading-content",
 		"use-html-lang",
 		"use-iframe-title",

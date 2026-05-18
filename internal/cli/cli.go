@@ -237,6 +237,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/useiterablecallbackreturn"
 	"github.com/jetlint/jetlint/internal/rules/usejsonimportattributes"
 	"github.com/jetlint/jetlint/internal/rules/usejsxkeyiniterable"
+	"github.com/jetlint/jetlint/internal/rules/usenumbertofixeddigitsargument"
 	"github.com/jetlint/jetlint/internal/rules/useparseintradix"
 	"github.com/jetlint/jetlint/internal/rules/useqwikclasslist"
 	"github.com/jetlint/jetlint/internal/rules/useqwikmethodusage"
@@ -908,6 +909,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		useisnan.New(),
 		usejsonimportattributes.New(),
 		usejsxkeyiniterable.New(),
+		usenumbertofixeddigitsargument.New(),
 		useparseintradix.New(),
 		useqwikclasslist.New(),
 		useqwikmethodusage.New(),
