@@ -44,6 +44,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noarguments"
 	"github.com/jetlint/jetlint/internal/rules/noarrayindexkey"
 	"github.com/jetlint/jetlint/internal/rules/noarraydelete"
+	"github.com/jetlint/jetlint/internal/rules/noassigninexpressions"
 	"github.com/jetlint/jetlint/internal/rules/noasyncpromiseexecutor"
 	"github.com/jetlint/jetlint/internal/rules/noawaitinloop"
 	"github.com/jetlint/jetlint/internal/rules/nobasetotostring"
@@ -741,6 +742,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noarguments.New(),
 		noarrayindexkey.New(),
 		noarraydelete.New(),
+		noassigninexpressions.New(),
 		noasyncpromiseexecutor.New(),
 		noawaitinloop.New(),
 		nobitwiseoperators.New(),

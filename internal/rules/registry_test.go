@@ -354,6 +354,7 @@ func additionalRulesSnapshot() []string {
 		"no-alert",
 		"no-approximative-numeric-constant",
 		"no-array-index-key",
+		"no-assign-in-expressions",
 		"no-bitwise-operators",
 		"no-catch-assign",
 		"no-comment-text",

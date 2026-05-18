@@ -22,6 +22,19 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-assign-in-expressions
+(suspicious)`. Package `internal/rules/noassigninexpressions/` already
+existed and its `EslintCompatibility` harness passed; this commit added
+the import + buildRules entry in `cli.go` (between `noarraydelete` and
+`noasyncpromiseexecutor`), the `CategorySuspicious` Metadata in
+`registry.go` (between `no-array-index-key` and `no-bitwise-operators`),
+and the snapshot line in `registry_test.go`. Closes #432.
+Sweep note: 88 unwired packages remain under `internal/rules/` — the
+"all wiring-only candidates done" claim in earlier loops only covered
+the surveyed subset. Future loops should re-run
+`comm -23 <(ls internal/rules/) <(grep -oE 'rules/[a-z]+' cli.go | sort -u)`
+to find wiring-only candidates that map to open milestone issues._
+
 _2026-05-17: Loop landed `feat(rules): wire no-useless-empty-export
 (complexity)`. Package `internal/rules/nouselessemptyexport/` already
 existed (rule ID `no-useless-empty-export`) and its `EslintCompatibility`
