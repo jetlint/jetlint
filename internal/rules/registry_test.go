@@ -368,6 +368,7 @@ func additionalRulesSnapshot() []string {
 		"no-useless-default-assignment",
 		"no-useless-label",
 		"no-useless-rename",
+		"no-useless-string-concat",
 		"no-useless-string-raw",
 		"no-useless-ternary",
 		"no-useless-undefined-initialization",

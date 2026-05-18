@@ -306,6 +306,7 @@ var All = []Metadata{
 	{ID: "no-useless-escape-in-string", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-label", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-rename", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-useless-string-concat", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-string-raw", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-ternary", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-undefined-initialization", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},

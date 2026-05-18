@@ -201,6 +201,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nouselessescapeinstring"
 	"github.com/jetlint/jetlint/internal/rules/nouselesslabel"
 	"github.com/jetlint/jetlint/internal/rules/nouselessrename"
+	"github.com/jetlint/jetlint/internal/rules/nouselessstringconcat"
 	"github.com/jetlint/jetlint/internal/rules/nouselessstringraw"
 	"github.com/jetlint/jetlint/internal/rules/nouselessternary"
 	"github.com/jetlint/jetlint/internal/rules/nouselessundefinedinitialization"
@@ -900,6 +901,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nouselessescapeinstring.New(),
 		nouselesslabel.New(),
 		nouselessrename.New(),
+		nouselessstringconcat.New(),
 		nouselessstringraw.New(),
 		nouselessternary.New(),
 		nouselessundefinedinitialization.New(),
