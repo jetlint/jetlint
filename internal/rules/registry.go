@@ -110,6 +110,7 @@ var All = []Metadata{
 	{ID: "no-extra-boolean-cast", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-extra-non-null-assertion", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-fallthrough", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-flat-map-identity", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-focused-tests", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-func-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-function-assign", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},

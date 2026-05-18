@@ -237,6 +237,7 @@ func additionalRulesSnapshot() []string {
 		"no-extra-boolean-cast",
 		"no-extra-non-null-assertion",
 		"no-fallthrough",
+		"no-flat-map-identity",
 		"no-focused-tests",
 		"no-func-assign",
 		"no-function-assign",

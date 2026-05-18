@@ -90,6 +90,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noextrabooleancast"
 	"github.com/jetlint/jetlint/internal/rules/noextranonnullassertion"
 	"github.com/jetlint/jetlint/internal/rules/nofallthrough"
+	"github.com/jetlint/jetlint/internal/rules/noflatmapidentity"
 	"github.com/jetlint/jetlint/internal/rules/nofloatingpromises"
 	"github.com/jetlint/jetlint/internal/rules/nofocusedtests"
 	"github.com/jetlint/jetlint/internal/rules/noforinarray"
@@ -767,6 +768,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		noextrabooleancast.New(),
 		noextranonnullassertion.New(),
 		nofallthrough.New(),
+		noflatmapidentity.New(),
 		nofocusedtests.New(),
 		nofuncassign.New(),
 		nofunctionassign.New(),
