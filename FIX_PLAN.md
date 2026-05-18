@@ -22,6 +22,18 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-useless-ternary
+(complexity)`. Package `internal/rules/nouselessternary/` already
+existed and its `EslintCompatibility` harness passed; this commit added
+the import + buildRules entry in `cli.go` (alphabetically between
+`nouselessstringraw` and `nouselessundefinedinitialization`), the
+`CategoryComplexity` Metadata in `registry.go` (between
+`no-useless-string-raw` and `no-useless-undefined-initialization`), and
+the snapshot line in `registry_test.go`. Clears one more wiring-only
+candidate from the 2026-05-17 complexity sweep list.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/nouselessternary/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-useless-string-raw
 (complexity)`. Package `internal/rules/nouselessstringraw/` already
 existed and its `EslintCompatibility` harness passed; this commit added
@@ -721,8 +733,8 @@ _Landed 2026-05-17 in this batch:_
 
 Remaining wiring-only candidates from the 2026-05-17 sweep (packages exist,
 EslintCompatibility/BiomeCompatibility passes — verify each before wiring):
-nouselessstringconcat, nouselessternary, nouselessswitchcase,
-nouselessemptyexport, nouselesscatchbinding.
+nouselessstringconcat, nouselessswitchcase, nouselessemptyexport,
+nouselesscatchbinding.
 
 ### #6 style — 15 remaining (after #419 wired this loop)
 
