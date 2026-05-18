@@ -112,6 +112,7 @@ var All = []Metadata{
 	{ID: "no-fallthrough", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-flat-map-identity", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-focused-tests", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-for-each", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-func-assign", Category: CategoryCorrectness, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-function-assign", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-global-assign", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},

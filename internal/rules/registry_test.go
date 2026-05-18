@@ -239,6 +239,7 @@ func additionalRulesSnapshot() []string {
 		"no-fallthrough",
 		"no-flat-map-identity",
 		"no-focused-tests",
+		"no-for-each",
 		"no-func-assign",
 		"no-function-assign",
 		"no-global-assign",

@@ -22,6 +22,16 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-foreach (complexity)`.
+Package `internal/rules/noforeach/` already existed (rule ID
+`no-for-each`) and its `EslintCompatibility` harness passed; this
+commit added the import + buildRules entry in `cli.go` (between
+`nofocusedtests` and `nofuncassign`), the `CategoryComplexity`
+Metadata in `registry.go` (between `no-focused-tests` and
+`no-func-assign`), and the snapshot line in `registry_test.go`.
+Closes #174. `go test ./internal/rules/ ./internal/cli/
+./internal/rules/noforeach/` all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-flat-map-identity
 (complexity)`. Package `internal/rules/noflatmapidentity/` already
 existed and its `EslintCompatibility` harness passed; this commit
@@ -657,7 +667,6 @@ _Landed 2026-05-17 in this batch:_
 
 Remaining wiring-only candidates from the 2026-05-17 sweep (packages exist,
 EslintCompatibility/BiomeCompatibility passes — verify each before wiring):
-noforeach,
 nostaticonlyclass, nouselesslabel, nouselessrename,
 nouselessundefinedinitialization, nouselessstringraw, nouselessstringconcat,
 nouselessternary, nouselessswitchcase, nouselessemptyexport,

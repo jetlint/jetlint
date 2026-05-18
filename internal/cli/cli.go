@@ -93,6 +93,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/noflatmapidentity"
 	"github.com/jetlint/jetlint/internal/rules/nofloatingpromises"
 	"github.com/jetlint/jetlint/internal/rules/nofocusedtests"
+	"github.com/jetlint/jetlint/internal/rules/noforeach"
 	"github.com/jetlint/jetlint/internal/rules/noforinarray"
 	"github.com/jetlint/jetlint/internal/rules/nofuncassign"
 	"github.com/jetlint/jetlint/internal/rules/nofunctionassign"
@@ -770,6 +771,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nofallthrough.New(),
 		noflatmapidentity.New(),
 		nofocusedtests.New(),
+		noforeach.New(),
 		nofuncassign.New(),
 		nofunctionassign.New(),
 		noglobalassign.New(),
