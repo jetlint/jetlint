@@ -230,6 +230,7 @@ func additionalRulesSnapshot() []string {
 		"no-empty-character-class",
 		"no-empty-interface",
 		"no-empty-pattern",
+		"no-empty-type-parameters",
 		"no-evolving-types",
 		"no-ex-assign",
 		"no-explicit-any",

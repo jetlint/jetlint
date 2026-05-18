@@ -22,6 +22,16 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-empty-type-parameters
+(complexity)`. Package `internal/rules/noemptytypeparameters/` already
+existed and its `EslintCompatibility` harness passed; this commit added
+the import + buildRules entry in `cli.go` (alphabetically between
+`noemptypattern` and `noevolvingtypes`), the `CategoryComplexity`
+Metadata in `registry.go` (between `no-empty-pattern` and
+`no-evolving-types`), and the snapshot line in `registry_test.go`.
+Closes #168. `go test ./internal/rules/ ./internal/cli/
+./internal/rules/noemptytypeparameters/` all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-extra-boolean-cast
 (complexity)`. Package `internal/rules/noextrabooleancast/` already
 existed and its `EslintCompatibility` harness passed; this commit
@@ -637,7 +647,7 @@ _Landed 2026-05-17 in this batch:_
 
 Remaining wiring-only candidates from the 2026-05-17 sweep (packages exist,
 EslintCompatibility/BiomeCompatibility passes — verify each before wiring):
-noemptytypeparameters, noflatmapidentity, noforeach,
+noflatmapidentity, noforeach,
 nostaticonlyclass, nouselesslabel, nouselessrename,
 nouselessundefinedinitialization, nouselessstringraw, nouselessstringconcat,
 nouselessternary, nouselessswitchcase, nouselessemptyexport,
