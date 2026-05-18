@@ -22,6 +22,19 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-useless-empty-export
+(complexity)`. Package `internal/rules/nouselessemptyexport/` already
+existed (rule ID `no-useless-empty-export`) and its `EslintCompatibility`
+harness passed; this commit added the import + buildRules entry in
+`cli.go` (between `nouselessdefaultassignment` and
+`nouselessescapeinstring`), the `CategoryComplexity` Metadata in
+`registry.go` (between `no-useless-default-assignment` and
+`no-useless-escape-in-string`), and the snapshot line in
+`registry_test.go`. Clears the last wiring-only candidate from the
+2026-05-17 complexity sweep list.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/nouselessemptyexport/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-useless-catch-binding
 (complexity)`. Package `internal/rules/nouselesscatchbinding/` already
 existed and its `EslintCompatibility` harness passed; this commit added
@@ -767,9 +780,8 @@ _Landed 2026-05-17 in this batch:_
 9. #195 no-useless-fragments
 10. #169 no-excessive-cognitive-complexity
 
-Remaining wiring-only candidates from the 2026-05-17 sweep (packages exist,
-EslintCompatibility/BiomeCompatibility passes — verify each before wiring):
-nouselessemptyexport.
+Remaining wiring-only candidates from the 2026-05-17 sweep: none. All
+known wiring-only complexity packages are now registered.
 
 ### #6 style — 15 remaining (after #419 wired this loop)
 

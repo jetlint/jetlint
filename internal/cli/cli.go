@@ -199,6 +199,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nouselesscatchbinding"
 	"github.com/jetlint/jetlint/internal/rules/nouselesscontinue"
 	"github.com/jetlint/jetlint/internal/rules/nouselessdefaultassignment"
+	"github.com/jetlint/jetlint/internal/rules/nouselessemptyexport"
 	"github.com/jetlint/jetlint/internal/rules/nouselessescapeinstring"
 	"github.com/jetlint/jetlint/internal/rules/nouselesslabel"
 	"github.com/jetlint/jetlint/internal/rules/nouselessrename"
@@ -901,6 +902,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nouselesscatchbinding.New(),
 		nouselesscontinue.New(),
 		nouselessdefaultassignment.New(),
+		nouselessemptyexport.New(),
 		nouselessescapeinstring.New(),
 		nouselesslabel.New(),
 		nouselessrename.New(),

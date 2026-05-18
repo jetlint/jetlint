@@ -304,6 +304,7 @@ var All = []Metadata{
 	{ID: "no-useless-catch-binding", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-continue", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-default-assignment", Category: CategoryComplexity, RequiresTypeChecking: true, Fix: FixNone, Stability: StabilityStable},
+	{ID: "no-useless-empty-export", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-escape-in-string", Category: CategorySuspicious, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-label", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
 	{ID: "no-useless-rename", Category: CategoryComplexity, Fix: FixNone, Stability: StabilityStable},
