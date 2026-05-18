@@ -22,6 +22,18 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-useless-catch-binding
+(complexity)`. Package `internal/rules/nouselesscatchbinding/` already
+existed and its `EslintCompatibility` harness passed; this commit added
+the import + buildRules entry in `cli.go` (between `nouselesscatch`
+and `nouselesscontinue`), the `CategoryComplexity` Metadata in
+`registry.go` (between `no-useless-catch` and `no-useless-continue`),
+and the snapshot line in `registry_test.go`. Closes #189. Clears the
+penultimate wiring-only candidate from the 2026-05-17 complexity sweep
+list — only `nouselessemptyexport` remains.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/nouselesscatchbinding/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-useless-switch-case
 (complexity)`. Package `internal/rules/nouselessswitchcase/` already
 existed and its `EslintCompatibility` harness passed; this commit added
@@ -757,7 +769,7 @@ _Landed 2026-05-17 in this batch:_
 
 Remaining wiring-only candidates from the 2026-05-17 sweep (packages exist,
 EslintCompatibility/BiomeCompatibility passes — verify each before wiring):
-nouselessemptyexport, nouselesscatchbinding.
+nouselessemptyexport.
 
 ### #6 style — 15 remaining (after #419 wired this loop)
 

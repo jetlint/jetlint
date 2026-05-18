@@ -473,5 +473,6 @@ func additionalRulesSnapshot() []string {
 		"no-useless-catch",
 		"no-arguments",
 		"no-useless-continue",
+		"no-useless-catch-binding",
 	}
 }
