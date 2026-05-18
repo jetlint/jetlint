@@ -200,6 +200,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nouselessdefaultassignment"
 	"github.com/jetlint/jetlint/internal/rules/nouselessescapeinstring"
 	"github.com/jetlint/jetlint/internal/rules/nouselesslabel"
+	"github.com/jetlint/jetlint/internal/rules/nouselessrename"
 	"github.com/jetlint/jetlint/internal/rules/novar"
 	"github.com/jetlint/jetlint/internal/rules/novoidelementswithchildren"
 	"github.com/jetlint/jetlint/internal/rules/novoidtypereturn"
@@ -895,6 +896,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nouselessdefaultassignment.New(),
 		nouselessescapeinstring.New(),
 		nouselesslabel.New(),
+		nouselessrename.New(),
 		onlythrowerror.New(),
 		preferdestructuring.New(),
 		preferfind.New(),
