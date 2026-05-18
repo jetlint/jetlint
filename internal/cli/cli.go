@@ -130,6 +130,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nopromiseexecutorreturn"
 	"github.com/jetlint/jetlint/internal/rules/noprototypebuiltins"
 	"github.com/jetlint/jetlint/internal/rules/noqwikusevisibletask"
+	"github.com/jetlint/jetlint/internal/rules/noreactforwardref"
 	"github.com/jetlint/jetlint/internal/rules/noreactpropassignments"
 	"github.com/jetlint/jetlint/internal/rules/noredundanttypeconstituents"
 	"github.com/jetlint/jetlint/internal/rules/norenderreturnvalue"
@@ -767,6 +768,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		norenderreturnvalue.New(),
 		norestrictedelements.New(),
 		noprototypebuiltins.New(),
+		noreactforwardref.New(),
 		noreactpropassignments.New(),
 		notemplatecurlyinstring.New(),
 		nothenproperty.New(),

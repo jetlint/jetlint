@@ -279,6 +279,7 @@ func additionalRulesSnapshot() []string {
 		"no-render-return-value",
 		"no-restricted-elements",
 		"no-prototype-builtins",
+		"no-react-forward-ref",
 		"no-react-prop-assignments",
 		"no-redundant-type-constituents",
 		"no-secrets",
