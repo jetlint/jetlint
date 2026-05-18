@@ -1038,3 +1038,65 @@ func TestCLI_NoTargetsErrorIncludesGuidanceTowardsHelpOrProject(t *testing.T) {
 		t.Errorf("expected no-targets error to mention --project or --help, got stderr: %s", out)
 	}
 }
+
+// Files matched by a .jetlintrc.json `ignorePatterns` glob must produce
+// no diagnostics, even when they otherwise contain rule violations
+// (jetlint#626).
+func TestCLI_IgnorePatternsFromJetlintrcSuppressDiagnosticsForMatchedFiles(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	for path, content := range map[string]string{
+		"tsconfig.json":    `{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"},"include":["**/*.ts"]}`,
+		".jetlintrc.json":  `{"ignorePatterns":["generated/**"]}`,
+		"api.ts":           "export async function saveUser(name: string): Promise<void> { return; }\n",
+		"main.ts":          "import { saveUser } from \"./api\";\nsaveUser(\"alice\");\n",
+		"generated/gen.ts": "import { saveUser } from \"../api\";\nsaveUser(\"bob\");\n",
+	} {
+		full := filepath.Join(dir, path)
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatalf("mkdir %s: %v", filepath.Dir(full), err)
+		}
+		if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+
+	cmd := exec.Command(bin, "--format", "json", "--project", filepath.Join(dir, "tsconfig.json"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_ = cmd.Run()
+
+	var doc struct {
+		Diagnostics []map[string]any
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &doc); err != nil {
+		t.Fatalf("decode output: %v\nstdout: %s\nstderr: %s", err, stdout.String(), stderr.String())
+	}
+	for _, d := range doc.Diagnostics {
+		file, _ := d["file"].(string)
+		if strings.Contains(file, "/generated/") {
+			t.Errorf("expected no diagnostics for ignored file %s, got %v", file, d)
+		}
+	}
+	// Sanity: main.ts is not ignored, so the floating-promise diagnostic
+	// still emits.
+	sawMain := false
+	for _, d := range doc.Diagnostics {
+		file, _ := d["file"].(string)
+		if strings.HasSuffix(file, "main.ts") {
+			sawMain = true
+		}
+	}
+	if !sawMain {
+		t.Errorf("expected main.ts diagnostic to remain, got: %v", doc.Diagnostics)
+	}
+}
