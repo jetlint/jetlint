@@ -22,6 +22,17 @@ merges.
 
 ## Active work / blockers
 
+_2026-05-17: Loop landed `feat(rules): wire no-extra-boolean-cast
+(complexity)`. Package `internal/rules/noextrabooleancast/` already
+existed and its `EslintCompatibility` harness passed; this commit
+added the import + buildRules entry in `cli.go` (alphabetically
+between `noexplicitany` and `noextranonnullassertion`), the
+`CategoryComplexity` Metadata in `registry.go` (between
+`no-explicit-any` and `no-extra-non-null-assertion`), and the
+snapshot line in `registry_test.go`. Closes #172.
+`go test ./internal/rules/ ./internal/cli/ ./internal/rules/noextrabooleancast/`
+all green._
+
 _2026-05-17: Loop landed `feat(rules): wire no-useless-continue (complexity)`.
 Package `internal/rules/nouselesscontinue/` already existed and its
 `EslintCompatibility` harness passed; this commit added the import +
@@ -626,7 +637,7 @@ _Landed 2026-05-17 in this batch:_
 
 Remaining wiring-only candidates from the 2026-05-17 sweep (packages exist,
 EslintCompatibility/BiomeCompatibility passes — verify each before wiring):
-noemptytypeparameters, noextrabooleancast, noflatmapidentity, noforeach,
+noemptytypeparameters, noflatmapidentity, noforeach,
 nostaticonlyclass, nouselesslabel, nouselessrename,
 nouselessundefinedinitialization, nouselessstringraw, nouselessstringconcat,
 nouselessternary, nouselessswitchcase, nouselessemptyexport,
