@@ -585,9 +585,16 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 	// For each explicit target, verify it is part of the discovered
 	// program. Files outside the program get a per-target structured
 	// warning (in JSON mode) and are skipped from the lint scope.
+	// Directory targets are skipped here: they aren't single source
+	// files, and the lint expands to the program's files regardless,
+	// so the per-target check would emit a misleading "not part of
+	// the program" error on a run that actually succeeded (jetlint#621).
 	for _, target := range targets {
 		abs, absErr := filepath.Abs(target)
 		if absErr != nil {
+			continue
+		}
+		if info, statErr := os.Stat(abs); statErr == nil && info.IsDir() {
 			continue
 		}
 		if prog.SourceFileByPath(abs) == nil {

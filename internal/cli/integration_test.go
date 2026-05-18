@@ -972,3 +972,26 @@ func TestCLI_TsgolintrcRejectsUnknownRuleOption(t *testing.T) {
 		t.Errorf("expected stderr to mention the unknown option, got: %s", stderr.String())
 	}
 }
+
+// Regression for jetlint#621: a directory positional argument used to
+// trip the per-target "file is not part of the discovered TypeScript
+// program" check, leaking an "internal" tool-error to stderr even
+// though the lint scope expanded to the program's files and the run
+// succeeded. Directories should be treated as "lint the program;
+// they're not a single source file to verify against the program set.
+func TestCLI_DoesNotEmitTargetNotInProgramErrorWhenTargetIsADirectory(t *testing.T) {
+	bin := buildBinary(t)
+	project := fixtureProject(t)
+	rt := runtimeDir(t)
+
+	cmd := exec.Command(bin, project)
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_ = cmd.Run()
+
+	if strings.Contains(stderr.String(), "not part of the discovered TypeScript program") {
+		t.Errorf("expected no 'not part of program' tool-error on directory target, got stderr: %s", stderr.String())
+	}
+}
