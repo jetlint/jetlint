@@ -110,6 +110,7 @@ import (
 	"github.com/jetlint/jetlint/internal/rules/nolossofprecision"
 	"github.com/jetlint/jetlint/internal/rules/nomeaninglessvoidoperator"
 	"github.com/jetlint/jetlint/internal/rules/nomisleadingcharacterclass"
+	"github.com/jetlint/jetlint/internal/rules/nomisplacedassertion"
 	"github.com/jetlint/jetlint/internal/rules/nomisusedpromises"
 	"github.com/jetlint/jetlint/internal/rules/nomisusedspread"
 	"github.com/jetlint/jetlint/internal/rules/nomixedenums"
@@ -803,6 +804,7 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 		nolabelvar.New(),
 		nolossofprecision.New(),
 		nomeaninglessvoidoperator.New(),
+		nomisplacedassertion.New(),
 		nomisusedspread.New(),
 		nomixedenums.New(),
 		nonestedcomponentdefinitions.New(),

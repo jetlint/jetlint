@@ -257,6 +257,7 @@ func additionalRulesSnapshot() []string {
 		"no-loss-of-precision",
 		"no-meaningless-void-operator",
 		"no-misleading-character-class",
+		"no-misplaced-assertion",
 		"no-misused-spread",
 		"no-mixed-enums",
 		"no-namespace-import",
