@@ -26,5 +26,13 @@ jobs:
       # `-short` skips the typescript-eslint compatibility harness
       # (each rule package gates ~6193 fixtures behind testing.Short).
       # Unit and CLI integration tests still run in full.
+      #
+      # `-timeout=20m` overrides the default 10-minute per-package
+      # cap. The CLI integration suite builds the binary in-process
+      # and runs a daemon round-trip per test, so on a hosted runner
+      # that lands a hot cache miss the suite can flirt with the
+      # default; the override is generous enough to absorb that
+      # variance without hiding a genuine deadlock — a real hang
+      # would still trip the 20m limit.
       - name: Test
-        run: go test -short ./...
+        run: go test -short -timeout=20m ./...
