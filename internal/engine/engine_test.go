@@ -1,6 +1,7 @@
 package engine_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -63,6 +64,71 @@ func loadTinyProgram(t *testing.T) *wrapperchecker.Program {
 	}
 	t.Cleanup(prog.Close)
 	return prog
+}
+
+// loadMultiFileProgram builds a TS program with the given number of
+// trivial source files, each containing exactly one variable
+// declaration. It is the smallest fixture that lets the engine
+// short-circuit between files.
+func loadMultiFileProgram(t *testing.T, fileCount int) *wrapperchecker.Program {
+	t.Helper()
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	if err := os.WriteFile(filepath.Join(dir, "tsconfig.json"),
+		[]byte(`{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"}}`),
+		0o644); err != nil {
+		t.Fatalf("tsconfig: %v", err)
+	}
+	for i := 0; i < fileCount; i++ {
+		name := filepath.Join(dir, fmt.Sprintf("f%03d.ts", i))
+		if err := os.WriteFile(name, []byte("const x = 1;\nexport {};\n"), 0o644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+	prog, err := wrapperchecker.LoadProgram(filepath.Join(dir, "tsconfig.json"))
+	if err != nil {
+		t.Fatalf("LoadProgram: %v", err)
+	}
+	t.Cleanup(prog.Close)
+	return prog
+}
+
+// WithMaxDiagnostics caps the number of error diagnostics the engine
+// will collect before bailing out of the per-file walk. The cap exists
+// to spare large projects from running every rule against every file
+// when the caller already knows it will only render the first N
+// findings (jetlint#629).
+func TestEngine_WithMaxDiagnosticsStopsLintingAfterErrorThresholdReached(t *testing.T) {
+	prog := loadMultiFileProgram(t, 10)
+	rules := []engine.Rule{quietRule{id: "test/quiet"}}
+	sevs := map[string]wrapperlint.Severity{"test/quiet": wrapperlint.SeverityError}
+
+	uncapped := engine.New(rules, sevs).Lint(prog)
+	if len(uncapped) != 10 {
+		t.Fatalf("expected baseline of 10 diagnostics with no cap, got %d", len(uncapped))
+	}
+
+	capped := engine.New(rules, sevs).WithMaxDiagnostics(3).Lint(prog)
+	if len(capped) != 3 {
+		t.Errorf("expected exactly 3 diagnostics with max=3, got %d", len(capped))
+	}
+}
+
+// A max-diagnostics value of 0 must preserve the current "unlimited"
+// behavior so existing users see no regression.
+func TestEngine_WithMaxDiagnosticsZeroMeansUnlimited(t *testing.T) {
+	prog := loadMultiFileProgram(t, 10)
+	rules := []engine.Rule{quietRule{id: "test/quiet"}}
+	sevs := map[string]wrapperlint.Severity{"test/quiet": wrapperlint.SeverityError}
+
+	diags := engine.New(rules, sevs).WithMaxDiagnostics(0).Lint(prog)
+	if len(diags) != 10 {
+		t.Errorf("expected max=0 to behave as unlimited (10 diagnostics), got %d", len(diags))
+	}
 }
 
 func TestEngine_PanicInRuleBecomesPerFileToolErrorAndDoesNotAbortLint(t *testing.T) {
