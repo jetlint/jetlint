@@ -683,7 +683,7 @@ func TestCLI_OnlyFlagRejectsUnknownRule(t *testing.T) {
 	}
 }
 
-func TestCLI_MaxDiagnosticsFlagTruncatesHumanOutput(t *testing.T) {
+func TestCLI_MaxDiagnosticsFlagShortCircuitsTheLintWalkInsteadOfMerelyTruncatingOutput(t *testing.T) {
 	bin := buildBinary(t)
 	rt := runtimeDir(t)
 
@@ -693,9 +693,12 @@ func TestCLI_MaxDiagnosticsFlagTruncatesHumanOutput(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(dir) })
 
-	// A file with three floating-promise call sites generates three
-	// diagnostics; --max-diagnostics=1 must render only one block and
-	// surface a "Diagnostics not shown: 2." line.
+	// Three floating-promise call sites would each produce a
+	// diagnostic; --max-diagnostics=1 must short-circuit the lint walk
+	// after the first error, so the rendered output and the summary
+	// both reflect a single finding (jetlint#629). The old contract
+	// (render N, hide the rest) is gone: hiding diagnostics doesn't
+	// save the wall-clock time we promised this flag would.
 	for path, content := range map[string]string{
 		"tsconfig.json": `{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"}}`,
 		"main.ts": "" +
@@ -717,11 +720,11 @@ func TestCLI_MaxDiagnosticsFlagTruncatesHumanOutput(t *testing.T) {
 	_ = cmd.Run() // exit 1 expected; we only assert on output here
 
 	out := stdout.String()
-	if !strings.Contains(out, "Diagnostics not shown: 2") {
-		t.Errorf("expected 'Diagnostics not shown: 2' in output, got:\n%s", out)
+	if !strings.Contains(out, "Found 1 error.") {
+		t.Errorf("expected 'Found 1 error.' (engine should bail after the cap), got:\n%s", out)
 	}
-	if !strings.Contains(out, "Found 3 errors.") {
-		t.Errorf("expected 'Found 3 errors.' in summary (total, not truncated), got:\n%s", out)
+	if strings.Contains(out, "Diagnostics not shown") {
+		t.Errorf("did not expect a 'Diagnostics not shown' line; the engine should bail rather than the formatter hiding work that was done, got:\n%s", out)
 	}
 }
 
@@ -1098,5 +1101,52 @@ func TestCLI_IgnorePatternsFromJetlintrcSuppressDiagnosticsForMatchedFiles(t *te
 	}
 	if !sawMain {
 		t.Errorf("expected main.ts diagnostic to remain, got: %v", doc.Diagnostics)
+	}
+}
+
+// The human-format trailer's file count should reflect user-authored
+// sources, not every file the TypeScript program transitively loads.
+// Files imported from node_modules satisfy the type checker but aren't
+// the user's code, so users surprised by an inflated count are reading
+// the trailer correctly — the count is wrong (jetlint#630).
+func TestCLI_CheckedFilesCountExcludesNodeModulesAndIgnoredFiles(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	for path, content := range map[string]string{
+		"tsconfig.json": `{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler","types":[]},"include":["src/**/*.ts","node_modules/some-pkg/**/*.ts","generated/**/*.ts"]}`,
+		".jetlintrc.json": `{"ignorePatterns":["generated/**"]}`,
+		"src/main.ts":     "import { thing } from \"./helper\";\nconsole.log(thing);\n",
+		"src/helper.ts":   "export const thing = 1;\n",
+		"node_modules/some-pkg/index.ts": "export const dep = 2;\n",
+		"generated/g.ts":  "export const gen = 3;\n",
+	} {
+		full := filepath.Join(dir, path)
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatalf("mkdir %s: %v", filepath.Dir(full), err)
+		}
+		if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+
+	cmd := exec.Command(bin, "--project", filepath.Join(dir, "tsconfig.json"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_ = cmd.Run()
+
+	out := stdout.String()
+	// Two user-authored .ts files in src/. Everything else should be
+	// excluded (node_modules + generated/ via ignorePatterns).
+	if !strings.Contains(out, "Checked 2 files") {
+		t.Errorf("expected trailer to report 'Checked 2 files', got: %s", out)
 	}
 }

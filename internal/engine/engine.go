@@ -9,9 +9,10 @@ import (
 // rules and their severities is supplied at construction; the engine
 // itself is stateless beyond that.
 type Engine struct {
-	rules      []Rule
-	severities map[string]wrapperlint.Severity
-	options    map[string]any
+	rules          []Rule
+	severities     map[string]wrapperlint.Severity
+	options        map[string]any
+	maxDiagnostics int // 0 = unlimited
 }
 
 // New creates an Engine with the given rules and per-rule severities.
@@ -26,6 +27,17 @@ func New(rules []Rule, severities map[string]wrapperlint.Severity) *Engine {
 // without an entry in the map see Context.Options() == nil.
 func (e *Engine) WithOptions(options map[string]any) *Engine {
 	e.options = options
+	return e
+}
+
+// WithMaxDiagnostics caps the number of error-severity diagnostics the
+// engine will collect before bailing out of the per-file walk. A value
+// of 0 (the default) means unlimited. Warning-severity diagnostics
+// don't count toward the cap; the goal is to spare large projects from
+// running every rule against every file once the caller already knows
+// it won't display more than N errors.
+func (e *Engine) WithMaxDiagnostics(n int) *Engine {
+	e.maxDiagnostics = n
 	return e
 }
 
@@ -60,13 +72,22 @@ func (e *Engine) Lint(program *wrapperchecker.Program) []wrapperlint.Diagnostic 
 		return diagnostics
 	}
 
+	errorCount := 0
+	stopped := false
 	for _, file := range program.SourceFiles() {
+		if stopped {
+			break
+		}
 		file.Walk(func(n *wrapperchecker.Node) bool {
+			if stopped {
+				return false
+			}
 			entries, ok := dispatch[n.Kind()]
 			if !ok {
 				return true
 			}
 			for _, ent := range entries {
+				before := len(diagnostics)
 				ctx := &Context{
 					program:     program,
 					checker:     chk,
@@ -76,6 +97,18 @@ func (e *Engine) Lint(program *wrapperchecker.Program) []wrapperlint.Diagnostic 
 					diagnostics: &diagnostics,
 				}
 				dispatchSafely(ctx, ent.handler, n, file.Path(), ent.ruleID, &diagnostics)
+				// Only error-severity diagnostics count toward the cap.
+				// dispatchSafely may also push a rule-panic warning; those
+				// must not consume budget intended for real findings.
+				for i := before; i < len(diagnostics); i++ {
+					if diagnostics[i].Severity == wrapperlint.SeverityError {
+						errorCount++
+					}
+				}
+				if e.maxDiagnostics > 0 && errorCount >= e.maxDiagnostics {
+					stopped = true
+					return false
+				}
 			}
 			return true
 		})
