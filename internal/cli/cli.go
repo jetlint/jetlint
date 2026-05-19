@@ -346,9 +346,15 @@ Flags:
                        junit (CI dashboard XML),
                        rdjson (reviewdog inline PR comments).
     --max-diagnostics <n>
-                       Cap on rendered diagnostics for the human format.
-                       0 disables truncation. Overrides .jetlintrc.json's
-                       maxDiagnostics value. Default: 20 (matches biome).
+                       Cap on error diagnostics for the human format.
+                       The lint walk short-circuits once the cap is hit,
+                       so this also bounds runtime on large projects.
+                       0 disables both the truncation and the bail-out.
+                       Overrides .jetlintrc.json's maxDiagnostics value.
+                       Default: 20 (matches biome). Machine formats
+                       (json, sarif, github, junit, rdjson) ignore the
+                       cap and return the full diagnostic set so
+                       downstream tools see everything.
     --only <rule-id>   Restrict execution to the named rule. Repeatable
                        to allow a small set: --only no-floating-promises
                        --only no-base-to-string. Useful for head-to-head
@@ -380,7 +386,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	// -1 is the sentinel for "not supplied"; the resolved config's
 	// value (or DefaultMaxDiagnostics when no config) wins in that
 	// case. 0 means "render every diagnostic".
-	maxDiagnosticsFlag := fs.Int("max-diagnostics", -1, "cap on rendered diagnostics for the human format (0 = unlimited; overrides config)")
+	maxDiagnosticsFlag := fs.Int("max-diagnostics", -1, "cap on error diagnostics for the human format; the lint walk short-circuits once the cap is hit (0 = unlimited; overrides config)")
 	var onlyRules stringSliceFlag
 	fs.Var(&onlyRules, "only", "restrict execution to the named rule (repeatable: --only no-floating-promises --only no-base-to-string)")
 	projectFlag := fs.String("project", "", "tsconfig path (or directory containing one) — required when no positional target is provided")
@@ -658,11 +664,24 @@ func runLint(targets []string, projectFlag string, stdout, stderr io.Writer, for
 		emitToolError(stderr, formatter.Name(), ruleErr)
 		return 2
 	}
-	eng := engine.New(rulesList, resolved.Rules)
+	// Resolve the effective cap before running the engine so the lint
+	// walk can short-circuit once the threshold is hit (jetlint#629).
+	// The cap is human-format-only: machine formats (json, sarif, …) keep
+	// returning the full diagnostic set so downstream tools aren't
+	// silently truncated.
+	maxDiagnostics := resolved.MaxDiagnostics
+	if maxDiagnosticsFlag >= 0 {
+		maxDiagnostics = maxDiagnosticsFlag
+	}
+	engineCap := 0
+	if _, ok := formatter.(format.Human); ok {
+		engineCap = maxDiagnostics
+	}
+	eng := engine.New(rulesList, resolved.Rules).WithMaxDiagnostics(engineCap)
 	lintStart := time.Now()
 	diagnostics := eng.Lint(prog)
 	lintDuration := time.Since(lintStart)
-	filesChecked := len(prog.SourceFiles())
+	filesChecked := userAuthoredFileCount(prog, resolved.IgnorePatterns)
 
 	// Drop diagnostics whose source file matches a configured
 	// ignorePatterns glob. The file stays in the TypeScript program so
@@ -686,11 +705,8 @@ func runLint(targets []string, projectFlag string, stdout, stderr io.Writer, for
 	// The human formatter benefits from execution stats (files checked,
 	// duration, max-diagnostics cap) in its summary block. Other
 	// formatters don't carry that state, so we only enrich when the
-	// active formatter is Human.
-	maxDiagnostics := resolved.MaxDiagnostics
-	if maxDiagnosticsFlag >= 0 {
-		maxDiagnostics = maxDiagnosticsFlag
-	}
+	// active formatter is Human. The cap value was resolved before
+	// running the engine (so it could short-circuit).
 	if _, ok := formatter.(format.Human); ok {
 		formatter = format.Human{
 			FilesChecked:   filesChecked,
@@ -1063,6 +1079,29 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 
 // hasError reports whether any diagnostic in the slice was emitted at
 // error severity (the signal for exit code 1).
+// userAuthoredFileCount counts the program's source files that
+// represent code the user actually wrote. TypeScript programs
+// transitively load `.ts` files from dependencies (rare but possible
+// for packages that ship source) and from the user's generated
+// directories, neither of which match the intuition behind the
+// "Checked N files" trailer (jetlint#630). Files under `node_modules`
+// and files matched by the resolved ignorePatterns matcher are
+// excluded; everything else counts.
+func userAuthoredFileCount(prog *wrapperchecker.Program, ignore config.IgnoreMatcher) int {
+	n := 0
+	for _, f := range prog.SourceFiles() {
+		path := f.Path()
+		if strings.Contains(filepath.ToSlash(path), "/node_modules/") {
+			continue
+		}
+		if ignore.Matches(path) {
+			continue
+		}
+		n++
+	}
+	return n
+}
+
 // filterIgnoredDiagnostics removes diagnostics whose file matches the
 // resolved ignorePatterns matcher. Diagnostic.Range.File is already an
 // absolute path produced by the TypeScript program.
