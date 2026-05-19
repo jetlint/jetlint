@@ -1,6 +1,6 @@
 # jetlint
 
-> A fast, type-aware TypeScript 7 linter. Drop-in compatible with typescript-eslint.
+> A fast, type-aware TypeScript 7 linter. Rule-compatible with typescript-eslint.
 
 **Site & docs:** https://jetlint.github.io
 
