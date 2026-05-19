@@ -414,7 +414,7 @@ func containsTypeVariable(t *wrapperchecker.Type) (result bool) {
 	}()
 	return typeContains(t, func(t *wrapperchecker.Type) bool {
 		return t != nil && t.IsTypeParameter()
-	}, map[*wrapperchecker.Type]struct{}{})
+	}, map[any]struct{}{})
 }
 
 // genericsMismatch reports whether the contextual type has at least
@@ -755,17 +755,25 @@ func containsAny(t *wrapperchecker.Type) (result bool) {
 	}()
 	return typeContains(t, func(t *wrapperchecker.Type) bool {
 		return t != nil && t.IsAny()
-	}, map[*wrapperchecker.Type]struct{}{})
+	}, map[any]struct{}{})
 }
 
-func typeContains(t *wrapperchecker.Type, pred func(*wrapperchecker.Type) bool, seen map[*wrapperchecker.Type]struct{}) bool {
+// typeContains walks t's structural shape (unions, intersections, type
+// arguments) looking for any sub-type that satisfies pred. The seen map
+// is keyed on the underlying checker type via t.Inner(): the wrapper's
+// UnionMembers / TypeArguments / IntersectionMembers each return fresh
+// wrapper instances around the same underlying types, so keying on the
+// wrapper pointer fails to detect cycles and lets recursion blow the
+// goroutine stack on legitimate recursive shapes (jetlint#624).
+func typeContains(t *wrapperchecker.Type, pred func(*wrapperchecker.Type) bool, seen map[any]struct{}) bool {
 	if t == nil {
 		return false
 	}
-	if _, ok := seen[t]; ok {
+	key := any(t.Inner())
+	if _, ok := seen[key]; ok {
 		return false
 	}
-	seen[t] = struct{}{}
+	seen[key] = struct{}{}
 	if pred(t) {
 		return true
 	}

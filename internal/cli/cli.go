@@ -664,6 +664,12 @@ func runLint(targets []string, projectFlag string, stdout, stderr io.Writer, for
 	lintDuration := time.Since(lintStart)
 	filesChecked := len(prog.SourceFiles())
 
+	// Drop diagnostics whose source file matches a configured
+	// ignorePatterns glob. The file stays in the TypeScript program so
+	// its type information is still available to importers; only the
+	// diagnostic emission is suppressed.
+	diagnostics = filterIgnoredDiagnostics(diagnostics, resolved.IgnorePatterns)
+
 	// Degraded-mode signal: when the program itself has type errors,
 	// every type-aware diagnostic built on it is suspect. Surface a
 	// single program-scope tool warning so AI agents can detect the
@@ -1057,6 +1063,20 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 
 // hasError reports whether any diagnostic in the slice was emitted at
 // error severity (the signal for exit code 1).
+// filterIgnoredDiagnostics removes diagnostics whose file matches the
+// resolved ignorePatterns matcher. Diagnostic.Range.File is already an
+// absolute path produced by the TypeScript program.
+func filterIgnoredDiagnostics(diags []wrapperlint.Diagnostic, m config.IgnoreMatcher) []wrapperlint.Diagnostic {
+	out := diags[:0]
+	for _, d := range diags {
+		if m.Matches(d.Range.File) {
+			continue
+		}
+		out = append(out, d)
+	}
+	return out
+}
+
 func hasError(d []wrapperlint.Diagnostic) bool {
 	for _, x := range d {
 		if x.Severity == wrapperlint.SeverityError {
