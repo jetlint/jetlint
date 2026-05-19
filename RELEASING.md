@@ -91,7 +91,11 @@ sequence:
 1. Verify CI is green on `main`.
 2. Update `CHANGELOG.md` (if present) and commit on `main`.
 3. Pick the semver tag: `vMAJOR.MINOR.PATCH` (no prerelease suffix until
-   the workflow's regex is loosened intentionally).
+   the workflow's regex is loosened intentionally). While the project is
+   in 0.1.x, releases stay on `0.1.y` — patch-bump regardless of how
+   additive or wrapper-bumpy the diff looks. The minor digit will be
+   promoted to `0.2` by an explicit, separate decision; default to a
+   patch until that decision is recorded here.
 4. `git tag -s v0.X.Y && git push origin v0.X.Y`
    (signed tag preferred; the workflow regex-validates the tag name).
 5. Watch the publish-alert monitor and the workflow run side by side. If
