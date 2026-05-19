@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	wrapperlint "github.com/microsoft/typescript-go/pkg/lint"
@@ -164,6 +165,33 @@ func TestResolveCascade_InvalidJSONReturnsConfigInvalidError(t *testing.T) {
 	}
 	if te.Path == "" {
 		t.Errorf("expected path on error, got empty")
+	}
+}
+
+// .jetlintrc.json's strict-validation promise ("misspelled options
+// exit with code 2") historically only applied to rule names and
+// severities. Top-level keys were silently accepted, so a user
+// guessing `ignoreFiles` instead of `ignorePatterns` lost their ignore
+// list without any error to point at the typo. This test pins the
+// stricter behavior: unknown top-level keys must produce a structured
+// config-invalid error so the user can fix the typo immediately.
+func TestResolveCascade_UnknownTopLevelKeyReturnsConfigInvalidError(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, ".jetlintrc.json"),
+		`{"ignoreFiles": ["app/generated/**"]}`)
+	_, err := config.ResolveCascade(dir)
+	if err == nil {
+		t.Fatal("expected error for unknown top-level key, got nil")
+	}
+	var te *toolerr.Error
+	if !errors.As(err, &te) {
+		t.Fatalf("expected *toolerr.Error, got %T: %v", err, err)
+	}
+	if te.Code != toolerr.CodeConfigInvalid {
+		t.Errorf("expected code %s, got %s", toolerr.CodeConfigInvalid, te.Code)
+	}
+	if !strings.Contains(te.Message, "ignoreFiles") {
+		t.Errorf("expected error message to name the offending key 'ignoreFiles', got: %s", te.Message)
 	}
 }
 

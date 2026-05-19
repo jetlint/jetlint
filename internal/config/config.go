@@ -6,6 +6,7 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -160,7 +161,14 @@ func LoadFile(path string) (FileConfig, error) {
 		return FileConfig{}, toolerr.WithPath(toolerr.CodeConfigInvalid, err.Error(), path)
 	}
 	var cfg FileConfig
-	if err := json.Unmarshal(raw, &cfg); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	// Reject typos in top-level keys (e.g. ignoreFiles vs ignorePatterns)
+	// so a guess at the schema fails loudly instead of being silently
+	// ignored. Matches the project's "misspelled options exit with code
+	// 2" promise that previously applied only to rule names and
+	// severities.
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&cfg); err != nil {
 		return FileConfig{}, toolerr.WithPath(toolerr.CodeConfigInvalid,
 			fmt.Sprintf("parse %s: %v", path, err), path)
 	}
