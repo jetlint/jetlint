@@ -1,6 +1,6 @@
 # jetlint
 
-> A fast, type-aware TypeScript 7 linter. Drop-in compatible with typescript-eslint.
+> A fast, type-aware TypeScript 7 linter. Rule-compatible with typescript-eslint.
 
 **Site & docs:** https://jetlint.github.io
 
@@ -46,8 +46,18 @@ setup.
 
 ## Run
 
+Point `--project` at a tsconfig (or a directory containing one):
+
 ```bash
 jetlint --project ./tsconfig.json
+```
+
+Or pass files and directories directly &mdash; the nearest enclosing
+`tsconfig.json` is discovered by walking upward:
+
+```bash
+jetlint src/index.ts
+jetlint .
 ```
 
 The **5 MVP rules** default to `error`. The other **56 rules** ship `off`
@@ -62,9 +72,20 @@ The **5 MVP rules** default to `error`. The other **56 rules** ship `off`
   "rules": {
     "no-array-delete": "error",
     "only-throw-error": ["error", { "allowThrowingAny": false }]
-  }
+  },
+  "ignorePatterns": [
+    "**/generated/**",
+    "packages/*/lib/**/*.gen.ts",
+    "!packages/keep/lib/api/keep.gen.ts"
+  ]
 }
 ```
+
+`ignorePatterns` is a gitignore-flavored list of doublestar globs.
+Matching files stay part of the TypeScript program (so their type
+information is still available to importers) but emit no diagnostics. A
+leading `!` un-ignores. Patterns resolve relative to the directory of
+the `.jetlintrc.json` that contains them.
 
 See [the config docs](https://jetlint.github.io/config/) for the full
 schema.

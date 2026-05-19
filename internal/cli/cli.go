@@ -398,10 +398,15 @@ const usage = `jetlint - fast, type-aware TypeScript linter
 
 Usage:
     jetlint [flags] [files...]
+    jetlint --project <tsconfig.json>
 
 Flags:
     --version          Print the linter version and exit.
     --help             Print this help text and exit.
+    --project <path>   Path to a tsconfig.json (or a directory containing
+                       one). Required when no positional target is given;
+                       positional targets win for tsconfig discovery when
+                       both are provided.
     --format <name>    Output format. One of: human (default), json,
                        sarif (GitHub Code Scanning, Azure DevOps),
                        github (GitHub Actions inline PR annotations),
@@ -445,6 +450,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	maxDiagnosticsFlag := fs.Int("max-diagnostics", -1, "cap on rendered diagnostics for the human format (0 = unlimited; overrides config)")
 	var onlyRules stringSliceFlag
 	fs.Var(&onlyRules, "only", "restrict execution to the named rule (repeatable: --only no-floating-promises --only no-base-to-string)")
+	projectFlag := fs.String("project", "", "tsconfig path (or directory containing one) — required when no positional target is provided")
 	daemonFlag := fs.String("daemon", "", "internal: run as the per-project daemon listening on the given socket")
 
 	if err := fs.Parse(args); err != nil {
@@ -484,7 +490,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		targets = append(targets, extra...)
 	}
 
-	return runLint(targets, stdout, stderr, formatter, *maxDiagnosticsFlag, onlyRules)
+	return runLint(targets, *projectFlag, stdout, stderr, formatter, *maxDiagnosticsFlag, onlyRules)
 }
 
 // readFileList returns the newline-separated target paths from path. The
@@ -556,29 +562,44 @@ func (s *stringSliceFlag) Set(value string) error {
 	return nil
 }
 
-func runLint(targets []string, stdout, stderr io.Writer, formatter format.Formatter, maxDiagnosticsFlag int, onlyRules []string) int {
-	if len(targets) == 0 {
+func runLint(targets []string, projectFlag string, stdout, stderr io.Writer, formatter format.Formatter, maxDiagnosticsFlag int, onlyRules []string) int {
+	// Pick the tsconfig discovery seed: an explicit --project wins; the
+	// first positional target wins next. Without either, the user gets a
+	// "no targets" error pointing at the flag and --help so first-time
+	// users aren't left guessing (jetlint#621).
+	seed := projectFlag
+	if seed == "" && len(targets) > 0 {
+		seed = targets[0]
+	}
+	if seed == "" {
 		emitToolError(stderr, formatter.Name(),
-			toolerr.New(toolerr.CodeNoTargets, "no targets provided"))
+			toolerr.New(toolerr.CodeNoTargets,
+				"no targets provided; pass a file or directory, or use --project <tsconfig.json> (run with --help for usage)"))
 		return 2
 	}
 
-	tsconfig, err := project.FindNearestTsconfig(targets[0])
+	tsconfig, err := project.FindNearestTsconfig(seed)
 	if err != nil {
 		code := toolerr.CodeInternal
 		if project.IsNotFound(err) {
 			code = toolerr.CodeTsconfigMissing
 		}
 		emitToolError(stderr, formatter.Name(),
-			toolerr.WithPath(code, err.Error(), targets[0]))
+			toolerr.WithPath(code, err.Error(), seed))
 		return 2
 	}
 
-	// Resolve the lint configuration cascade starting at the directory of
-	// the first target. Failures here are user-facing tooling errors (bad
-	// JSON, unknown rule); they preempt daemon work so the user sees the
-	// problem immediately.
-	resolved, err := config.ResolveCascade(filepath.Dir(targets[0]))
+	// Resolve the lint configuration cascade. The first positional
+	// target's directory is the user's intent when given; otherwise fall
+	// back to the resolved tsconfig's directory, which is the project
+	// root for an explicit --project invocation. Failures here are
+	// user-facing tooling errors (bad JSON, unknown rule); they preempt
+	// daemon work so the user sees the problem immediately.
+	cascadeStart := filepath.Dir(tsconfig)
+	if len(targets) > 0 {
+		cascadeStart = filepath.Dir(targets[0])
+	}
+	resolved, err := config.ResolveCascade(cascadeStart)
 	if err != nil {
 		var te *toolerr.Error
 		if errors.As(err, &te) {
@@ -652,9 +673,16 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 	// For each explicit target, verify it is part of the discovered
 	// program. Files outside the program get a per-target structured
 	// warning (in JSON mode) and are skipped from the lint scope.
+	// Directory targets are skipped here: they aren't single source
+	// files, and the lint expands to the program's files regardless,
+	// so the per-target check would emit a misleading "not part of
+	// the program" error on a run that actually succeeded (jetlint#621).
 	for _, target := range targets {
 		abs, absErr := filepath.Abs(target)
 		if absErr != nil {
+			continue
+		}
+		if info, statErr := os.Stat(abs); statErr == nil && info.IsDir() {
 			continue
 		}
 		if prog.SourceFileByPath(abs) == nil {
@@ -702,6 +730,12 @@ func runLint(targets []string, stdout, stderr io.Writer, formatter format.Format
 	diagnostics := eng.Lint(prog)
 	lintDuration := time.Since(lintStart)
 	filesChecked := len(prog.SourceFiles())
+
+	// Drop diagnostics whose source file matches a configured
+	// ignorePatterns glob. The file stays in the TypeScript program so
+	// its type information is still available to importers; only the
+	// diagnostic emission is suppressed.
+	diagnostics = filterIgnoredDiagnostics(diagnostics, resolved.IgnorePatterns)
 
 	// Degraded-mode signal: when the program itself has type errors,
 	// every type-aware diagnostic built on it is suspect. Surface a
@@ -1163,6 +1197,20 @@ func buildRules(ruleOptions map[string]json.RawMessage) ([]engine.Rule, *toolerr
 
 // hasError reports whether any diagnostic in the slice was emitted at
 // error severity (the signal for exit code 1).
+// filterIgnoredDiagnostics removes diagnostics whose file matches the
+// resolved ignorePatterns matcher. Diagnostic.Range.File is already an
+// absolute path produced by the TypeScript program.
+func filterIgnoredDiagnostics(diags []wrapperlint.Diagnostic, m config.IgnoreMatcher) []wrapperlint.Diagnostic {
+	out := diags[:0]
+	for _, d := range diags {
+		if m.Matches(d.Range.File) {
+			continue
+		}
+		out = append(out, d)
+	}
+	return out
+}
+
 func hasError(d []wrapperlint.Diagnostic) bool {
 	for _, x := range d {
 		if x.Severity == wrapperlint.SeverityError {

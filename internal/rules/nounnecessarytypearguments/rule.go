@@ -196,8 +196,8 @@ func typesMatch(a, b *wrapperchecker.Type) bool {
 	if a.Identical(b) {
 		return true
 	}
-	aArgs := a.TypeArguments()
-	bArgs := b.TypeArguments()
+	aArgs := safeTypeArguments(a)
+	bArgs := safeTypeArguments(b)
 	if len(aArgs) == 0 || len(aArgs) != len(bArgs) {
 		return false
 	}
@@ -207,4 +207,22 @@ func typesMatch(a, b *wrapperchecker.Type) bool {
 		}
 	}
 	return true
+}
+
+// safeTypeArguments returns the type's type arguments, or nil if the
+// type has none or the underlying checker rejects the query. The
+// wrapper's TypeArguments() filters non-Object types and non-
+// TypeReferences but still propagates panics for TypeReferences whose
+// target lacks the expected InterfaceType backing (e.g., aliased
+// generic signatures like `React.FC<P>` — jetlint#625).
+func safeTypeArguments(t *wrapperchecker.Type) (args []*wrapperchecker.Type) {
+	if t == nil {
+		return nil
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			args = nil
+		}
+	}()
+	return t.TypeArguments()
 }

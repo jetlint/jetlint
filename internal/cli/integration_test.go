@@ -972,3 +972,131 @@ func TestCLI_TsgolintrcRejectsUnknownRuleOption(t *testing.T) {
 		t.Errorf("expected stderr to mention the unknown option, got: %s", stderr.String())
 	}
 }
+
+// Regression for jetlint#621: a directory positional argument used to
+// trip the per-target "file is not part of the discovered TypeScript
+// program" check, leaking an "internal" tool-error to stderr even
+// though the lint scope expanded to the program's files and the run
+// succeeded. Directories should be treated as "lint the program;
+// they're not a single source file to verify against the program set.
+func TestCLI_DoesNotEmitTargetNotInProgramErrorWhenTargetIsADirectory(t *testing.T) {
+	bin := buildBinary(t)
+	project := fixtureProject(t)
+	rt := runtimeDir(t)
+
+	cmd := exec.Command(bin, project)
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_ = cmd.Run()
+
+	if strings.Contains(stderr.String(), "not part of the discovered TypeScript program") {
+		t.Errorf("expected no 'not part of program' tool-error on directory target, got stderr: %s", stderr.String())
+	}
+}
+
+// Regression for jetlint#621: the README documents
+// `jetlint --project ./tsconfig.json` but the CLI rejected the flag.
+// With `--project`, no positional target is required: the linter
+// loads the named tsconfig and reports on the program it builds.
+func TestCLI_ProjectFlagPointsAtTsconfigAndRunsWithoutPositionalTargets(t *testing.T) {
+	bin := buildBinary(t)
+	project := fixtureProject(t)
+	rt := runtimeDir(t)
+
+	cmd := exec.Command(bin, "--project", filepath.Join(project, "tsconfig.json"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("expected exit 0 on clean project via --project, got %v\nstdout: %s\nstderr: %s",
+			err, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Checked") {
+		t.Errorf("expected human summary line, got stdout: %s", stdout.String())
+	}
+}
+
+// When the user invokes jetlint with no targets and no --project, the
+// "no targets provided" error should hint at how to get going so a
+// first-time user isn't left guessing (jetlint#621).
+func TestCLI_NoTargetsErrorIncludesGuidanceTowardsHelpOrProject(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	cmd := exec.Command(bin)
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_ = cmd.Run()
+
+	out := stderr.String()
+	if !strings.Contains(out, "--project") && !strings.Contains(out, "--help") {
+		t.Errorf("expected no-targets error to mention --project or --help, got stderr: %s", out)
+	}
+}
+
+// Files matched by a .jetlintrc.json `ignorePatterns` glob must produce
+// no diagnostics, even when they otherwise contain rule violations
+// (jetlint#626).
+func TestCLI_IgnorePatternsFromJetlintrcSuppressDiagnosticsForMatchedFiles(t *testing.T) {
+	bin := buildBinary(t)
+	rt := runtimeDir(t)
+
+	dir, err := os.MkdirTemp("/tmp", "tsg")
+	if err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
+	for path, content := range map[string]string{
+		"tsconfig.json":    `{"compilerOptions":{"strict":true,"target":"es2022","module":"esnext","moduleResolution":"bundler"},"include":["**/*.ts"]}`,
+		".jetlintrc.json":  `{"ignorePatterns":["generated/**"]}`,
+		"api.ts":           "export async function saveUser(name: string): Promise<void> { return; }\n",
+		"main.ts":          "import { saveUser } from \"./api\";\nsaveUser(\"alice\");\n",
+		"generated/gen.ts": "import { saveUser } from \"../api\";\nsaveUser(\"bob\");\n",
+	} {
+		full := filepath.Join(dir, path)
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatalf("mkdir %s: %v", filepath.Dir(full), err)
+		}
+		if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+
+	cmd := exec.Command(bin, "--format", "json", "--project", filepath.Join(dir, "tsconfig.json"))
+	cmd.Env = append(os.Environ(), "XDG_RUNTIME_DIR="+rt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_ = cmd.Run()
+
+	var doc struct {
+		Diagnostics []map[string]any
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &doc); err != nil {
+		t.Fatalf("decode output: %v\nstdout: %s\nstderr: %s", err, stdout.String(), stderr.String())
+	}
+	for _, d := range doc.Diagnostics {
+		file, _ := d["file"].(string)
+		if strings.Contains(file, "/generated/") {
+			t.Errorf("expected no diagnostics for ignored file %s, got %v", file, d)
+		}
+	}
+	// Sanity: main.ts is not ignored, so the floating-promise diagnostic
+	// still emits.
+	sawMain := false
+	for _, d := range doc.Diagnostics {
+		file, _ := d["file"].(string)
+		if strings.HasSuffix(file, "main.ts") {
+			sawMain = true
+		}
+	}
+	if !sawMain {
+		t.Errorf("expected main.ts diagnostic to remain, got: %v", doc.Diagnostics)
+	}
+}

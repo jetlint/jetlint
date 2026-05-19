@@ -17,6 +17,39 @@ import (
 
 const id = "no-deprecated"
 
+// symbolIsDeprecated wraps Symbol.IsDeprecated() with a recover.
+// The upstream checker's alias-resolution path hits an unexpected-nil
+// assertion on some namespace-import / default-member shapes
+// (jetlint#625); treating those as "not deprecated" is strictly safer
+// than aborting the rule for the entire node.
+func symbolIsDeprecated(sym *wrapperchecker.Symbol) (deprecated bool) {
+	if sym == nil {
+		return false
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			deprecated = false
+		}
+	}()
+	type deprecatableSymbol interface{ IsDeprecated() bool }
+	return deprecatableSymbol(sym).IsDeprecated()
+}
+
+// signatureIsDeprecated wraps Signature.IsDeprecated() with the same
+// guard for the call-signature lookup path.
+func signatureIsDeprecated(sig *wrapperchecker.Signature) (deprecated bool) {
+	if sig == nil {
+		return false
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			deprecated = false
+		}
+	}()
+	type deprecatableSignature interface{ IsDeprecated() bool }
+	return deprecatableSignature(sig).IsDeprecated()
+}
+
 // Options is the configurable surface of the rule. Mirrors
 // typescript-eslint's `no-deprecated` options.
 type Options struct {
@@ -135,7 +168,7 @@ func visitSuperKeyword(ctx *engine.Context, n *wrapperchecker.Node, opts Options
 		return
 	}
 	sig := ctx.Checker().ResolvedSignature(parent)
-	if sig == nil || !sig.IsDeprecated() {
+	if sig == nil || !signatureIsDeprecated(sig) {
 		return
 	}
 	report(ctx, n, "super", sig.DeprecationReason(), opts)
@@ -192,7 +225,7 @@ func visitIdentifier(ctx *engine.Context, n *wrapperchecker.Node, opts Options) 
 // signature is being used.
 func reportIfDeprecatedExceptOwnSpecifier(ctx *engine.Context, n, spec *wrapperchecker.Node, opts Options) {
 	sym := ctx.Checker().SymbolOf(n)
-	if sym == nil || !sym.IsDeprecated() {
+	if sym == nil || !symbolIsDeprecated(sym) {
 		return
 	}
 	d := sym.FirstDeprecatedDeclaration()
@@ -269,7 +302,7 @@ func checkJsxAttributeUse(ctx *engine.Context, n *wrapperchecker.Node, opts Opti
 	// component types. ContextualTypeOf on the tag identifier itself
 	// returns `any`, so go through the attributes parent instead.
 	if attrsT := ctx.Checker().ContextualTypeOf(pp); attrsT != nil {
-		if prop := attrsT.PropertySymbol(n.LiteralText()); prop != nil && prop.IsDeprecated() {
+		if prop := attrsT.PropertySymbol(n.LiteralText()); prop != nil && symbolIsDeprecated(prop) {
 			report(ctx, n, n.LiteralText(), prop.DeprecationReason(), opts)
 			return true
 		}
@@ -286,7 +319,7 @@ func checkJsxAttributeUse(ctx *engine.Context, n *wrapperchecker.Node, opts Opti
 		}
 	}
 	prop := t.PropertySymbol(n.LiteralText())
-	if prop == nil || !prop.IsDeprecated() {
+	if prop == nil || !symbolIsDeprecated(prop) {
 		return true
 	}
 	report(ctx, n, n.LiteralText(), prop.DeprecationReason(), opts)
@@ -354,7 +387,7 @@ func checkDestructuringPropertyUse(ctx *engine.Context, n *wrapperchecker.Node, 
 		}
 	}
 	prop := srcT.PropertySymbol(key)
-	if prop == nil || !prop.IsDeprecated() {
+	if prop == nil || !symbolIsDeprecated(prop) {
 		return true
 	}
 	report(ctx, n, key, prop.DeprecationReason(), opts)
@@ -485,7 +518,7 @@ func visitElementAccess(ctx *engine.Context, n *wrapperchecker.Node, opts Option
 		return
 	}
 	prop := objT.PropertySymbol(name)
-	if prop == nil || !prop.IsDeprecated() {
+	if prop == nil || !symbolIsDeprecated(prop) {
 		return
 	}
 	report(ctx, idx, name, prop.DeprecationReason(), opts)
@@ -511,7 +544,7 @@ func reportIfDeprecated(ctx *engine.Context, n *wrapperchecker.Node, opts Option
 	callLike := getCallLikeNode(n)
 	if callLike != nil {
 		if sig := ctx.Checker().ResolvedSignatureGeneral(callLike); sig != nil {
-			if sig.IsDeprecated() {
+			if signatureIsDeprecated(sig) {
 				reportSym(ctx, n, n.LiteralText(), sig.DeprecationReason(), sym, opts)
 				return
 			}
@@ -526,7 +559,7 @@ func reportIfDeprecated(ctx *engine.Context, n *wrapperchecker.Node, opts Option
 			return
 		}
 	}
-	if sym.IsDeprecated() {
+	if symbolIsDeprecated(sym) {
 		reportSym(ctx, n, n.LiteralText(), sym.DeprecationReason(), sym, opts)
 	}
 }
@@ -776,7 +809,15 @@ func getCallLikeNode(n *wrapperchecker.Node) *wrapperchecker.Node {
 // by the resolved-signature check; surfacing the alias-chain's
 // any-overload result there would over-report when the selected
 // overload is fine.
-func symbolHasBindingLevelDeprecation(sym *wrapperchecker.Symbol) bool {
+func symbolHasBindingLevelDeprecation(sym *wrapperchecker.Symbol) (binding bool) {
+	if sym == nil {
+		return false
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			binding = false
+		}
+	}()
 	d := sym.FirstDeprecatedDeclaration()
 	if d == nil {
 		return false

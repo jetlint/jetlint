@@ -80,3 +80,36 @@ func TestNoUnsafeAssignment_DoesNotFlagAnyToAny(t *testing.T) {
 		t.Errorf("expected no diagnostics for any-to-any, got %d: %#v", len(diags), diags)
 	}
 }
+
+// Regression for jetlint#621: assigning an object literal to a typed
+// interface binding caused the rule to panic on every such site (5,281
+// rule-panic diagnostics across a real codebase). The trigger is a
+// non-tuple TypeReference whose target is not InterfaceType-backed, on
+// which the wrapper's TypeArguments() unsafely dispatches.
+func TestNoUnsafeAssignment_DoesNotPanicWhenObjectLiteralIsAssignedToInterfaceTypeBinding(t *testing.T) {
+	tsconfig := fixture(t, map[string]string{
+		"main.ts": "interface Config { content: string[] }\nconst c: Config = { content: ['x'] };\n",
+	})
+	diags := runRule(t, tsconfig)
+	for _, d := range diags {
+		if d.RuleID == "jetlint/rule-panic" {
+			t.Fatalf("expected no rule-panic diagnostics, got: %#v", diags)
+		}
+	}
+}
+
+// Regression for jetlint#621: object-literal property values passed as
+// call arguments (e.g., `f({ start: value })`) and JSX prop value
+// expressions (e.g., `<C selected={value} />`) panicked when the
+// rule probed contextual type arguments.
+func TestNoUnsafeAssignment_DoesNotPanicOnObjectLiteralPropertyValuesInCallArguments(t *testing.T) {
+	tsconfig := fixture(t, map[string]string{
+		"main.ts": "declare function f(i: { start: Date | number; end: Date | number }): void;\nconst sd: Date = new Date();\nconst ed: Date = new Date();\nf({ start: sd, end: ed });\n",
+	})
+	diags := runRule(t, tsconfig)
+	for _, d := range diags {
+		if d.RuleID == "jetlint/rule-panic" {
+			t.Fatalf("expected no rule-panic diagnostics, got: %#v", diags)
+		}
+	}
+}

@@ -159,11 +159,11 @@ func unwrapPromise(t *wrapperchecker.Type) *wrapperchecker.Type {
 		if !t.IsPromise() {
 			return t
 		}
-		args := t.TypeArguments()
+		args := safeTypeArguments(t)
 		if t.SymbolName() != "Promise" {
 			// Inherited Promise — find the base Promise's argument.
 			if base := promiseBase(t); base != nil {
-				bargs := base.TypeArguments()
+				bargs := safeTypeArguments(base)
 				if len(bargs) == 1 {
 					t = bargs[0]
 					continue
@@ -210,12 +210,33 @@ func typeContainsAnyDeep(t *wrapperchecker.Type, depth int) bool {
 			}
 		}
 	}
-	for _, a := range t.TypeArguments() {
+	for _, a := range safeTypeArguments(t) {
 		if typeContainsAnyDeep(a, depth-1) {
 			return true
 		}
 	}
 	return false
+}
+
+// safeTypeArguments returns the type's type arguments, or nil if the
+// type has none or the underlying checker rejects the query. The
+// wrapper's TypeArguments() filters non-Object types and non-
+// TypeReferences but still propagates panics for TypeReferences whose
+// target lacks the expected InterfaceType backing (e.g., synthesized
+// references seen on certain object literals — jetlint#621/#625).
+// Falling back to nil here loses at most a nested generic recursion;
+// the surrounding logic already treats "no matching arguments" as
+// "nothing to recurse into."
+func safeTypeArguments(t *wrapperchecker.Type) (args []*wrapperchecker.Type) {
+	if t == nil {
+		return nil
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			args = nil
+		}
+	}()
+	return t.TypeArguments()
 }
 
 // returnIsUnsafe reports whether returning an actual value of type
@@ -245,8 +266,8 @@ func returnIsUnsafe(actual, declared *wrapperchecker.Type, depth int) bool {
 		return false
 	}
 	// Same generic type — compare type arguments positionally.
-	actualArgs := actual.TypeArguments()
-	declaredArgs := declared.TypeArguments()
+	actualArgs := safeTypeArguments(actual)
+	declaredArgs := safeTypeArguments(declared)
 	if len(actualArgs) > 0 && len(actualArgs) == len(declaredArgs) &&
 		actual.SymbolName() == declared.SymbolName() && actual.SymbolName() != "" {
 		for i := range actualArgs {
