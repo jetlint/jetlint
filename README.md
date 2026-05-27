@@ -9,18 +9,20 @@ jetlint is a Go-based linter built on the TypeScript 7 native compiler
 type-aware rules to a long-lived daemon model, paying the cost of loading
 TypeScript once and returning subsequent lints in milliseconds.
 
-**Status:** pre-1.0. Diagnostics are real and validated against
-typescript-eslint's published test fixtures (currently 6193/6193 cases,
-100%). The CLI surface and configuration schema may still change.
+**Status:** pre-1.0. Diagnostics are real and validated byte-for-byte
+against vendored typescript-eslint, ESLint, and Biome test fixtures (all
+rule suites passing). The CLI surface and configuration schema may still
+change.
 
 ## Highlights
 
-- **67 rules**: 61 type-aware ports of typescript-eslint plus 6
-  non-type-aware correctness rules ported from ESLint core
-  (`no-dupe-keys`, `no-duplicate-case`, `no-self-assign`, `no-self-compare`,
-  `use-isnan`, `valid-typeof`).
-- **6193/6193 typescript-eslint fixtures pass** &mdash; same
-  diagnostics as typescript-eslint, byte-for-byte.
+- **373 rules** across seven categories (correctness, suspicious,
+  security, performance, complexity, a11y, style): 65 type-aware ports of
+  typescript-eslint plus syntactic rules ported from ESLint core,
+  eslint-plugin-jsx-a11y, and Biome. 367 emit diagnostics today; 6 are
+  scaffolded.
+- **All rule suites pass** &mdash; diagnostics validated byte-for-byte
+  against vendored typescript-eslint, ESLint, and Biome fixtures.
 - **Native checker:** built on TypeScript 7 native (typescript-go), not
   AST heuristics standing in for type queries.
 - **Long-lived daemon:** the program and checker stay warm between
@@ -60,8 +62,9 @@ jetlint src/index.ts
 jetlint .
 ```
 
-The **5 MVP rules** default to `error`. The other **56 rules** ship `off`
-&mdash; opt in via [`.jetlintrc.json`](https://jetlint.github.io/config/).
+The **5 recommended rules** default to `error`. The other **368 rules**
+ship `off` &mdash; opt in via
+[`.jetlintrc.json`](https://jetlint.github.io/config/).
 
 ## Configuration
 
@@ -93,12 +96,12 @@ schema.
 ## Compatibility
 
 Per-rule scores against typescript-eslint's published fixtures live in
-[`docs/TSEC-COMPAT-OVERVIEW.md`](docs/TSEC-COMPAT-OVERVIEW.md). All 61
-typescript-eslint ports currently sit at 100%. The six ESLint-core
-ports (`no-dupe-keys`, `no-duplicate-case`, `no-self-assign`,
-`no-self-compare`, `use-isnan`, `valid-typeof`) ship with hand-rolled
-unit tests since ESLint core does not publish a machine-readable
-fixture format.
+[`docs/TSEC-COMPAT-OVERVIEW.md`](docs/TSEC-COMPAT-OVERVIEW.md). All 65
+type-aware typescript-eslint ports currently pass their fixtures. The
+ESLint-core and Biome ports ship with their own compatibility harnesses
+(`TestEslintCompatibility`, `TestBiomeCompatibility`) against vendored
+upstream fixtures; the few ESLint-core rules without a machine-readable
+fixture format use hand-rolled unit tests.
 
 Reproduce a single rule's score:
 
@@ -115,7 +118,7 @@ cmd/
   probe/           diagnostic helper
 internal/
   engine/          single AST walk, dispatches to rules
-  rules/           67 rule implementations (one package each)
+  rules/           373 rule packages (one per rule)
   daemon/          long-lived sidecar (JSON-RPC over stdio)
   transport/       JSON-RPC framing
   cli/             argv parsing, exit codes
@@ -124,7 +127,7 @@ internal/
   project/         tsconfig resolution
   bootstrap/       Program loading
   architecture/    cross-package layering checks
-  tselintcompat/   upstream test-fixture loader (the 6193 cases)
+  tselintcompat/   upstream test-fixture loader
   toolerr/         exit-code-bearing error types
 testdata/          vendored typescript-eslint fixtures
 docs/              per-rule compat notes
